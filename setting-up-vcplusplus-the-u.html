@@ -1,0 +1,116 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Setting Up VCPlusPlus/The UnrealScript Part</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Setting_Up_VCPlusPlus/The_UnrealScript_Part; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="setting-up-vcplusplus.html">Setting Up VCPlusPlus</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Setting+Up+VCPlusPlus/The+UnrealScript+Part">The UnrealScript Part</a></h1>
+	<div class="wiki"><p>You'll need a header for your native C file. In this example, you'll implement a class (or a part of a class) in C++; in that case it's easiest (though NOT required) to have unreal create the header file for you.</p>
+<p>First of all, open Unreal.ini or Deusex.ini and search for EditPackages= lines. Add a line containing the name of your Package.</p>
+<p>Next, create a .uc file in $UNREALROOTDIR\SQLite\Classes\MyClass.uc</p>
+<p>It must contain at least this line:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MyClass <span class="uscript-keyword">extends</span> Actor
+    <span class="uscript-keyword">native</span><span class="uscript-operator">;</span></pre><p>Declare variables that you want to access from your C code as global variables</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bGenerateDebugInfo<span class="uscript-operator">;</span></pre><p>Declare static functions like that:</p>
+<pre class="uscript"><span class="uscript-keyword">native</span> <span class="uscript-keyword">final</span> <span class="uscript-operator">(</span><span class="uscript-number">1723</span><span class="uscript-operator">)</span> <span class="uscript-keyword">function</span> MyStaticFunc<span class="uscript-operator">(</span><span class="uscript-type">String</span> s<span class="uscript-operator">,</span> <span class="uscript-type">int</span> i<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>Note the '1723'. This is a UNIQUE number that you have to manually assign to static functions. Unreal reserves numbers up to 1000. Deus Ex, for example, adds some beyond 1000; you're on your own in finding out which numbers are reserved and which are not.</p>
+<p>Declare non-static functions like that:</p>
+<pre class="uscript"><span class="uscript-keyword">native</span> <span class="uscript-keyword">function</span> MyNativeFunc <span class="uscript-operator">(</span><span class="uscript-type">String</span> s<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>NOTE: do this only AFTER you have created a DLL that EXPORTS this function; otherwise the compilation will fail. This is a stupid behavior of the unreal engine; I don't know if it's present in the latest version of the engine, but I think it is. If you want to define non-static native functions, you'll have to declare them manually in the C++ file and add the UnrealScript definition later.</p>
+<p>The only advantage this behavior has: You don't have to declare non-final native functions in UnrealScript at all; the engine is aware of their existence simply by reading the DLL file. Why then add it at all? Because it's easier for the US coder if he can see the functions declarations in the US file.</p>
+<p>When you're done, go to $UNREALROOT\System . Delete your package .u file if it exists, then issue:</p>
+<p>ucc make . When it's compiled your package without errors, it will ask you if you want to update the .h file. Choose yes. That's the header file you need to include in your DLL project.</p>
+<p><em class="em3">Next step:</em> <a href="setting-up-vcplusplus-the-c.html">/The CPP File</a></p>
+</div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="setting-up-vcplusplus.html">Setting Up VCPlusPlus</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Setting_Up_VCPlusPlus/The_UnrealScript_Part">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Setting_Up_VCPlusPlus/The_UnrealScript_Part">View other revisions</a><br>Last edited March 30, 2006 2:47 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Setting_Up_VCPlusPlus/The_UnrealScript_Part">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Setting_Up_VCPlusPlus/The_UnrealScript_Part">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I love the smell of UnrealEd crashing in the morning. (tarquin)</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

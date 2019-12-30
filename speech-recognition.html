@@ -1,0 +1,271 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Speech Recognition</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Speech_Recognition; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Speech Recognition">Speech Recognition</a></h1>
+	<div class="wiki"><p><a href="unreal-tournament-2004.html">UT2004</a> implements the <a href="http://www.microsoft.com/speech/">[Microsoft Speech API]</a> for text to voice and speech recognition. (Windows 32bit only)</p>
+<p>This document will explain how to use the speech recognition feature.</p>
+<h2><a name="0.1"></a>Setup</h2>
+<p>To enable speech recognition you will have to make sure the following is set in your UT2004.ini file</p>
+<pre class="paraverbatim"> [WinDrv.WindowsClient]
+ UseSpeechRecognition=True</pre><p>By default this has been set.</p>
+<p>Next you will have to create a grammar file (the format will be explained below). This file should go into the folder configured for the Speech files, by default this is <code>../Speech</code>.</p>
+<p>It's set by the <code>SpeechPath</code> in the <code>[Core.System]</code>.</p>
+<p>Now you have to make sure your grammar file is loaded for your mod. For game types you do this by overwriting the <code>event SetGrammar()</code> with the following</p>
+<pre class="uscript"><span class="uscript-keyword">event</span> SetGrammar<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    LoadSRGrammar<span class="uscript-operator">(</span><span class="uscript-string">"MyGrammar"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// you grammar file without extention</span>
+<span class="uscript-operator">}</span></pre><p>You can set this at any time in the game. Every subsequent call to <code>LoadSRGrammar()</code> will overwrite the previous grammar.</p>
+<p><em class="em2">Important note:</em> for the best performance you will have to train the speech recognition engine. This can take quite a long time, but more training will give you better results. To train the engine use the "speech" applet in the windows Control Panel.</p>
+<h2><a name="0.2"></a>Usage</h2>
+<p>Speech recognition is available at any time, even if there is no voice replication. Speech will be recorded when the <code>bVoiceTalk</code> input is activated. By default an alias has been created for easy use: <code>VoiceTalk</code>. The <code>f</code> key is bound to the VoiceTalk command.</p>
+<p>For a more fool proof usage, use the <code>command</code> console command, it will execute the <em class="em1">recognised string</em> , not the raw string (unless you change the base code for that command).</p>
+<h2><a name="0.3"></a>Grammar file</h2>
+<p>This file defines how speech is recognised and what commands sequences are build. The grammar file is a simple WikiPedia:XML like document.</p>
+<p>Note: just like with any XML documented you can use <code>&lt;!-- ... --&gt;</code> for comments.</p>
+<p>Only the most important features will be discussed. For more information about the grammar, download the SAPI SDK.</p>
+<h3><a name="0.3.1"></a>&lt;GRAMMAR&gt;</h3>
+<p>A grammar file will always start and end with a <code>&lt;GRAMMAR&gt;...&lt;/GRAMMAR&gt;</code> tag. A grammar needs at least one <code>&lt;RULE&gt;...&lt;/RULE&gt;</code> element.</p>
+<p>The only usefull property of this tag is:</p>
+<dl><dt>LANGID</dt><dd>(optional) This is the language ID for this grammar. At the moment the engine only supports US English (ID: <code>409</code>)</dd></dl>
+<p><em class="em2">Child elements:</em></p>
+<ul><li>RULE (1 or more)</li>
+</ul>
+<h3><a name="0.3.2"></a>&lt;RULE&gt;</h3>
+<p>This is the core element of the grammar. It defines a rule to be recognised. You can have more than one rule per grammar, but only one can be active.</p>
+<p>Properties:</p>
+<dl><dt>NAME</dt><dd>(required) the name of this rule. It will be used for referencing to this rule (see RULEREF)</dd><dt>TOPLEVEL</dt><dd>(optional) set this to "active" to make this rule the active rule. Only the active rule will be recognised for a start of a sequence.</dd></dl>
+<p><em class="em2">Child elements:</em></p>
+<ul><li>RULEREF</li>
+<li>PHRASE</li>
+<li>LIST</li>
+<li>OPT</li>
+<li>WILDCARD</li>
+<li>DICTATION</li>
+</ul>
+<h3><a name="0.3.3"></a>&lt;LIST&gt; or &lt;L&gt;</h3>
+<p>A list tag allows you to create a list of possible phrase paths. Each element within the list will be chosen exlucively.</p>
+<p>For example in:</p>
+<pre class="paraverbatim"> &lt;list&gt;
+   &lt;p&gt;one&lt;/p&gt;
+   &lt;p&gt;two&lt;/p&gt;
+ &lt;/list&gt;</pre><p>Either <code>one</code> or <code>two</code> will be accepted.</p>
+<dl><dt>PROPNAME</dt><dd>(optional) this will set the default value of PROPNAME for the children (see PHRASE for a description)</dd></dl>
+<p><em class="em2">Child elements:</em></p>
+<ul><li>PHRASE</li>
+<li>LIST</li>
+<li>RULEREF</li>
+<li>WILDCARD</li>
+<li>DICTATION</li>
+</ul>
+<h3><a name="0.3.4"></a>&lt;PHRASE&gt; or &lt;P&gt;</h3>
+<p>This is the most important element. It defined a text to be recognised in order to follow the rest of the path. It can either be a single world or a couple of works to be recognised. How to do it depends on the purpose.</p>
+<dl><dt>DISP</dt><dd>(optional) text to display instead of the text within the tag</dd><dt>MAX</dt><dd>(optional) maximum occurences of the phrase sequence, by default equal to MIN. <code>"INF"</code> means infinite.</dd><dt>MIN</dt><dd>(optional) minimal occurences of the phrase, by default 1</dd><dt>PRON</dt><dd>(optional) pronunciation, some words might not be accepted by the engine, this will allow you to define a <em class="em1">sounds like</em> for the text</dd><dt>PROPNAME</dt><dd>(optional) this is the token\text used to identify this recognised string with. It's important to parse the recognised string within the UnrealEngine.</dd></dl>
+<p><em class="em2">Child elements:</em></p>
+<ul><li>RULEREF</li>
+<li>PHRASE</li>
+<li>OPT</li>
+<li>LIST</li>
+<li>WILDCARD</li>
+<li>DICTATION</li>
+</ul>
+<h3><a name="0.3.5"></a>&lt;OPT&gt; or &lt;O&gt;</h3>
+<p>This defines an optional element. It's accepted when it's there, or not.</p>
+<p>For example</p>
+<pre class="paraverbatim"> &lt;p&gt;hello&lt;/p&gt;
+ &lt;opt&gt;world&lt;/opt&gt;</pre><p>Either <code>hello</code> or <code>hello world</code> is accepted.</p>
+<p>This tag has the same properties as PHRASE</p>
+<p><em class="em2">Child elements:</em></p>
+<ul><li>RULEREF</li>
+<li>PHRASE</li>
+<li>OPT</li>
+<li>LIST</li>
+<li>WILDCARD</li>
+<li>DICTATION</li>
+</ul>
+<h3><a name="0.3.6"></a>&lt;WILDCARD&gt;</h3>
+<p>This is a wildcard for zero or more words, everything that matches this space will be ignored in the output.</p>
+<p>For example:</p>
+<pre class="paraverbatim"> &lt;p&gt;bite my &lt;wildcard /&gt; metal ass&lt;/p&gt;</pre><p>This will match "bite my metal ass", "bite my shiney metal ass" or "bite my colosal shiney metal ass". However the output will always be "bite my metal ass"</p>
+<h3><a name="0.3.7"></a>&lt;DICTATION&gt;</h3>
+<p>This is a very tricky tag, the result may not be what you want it to be. It's pretty much like a WILDCARD except that the matching text won't be ignored.</p>
+<p>Learning the engine is very important for this tag, because it tries to guess the words you said. It can easily confuse the word "knife" with "life".</p>
+<dl><dt>MAX</dt><dd>(optional) maximum words </dd><dt>MIN</dt><dd>(optional) minimum words</dd><dt>PROPNAME</dt><dd>(optional) used to represent this element in the recognized string.</dd></dl>
+<h3><a name="0.3.8"></a>&lt;RULEREF&gt;</h3>
+<p>This tag will allow you to refer to a different RULE in the grammar. This way you can re-use rules in various phrases.</p>
+<dl><dt>NAME</dt><dd>(required) the name of the rule you are refering to</dd><dt>PROPNAME</dt><dd>(optional)</dd></dl>
+<h2><a name="0.4"></a>Example Grammar</h2>
+<p>Let's say we have the following grammar (based on the BR.xml grammar of UT2004):</p>
+<pre class="paraverbatim"> &lt;GRAMMAR LANGID="409"&gt;
+ &lt;RULE NAME="BR" TOPLEVEL="ACTIVE"&gt;
+ 	&lt;P MIN="1" MAX="3"&gt;
+ 		&lt;RULEREF NAME="PLAYER"/&gt;
+ 	&lt;/P&gt;
+ 	&lt;L&gt;
+ 		&lt;P&gt;
+ 			&lt;P PROPNAME="DEFEND"&gt;defend&lt;/P&gt;
+ 			&lt;O&gt;the&lt;/O&gt;
+ 			&lt;O&gt;ball&lt;/O&gt;
+ 		&lt;/P&gt;
+ 		&lt;P&gt;
+ 			&lt;L PROPNAME="ATTACK"&gt;
+ 				&lt;P&gt;take&lt;/P&gt;
+ 				&lt;P&gt;attack&lt;/P&gt;
+ 				&lt;P&gt;get&lt;/P&gt;
+ 			&lt;/L&gt;
+ 			&lt;O&gt;the&lt;/O&gt;
+ 			&lt;O&gt;ball&lt;/O&gt;
+ 		&lt;/P&gt;		
+ 		&lt;P PROPNAME="COVER"&gt;cover me&lt;/P&gt;
+ 		&lt;P PROPNAME="FREELANCE"&gt;freelance&lt;/P&gt;
+ 		&lt;P PROPNAME="TAUNT"&gt;taunt&lt;/P&gt;
+ 	&lt;/L&gt;
+ &lt;/RULE&gt;
+ &lt;RULE NAME="PLAYER" &gt;
+ 	&lt;L&gt;
+ 		&lt;P PROPNAME="ALPHA"&gt;alpha&lt;/P&gt;
+ 		&lt;P PROPNAME="BRAVO"&gt;bravo&lt;/P&gt;
+ 		&lt;P PROPNAME="CHARLIE"&gt;charlie&lt;/P&gt;
+ 	&lt;/L&gt;
+ 	&lt;O&gt;and&lt;/O&gt;
+ &lt;/RULE&gt;
+ &lt;/GRAMMAR&gt;</pre><p>This grammar requires you to address at least one bot first (alpha, bravo or charlie), with a max of 3 bots. The "and" after the bot's name is optional, so you can say "alpha bravo" or "alpha and bravo". </p>
+<p>Next comes a command, this is a list. Basically it comes down to one of these commands: defend, attack, cover me, freelance and taunt.</p>
+<p>For defent you could also say "defend the ball" or just "defend ball". For the attack command either "take", "attack" or "get" is accepted.</p>
+<p>The propnames will generate a <em class="em1">recognized string</em> (see below). When you say "alpha take the ball" it will generate the string "ALPHA ATTACK".</p>
+<h2><a name="0.5"></a>UnrealScript</h2>
+<p>When a phrase you spoke is accepted by the engine it will call the following event in the player controller</p>
+<pre class="uscript"><span class="uscript-keyword">event</span> VoiceCommand<span class="uscript-operator">(</span> <span class="uscript-type">string</span> RecognizedString<span class="uscript-operator">,</span> <span class="uscript-type">string</span> RawString <span class="uscript-operator">)</span></pre><dl><dt>RecognizedString</dt><dd>contains the <code>PROPNAME</code> values as constructed via the grammar</dd><dt>RawString</dt><dd>contains the actual data received. </dd></dl>
+<p>If you say "alpha take the ball" the RecognizedString will be <code>"ALPHA ATTACK"</code> and the RawString will be "alpha take the ball".</p>
+<p>When you use a <code>&lt;WILDCARD /&gt;</code> that part will be ignored in the <code>RawString</code>. If whatever is said is important use the <code>&lt;DICTATION&gt;</code> tag instead.</p>
+<p>By default the <code>RecognizedString</code> string is forwarded to GameInfo's <code>function ParseVoiceCommand( PlayerController Sender, string RecognizedString )</code> for further processing. See the TeamGame class for an extensive example.</p>
+<h2><a name="0.6"></a>Quirks</h2>
+<p>Nesting elements will duplicate the PROPNAME is the RecognizedString string.</p>
+<p>For example:</p>
+<pre class="paraverbatim"> &lt;p PROPNAME="use"&gt;use &lt;RULEREF NAME="ITEM" PROPNAME="item1" /&gt; on &lt;RULEREF NAME="ITEM" PROPNAME="item1" /&gt;&lt;/p&gt;</pre><p>Will generate:</p>
+<pre class="paraverbatim"> use item1 use item2</pre><p>To fix this change it to something like</p>
+<pre class="paraverbatim"> &lt;p&gt;&lt;p PROPNAME="use"&gt;use&lt;/p&gt;&lt;RULEREF NAME="ITEM" PROPNAME="item1" /&gt; on &lt;RULEREF NAME="ITEM" PROPNAME="item1" /&gt;&lt;/p&gt;</pre><p>This will generate:</p>
+<pre class="paraverbatim"> use item1 item2</pre><p>In case of "use" we could just ignore the "on" part since it's redundant at that point.</p>
+<h2><a name="0.7"></a>Related Topics</h2>
+<ul><li><a href="speech-recognition-external.html">External Grammar files</a></li>
+</ul>
+<h2><a name="0.8"></a>Discussion</h2>
+<p><em class="em2">El Muerte:</em> I promised some cool stuff when I wrote this document. However when I was working on these cool things I stumbled upon a couple of issues that I could not resolve.</p>
+<p>First, the &lt;dictation /&gt; part of the speech recoginition works, but does not work well. Even after training the speech engine for more than an hour it still gave a lot of errors in the words I was trying. When using script grammar rules (e.g. &lt;phrase&gt; tags) you won't have any problems with this since the engine will try to match the spoken text with the limited set of possible phrases provided by the grammar (ofcourse "knife" and "life" would still be difficult).</p>
+<p>Secondly I was trying to implement a dynamic grammar that would change depending on some events (like during a conversation or current in game environment). An example of this would be to limit the strict grammar to the possible conversation choises (like with adventure games when you can select what to ask). An other example would be only provide a list with object names in the current room (so you could say "pick up &lt;object in the room&gt;"). The problem I encountered with this idea is that it's not possible to create a dynamic grammar file. Only grammar files with an .xml extention are accepted on the local grammars (stored on disk). For online grammars you will have to use an independed webserver, because the game's webserver doesn't respond during the LoadGrammar function call (it's not multi-threaded). Since the best purpose for speech recognision would be a single player game, using an external webserver just doesn't work well.</p>
+<p>I might implement the second idea in the (near) future using an external webserver, or at least give it a try.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Setup", "#0.1");
+menuItemAdd("Usage", "#0.2");
+menuItemAdd("Grammar file", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>&lt;GRAMMAR&gt;", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>&lt;RULE&gt;", "#0.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>&lt;LIST&gt; or &lt;L&gt;", "#0.3.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>&lt;PHRASE&gt; or &lt;P&gt;", "#0.3.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>&lt;OPT&gt; or &lt;O&gt;", "#0.3.5");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>&lt;WILDCARD&gt;", "#0.3.6");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>&lt;DICTATION&gt;", "#0.3.7");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>&lt;RULEREF&gt;", "#0.3.8");
+menuItemAdd("Example Grammar", "#0.4");
+menuItemAdd("UnrealScript", "#0.5");
+menuItemAdd("Quirks", "#0.6");
+menuItemAdd("Related Topics", "#0.7");
+menuItemAdd("Discussion", "#0.8");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Speech_Recognition">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Speech_Recognition">View other revisions</a><br>Last edited December 26, 2005 15:07 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Speech_Recognition">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Speech_Recognition">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>There is no spoon
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

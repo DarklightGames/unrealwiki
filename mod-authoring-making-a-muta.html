@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Mod Authoring/Making A Mutator</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Mod_Authoring/Making_A_Mutator; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="mod-authoring.html">Mod Authoring</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Mod+Authoring/Making+A+Mutator">Making A Mutator</a></h1>
+	<div class="wiki"><p><a href="mutator.html">Mutator</a>s are a great place to cut your teeth on UnrealScript because you are exposed to a limited, but powerful subset of the engine. As I said above, Mutators should only modify the game code in a relatively slight way. This increases the chances your mutator will work well when mixed with other mutators. (For example, you can play <em class="em1">FatBoy</em>, <em class="em1">InstaGib</em>, <em class="em1">No Powerups</em> deathmatch. A mix of 3 mutators).</p>
+<p>All mutators descend from the Mutator base class either directly or indirectly. Let's make a Vampire mutator and see how it all works. Create a new file in your package classes directory called Vampire.uc. Drop the following code in there:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> Vampire <span class="uscript-keyword">extends</span> Mutator<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> Initialized<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Initialized<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    Initialized <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+
+    Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>RegisterDamageMutator<span class="uscript-operator">(</span> <span class="uscript-keyword">Self</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> MutatorTakeDamage<span class="uscript-operator">(</span> <span class="uscript-keyword">out</span> <span class="uscript-type">int</span> ActualDamage<span class="uscript-operator">,</span> Pawn Victim<span class="uscript-operator">,</span> Pawn InstigatedBy<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> Vector HitLocation<span class="uscript-operator">,</span>
+    <span class="uscript-keyword">out</span> Vector Momentum<span class="uscript-operator">,</span> <span class="uscript-type">name</span> DamageType<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>InstigatedBy<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Bot'</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> InstigatedBy<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'PlayerPawn'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        InstigatedBy<span class="uscript-operator">.</span>Health <span class="uscript-operator">+=</span> ActualDamage<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>InstigatedBy<span class="uscript-operator">.</span>Health <span class="uscript-operator">&gt;</span> <span class="uscript-number">199</span><span class="uscript-operator">)</span>
+            InstigatedBy<span class="uscript-operator">.</span>Health <span class="uscript-operator">=</span> <span class="uscript-number">199</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> NextDamageMutator <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        NextDamageMutator<span class="uscript-operator">.</span>MutatorTakeDamage<span class="uscript-operator">(</span> ActualDamage<span class="uscript-operator">,</span> Victim<span class="uscript-operator">,</span> InstigatedBy<span class="uscript-operator">,</span> HitLocation<span class="uscript-operator">,</span> Momentum<span class="uscript-operator">,</span> DamageType <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>The first line declares the class contained in this file. UnrealScript is like Java in that each file contains a separate class definition. We are saying that our class, Vampire, is a Mutator. It "inherits" all the properties of Mutator.</p>
+<p>Next, we declare a class member. In UnrealScript, all class member variables must be declared before any functions (also called methods) are declared. The var keyword tells the compiler what we are doing. Here we have a boolean (true/false) value called Intialized.</p>
+<p>Next we have a function called <code>PostBeginPlay</code>. To someone who isn't experienced with object oriented programming, we have a bit of a puzzle. This object just declares functions, it doesn't seem to have any entry point! The "entry point" is inherited. Vampire is a Mutator, so it does everything Mutators can. Mutator is an Info, Info is an Actor, and an Actor is managed by the engine. In our case, we are overriding the function PostBeginPlay. PreBeginPlay, BeginPlay, and PostBeginPlay are called on every Actor in the level when the game starts. They are used to initialize the world.</p>
+<p>Our PostBeginPlay function starts by setting initialized to true. Notice it'll return if initialized is already true. What's the point of that? Well, the problem is that the BeginPlay suite of functions get called twice on Mutators. Unfortunately, this is somewhat unavoidable. BeginPlay and its friends are called on Actors when they are spawned and when the game starts. Mutators, unlike other actors, are spawned before the game starts... so you get two calls. The Initialized check is to prevent the rest of PostBeginPlay from being executed twice.</p>
+<p>The second part of PostBeginPlay is called RegisterDamageMutator, a method located in the <a href="gameinfo-ut.html">GameInfo (UT)</a> class. Here we are accessing the <code>Level</code> property that all <a href="actor.html">Actor</a>s inherit. Then we access the <code>Game</code> property of the <a href="levelinfo.html">LevelInfo</a> class that <code>Level</code> points to. Finally, we call the function from that reference, passing our <code>Self</code> as the parameter.</p>
+<p><code>RegisterDamageMutator</code> is a special method that tells the GameInfo to call MutatorTakeDamage on this mutator whenever a pawn takes damage. Because pawns take a lot of damage during the course of a normal game, we don't want to call this function on every mutator, that would be slow. RegisterDamageMutator allows us to limit the calls to only a subset of mutators. (By the way, in UT <a href="pawn-ut.html">Pawn (UT)</a>s consist primarily of <a href="bot-ut.html">Bot (UT)</a>s and <a href="playerpawn.html">PlayerPawn</a>s).</p>
+<p>Next we have our implementation of <code>MutatorTakeDamage</code>. This is the heart of our Mutator. We are making a Vampire mutator. The idea is simple: if a Pawn A does damage to another Pawn B, give the Pawn A health equal to the amount of damage. Players and bots will effectively suck life off of other players or bots. </p>
+<p>As I mentioned above, RegisterDamageMutator is called on our mutator whenever a player takes damage from another one. The pawns in question are passed to us in the variables.</p>
+<p>We start by making sure we are only dealing with bots and playerpawns. There are pawns that are neither bots nor players and we don't want to deal with them. InstigatedBy refers to the player who dealt the damage. We do our core logic by adding to that pawn's health life equal to the damage dealt. RegisterDamageMutator always passes in an amount of damage <em class="em1">after</em> armor, so this is raw final damage. Finally, we don't want a player gaining so much life he becomes unkillable, so we limit the total life gain to 199 points.</p>
+<p>To finish the function off, we call MutatorTakeDamage on the next damage mutator in the list. It is <em class="em2">critical</em> that you pass along method calls like this. If you fail to, damage mutators loaded after your own won't work right. There are other functions that need to be passed along, which we'll look at below.</p>
+<p>So now you can save this file and rebuild your package. We aren't done yet, though, because the mutator won't show up in the menus without some more work. Open your package's .int file and add the following line to the <code>[Public]</code> section (in a single line):</p>
+<pre class="paraverbatim">  Object=(Name=SemperFi.Vampire,Class=Class,MetaClass=Engine.Mutator,
+    Description="Vampire,You gain life equal to the amount of damage you do to an enemy.")</pre><p>When the game looks for mutators to list in the <em class="em1">Add Mutators</em> window, it searches all .int files for objects with a declared MetaClass of Engine.Mutator. We've also added a Description for the help bar. Now we are ready to run Unreal Tournament and load the mutator. Play around with it for a bit and you'll probably get ideas for your own mutators or ways of expanding Vampire.</p>
+<hr class="thin"><p>Prev Page: <a href="mod-authoring-how-to-build.html">/How To Build Your Package</a> &ndash; <em class="em2">Section 7 of 12</em> &ndash; Next Page: <a href="mod-authoring-the-anatomy-o.html">/The Anatomy Of Mutator</a></p>
+</div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="mod-authoring.html">Mod Authoring</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Mod_Authoring/Making_A_Mutator">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Mod_Authoring/Making_A_Mutator">View other revisions</a><br>Last edited May 19, 2003 22:46 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Mod_Authoring/Making_A_Mutator">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Mod_Authoring/Making_A_Mutator">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I search for solutions in this order: Past Code, Unreal Source, Wiki, BUF, groups.yahoo, google, screaming at monitor. (RegularX)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

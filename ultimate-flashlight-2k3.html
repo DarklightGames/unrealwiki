@@ -1,0 +1,338 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Ultimate FlashLight 2k3</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Ultimate_FlashLight_2k3; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Ultimate FlashLight 2k3">Ultimate FlashLight 2k3</a></h1>
+	<div class="wiki"><p>A really nice flashlight for UT2003.  <a href="http://www.frag-ops.com/content/animations/FragOps-taclight.wmv">[Watch it in action]</a></p>
+<p><img src="http://www.frag-ops.com/images/taclight.jpg"></p>
+<h2><a name="0.1"></a>Summary</h2>
+<p>I spent a few days trying to create a fairly realistic flashlight using projectors, then switched to dynamic lights after i didn't get the specific look i wanted, at the same time discovering they had a random darkening effect when projected onto certain terrain.  This worked out better for the terrain issue, but i felt it looked too drab. What i ended up deciding on was a dynamic projector to get a focal point with adjustable FOV, and then keeping the light for ambience. To follow the FOV adjustment of the projector, i'm manually adjusting the LightRadius of the dynamic light, which is dependant on a trace done every tick.  The resulting effect was quite stunning, and i decided it was too good to go unshared.</p>
+<p>On a side note, i made my projective texture light-affected, which seems to partially cure the darkening effect on terrain.</p>
+<h2><a name="0.2"></a>What You Need</h2>
+<ol><li>A texture for the projector. I use a 256x256, DXT1 compressed bitmap.  The full info is commented below.</li>
+</ol>
+<h2><a name="0.3"></a>Effect_TacLightProjector.uc</h2>
+<p>Here is where everything takes place.  <b>bHasLight</b> is toggled from an outside control. All you need to do is call <b>spawn(class'Effect_TacLightProjector',Owner);</b> where "Owner" is the pawn that will be owning the light. Then set its <b>bHasLight</b> variable, and the actor will take care of the rest.</p>
+<pre class="uscript"><span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// © 2003 Matt 'SquirrelZero' Farber</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// "UT2k3 Ultimate Flashlight"</span>
+<span class="uscript-comment">// I wrote this using _both_ a dynamic projector and a dynamic light, with the </span>
+<span class="uscript-comment">// dynamic projector as the focal point and lightsource providing general </span>
+<span class="uscript-comment">// ambient illumination.  Either one by itself is pretty dull, but combine the </span>
+<span class="uscript-comment">// two and you've got yourself a really nice effect if done correctly.</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">class</span> Effect_TacLightProjector <span class="uscript-keyword">extends</span> DynamicProjector<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// add a light too, there seems to be a problem with the projector darkening terrain sometimes</span>
+<span class="uscript-keyword">var</span> Effect_TacLightGlow TacLightGlow<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> Pawn LightPawn<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> Controller LightController<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bHasLight<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">replication</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// relevant variables needed by the client</span>
+    <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span>
+        LightPawn<span class="uscript-operator">,</span> LightController<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// relevant variables needed by the client</span>
+    <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span>
+        bHasLight<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// setup the pawn and controller variables, spawn the dynamic light</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bProjectActor <span class="uscript-operator">)</span>
+        SetCollision<span class="uscript-operator">(</span><span class="uscript-keyword">True</span><span class="uscript-operator">,</span> <span class="uscript-keyword">False</span><span class="uscript-operator">,</span> <span class="uscript-keyword">False</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Owner <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        LightPawn <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        LightController <span class="uscript-operator">=</span> LightPawn<span class="uscript-operator">.</span>Controller<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>TacLightGlow <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        TacLightGlow <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Effect_TacLightGlow'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// updates the taclight projector and dynamic light positions</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> vector StartTrace<span class="uscript-operator">,</span>EndTrace<span class="uscript-operator">,</span>X<span class="uscript-operator">,</span>Y<span class="uscript-operator">,</span>Z<span class="uscript-operator">,</span>HitLocation<span class="uscript-operator">,</span>HitNormal<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> material SurfaceMat<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> BeamLength<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// we're changing its location and rotation, so detach it</span>
+    DetachProjector<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// fallback</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>LightPawn <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">||</span> LightController <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">||</span> <span class="uscript-operator">!</span>bHasLight<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>TacLightGlow <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+            TacLightGlow<span class="uscript-operator">.</span>bDynamicLight <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">// ok, first we need to get a location directly in front of the player</span>
+    StartTrace <span class="uscript-operator">=</span> LightPawn<span class="uscript-operator">.</span>Location <span class="uscript-operator">+</span> LightPawn<span class="uscript-operator">.</span>EyePosition<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    GetAxes<span class="uscript-operator">(</span>LightController<span class="uscript-operator">.</span>GetViewRotation<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span>X<span class="uscript-operator">,</span>Y<span class="uscript-operator">,</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// not too far out, we don't want a flashlight that can shine across the map</span>
+    EndTrace <span class="uscript-operator">=</span> StartTrace <span class="uscript-operator">+</span> <span class="uscript-number">1800</span><span class="uscript-operator">*</span>vector<span class="uscript-operator">(</span>LightController<span class="uscript-operator">.</span>GetViewRotation<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Trace<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">,</span>HitNormal<span class="uscript-operator">,</span>EndTrace<span class="uscript-operator">,</span>StartTrace<span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span>SurfaceMat<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// find out how far the first hit was</span>
+    BeamLength <span class="uscript-operator">=</span> VSize<span class="uscript-operator">(</span>StartTrace<span class="uscript-operator">-</span>HitLocation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// clear the base, we're going to be doing some adjustments</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Base <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        SetBase<span class="uscript-operator">(</span><span class="uscript-keyword">none</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// this makes a neat focus effect when you get close to a wall</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>BeamLength <span class="uscript-operator">&lt;=</span> <span class="uscript-number">90</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        SetLocation<span class="uscript-operator">(</span>StartTrace<span class="uscript-operator">+</span>vector<span class="uscript-operator">(</span>LightController<span class="uscript-operator">.</span>GetViewRotation<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>Max<span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-number">0.2</span><span class="uscript-operator">*</span>BeamLength<span class="uscript-operator">)</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        SetBase<span class="uscript-operator">(</span>LightPawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        SetRotation<span class="uscript-operator">(</span>LightController<span class="uscript-operator">.</span>GetViewRotation<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        SetDrawScale<span class="uscript-operator">(</span>FMax<span class="uscript-operator">(</span><span class="uscript-number">0.02</span><span class="uscript-operator">,</span><span class="uscript-operator">(</span>BeamLength<span class="uscript-operator">/</span><span class="uscript-number">90</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>DrawScale<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-comment">// else we project it normally, positioning slightly in front of the player</span>
+    <span class="uscript-keyword">else</span> 
+    <span class="uscript-operator">{</span>
+        SetLocation<span class="uscript-operator">(</span>StartTrace<span class="uscript-operator">+</span>vector<span class="uscript-operator">(</span>LightController<span class="uscript-operator">.</span>GetViewRotation<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span><span class="uscript-number">80</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        SetBase<span class="uscript-operator">(</span>LightPawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        SetRotation<span class="uscript-operator">(</span>LightController<span class="uscript-operator">.</span>GetViewRotation<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        SetDrawScale<span class="uscript-operator">(</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>DrawScale<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">// reattach it</span>
+    AttachProjector<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// turns the dynamic light on if it's off</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>TacLightGlow<span class="uscript-operator">.</span>bDynamicLight<span class="uscript-operator">)</span>
+        TacLightGlow<span class="uscript-operator">.</span>bDynamicLight <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// better than tracing for the actor, makes it more projector-like</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>SurfaceMat <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-comment">// again, neat focus effect up close, starts earlier than the dynamic projector</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>BeamLength <span class="uscript-operator">&lt;=</span> <span class="uscript-number">100</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            TacLightGlow<span class="uscript-operator">.</span>LightBrightness <span class="uscript-operator">=</span> TacLightGlow<span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>LightBrightness <span class="uscript-operator">*</span> <span class="uscript-operator">(</span><span class="uscript-number">1.0</span> <span class="uscript-operator">+</span> <span class="uscript-operator">(</span><span class="uscript-number">1.0</span> <span class="uscript-operator">-</span> <span class="uscript-operator">(</span>BeamLength<span class="uscript-operator">/</span><span class="uscript-number">100</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            TaclightGlow<span class="uscript-operator">.</span>LightRadius <span class="uscript-operator">=</span> TacLightGlow<span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>LightRadius <span class="uscript-operator">*</span> FMax<span class="uscript-operator">(</span><span class="uscript-number">0.3</span><span class="uscript-operator">,</span><span class="uscript-operator">(</span>BeamLength<span class="uscript-operator">/</span><span class="uscript-number">100</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-comment">// else we scale its radius and brightness depending on distance from the material</span>
+        <span class="uscript-keyword">else</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-comment">// fades the lightsource out as it moves farther away</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>BeamLength <span class="uscript-operator">&gt;=</span> <span class="uscript-number">1300</span><span class="uscript-operator">)</span>
+                TacLightGlow<span class="uscript-operator">.</span>LightBrightness <span class="uscript-operator">=</span> TacLightGlow<span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>LightBrightness <span class="uscript-operator">*</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-number">1800</span><span class="uscript-operator">-</span>BeamLength<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">500</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-comment">// else normal brightness</span>
+            <span class="uscript-keyword">else</span>
+                TacLightGlow<span class="uscript-operator">.</span>LightBrightness <span class="uscript-operator">=</span> TacLightGlow<span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>LightBrightness<span class="uscript-operator">;</span>
+
+            <span class="uscript-comment">// this makes the light act more like a spotlight, resizing depending on distance</span>
+            TacLightGlow<span class="uscript-operator">.</span>LightRadius <span class="uscript-operator">=</span> TacLightGlow<span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>LightRadius <span class="uscript-operator">+</span> <span class="uscript-operator">(</span><span class="uscript-number">4.5</span> <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>BeamLength<span class="uscript-operator">/</span><span class="uscript-number">1900</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        TacLightGlow<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">-</span>vector<span class="uscript-operator">(</span>LightController<span class="uscript-operator">.</span>GetViewRotation<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span><span class="uscript-number">64</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        TacLightGlow<span class="uscript-operator">.</span>SetRotation<span class="uscript-operator">(</span>rotator<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">-</span>StartTrace<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-operator">}</span>
+    <span class="uscript-comment">// else if the trace returned nothing, then we put the light right in front of the player, scale its brightness down,</span>
+    <span class="uscript-comment">// and give it normal radius.  This makes it seem as if the light is casting a dull glow  onto the ground in front </span>
+    <span class="uscript-comment">// of the player, and is dim enough for players to not notice the transition.</span>
+    <span class="uscript-keyword">else</span>
+    <span class="uscript-operator">{</span>
+        TacLightGlow<span class="uscript-operator">.</span>LightRadius <span class="uscript-operator">=</span> TacLightGlow<span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>LightRadius<span class="uscript-operator">;</span>
+        TacLightGlow<span class="uscript-operator">.</span>LightBrightness <span class="uscript-operator">=</span> <span class="uscript-number">50</span><span class="uscript-operator">;</span>
+        TacLightGlow<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>StartTrace<span class="uscript-operator">+</span>vector<span class="uscript-operator">(</span>LightController<span class="uscript-operator">.</span>GetViewRotation<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span><span class="uscript-number">100</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// for my projtexture, i'm using a 256x256 DXT1 texture, created in the same way as the bulldog headlights --</span>
+    <span class="uscript-comment">// just a bright white circle dead center on a black background.  Make sure the texture is set to TC_Clamp</span>
+    <span class="uscript-comment">// or it'll repeat itself over the whole surface.</span>
+    ProjTexture<span class="uscript-operator">=</span>Texture<span class="uscript-name">'FOMisc.Projected.TacLight'</span>
+    MaterialBlendingOp<span class="uscript-operator">=</span>PB_Modulate
+    FrameBufferBlendingOp<span class="uscript-operator">=</span>PB_Add
+    MaxTraceDistance<span class="uscript-operator">=</span><span class="uscript-number">1600</span>
+    bClipBSP<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bProjectOnUnlit<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bGradient<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bProjectOnAlpha<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bProjectOnParallelBSP<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bLightChanged<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    RemoteRole<span class="uscript-operator">=</span>ROLE_SimulatedProxy
+    DrawScale<span class="uscript-operator">=</span><span class="uscript-number">0.21000</span>
+    FOV<span class="uscript-operator">=</span><span class="uscript-number">5</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.4"></a>Effect_TacLightGlow.uc</h2>
+<p>A dynamic light used by the <b>Effect_TacLightProjector</b> class to provide extra ambience.</p>
+<pre class="uscript"><span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// © 2003 Matt 'SquirrelZero' Farber</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">class</span> Effect_TacLightGlow <span class="uscript-keyword">extends</span> Light<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    SetTimer<span class="uscript-operator">(</span><span class="uscript-number">1.0</span><span class="uscript-operator">,</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// makes bots "see" the light when it's on</span>
+<span class="uscript-keyword">function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    MakeNoise<span class="uscript-operator">(</span><span class="uscript-number">0.3</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    Texture<span class="uscript-operator">=</span>S_Light
+    LightType<span class="uscript-operator">=</span>LT_Steady
+    LightEffect<span class="uscript-operator">=</span>LE_None
+    LightBrightness<span class="uscript-operator">=</span><span class="uscript-number">180</span>
+    LightSaturation<span class="uscript-operator">=</span><span class="uscript-number">255</span>
+    LightRadius<span class="uscript-operator">=</span><span class="uscript-number">3.0</span>
+    LightPeriod<span class="uscript-operator">=</span><span class="uscript-number">34</span>
+    CollisionRadius<span class="uscript-operator">=</span><span class="uscript-operator">+</span><span class="uscript-number">0005.000000</span>
+    CollisionHeight<span class="uscript-operator">=</span><span class="uscript-operator">+</span><span class="uscript-number">0005.000000</span>
+    bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    bStatic<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+    bNoDelete<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+    bMovable<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    bDynamicLight<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+    bDirectional<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    RemoteRole<span class="uscript-operator">=</span>ROLE_SimulatedProxy
+<span class="uscript-operator">}</span></pre><h2><a name="0.5"></a>Applications</h2>
+<p>In my case, i created a specialized exec function in my <b>PlayerController</b> class for toggling the light on or off, named <b>ToggleItem()</b>.  Since my light will only be used by specific weapons and not all the time, the exec then calls my custom function <b>SpecialFire()</b>, declared in my <b>Weapon</b> class, on the currently held weapon.  By default <b>SpecialFire()</b> is a blank function, but on taclight weapons here is where i insert my trigger for the light.  This then calls a client&rarr;server (Reliable if Role &lt; ROLE_Authority) replicated function, and the server spawns the light if it doesn't exist, else toggles it on or off if it does (<b>bHasLight = true;</b> or <b>bHasLight = false;</b>).  The <b>Owner</b> of the light is always the weapon's <b>Instigator</b>, since by default the Instigator is replicated in the WeaponClass.  To see how to specify the Owner when spawning the projector, look at the <b>spawn()</b> function in the <b>Actor</b> class.</p>
+<h2><a name="0.6"></a>Final Note</h2>
+<p>That's all there is to it, the projector actor handles nearly everything on its own.  If you intend to use this method, please contact me and let me know, only because i'd like to hear how you made use of it.</p>
+<h3><a name="0.6.1"></a>Comments</h3>
+<p><em class="em2">MythOpus:</em> Wow, this looks good.  I've been looking for a flshlight for awhile now.  My search is over <img alt=":D" src="emoticons/biggrin.gif" align="middle">  I have a question though...  how did you get this ingame and how do you turn it on ??  I've compiled it.. what next?</p>
+<p><em class="em2">SquirrelZero:</em> Thanks =].  I added an 'applications' section, to explain how i put it to use.</p>
+<p><em class="em2">MythOpus:</em> I see... Way outta my league <img alt=":)" src="emoticons/smile.gif" align="middle">  So this is for Face Off then ?</p>
+<p><em class="em2">SquirrelZero:</em> nah, different mod coming out soon.  <a href="http://www.frag-ops.com">[Frag.Ops]</a></p>
+<p><em class="em2">Foxpaw:</em> Could this page be renamed to something simpler, like just Flashlight or Creating a flashlight or something to that effect? "Ultimate Flashlight 2K3" sound like "Xtreme Advertising" run amok.</p>
+<p><em class="em2">SquirrelZero:</em> what am i advertising?  This a free script.  I'm not forcing anyone to use it over another one.  Ultimate FlashLight 2k3 is the name of the program, i made it up in exactly 5 seconds, because honestly i didn't care what it was called as long as it was useful for someone.  I mean cmon, that's along the same lines as asking someone to rename their mutator or mod.  I'm sorry that my choice doesn't agree with you, but i think you're a bit too "Xtreme" yourself.</p>
+<p><em class="em2">Mosquito:</em> IN BEFORE THE LOCK!! wait... this isn't a forum.... oh well. Hey? how did you record the video WITH sound?!</p>
+<p><em class="em2">Dark Pulse:</em> He probably dumped Pictures repeatedly (I know there's a console command for this) and then Did a Rip of Audio using total Recorder or something, then bundled them together.</p>
+<p><em class="em2">(v)adOnion:</em> Be glad he's sharing his code - a lot of people don't and you'll have to figure stuff out all on your own.</p>
+<p><em class="em2">Bslayerw:</em> SquirrelZero, FragOps looks awesome. Thanks for sharing the code. It's people like you that make the modding community a better place. Sharing code like this is very valuable.</p>
+<p><em class="em2">RegularX:</em> Ditto here SZ.  I just started researching into some good flashlight code, had kinda wondered about a path like this, then found this page.  Exactly what I was looking for.  Thanks for sharing, this will shave off a lot of frustration I think <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">SquirrelZero:</em> I've gotten quite a few requests over the past few days on how to actually implement it in your own code, so i think i'll add some detailed examples soon.  Gimme a few days to think them up tho <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">MythOpus:</em> I know your probably busy with FragOps. (Impressive BTW) but how are those 'examples' coming along <img alt=":P" src="emoticons/tongue.gif" align="middle">  I want to just put the turn on flashlight exec function in my playercontroller but I don't want it to have anything to do with the current weapon.  Any ideas?</p>
+<p><em class="em2">EricBlade:</em> I popped this in as a mutator in my game, and everything seems to be good on it, except that i'm not actually getting any light.  <img alt=":(" src="emoticons/sad.gif" align="middle"> I don't know if I know enough to debug this, either.  All the code seems to be functioning.. am I having replication issues?</p>
+<p><em class="em2">MythOpus:</em> Well, I haven't looked at this in a long time, but I don't think that it actually gives off light, as a light actor would.  It should only display a projector of a light.  Unless, that's the thing you're talking about.</p>
+<p><em class="em2">EricBlade:</em> Turned out it was replication issues.. a tad difficult thing to work with in a mutator, i'm thinking.. so i implemented it into my playercontroller, and spent an hour or so before realising that exec function flashlight() { .. } doesn't work, for no obvious reason. <img alt=":)" src="emoticons/smile.gif" align="middle">  Now, I have it working, though it obviously makes a much better spot/pointlight than a flashlight.   Since it is implemented as both a projector, and a light, it should give off light, and it does (although I had to change the "if(TacLightGlow == None &amp;&amp; Role == ROLE_AUTHORITY)" to just if(TacLightGlow == None), else there was no light glow on the local players end, and the local players end filled with a zillion Accessed Nones. <img alt=":)" src="emoticons/smile.gif" align="middle">  Now, to see if I can make it more flashlight like.. if anyone has suggestions, i'd love to hear <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">MythOpus:</em>Modify the texture so that it will have those... flashlight 'rings' around the light?</p>
+<p><em class="em2">EricBlade:</em>Looks like that would be the first order.  It looks like the Light part of this really doesn't seem to work.  I actually commented out all the code having to do with the LightGlow, and it worked almost identically, except I didn't get weird spot flashes on parts of the level.. </p>
+<p><em class="em2">SuperApe:</em> A different <a href="http://forums.unrealplayground.com/showthread.php?t=38185">[Flashlight example]</a> for UT200x.  Not sure how it compares to this one, but it includes bot support, etc.  Comments welcome on the UP forums.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Summary", "#0.1");
+menuItemAdd("What You Need", "#0.2");
+menuItemAdd("Effect_TacLightProjector.uc", "#0.3");
+menuItemAdd("Effect_TacLightGlow.uc", "#0.4");
+menuItemAdd("Applications", "#0.5");
+menuItemAdd("Final Note", "#0.6");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Comments", "#0.6.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Ultimate_FlashLight_2k3">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Ultimate_FlashLight_2k3">View other revisions</a><br>Last edited March 6, 2006 10:37 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Ultimate_FlashLight_2k3">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Ultimate_FlashLight_2k3">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I don't need to test my programs. I have an error-correcting modem.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

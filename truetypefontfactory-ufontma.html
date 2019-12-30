@@ -1,0 +1,356 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: TrueTypeFontFactory/UFontMaterial</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=TrueTypeFontFactory/UFontMaterial; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="truetypefontfactory.html">TrueTypeFontFactory</a>/<a href="http://wiki.beyondunreal.com/wiki?back=TrueTypeFontFactory/UFontMaterial">UFontMaterial</a></h1>
+	<div class="wiki"><p>UFontMaterial is a little plugin for UnrealEd's material factory based on TrueTypeFontFactory created by <a href="jan.html">Jan "eGo" Urbansky</a></p>
+<div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 width="100%"><tr valign=top><td class="floatimages-text" width="100%"></td>
+<td class="floatimages-right" align=right width=1><div><img alt="[UFontMaterial]" src="images/ufontmaterial.gif"><p>UFontMaterial Factory in UnrealEd in action</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<h2><a name="0.1"></a>Source Code</h2>
+<table border=0 cellspacing=0 cellpadding=0 class="wookee-expandable"><tr><td valign=top><p>EC_UFontMaterial.uc</p>
+</td>
+<td valign=top>&nbsp;<a class="wookee-expandable-label" labelfor="wookee-expandable-42" onclick="toggleElementExpanded(event);">&gt;&gt;</a></td>
+</tr>
+</table>
+<div id="wookee-expandable-42" class="wookee-expandable-body expandable"><pre class="uscript"><span class="uscript-comment">// ========================================================================================</span>
+<span class="uscript-comment">//  Package/class   :   ECTools.EC_UFontMaterial</span>
+<span class="uscript-comment">//  Autor           :   Jan "eGo" Urbansky</span>
+<span class="uscript-comment">//  WWW             :   http://www.ego-creations.de</span>
+<span class="uscript-comment">//  Script Version  :   0.6</span>
+<span class="uscript-comment">//  last changed    :   12.03.2005 - 08:33</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">//  NOTE!!!!!!!!!!!!!</span>
+<span class="uscript-comment">//  This script only works correctly with UT2004. Recommend usage with v3186 and higher.</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">//  Used information:</span>
+<span class="uscript-comment">//  http://udn.epicgames.com/Two/FontTutorial</span>
+<span class="uscript-comment">//  http://wiki.beyondunreal.com/wiki/TrueTypeFontFactory</span>
+<span class="uscript-comment">// ========================================================================================</span>
+
+<span class="uscript-keyword">class</span> EC_UFontMaterial <span class="uscript-keyword">extends</span> MaterialFactory<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Texture<span class="uscript-operator">&gt;</span> MaterialClass<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">string</span> FontName<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> FontSize<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">enum</span> EFontStyle
+<span class="uscript-operator">{</span>
+    Normal<span class="uscript-operator">,</span>
+    Italic<span class="uscript-operator">,</span>
+    Bold<span class="uscript-operator">,</span>
+    Bold_Italic<span class="uscript-operator">,</span>
+    Bolder<span class="uscript-operator">,</span>
+    Bolder_Italic<span class="uscript-operator">,</span>
+<span class="uscript-operator">}</span> FontStyle<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">enum</span> EFormat
+<span class="uscript-operator">{</span>
+    RGBA8<span class="uscript-operator">,</span>
+    DXT1<span class="uscript-operator">,</span>
+    DXT3<span class="uscript-operator">,</span>
+    DXT5<span class="uscript-operator">,</span>
+<span class="uscript-operator">}</span> TextureFormat<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span> AntiAlias<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">string</span> Chars<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> Count<span class="uscript-operator">;</span>
+<span class="uscript-comment">//var() int CharactersPerPage;      // obsolete UEngine stuff???</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> DropShadowX<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> DropShadowY<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> ExtendBoxBottom<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> ExtendBoxLeft<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> ExtendBoxRight<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> ExtendBoxTop<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> Gamma<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> Kerning<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">string</span> Path<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span> Underline<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">string</span> UnicodeRange<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> USize<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> VSize<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">string</span> Wildcard<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> XPad<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> YPad<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">const</span> <span class="uscript-keyword">editconst</span> <span class="uscript-type">string</span> Copyright<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// ========================================================================================</span>
+<span class="uscript-comment">//  Returns the font style</span>
+<span class="uscript-comment">// ========================================================================================</span>
+<span class="uscript-keyword">private</span> <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> GetFontStyle<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> FS<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">switch</span><span class="uscript-operator">(</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span> GetEnum<span class="uscript-operator">(</span> <span class="uscript-keyword">enum</span><span class="uscript-name">'EFontStyle'</span><span class="uscript-operator">,</span>FontStyle <span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">case</span> <span class="uscript-string">"Normal"</span>:              FS <span class="uscript-operator">=</span> <span class="uscript-string">" STYLE=500 ITALIC=FALSE"</span><span class="uscript-operator">;</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">case</span> <span class="uscript-string">"Italic"</span>:              FS <span class="uscript-operator">=</span> <span class="uscript-string">" STYLE=500 ITALIC=TRUE"</span><span class="uscript-operator">;</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">case</span> <span class="uscript-string">"Bold"</span>:                FS <span class="uscript-operator">=</span> <span class="uscript-string">" STYLE=600 ITALIC=FALSE"</span><span class="uscript-operator">;</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">case</span> <span class="uscript-string">"Bold_Italic"</span>:         FS <span class="uscript-operator">=</span> <span class="uscript-string">" STYLE=600 ITALIC=TRUE"</span><span class="uscript-operator">;</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">case</span> <span class="uscript-string">"Bolder"</span>:              FS <span class="uscript-operator">=</span> <span class="uscript-string">" STYLE=700 ITALIC=FALSE"</span><span class="uscript-operator">;</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">case</span> <span class="uscript-string">"Bolder_Italic"</span>:       FS <span class="uscript-operator">=</span> <span class="uscript-string">" STYLE=700 ITALIC=TRUE"</span><span class="uscript-operator">;</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">return</span> FS<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// ========================================================================================</span>
+<span class="uscript-comment">//  Returns the compression value</span>
+<span class="uscript-comment">// ========================================================================================</span>
+<span class="uscript-keyword">private</span> <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> GetCompression<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> CS<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">switch</span><span class="uscript-operator">(</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span> GetEnum<span class="uscript-operator">(</span> <span class="uscript-keyword">enum</span><span class="uscript-name">'EFormat'</span><span class="uscript-operator">,</span>TextureFormat <span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">case</span> <span class="uscript-string">"RGBA8"</span>:   CS <span class="uscript-operator">=</span> <span class="uscript-string">""</span><span class="uscript-operator">;</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>                 <span class="uscript-comment">// RGBA8</span>
+        <span class="uscript-keyword">case</span> <span class="uscript-string">"DXT1"</span>:    CS <span class="uscript-operator">=</span> <span class="uscript-string">" COMPRESSION=3"</span><span class="uscript-operator">;</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>   <span class="uscript-comment">// DXT1</span>
+        <span class="uscript-keyword">case</span> <span class="uscript-string">"DXT3"</span>:    CS <span class="uscript-operator">=</span> <span class="uscript-string">" COMPRESSION=7"</span><span class="uscript-operator">;</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>   <span class="uscript-comment">// DXT3</span>
+        <span class="uscript-keyword">case</span> <span class="uscript-string">"DXT5"</span>:    CS <span class="uscript-operator">=</span> <span class="uscript-string">" COMPRESSION=8"</span><span class="uscript-operator">;</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>   <span class="uscript-comment">// DXT5</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">return</span> CS<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// ========================================================================================</span>
+<span class="uscript-comment">//  Builds the console command for the TrueTypeFontFactory</span>
+<span class="uscript-comment">// ========================================================================================</span>
+<span class="uscript-keyword">private</span> <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> NewTTFMaterial<span class="uscript-operator">(</span> <span class="uscript-type">string</span> InPackage<span class="uscript-operator">,</span> <span class="uscript-type">string</span> InGroup<span class="uscript-operator">,</span> <span class="uscript-type">string</span> InName <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> S<span class="uscript-operator">;</span>                                                                     <span class="uscript-comment">// command string declaration</span>
+
+    S <span class="uscript-operator">=</span> <span class="uscript-string">"NEW TrueTypeFontFactory"</span><span class="uscript-operator">;</span>                                  <span class="uscript-comment">// create font with TTF factory</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" NAME=\""</span> <span class="uscript-operator">$</span> InName <span class="uscript-operator">$</span> <span class="uscript-string">"\""</span><span class="uscript-operator">;</span>                                     <span class="uscript-comment">// name of texture</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" CLASS=\""</span> <span class="uscript-operator">$</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>MaterialClass<span class="uscript-operator">)</span> <span class="uscript-operator">$</span> <span class="uscript-string">"\""</span><span class="uscript-operator">;</span>     <span class="uscript-comment">// name of class</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" GROUP=\""</span> <span class="uscript-operator">$</span> InGroup <span class="uscript-operator">$</span> <span class="uscript-string">"\""</span><span class="uscript-operator">;</span>                                   <span class="uscript-comment">// name of group</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" PACKAGE=\""</span> <span class="uscript-operator">$</span> InPackage <span class="uscript-operator">$</span> <span class="uscript-string">"\""</span><span class="uscript-operator">;</span>                           <span class="uscript-comment">// name of package</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" HEIGHT="</span> <span class="uscript-operator">$</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>FontSize<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                          <span class="uscript-comment">// font height</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" USIZE="</span> <span class="uscript-operator">$</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>USize<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                  <span class="uscript-comment">// texture horizontal size</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" VSIZE="</span> <span class="uscript-operator">$</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>VSize<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                      <span class="uscript-comment">// texture vertical size</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" FONTNAME=\""</span> <span class="uscript-operator">$</span> FontName <span class="uscript-operator">$</span> <span class="uscript-string">"\""</span><span class="uscript-operator">;</span>                       <span class="uscript-comment">// Windows font name</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" YPAD="</span> <span class="uscript-operator">$</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>YPad<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                        <span class="uscript-comment">// texture tiles</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" XPAD="</span> <span class="uscript-operator">$</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>XPad<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                        <span class="uscript-comment">// texture tiles</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" ANTIALIAS="</span> <span class="uscript-operator">$</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>AntiAlias<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                  <span class="uscript-comment">// antialiasing</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" COUNT="</span> <span class="uscript-operator">$</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>Count<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                  <span class="uscript-comment">// char count</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" DROPSHADOWX="</span> <span class="uscript-operator">$</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>DropShadowX<span class="uscript-operator">)</span><span class="uscript-operator">;</span>          <span class="uscript-comment">// shadow width X</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" DROPSHADOWY="</span> <span class="uscript-operator">$</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>DropShadowY<span class="uscript-operator">)</span><span class="uscript-operator">;</span>          <span class="uscript-comment">// shadow width Y</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" GAMMA="</span> <span class="uscript-operator">$</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>Gamma<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                  <span class="uscript-comment">// gamma value</span>
+<span class="uscript-comment">//  S = S $ " CHARACTERSPERPAGE=" $ string(CharactersPerPage);</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" UNICODERANGE=\""</span> <span class="uscript-operator">$</span> UnicodeRange <span class="uscript-operator">$</span> <span class="uscript-string">"\""</span><span class="uscript-operator">;</span>           <span class="uscript-comment">// Unicode characters, use Hex values comma separated</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" WILDCARD=\""</span> <span class="uscript-operator">$</span> Wildcard <span class="uscript-operator">$</span> <span class="uscript-string">"\""</span><span class="uscript-operator">;</span>                           <span class="uscript-comment">// includes a file with Unicode characters (e.g. MyChars.*)</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" EXTENDBOXBOTTOM="</span> <span class="uscript-operator">$</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>ExtendBoxBottom<span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// size box of the character letter (bottom edge)</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" EXTENDBOXTOP="</span> <span class="uscript-operator">$</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>ExtendBoxTop<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                <span class="uscript-comment">// size box of the character letter (top edge)</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" EXTENDBOXLEFT="</span> <span class="uscript-operator">$</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>ExtendBoxLeft<span class="uscript-operator">)</span><span class="uscript-operator">;</span>          <span class="uscript-comment">// size box of the character letter (left edge)</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" EXTENDBOXRIGHT="</span> <span class="uscript-operator">$</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>ExtendBoxRight<span class="uscript-operator">)</span><span class="uscript-operator">;</span>        <span class="uscript-comment">// size box of the character letter (right edge)</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" UNDERLINE="</span> <span class="uscript-operator">$</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>Underline<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                          <span class="uscript-comment">// underline style</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" PATH=\""</span> <span class="uscript-operator">$</span> Path <span class="uscript-operator">$</span> <span class="uscript-string">"\""</span><span class="uscript-operator">;</span>                                               <span class="uscript-comment">// use it with Unicoderange (e.g. ".")</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" KERNING="</span> <span class="uscript-operator">$</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>Kerning<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                  <span class="uscript-comment">// spaces between the characters</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> GetFontStyle<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                                 <span class="uscript-comment">// font style</span>
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> GetCompression<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                               <span class="uscript-comment">// compression type</span>
+
+    <span class="uscript-comment">// add backslashes to a string variable</span>
+    <span class="uscript-keyword">class</span><span class="uscript-name">'EC_StrUtils'</span><span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>StrReplace<span class="uscript-operator">(</span> Chars <span class="uscript-operator">,</span> Chr<span class="uscript-operator">(</span><span class="uscript-number">92</span><span class="uscript-operator">)</span> <span class="uscript-operator">,</span> Chr<span class="uscript-operator">(</span><span class="uscript-number">92</span><span class="uscript-operator">)</span> <span class="uscript-operator">$</span> Chr<span class="uscript-operator">(</span><span class="uscript-number">92</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">class</span><span class="uscript-name">'EC_StrUtils'</span><span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>StrReplace<span class="uscript-operator">(</span> Chars <span class="uscript-operator">,</span> Chr<span class="uscript-operator">(</span><span class="uscript-number">34</span><span class="uscript-operator">)</span> <span class="uscript-operator">,</span> Chr<span class="uscript-operator">(</span><span class="uscript-number">92</span><span class="uscript-operator">)</span> <span class="uscript-operator">$</span> Chr<span class="uscript-operator">(</span><span class="uscript-number">34</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    S <span class="uscript-operator">=</span> S <span class="uscript-operator">$</span> <span class="uscript-string">" CHARS=\""</span> <span class="uscript-operator">$</span> Chars <span class="uscript-operator">$</span> <span class="uscript-string">"\""</span><span class="uscript-operator">;</span>                     <span class="uscript-comment">// chars to include</span>
+
+  Log<span class="uscript-operator">(</span> S <span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                                                             <span class="uscript-comment">// log the command</span>
+
+    <span class="uscript-keyword">return</span> S<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// ========================================================================================</span>
+<span class="uscript-comment">//  Returns the created font material</span>
+<span class="uscript-comment">// ========================================================================================</span>
+<span class="uscript-keyword">function</span> Material CreateMaterial<span class="uscript-operator">(</span> Object InOuter<span class="uscript-operator">,</span> <span class="uscript-type">string</span> InPackage<span class="uscript-operator">,</span> <span class="uscript-type">string</span> InGroup<span class="uscript-operator">,</span> <span class="uscript-type">string</span> InName <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> sMaterialPath<span class="uscript-operator">;</span>
+
+    ConsoleCommand <span class="uscript-operator">(</span> NewTTFMaterial<span class="uscript-operator">(</span> InPackage<span class="uscript-operator">,</span> InGroup<span class="uscript-operator">,</span> InName <span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Package.Group.Name</span>
+    sMaterialPath <span class="uscript-operator">=</span> InPackage <span class="uscript-operator">$</span> <span class="uscript-string">"."</span> <span class="uscript-operator">$</span> InName <span class="uscript-operator">$</span> <span class="uscript-string">"."</span> <span class="uscript-operator">$</span> InName<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> MaterialClass <span class="uscript-operator">==</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">none</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span> <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">return</span> Material<span class="uscript-operator">(</span> FindObject<span class="uscript-operator">(</span> sMaterialPath <span class="uscript-operator">$</span> <span class="uscript-string">"_PageA"</span> <span class="uscript-operator">,</span> MaterialClass<span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// ========================================================================================</span>
+<span class="uscript-comment">//  Default Properties for this Class</span>
+<span class="uscript-comment">// ========================================================================================</span>
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    MaterialClass<span class="uscript-operator">=</span>Engine<span class="uscript-operator">.</span>Texture
+    AntiAlias<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+    Chars<span class="uscript-operator">=</span><span class="uscript-string">" 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz`~!@#$%^&amp;*()_+-=[]\\{}|;:',./?&gt;&lt;\"¡«°»¿ÀÁÄÈÉÊËÌÍÑÒÓÖÙÚÜßàáâäçèéêëìíîïñòóôöùúûüæøå"</span>
+    Count<span class="uscript-operator">=</span><span class="uscript-number">256</span>
+    FontName<span class="uscript-operator">=</span><span class="uscript-string">"Arial"</span>
+    FontSize<span class="uscript-operator">=</span><span class="uscript-number">10.000000</span>
+    Gamma<span class="uscript-operator">=</span><span class="uscript-number">0.700000</span>
+    Kerning<span class="uscript-operator">=</span><span class="uscript-number">0</span>
+    YPad<span class="uscript-operator">=</span><span class="uscript-number">1</span>
+    XPad<span class="uscript-operator">=</span><span class="uscript-number">1</span>
+    USize<span class="uscript-operator">=</span><span class="uscript-number">256</span>
+    VSize<span class="uscript-operator">=</span><span class="uscript-number">256</span>
+    Description<span class="uscript-operator">=</span><span class="uscript-string">"TrueType Font Texture"</span>
+    Copyright<span class="uscript-operator">=</span><span class="uscript-string">"UnrealED Plugin (c) 2004-2005, EGO-CREATIONS"</span>
+<span class="uscript-operator">}</span></pre></div>
+<table border=0 cellspacing=0 cellpadding=0 class="wookee-expandable"><tr><td valign=top><p>EC_StrUtils.uc</p>
+</td>
+<td valign=top>&nbsp;<a class="wookee-expandable-label" labelfor="wookee-expandable-43" onclick="toggleElementExpanded(event);">&gt;&gt;</a></td>
+</tr>
+</table>
+<div id="wookee-expandable-43" class="wookee-expandable-body expandable"><pre class="uscript"><span class="uscript-comment">// ========================================================================================</span>
+<span class="uscript-comment">//  Package/class   :   ECTools.EC_StrUtils</span>
+<span class="uscript-comment">//  Autor           :   Jan "eGo" Urbansky</span>
+<span class="uscript-comment">//  WWW             :   http://www.ego-creations.de</span>
+<span class="uscript-comment">//  Script Version  :   0.1</span>
+<span class="uscript-comment">//  last changed    :   12.03.2005 - 08:24</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">//  Description     :   some string functions</span>
+<span class="uscript-comment">// ========================================================================================</span>
+<span class="uscript-keyword">class</span> EC_StrUtils <span class="uscript-keyword">extends</span> Object<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// ========================================================================================</span>
+<span class="uscript-comment">//  String Replacement</span>
+<span class="uscript-comment">// ========================================================================================</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> StrReplace<span class="uscript-operator">(</span><span class="uscript-keyword">out</span> <span class="uscript-type">string</span> Text<span class="uscript-operator">,</span> <span class="uscript-type">string</span> OldString<span class="uscript-operator">,</span> <span class="uscript-type">string</span> NewString<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> s<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Text <span class="uscript-operator">==</span> <span class="uscript-string">""</span> <span class="uscript-operator">||</span> OldString <span class="uscript-operator">==</span> <span class="uscript-string">""</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    s <span class="uscript-operator">=</span> Text<span class="uscript-operator">;</span>
+    Text <span class="uscript-operator">=</span> <span class="uscript-string">""</span><span class="uscript-operator">;</span>
+    i <span class="uscript-operator">=</span> InStr<span class="uscript-operator">(</span>s<span class="uscript-operator">,</span> OldString<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">while</span><span class="uscript-operator">(</span>i <span class="uscript-operator">!=</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Text <span class="uscript-operator">=</span> Text <span class="uscript-operator">$</span> Left<span class="uscript-operator">(</span>s<span class="uscript-operator">,</span> i<span class="uscript-operator">)</span> <span class="uscript-operator">$</span> NewString<span class="uscript-operator">;</span>
+        s <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>s<span class="uscript-operator">,</span> i <span class="uscript-operator">+</span> Len<span class="uscript-operator">(</span>OldString<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        i <span class="uscript-operator">=</span> InStr<span class="uscript-operator">(</span>s<span class="uscript-operator">,</span> OldString<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    Text <span class="uscript-operator">=</span> Text <span class="uscript-operator">$</span> s<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span></pre></div>
+<h2><a name="0.2"></a>Releases</h2>
+<p>Download: <a href="http://www.ego-creations.de/index.php?f=files&T=2&S=5">[UFontMaterial (UT2003)]</a> (72 kB) v0.4</p>
+<p>Download: <a href="http://www.ego-creations.de/index.php?f=files&T=2&S=5">[UFontMaterial (UT2004)]</a> (83 kB) v0.5</p>
+<h2><a name="0.3"></a>Related Topics</h2>
+<ul><li><a href="truetypefontfactory.html">TrueTypeFontFactory</a></li>
+</ul>
+<h2><a name="0.4"></a>Discussion</h2>
+<p><em class="em2">Mychaeel:</em> That's a pretty cool idea, actually...  <img alt=":-)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">SuperApe:</em> Well done.  I recommend this plug-in. <img alt=":tup:" src="emoticons/tup.gif" align="middle"></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Source Code", "#0.1");
+menuItemAdd("Releases", "#0.2");
+menuItemAdd("Related Topics", "#0.3");
+menuItemAdd("Discussion", "#0.4");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="truetypefontfactory.html">TrueTypeFontFactory</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=TrueTypeFontFactory/UFontMaterial">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=TrueTypeFontFactory/UFontMaterial">View other revisions</a><br>Last edited May 10, 2007 8:59 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=TrueTypeFontFactory/UFontMaterial">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/TrueTypeFontFactory/UFontMaterial">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I search for solutions in this order: Past Code, Unreal Source, Wiki, BUF, groups.yahoo, google, screaming at monitor. (RegularX)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

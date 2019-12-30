@@ -1,0 +1,205 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: UDP Server Sample</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=UDP_Server_Sample; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=UDP Server Sample">UDP Server Sample</a></h1>
+	<div class="wiki"><p>Well, this is my first contribution....If I made some mistakes feel free to correct them <img alt=":)" src="emoticons/smile.gif" align="middle">      - Matthieu29 -</p>
+<p>This sample code show how to run an <span class="interwiki"><img 
+      alt="Wikipedia logo"
+      title="Wikipedia"
+      src="shared//InterWiki-Wikipedia.png">&nbsp;<a href="http://www.wikipedia.com/wiki/UDP">UDP</a></span> server for UT2003.</p>
+<p>UDP is a connection-less protocol, this means that there's no establisched connection between the client and server. Packets might get lost or might be received in random order. Also the remote side is not validated, there's no way to assure that the packet came from the host as reported by the packet (spoofing IP's). The only check that is performed on UDP packets is if the content is valid (CRC checksum). If the content is invalid the packet is dropped as if it was never send. Because of all this UDP provides as fast way to communicate. UDP is often used in applications where it doesn't matter much that data might get lost: game servers, streaming video, VoIP. UDP also has a limitation the the maximum data because packet fragmentation is not supported. You can't send UDP packets larger that the MTU (which is often 1500), using 1000 bytes as a maximum length is usualy a good choice.</p>
+<p>This class create, an UDP server socket to receive datas from an external program. You just have to specify the port number (a default properties), the IP address used id the local one : 127.0.0.1. I originally designed this class to use a 3D tracker (mounted on a virtual reality helmet) in order to set virtual player's pitch roll and yaw.</p>
+<p>First, the class extracts 6 chars sended by the external program: the pitch yaw and roll composing player's head rotation. (Each of the 3 angles are coded with 2 chars).</p>
+<p>After, an another class of the game gets these informations in order to set the virtual player's rotation.</p>
+<pre class="uscript"><span class="uscript-keyword">Class</span> MyUdp <span class="uscript-keyword">extends</span> UdpLink<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> iPort<span class="uscript-operator">;</span>   <span class="uscript-comment">// server port number</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> pitch<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> yaw<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> roll<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> InitUdpLinkTracker<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> address<span class="uscript-operator">;</span> <span class="uscript-comment">// contains the address (for debug purposes)</span>
+  <span class="uscript-keyword">local</span> IpAddr Addr<span class="uscript-operator">;</span>    <span class="uscript-comment">// struct with the address and the port of the client (us)</span>
+
+  log<span class="uscript-operator">(</span><span class="uscript-string">"InitUdpLinkTracker (entered)"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  ReceiveMode <span class="uscript-operator">=</span> RMODE_Event<span class="uscript-operator">;</span> <span class="uscript-comment">// We are using events to catch incomming datas</span>
+  LinkMode <span class="uscript-operator">=</span> MODE_Text<span class="uscript-operator">;</span>      <span class="uscript-comment">// We expect to receive datas in text format</span>
+
+  <span class="uscript-comment">// set the socket</span>
+  GetLocalIp<span class="uscript-operator">(</span>Addr<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  addr<span class="uscript-operator">.</span>port <span class="uscript-operator">=</span> iport<span class="uscript-operator">;</span>
+  address <span class="uscript-operator">=</span> ipaddrtostring<span class="uscript-operator">(</span>Addr<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  log <span class="uscript-operator">(</span><span class="uscript-string">"Address: "</span><span class="uscript-operator">$</span>address<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-comment">// bind</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>BindPort<span class="uscript-operator">(</span>addr<span class="uscript-operator">.</span>port<span class="uscript-operator">,</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+    log<span class="uscript-operator">(</span><span class="uscript-string">"bind OK : socket initialized and binded!"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    address <span class="uscript-operator">=</span> ipaddrtostring<span class="uscript-operator">(</span>Addr<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    log <span class="uscript-operator">(</span><span class="uscript-string">"Addr"</span><span class="uscript-operator">$</span>address<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span> log<span class="uscript-operator">(</span><span class="uscript-string">"### bind ERROR!"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">event</span> ReceivedText <span class="uscript-operator">(</span>IpAddr Addr<span class="uscript-operator">,</span> <span class="uscript-type">string</span> Text<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-comment">// we have just received a string !</span>
+
+log<span class="uscript-operator">(</span><span class="uscript-string">"Read string: "</span><span class="uscript-operator">$</span>Text<span class="uscript-operator">$</span><span class="uscript-string">" Size : "</span><span class="uscript-operator">$</span>Len<span class="uscript-operator">(</span>Text<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//convert the 6 read chars into three 32 bits int (2 chars =&gt; 2X8 bits)</span>
+  pitch <span class="uscript-operator">=</span> Asc<span class="uscript-operator">(</span>Right<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span>len<span class="uscript-operator">(</span>Text<span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-number">256</span> <span class="uscript-operator">*</span> Asc<span class="uscript-operator">(</span>Right<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span>len<span class="uscript-operator">(</span>Text<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  yaw  <span class="uscript-operator">=</span> Asc<span class="uscript-operator">(</span>Right<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span>len<span class="uscript-operator">(</span>Text<span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-number">256</span> <span class="uscript-operator">*</span> Asc<span class="uscript-operator">(</span>Right<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span>len<span class="uscript-operator">(</span>Text<span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  roll <span class="uscript-operator">=</span> Asc<span class="uscript-operator">(</span>Right<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span>len<span class="uscript-operator">(</span>Text<span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">5</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-number">256</span> <span class="uscript-operator">*</span> Asc<span class="uscript-operator">(</span>Right<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span>len<span class="uscript-operator">(</span>Text<span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">4</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+log<span class="uscript-operator">(</span><span class="uscript-string">" pitch read "</span><span class="uscript-operator">$</span>pitch<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+log<span class="uscript-operator">(</span><span class="uscript-string">" yaw read "</span><span class="uscript-operator">$</span>yaw<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+log<span class="uscript-operator">(</span><span class="uscript-string">" roll read "</span><span class="uscript-operator">$</span>roll<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">defaultproperties</span>
+  <span class="uscript-operator">{</span>
+  iPort<span class="uscript-operator">=</span><span class="uscript-number">4000</span>     <span class="uscript-comment">// local port number</span>
+  <span class="uscript-operator">}</span></pre><p>As I explained, the server port number is set by "iPort", and the IP adress of the server is the IP of the local machine.</p>
+<p>"ReceivedText" is called when you have received datas.</p>
+<p>After, pitch yaw and roll are acessed by an another class so I can change the player's rotation ! <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p>So, let's see how to use it:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MyXPlayer <span class="uscript-keyword">extends</span> XPlayer
+    <span class="uscript-keyword">DependsOn</span><span class="uscript-operator">(</span>xUtil<span class="uscript-operator">)</span> <span class="uscript-keyword">config</span><span class="uscript-operator">(</span>user<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> MyTcp UdpComm<span class="uscript-operator">;</span>      <span class="uscript-comment">// class member for UDP communication (UDP communication used to set the rotation of the player)</span>
+
+<span class="uscript-comment">// Initialize the UDP comunication class</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// call the super</span>
+  UdpComm<span class="uscript-operator">=</span>Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'MyUdp'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>   <span class="uscript-comment">// Here we spawn the MyUDP class</span>
+  UdpComm<span class="uscript-operator">.</span>InitUdpLinkTracker<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Here we initilalize the UDP connection</span>
+  <span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//Function "PlayerTick" called every DeltaTime T</span>
+<span class="uscript-keyword">event</span> PlayerTick<span class="uscript-operator">(</span> <span class="uscript-type">float</span> DeltaTime <span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PlayerTick<span class="uscript-operator">(</span>DeltaTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// call the super</span>
+  SetRotationOfPlayer<span class="uscript-operator">(</span>UdpComm<span class="uscript-operator">.</span>pitch<span class="uscript-operator">,</span> UdpComm<span class="uscript-operator">.</span>yaw<span class="uscript-operator">,</span> UdpComm<span class="uscript-operator">.</span>roll<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// set the rotation of the player!</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> SetRotationOfPlayer<span class="uscript-operator">(</span><span class="uscript-type">int</span> ClientPitch<span class="uscript-operator">,</span> <span class="uscript-type">int</span> ClientYaw<span class="uscript-operator">,</span> <span class="uscript-type">int</span> ClientRoll<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-keyword">local</span> rotator PlayerRotate<span class="uscript-operator">;</span>
+
+  PlayerRotate<span class="uscript-operator">.</span>Pitch <span class="uscript-operator">=</span> ClientPitch<span class="uscript-operator">;</span>
+  PlayerRotate<span class="uscript-operator">.</span>Yaw   <span class="uscript-operator">=</span> ClientYaw<span class="uscript-operator">;</span>
+  PlayerRotate<span class="uscript-operator">.</span>Roll  <span class="uscript-operator">=</span> ClientRoll<span class="uscript-operator">;</span>
+  SetRotation<span class="uscript-operator">(</span>PlayerRotate<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//apply the rotation</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">replication</span>
+  <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Role <span class="uscript-operator">==</span> ROLE_Authority <span class="uscript-operator">)</span>
+  SetRotationOfPlayer<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span></pre></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=UDP_Server_Sample">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=UDP_Server_Sample">View other revisions</a><br>Last edited December 10, 2003 8:35 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=UDP_Server_Sample">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/UDP_Server_Sample">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Cogito, ergo sum
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

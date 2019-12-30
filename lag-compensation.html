@@ -1,0 +1,150 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Lag Compensation</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Lag_Compensation; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Lag Compensation">Lag Compensation</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>General</h2>
+<p>With the term "lag compensation", I refer to everything that is in the code to make players suffer less from the effects of lag. For example every modern first person shooter has some kind of movement prediction build in. Without movement prediction, we couldn't move instantly but every move would be delayed by a few milliseconds which would change the gameplay a lot (and not to the better).</p>
+<p>Even though our movement still lags behind on the server for a small amount, at least we don't feel affected by the lag when moving.</p>
+<h2><a name="0.2"></a>Hit Prediction</h2>
+<h3><a name="0.2.1"></a>Introduction</h3>
+<p>One important area in which we still feel the lag is aiming. When shooting projectile weapons, our projectile starts a bit delayed (and not instantly like our movement) and when shooting hitscan weapons, we have to predict the movement of our target and aim a bit ahead of it, praying that it doesn't change direction before the shot registers. The problem simply is, that it takes a while for the shot to travel to the server and then it will compare your shot information (do the trace) to the new timeframe and not the timeframe you actually did the shot in. This has a pretty heavy impact on gameplay and is the number one reason why a low latency is so important for games like Unreal Tournament. </p>
+<h3><a name="0.2.2"></a>Clientside Hit Detection</h3>
+<p>One attempt to solve this is the well known ZeroPing (can't find the real link right now, anyone?). In a nutshell, ZeroPing simply does all the hitscan hit detection on the client side and then tells the server what it hit. Obviously this completely breaks the paradigm of not giving any deciding power to the client. Even if you take away the threats of cheating, the question remains weither the client can be trusted, considering that the client's representation of other actors in the game does NOT have to match their actual positions. The client will simulate the movement of the other actor until it got a new update about their position and movement, so at the client, the target actor will actually move in a straight line, until it is "warped" to it's new and correct position with the next update. Without ZeroPing, there would hardly be any chance to hit those targets, if you don't even know where they really are at the moment. With ZeroPing, it doesn't matter if the prediction is completely wrong, you can still hit what you see, not what is real on the server. But this actively limits the maneuvering possibilities of the target. To summarize, while I believe that ZeroPing works great to allow people on very high latencies to play and have some fun with each other, I don't think that it's the right thing to do in general. Please correct me if I'm wrong with anything about ZeroPing or client side hit detection in general.</p>
+<h3><a name="0.2.3"></a>Introducing Serverside Hit Prediction</h3>
+<p>Besides of ZeroPing, there is another approach and this one is actually tried and tested by large mainstream games like Counter-Strike. To make it short, the server simply stores a trail of timeframes (including the position of each actor) for a short time. Whenever a client shoots, the server will move all actors back to the timeframe of the client when it actually fired the shot. This allows a client to practically shoot at what it sees IF (and this is the important point) the client shows all actors at a position matching the positions on the server of the same timeframe. </p>
+<h3><a name="0.2.4"></a>Implementation</h3>
+<p>In detail, the implementation will work like this: </p>
+<ul><li>The server needs to store a trail for each moving and shootable actor. Each trail has to contain a timestamp, a location and a rotation of this actor. This is the simple part.</li>
+<li>When a client shoots, the server needs to know when exactly the client fired this shot (servertime). Currently I do it like this: The server replicated ServerTimeStamp (a float) to the client. To make this more accurate, the client increases this TimeStamp every tick by the time that has passed. Obviously the ServerTimeStamp always lags behind on the client, just as much as ever other information from the server lags behind (like actor positions).</li>
+</ul>
+<p><em class="em2">Question</em>: Is there a way to get the same result without replicating a float value each time? Or do you think this is acceptable for the case?</p>
+<p>To send the timestamp to the server, I simply use a modified fire function which includes the current ServerTimeStamp as a parameter.</p>
+<ul><li>When the server does the actual hitscan, it moves all actors to a timestamp which most closely matches the timestamp at which the shot was actually fired. Because clients usually run at higher FPS than the server, interpolation can be used to get even more precision.</li>
+<li>Finally, it is important to render beam and impact effects immediately on the client and not spawn them on the server first, otherwise it would still "feel" as if you would have to lead, even though you don't.</li>
+</ul>
+<p>There is one problem with machineguns in UT2003. Unlike UT, those guns don't call the replicated fire function with each bullet anymore, but only for startfire and stopfire. This is obviously a good thing because it doesn't limit the firerate to FPS or lag anymore, but a bad thing for us, as we don't know the exact time of each shot (as latency can fluctuate a lot). One possibility would be to simply ignore the inaccuracies, another possibility would be to replicate the ServerTimeStamp from the client to the server constantly, at least while a gun is fired. This might be the most accurate way and even usefull for other things, but I'm not sure how much of a hit this would be for bandwidth usage. Comments?</p>
+<h3><a name="0.2.5"></a>Disadvantages</h3>
+<p>Obviously you can't simply make lag disappear, so every kind of lag compensation is a tradeoff. The drawbacks of movement prediction for example are, that a lagging player might seem to "warp" for other players when the prediction was wrong and has to be corrected. If the server was wrong with prediction, it will even allow a certain amount of error and correct the position on the server instead of correcting the client, so it can seem that other players are warping a bit for you, even if your connection is perfectly fast. This is a drawback that is commonly accepted because the alternative would be horrible and a tiny bit of warping really isn't significant anymore, especially when playing against other people with decent pings.</p>
+<p>The major disadvantage of hit prediction is, that you can be shot, even though you think you are safe. For example if you take cover behind a wall and a split second later the server tells you that you are hit. This can be quite irritating, but it happens rarely if at all and even less when playing against other people with good pings.</p>
+<p>Additionally, just like movement prediction only allows a certain amount of error, hit prediction could only compensate for a certain amount of time. This amount could be reduced if high ping bastards are too much of an annoyance. A value of 200ms should still be fine for most players and shouldn't feel too bad.</p>
+<h2><a name="0.3"></a>See Also</h2>
+<p><a href="hit-prediction.html">Hit Prediction</a> (<a href="open-source.html">Open Source</a> example implementation for <a href="unreal-tournament-2003.html">UT2003</a>)</p>
+<h2><a name="0.4"></a>Discussion</h2>
+<p><em class="em2">Spark:</em> Phew... Well, this is my first contribution to the Wiki, hopefully it's interesting to anyone. I'm really really tired now so I can only hope that I didn't make too much mistakes at the end. <img alt=":)" src="emoticons/smile.gif" align="middle"> If I made anything wrong with the layout, formating or names, please tell (and excuse) me. I'm thinking of splitting this into several pages, at least one dedicated page to hit prediction, but I wanted to do my "Hello Wiki World" on one page at first.</p>
+<p>I also have a working implementation (an Instagib gametype) here that I would like to wikify so it can be looked at, learned from and hopefully be improved (tests went really well though). But I will think about how to do that after some sleep. <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p>As a final note, I know that hit prediction is a very controversial topic and to be honest, I'm a bit tired of pointless arguments about weither it should be included in a game or not. I will leave it up to other people to create a mutator for UT2003 from this (or not) and then convince people to actually use it (or not). So this is mainly targeted to mod developers looking to "unlag" their mod, especially those which feature mostly hitscan weapons (like most realistic mods and Instagib).</p>
+<p><em class="em2">Dante:</em> Sounds interesting. But you're increasing server load very much. Take 3 guys firing with mguns, and for every trace you take all pawns and move them to the correct location for a given timestamp. You could decrease from all pawns to pawns within a given angular difference ( aiming from shooter to angle of ( enemy.location - location ) ).</p>
+<p><em class="em2">Spark:</em> That's a good idea, but even if the pawn is out of this radius it might not be out of the radius after timeshifting. Just allowing a large radius wouldn't be enough because an actor could also be "rocketed" behind the instigator (in close combat) or something like that. So an algorithm would need to be found that covers all eventualities and still is faster then doing the actual timeshifting. <img alt=":)" src="emoticons/smile.gif" align="middle"> Maybe the "relevent actors" functionality can be used for this? I.e. only timeshift those actors which are relevant to the instigator. This would at least cover those actors which are completely out of reach and sight.</p>
+<p>The Quake 3 "unlagged" implementation does also do the timeshifting for each and every player though and I'm not aware of any performance problems (that does not mean that it shouldn't be improved if possible of course).</p>
+<p><em class="em2">Dirk Fist:</em> I'm on dial up in a rural area the lowest ping I've ever had was 300(400 is avg). Your tracking idea sounds like a great idea you should realise however that most of the people that NEED lag compensation are going to have pings in excess of 200 (assuming 10 samples per second with 10 samples per actor would give a max lag of 1000), Also you will need to track everything that moves which could stop a projectile. If it was'nt for ZP on (UT) I would not be able to play.  Its important to note in the above discussion that ALL PLAYERS AIM BASED ON CLIENT SIDE information. </p>
+<p><a href="http://zeroping.home.att.net/">http://zeroping.home.att.net/</a></p>
+<p><em class="em2">xX)(Xx:</em> Zeroping weapons cannot hit the fortstandards in Assault maps, meaning, AS maps must be played with non ZP weapons, or ZP Assault players can only play maps that set it so you walk into the fortstandard rather than shoot it</p>
+<script type="text/javascript"><!--
+ menuItemAdd("General", "#0.1");
+menuItemAdd("Hit Prediction", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Introduction", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Clientside Hit Detection", "#0.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Introducing Serverside Hit Prediction", "#0.2.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Implementation", "#0.2.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Disadvantages", "#0.2.5");
+menuItemAdd("See Also", "#0.3");
+menuItemAdd("Discussion", "#0.4");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Lag_Compensation">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Lag_Compensation">View other revisions</a><br>Last edited August 3, 2004 8:21 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Lag_Compensation">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Lag_Compensation">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>There is no spoon
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

@@ -1,0 +1,175 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: How UT2003 Weapons Work/Teaching Bots To Use Your Weapon</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=How_UT2003_Weapons_Work/Teaching_Bots_To_Use_Your_Weapon; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="how-ut2003-weapons-work.html">How UT2003 Weapons Work</a>/<a href="http://wiki.beyondunreal.com/wiki?back=How+UT2003+Weapons+Work/Teaching+Bots+To+Use+Your+Weapon">Teaching Bots To Use Your Weapon</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Overview</h2>
+<p>Bots don't understand the most obvious thing about your weapon.  I don't care if it's just another machinegun or yet another shotgun.  The truth is, it might as well be a stick of wood for all they care.  Fortunatly, the bot does know how to pull a trigger, so it can handle that.  Unfortunatly, it doesn't know what the trigger does or whether your superdoopershotgun is better than the wet noodle it can also choose from.  Even if it can make a choice, there's probably more than one way to use your weapon, assuming there's an alt-fire function. This all means we're going to have to do a little work to make the weapon bot-friendly.</p>
+<p>First, in any function you've got to get a handle for a bot.  This is done like this:</p>
+<pre class="uscript"><span class="uscript-keyword">local</span> Bot B<span class="uscript-operator">;</span>
+
+B <span class="uscript-operator">=</span> Bot<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>And then running off and doing whatever we're going to do with it.  I'm using examples from my work on the <a href="mod-ideas-semigib-onslaught.html">Mod Ideas/Semigib Onslaught</a> mutator</p>
+<h2><a name="0.2"></a>Bot variables</h2>
+<dl><dt>Pawn Enemy</dt><dd>The pawn the bot is hunting/fighting with (not used normally since Target is the real meat)</dd><dt>Actor Target</dt><dd>Whatever the bot is shooting at</dd><dt>bool bFire</dt><dd>1 if the primary fire mode is selected</dd><dt>bool bAltFire</dt><dd>1 if the alt-fire mode is selected</dd></dl>
+<h2><a name="0.3"></a>Weapon Functions</h2>
+<dl><dt>function float RangedAttackTime()</dt><dd>Time for the bot to wait between attacks.</dd><dt>function bool RecommendRangedAttack()</dt><dd>Unknown, What is defined as "Ranged" in the UT engine? This is false by default, and ranged weapons don't seem to be bothered by this.</dd><dt>function bool RecommendLongRangedAttack()</dt><dd>Unknown, What is defined as "Long Ranged" in the UT engine? This is false by default, and ranged weapons don't seem to be bothered by this.</dd><dt>function bool FocusOnLeader(bool bLeaderFiring)</dt><dd>return true if the bot should focus on the leader of it's Squad.  The best example of this is the Link Gun.</dd><dt>function bool SplashDamage()</dt><dd>return true if weapon effect has splash damage (if significant), used by bot to avoid hurting self.  It should be based on current firing Mode if active</dd><dt>function bool RecommendSplashDamage()</dt><dd>return true if weapon should be fired to take advantage of splash damage.  For example, rockets should be fired at enemy feet</dd><dt>function float GetDamageRadius()</dt><dd>return the damage radius of the splash damage.</dd><dt>function float RefireRate()</dt><dd>Repeater weapons like minigun should be 0.99, other weapons based on likelihood of firing again right away</dd><dt>function bool FireOnRelease()</dt><dd>tells AI that it needs to release the fire button for this weapon to do anything</dd><dt>function byte BestMode()</dt><dd>choose between regular or alt-fire, 0 is regular, 1 is alt-fire.</dd></dl>
+<p>Note: This is for the Instagib Linkgun.  The primary fire is only useful for other xPawns, and thus the secondary fire is chosen if the bot is targeting a xPawn.  Of course, the primary fire doesn't help teammates, so the check for teams had to be added as well</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> <span class="uscript-type">byte</span> BestMode<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> bot B<span class="uscript-operator">;</span>
+
+    B <span class="uscript-operator">=</span> Bot<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span> B <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>xPawn<span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Target<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>xPawn<span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Target<span class="uscript-operator">)</span><span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">.</span>Team <span class="uscript-operator">!=</span> Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">.</span>Team<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><dl><dt>function bool BotFire(bool bFinished, optional name FiringMode)</dt><dd>called by NPC firing weapon. Weapon chooses appropriate firing Mode to use (typically no change) bFinished should only be true if called from the Finished() function FiringMode can be passed in to specify a firing Mode (used by scripted sequences)</dd><dt>simulated function float RateSelf()</dt><dd>need to figure out modified rating based on enemy/tactical situation. The range is -2 to 2, the higher the better.</dd><dt>function float GetAIRating()</dt><dd>Returns the AI Rating for the weapon ranged from -2.0 to 2.0.  This is the real meat of the rating system.  It's what is used, along with a bot's personal opinion of the weapon (this is where the "favorite weapon" comes into play) comes into effect and is actually used when the bot trys to descide which weapon to bring up.</dd></dl>
+<pre class="uscript"><span class="uscript-keyword">function</span> <span class="uscript-type">float</span> GetAIRating<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+    <span class="uscript-keyword">local</span> Bot B<span class="uscript-operator">;</span>
+
+    B <span class="uscript-operator">=</span> Bot<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>B <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> AIRating<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Enemy <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Target <span class="uscript-operator">==</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>AmmoCharge<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">&gt;=</span> FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>AmmoAmount<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+       <span class="uscript-keyword">return</span> <span class="uscript-operator">-</span><span class="uscript-number">2.0</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>xPawn<span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Target<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+       <span class="uscript-keyword">return</span> <span class="uscript-number">2.0</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Vehicle<span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Target<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+       <span class="uscript-keyword">return</span> <span class="uscript-number">1.2</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>VSize<span class="uscript-operator">(</span> Instigator<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> B<span class="uscript-operator">.</span>Target<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> LinkFire<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>TraceRange<span class="uscript-operator">)</span>
+       <span class="uscript-keyword">return</span> <span class="uscript-operator">-</span><span class="uscript-number">2.0</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> AIRating<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><dl><dt>function float SuggestAttackStyle()</dt><dd>tells bot whether to charge or back off while using this weapon (negative = run away, positive = run towards)</dd><dt>function float SuggestDefenseStyle()</dt><dd>tells bot whether to charge or back off while defending against this weapon (negative = run away, positive = run towards)</dd><dt>function bool SplashJump()</dt><dd>return true if recommend jumping while firing to improve splash damage (by shooting at feet) true for R.L., for example</dd><dt>function bool CanAttack(Actor Other)</dt><dd>return false if out of range, can't see target, etc. otherwise, if the bot can attack then return true.</dd></dl>
+<p>In this case, I had to let the bot know that the link beam has a limited range.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CanAttack<span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> bot B<span class="uscript-operator">;</span>
+
+    B <span class="uscript-operator">=</span> Bot<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>B <span class="uscript-operator">==</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+       <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span> B<span class="uscript-operator">.</span>bAltFire <span class="uscript-operator">==</span> <span class="uscript-number">1</span> <span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span> VSize<span class="uscript-operator">(</span> Instigator<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> Other<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> LinkFire<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>TraceRange<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+       <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.4"></a>Comments</h2>
+<p><em class="em2">Enigmatic:</em> OK, I probably could use a etter name/location for this mess, but I think it's a pretty solid block of something at least</p>
+<p><em class="em2">JonAzz:</em> What signifigance does this function have in any of this? </p>
+<pre class="uscript"><span class="uscript-keyword">static</span> <span class="uscript-keyword">function</span> <span class="uscript-type">float</span> GetRange<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>LifeSpan <span class="uscript-operator">==</span> <span class="uscript-number">0.0</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-number">15000</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-operator">(</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>MaxSpeed <span class="uscript-operator">*</span> <span class="uscript-keyword">default</span><span class="uscript-operator">.</span>LifeSpan<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>this is from UT2004... I can't find a UT2004 version, but I am assuming they are similar...somewhat.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Overview", "#0.1");
+menuItemAdd("Bot variables", "#0.2");
+menuItemAdd("Weapon Functions", "#0.3");
+menuItemAdd("Comments", "#0.4");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="how-ut2003-weapons-work.html">How UT2003 Weapons Work</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=How_UT2003_Weapons_Work/Teaching_Bots_To_Use_Your_Weapon">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=How_UT2003_Weapons_Work/Teaching_Bots_To_Use_Your_Weapon">View other revisions</a><br>Last edited May 1, 2005 13:49 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=How_UT2003_Weapons_Work/Teaching_Bots_To_Use_Your_Weapon">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/How_UT2003_Weapons_Work/Teaching_Bots_To_Use_Your_Weapon">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Gah - a solution with more questions. (EntropicLqd)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

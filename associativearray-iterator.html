@@ -1,0 +1,281 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: AssociativeArray/Iterator</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=AssociativeArray/Iterator; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="associativearray.html">AssociativeArray</a>/<a href="http://wiki.beyondunreal.com/wiki?back=AssociativeArray/Iterator">Iterator</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Iterator</h2>
+<p>A script-only iterator must use a different syntax from the built-in <a href="unrealscript.html">UnrealScript</a> <a href="iterator.html">iterators</a>. The syntax used here is "close" to that used in C++'s STL. Traversing an unthreaded binary search tree in order requires keeping track of the progress of the traversal; this is done in the activation stack in a recursive solution. It must be done explicitly with an iterator.</p>
+<h3><a name="0.1.1"></a>AssociativeArrayIterator</h3>
+<p><em class="em2">Warning</em> this code is not insertion safe. That is, if elements are added to the associative array during a traversal, there is no way of knowing whether the nodes will be visited in the traversal. It is even less deletion save but this implementation of associative arrays doesn't support deletion.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> AssociativeArrayIterator
+    <span class="uscript-keyword">extends</span> Object<span class="uscript-operator">;</span>
+<span class="uscript-comment">/* A forward, read-only, in-order iterator for traversing an associative
+   array (a binary search tree (BST)). The iterator is associated with a
+   particular associative array, keeping track of its current position and
+   a stack of "open" nodes.
+
+   An in-order traversal visits the nodes of a BST in sorted order by their
+   keys. The typical description of the traversal is recursive: "left
+   subtree, current node, right subtree". This means: do an in-order
+   traversal of the left subtree, then visit the current node, then do an
+   in-order traversal of the right subtree. Called on the root node of the
+   tree, this will visit each node in sorted key order.
+
+   An iterator cannot be recursive: each call to next should return the
+   next element in the collection being interated over. Thus the iterator
+   must capture the state of one step in the recursive, in-order
+   traversal. The iterator uses a stack to keep a collection of "opened"
+   but not yet visited nodes. These are exactly the nodes that would have
+   been current in each recursive call down to the node being visited
+   (curr_); the stack simulates the calling stack for the recursive version
+   of the function and we can push and pop "activation records", one at a
+   time, to complete a traversal of the BST.
+*/</span>
+
+<span class="uscript-comment">/* The state of an iterator is captured in the binary tree being traversed,
+   the current node, and the collection of open but not visited nodes.
+*/</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">private</span> AssociativeArray tree_<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">private</span> AssociativeArrayNode curr_<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">private</span> AssociativeArrayNodeStack stack_<span class="uscript-operator">;</span>
+<span class="uscript-comment">/* Traversal order is determined by the contents of stack; the iterator must
+   know when to push the root node onto the stack */</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">private</span> <span class="uscript-type">bool</span> started_<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">/* Initialize the iterator. aaTree is the associative array this iterator
+   is iterating across. bSetCurrentNodeNone is set true if the current node
+   should NOT be set to the first node in the tree. This backward logic is
+   required to handle the "optionalness" of the parameter; if no parameter
+   is provided on the call, the boolean value is false.
+*/</span>
+<span class="uscript-keyword">function</span> init<span class="uscript-operator">(</span>AssociativeArray aaTree<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">bool</span> bSetCurrentNodeNone<span class="uscript-operator">)</span> 
+<span class="uscript-operator">{</span>
+  started_ <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+  tree_ <span class="uscript-operator">=</span> aaTree<span class="uscript-operator">;</span>
+  stack_ <span class="uscript-operator">=</span> <span class="uscript-keyword">new</span><span class="uscript-operator">(</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-keyword">class</span><span class="uscript-name">'AssociativeArrayNodeStack'</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>bSetCurrentNodeNone<span class="uscript-operator">)</span>
+    next<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span> <span class="uscript-comment">// init</span>
+
+<span class="uscript-comment">/* Get the first value from the current iterator position, the key in the
+   key/value pair. */</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">string</span> first<span class="uscript-operator">(</span><span class="uscript-operator">)</span> 
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">return</span> curr_<span class="uscript-operator">.</span>key<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span> <span class="uscript-comment">// first</span>
+
+<span class="uscript-comment">/* get the second value from the current iterator position, the value in
+   the key/value pair. */</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">string</span> second<span class="uscript-operator">(</span><span class="uscript-operator">)</span> 
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">return</span> curr_<span class="uscript-operator">.</span>value<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span> <span class="uscript-comment">// second</span>
+
+<span class="uscript-keyword">function</span> AssociativeArray getCollection<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">return</span> tree_<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span> <span class="uscript-comment">// getCollection</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">string</span> getIndex<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">return</span> curr_<span class="uscript-operator">.</span>key<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span> <span class="uscript-comment">// getIndex</span>
+
+<span class="uscript-keyword">function</span> dump<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> dumpString<span class="uscript-operator">;</span>
+  
+  dumpString <span class="uscript-operator">=</span> <span class="uscript-type">Name</span><span class="uscript-operator">$</span><span class="uscript-string">".dump(): "</span>
+               <span class="uscript-operator">$</span><span class="uscript-string">"started_ = "</span><span class="uscript-operator">$</span>started_
+               <span class="uscript-operator">$</span><span class="uscript-string">", tree_ = "</span><span class="uscript-operator">$</span>tree_
+               <span class="uscript-operator">$</span><span class="uscript-string">", stack_ = "</span><span class="uscript-operator">$</span>stack_
+               <span class="uscript-operator">$</span><span class="uscript-string">", curr_ = "</span><span class="uscript-operator">$</span>curr_<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>curr_ <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    dumpString <span class="uscript-operator">=</span> dumpString
+                 <span class="uscript-operator">$</span><span class="uscript-string">", curr_.key = "</span><span class="uscript-operator">$</span>curr_<span class="uscript-operator">.</span>key
+                 <span class="uscript-operator">$</span><span class="uscript-string">", curr_.value = "</span><span class="uscript-operator">$</span>curr_<span class="uscript-operator">.</span>value<span class="uscript-operator">;</span>
+  log<span class="uscript-operator">(</span>dumpString<span class="uscript-operator">,</span> <span class="uscript-name">'DevAssociativeArray'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span> <span class="uscript-comment">// dump</span>
+
+
+<span class="uscript-comment">/* Comparison operator calls this function */</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> same<span class="uscript-operator">(</span>AssociativeArrayIterator other<span class="uscript-operator">)</span> 
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">return</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>tree_ <span class="uscript-operator">==</span> other<span class="uscript-operator">.</span>tree_<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>curr_ <span class="uscript-operator">==</span> other<span class="uscript-operator">.</span>curr_<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span> <span class="uscript-comment">// same</span>
+
+<span class="uscript-comment">/* advance to the next element. The next element is the left-most child of
+   the root (first time through) or the left-most child of the right
+   subtree (think about BST deletion routines and finding successor of a
+   node to be deleted). */</span>
+<span class="uscript-keyword">function</span> next<span class="uscript-operator">(</span><span class="uscript-operator">)</span> 
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> AssociativeArrayNode p<span class="uscript-operator">;</span>
+  
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>started_<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    p <span class="uscript-operator">=</span> tree_<span class="uscript-operator">.</span>root<span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span> <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+    p <span class="uscript-operator">=</span> curr_<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>p <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+      p <span class="uscript-operator">=</span> p<span class="uscript-operator">.</span>right_child<span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+
+  <span class="uscript-keyword">do</span> <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span>p <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+      stack_<span class="uscript-operator">.</span>push<span class="uscript-operator">(</span>p<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      p <span class="uscript-operator">=</span> p<span class="uscript-operator">.</span>left_child<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span> <span class="uscript-comment">// push all the left children</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>stack_<span class="uscript-operator">.</span>isEmpty<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+      p <span class="uscript-operator">=</span> stack_<span class="uscript-operator">.</span>pop<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      started_ <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+      curr_ <span class="uscript-operator">=</span> p<span class="uscript-operator">;</span>
+      <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+  <span class="uscript-operator">}</span> <span class="uscript-keyword">until</span> <span class="uscript-operator">(</span>stack_<span class="uscript-operator">.</span>isEmpty<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  curr_ <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span> <span class="uscript-comment">// next()</span>
+
+<span class="uscript-keyword">defaultproperties</span> 
+<span class="uscript-operator">{</span>
+  started_ <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.1.2"></a>AssociativeArrayNodeStack</h3>
+<p>The explicit state of an iteration in progress. A stack of <tt>AssociativeArrayNode</tt>s.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> AssociativeArrayNodeStack
+    <span class="uscript-keyword">extends</span> Object<span class="uscript-operator">;</span>
+<span class="uscript-comment">/* A stack of array nodes; used to implement iterators. */</span>
+
+
+<span class="uscript-comment">/* Implementation of the stack itself. Top of the stack is at
+   impl[impl.Length-1]
+*/</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">private</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>AssociativeArrayNode<span class="uscript-operator">&gt;</span> impl<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">/* is the stack currently empty? */</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> isEmpty<span class="uscript-operator">(</span><span class="uscript-operator">)</span> 
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">return</span> <span class="uscript-operator">(</span>impl<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">==</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span> <span class="uscript-comment">// isEmpty</span>
+
+<span class="uscript-comment">/* Push the given AssociateArrayNode on the top of the stack. */</span>
+<span class="uscript-keyword">function</span> push<span class="uscript-operator">(</span>AssociativeArrayNode a<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  impl<span class="uscript-operator">[</span>impl<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> a<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span> <span class="uscript-comment">// push</span>
+
+<span class="uscript-comment">/* Pop and top together: Return and remove the top element from the stack.
+   If there is no such node, return None. */</span>
+<span class="uscript-keyword">function</span> AssociativeArrayNode pop<span class="uscript-operator">(</span><span class="uscript-operator">)</span> 
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> AssociativeArrayNode retval<span class="uscript-operator">;</span>
+  
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>isEmpty<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    retval <span class="uscript-operator">=</span> impl<span class="uscript-operator">[</span>impl<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-number">-1</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+    impl<span class="uscript-operator">.</span><span class="uscript-keyword">Remove</span><span class="uscript-operator">(</span>impl<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">-</span> <span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span> retval<span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span> <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span> <span class="uscript-comment">// pop</span>
+<span class="uscript-comment">// AssociativeArrayNodeStack</span></pre><script type="text/javascript"><!--
+ menuItemAdd("Iterator", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>AssociativeArrayIterator", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>AssociativeArrayNodeStack", "#0.1.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="associativearray.html">AssociativeArray</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=AssociativeArray/Iterator">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=AssociativeArray/Iterator">View other revisions</a><br>Last edited September 3, 2003 20:49 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=AssociativeArray/Iterator">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/AssociativeArray/Iterator">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>The three virtues of a programmer: Laziness, Impatience, and Hubris. (Larry Wall)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

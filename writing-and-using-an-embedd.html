@@ -1,0 +1,687 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Writing And Using An Embedded Mutator</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Writing_And_Using_An_Embedded_Mutator; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Writing And Using An Embedded Mutator">Writing And Using An Embedded Mutator</a></h1>
+	<div class="wiki"><p class="indent1">Author: <a href="dawn.html">Dawn</a></p>
+<p class="indent1">Date: 06/27/2002 </p>
+<h2><a name="0.1"></a>Introduction</h2>
+<p>Creating a <a href="mutator.html">Mutator</a> for Unreal Tournament has always been an easy way for anyone armed with a little programming experience or a couple of tutorials to modify or enhance gameplay in UT.  Mutators can alter many elements of a game including weapon assortment, player characteristics, level parameters, scoring, messaging, and HUD displays, to mention a few.</p>
+<p>The conventional Mutator is a separately compiled code file that is linked at run time to a UT map when it is loaded and played.  The benefits of this arrangement are that any map can be modified at run time by simply choosing different combinations of Mutators to load, and many Mutators can be used with virtually any map.  The drawbacks of this arrangement are that some maps can be created specifically for a certain Mutator whose absence at run time makes playing the game nonsensical or undesirable, and running a server unattended with a maplist usually means running all the maps in the maplist with the same set of Mutators simply because no facility exists to switch Mutators in and out within the maplist.</p>
+<p>Another scenario arises from time to time in which a mapper may discover that his map needs the services of a Mutator, but he doesn't want to distribute the map and Mutator separately.  Wouldn't it be nice in those situations if a Mutator could be designed to be embedded within a map, relieving server admins and mappers from the responsibility of keeping track of two or more separate, but essential files?</p>
+<p>This tutorial will explain the key elements of writing and using an embedded Mutator, and demonstrate their application in a working example.</p>
+<h2><a name="0.2"></a>Elements of an embedded Mutator</h2>
+<p>Without some additional code of its own, an embedded Mutator will not function properly.  Some sections of code, such as a PreBeginPlay(), PostBeginPlay(), etc., will run, but because Mutators are normally linked together at run time by a device called a <a href="linked-list.html">Linked List</a>, the embedded Mutator will not be automatically linked and will therefore miss some of the function calls it needs to perform properly.</p>
+<p>So the first element of an embedded Mutator is some means to register, or link, itself into the Mutator Linked List.</p>
+<p>In addition to the Mutator Linked List which the <a href="unreal-engine.html">Unreal engine</a> uses to send Mutator-specific function calls to each Mutator in the list, there are other types of Linked Lists that pertain to some Mutators:  the DamageMutator, MessageMutator, and HUDMutator linked Lists.  These special types of Mutators receive additional function calls if registered. </p>
+<p>Additional code elements will be required for these special types of Mutators if they apply.</p>
+<p>If the mapper can be content that after embedding his Mutator no other instance of the same Mutator will be accidentally loaded, either as another embedded instance in the map or an external copy loaded at runtime, no other elements may be required for the embedded Mutator.  But strange things may happen including abrupt game crashes if two or more instances are loaded and run. </p>
+<p>A robust embedded Mutator needs to contain an element of code to check for multiple instances of itself and to allow only one instance to survive before gameplay begins.</p>
+<p>Because the first instance of an embedded Mutator can't know about any subsequent instances of itself (until it's too late), it will link itself and cause other effects that must be undone by the final instance of itself.  The last instance loaded has the best opportunity to unlink previous instances from the Mutator Linked List and special Mutator Lists, so code must be provided to perform these functions.</p>
+<p>This  ability to undo effects of previous instances of itself is the final element of a general purpose embedded Mutator.</p>
+<p>These various elements will be discussed in detail next.</p>
+<h2><a name="0.3"></a>Registering an embedded Mutator</h2>
+<p>Placing the code of a Mutator within a map bypasses the normal Mutator registration process that occurs in GameInfo.InitGame().  The relevant code looks like this:</p>
+<pre class="uscript">    <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span> InOpt <span class="uscript-operator">!=</span> <span class="uscript-string">""</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        pos <span class="uscript-operator">=</span> InStr<span class="uscript-operator">(</span>InOpt<span class="uscript-operator">,</span><span class="uscript-string">","</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> pos <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            LeftOpt <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>InOpt<span class="uscript-operator">,</span> pos<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+            InOpt <span class="uscript-operator">=</span> Right<span class="uscript-operator">(</span>InOpt<span class="uscript-operator">,</span> Len<span class="uscript-operator">(</span>InOpt<span class="uscript-operator">)</span> <span class="uscript-operator">-</span> pos <span class="uscript-operator">-</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+        <span class="uscript-keyword">else</span>
+        <span class="uscript-operator">{</span>
+            LeftOpt <span class="uscript-operator">=</span> InOpt<span class="uscript-operator">;</span>
+
+            InOpt <span class="uscript-operator">=</span> <span class="uscript-string">""</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        log<span class="uscript-operator">(</span><span class="uscript-string">"Add mutator "</span><span class="uscript-operator">$</span>LeftOpt<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        MClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Mutator<span class="uscript-operator">&gt;</span><span class="uscript-operator">(</span>DynamicLoadObject<span class="uscript-operator">(</span>LeftOpt<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Class'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+        BaseMutator<span class="uscript-operator">.</span>AddMutator<span class="uscript-operator">(</span>Spawn<span class="uscript-operator">(</span>MClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span></pre><pre class="paraverbatim">  </pre><p>The While loop parses a string containing a list of Mutators, if any, to be loaded and linked before the start of a game.  Once MClass is set to the class of a particular Mutator, the last line Spawns an instance of the Mutator and then calls BaseMutator.AddMutator(), which registers the Mutator by linking it into the Mutator Linked List.</p>
+<p>An embedded Mutator will never receive this call since it's not in the InOpt string being parsed here, but fortunately, an alternative exists:  any PreBeginPlay() or PostBeginPlay() function in the Mutator will be run automatically before the game begins and can be used to perform the necessary task.  Here is sample code to accomplish this:</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bPreBPInitialized<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> PreBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bPreBPInitialized <span class="uscript-operator">)</span> <span class="uscript-comment">// older versions of UT call this function twice but we</span>
+                                         <span class="uscript-comment">// only want to run our code once!</span>
+    <span class="uscript-operator">{</span>
+        bPreBPInitialized <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-comment">// Add the mutator by linking it into the Mutator List ala Beppo.</span>
+        <span class="uscript-comment">// This Embedded Mutator makes sense to be 1st after the BaseMutator</span>
+        <span class="uscript-comment">// in the Mutator List...</span>
+
+        <span class="uscript-keyword">Self</span><span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>NextMutator<span class="uscript-operator">;</span> <span class="uscript-comment">// Make a place in the List</span>
+
+        Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">=</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">;</span> <span class="uscript-comment">// place it 1st after BaseMutator</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>The last two lines do all the work of inserting the embedded Mutator into the Mutator Linked List just after the built-in, or base, Mutator referred to as BaseMutator.  Any other Mutators already linked into the list are shoved back to make room for the embedded Mutator.  Adding this code to any Mutator will allow it to be embedded in a map and subsequently run and registered when the map is played.</p>
+<h2><a name="0.4"></a>Registering Special Mutator Types</h2>
+<p>Damage Mutators, MessageMutators, and HUDMutators are special types of Mutators that register themselves and get Linked into their additional respective Lists by a call to one of these functions:</p>
+<pre class="paraverbatim">    Level.Game.RegisterDamageMutator(Self);
+    Level.Game.RegisterMessageMutator(Self);
+    RegisterHUDMutator();</pre><p>A Mutator of any of these types will already contain a call to one or more of these functions, so no additional effort is required for the embedded Mutator.  However, a well-behaved embedded Mutator must be aware of these calls and deal with them later on.</p>
+<h2><a name="0.5"></a>Checking for Multiple Instances</h2>
+<p>If a mapper carelessly inserts multiple copies of a Mutator into his map, or if someone accidentally adds a copy of the same embedded Mutator at run time, the consequences may be unpleasant unless the Mutator checks for this condition and takes appropriate actions to ensure that only one copy survives when a game begins.  A good place to perform this function is in the same PreBeginPlay() where the embedded Mutator already registered itself.  An improved PreBeginPlay() looks like this:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> PreBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> Mutator M<span class="uscript-operator">,</span> Previous<span class="uscript-operator">,</span> Temp<span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bPreBPInitialized <span class="uscript-operator">)</span> <span class="uscript-comment">// older versions of UT call this function twice but we</span>
+                                       <span class="uscript-comment">// only want to run our code once!</span>
+  <span class="uscript-operator">{</span>
+    bPreBPInitialized <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Add the mutator by linking it into the Mutator List ala Beppo.</span>
+    <span class="uscript-comment">// this Embedded Mutator makes sense to be 1st after the BaseMutator</span>
+    <span class="uscript-comment">// in the Mutator List...</span>
+    <span class="uscript-comment">// But first, check for and destroy an already loaded version</span>
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>M <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">;</span> M <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span> M <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>NextMutator<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>GetItemName<span class="uscript-operator">(</span><span class="uscript-type">string</span><span class="uscript-operator">(</span>M<span class="uscript-operator">.</span><span class="uscript-keyword">class</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> GetItemName<span class="uscript-operator">(</span><span class="uscript-type">string</span><span class="uscript-operator">(</span><span class="uscript-keyword">Self</span><span class="uscript-operator">.</span><span class="uscript-keyword">class</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-comment">//Found Self or a copy?</span>
+      <span class="uscript-operator">{</span>
+        Previous<span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>NextMutator<span class="uscript-operator">;</span> <span class="uscript-comment">// Unlink from the Mutator List</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>M <span class="uscript-operator">!=</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">)</span> <span class="uscript-comment">// Not Self - this is a copy!</span>
+        <span class="uscript-operator">{</span>
+          M<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+      <span class="uscript-operator">}</span>
+      <span class="uscript-keyword">else</span>  <span class="uscript-comment">// this will happen at least the 1st time thru the For Loop.</span>
+      <span class="uscript-operator">{</span>
+        Previous <span class="uscript-operator">=</span> M<span class="uscript-operator">;</span> <span class="uscript-comment">// So Previous can now be used as the Previous Mutator</span>
+                                <span class="uscript-comment">// in the next pass thru the for Loop.</span>
+      <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">Self</span><span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>NextMutator<span class="uscript-operator">;</span> <span class="uscript-comment">// Make a place in the List</span>
+
+    Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">=</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">;</span> <span class="uscript-comment">// place it 1st after BaseMutator</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>  </pre><p>The for loop steps through the current list of Mutators, looking for Mutators of the same class, and if any are found, a check is made to see if they are copies.  GetItemName() is used to remove the Parent Class from the class name because copies of the same class can have different Parent Classes.  If a copy is found, the Mutator Linked List is adjusted to unregister the copy and then the copy is destroyed with a call to Destroy().  Only the last instance of the Mutator that runs this code will survive and reregister itself.</p>
+<hr class="thin"><p>There is a situation where the Mutator's PreBeginPlay() will run and AddMutator() can be called on it.  In that case, the Mutator would be registered by it's own PreBeginPlay() and then again by GameInfo.InitGame().  Although only one copy of the code exists, it will be registered twice and all Mutator function calls will get passed to this Mutator twice.  The following function redefines AddMutator() and checks if the call is to this Mutator.  If so, no registration is performed, otherwise super.AddMutator() performs the normal registration:</p>
+<pre class="uscript"><span class="uscript-comment">// We already added ourselves to the Mutator List in our PreBeginPlay, but</span>
+<span class="uscript-comment">// GameInfo.InitGame() will erroneously add us again unless we intercept the</span>
+<span class="uscript-comment">// call with our own AddMutator function and prevent it.</span>
+<span class="uscript-keyword">function</span> AddMutator<span class="uscript-operator">(</span>Mutator M<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>M <span class="uscript-operator">==</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Don't add us.</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>AddMutator<span class="uscript-operator">(</span>M<span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// keep the chain unbroken</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.6"></a>Unlinking Special Mutator Types</h2>
+<p>If the embedded Mutator is also registered as a special Mutator type such as a DamageMutator, it should have been noted already so that steps can be taken to unregister any copies before they are destroyed.  The final version of this example PreBeginPlay() function contains a call to RegisterDamageMutator() so that a method can be shown to unlink any copies from the DamageMutator Linked List.  A function called UnLinkDamageMutator() will be created to handle this task and called from PreBeginPlay():</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> PreBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> Mutator M<span class="uscript-operator">,</span> Previous<span class="uscript-operator">,</span> Temp<span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bPreBPInitialized <span class="uscript-operator">)</span> <span class="uscript-comment">// older versions of UT call this function twice but we</span>
+                                       <span class="uscript-comment">// only want to run our code once!</span>
+  <span class="uscript-operator">{</span>
+    bPreBPInitialized <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Add the mutator by linking it into the Mutator List ala Beppo.</span>
+    <span class="uscript-comment">// this Embedded Mutator makes sense to be 1st after the BaseMutator</span>
+    <span class="uscript-comment">// in the Mutator List...</span>
+    <span class="uscript-comment">// But first, check for and destroy an already loaded version</span>
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>M <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">;</span> M <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span> M <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>NextMutator<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>GetItemName<span class="uscript-operator">(</span><span class="uscript-type">string</span><span class="uscript-operator">(</span>M<span class="uscript-operator">.</span><span class="uscript-keyword">class</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> GetItemName<span class="uscript-operator">(</span><span class="uscript-type">string</span><span class="uscript-operator">(</span><span class="uscript-keyword">Self</span><span class="uscript-operator">.</span><span class="uscript-keyword">class</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-comment">//Found Self or a copy?</span>
+      <span class="uscript-operator">{</span>
+        Previous<span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>NextMutator<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>M <span class="uscript-operator">!=</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">)</span> <span class="uscript-comment">// Not Self - this is a copy!</span>
+        <span class="uscript-operator">{</span>
+          <span class="uscript-comment">// Unlink from DamageMutator List BEFORE destroying this version.  We</span>
+          <span class="uscript-comment">// would need to call a similar function to UnLink from MessageMutator</span>
+          <span class="uscript-comment">// and HUDMutator Lists if we were registered as them.</span>
+          UnLinkDamageMutator<span class="uscript-operator">(</span>M<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// do this BEFORE M.Destroy()!</span>
+          M<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+      <span class="uscript-operator">}</span>
+      <span class="uscript-keyword">else</span>  <span class="uscript-comment">// this will happen at least the 1st time thru the For Loop.</span>
+      <span class="uscript-operator">{</span>
+        Previous <span class="uscript-operator">=</span> M<span class="uscript-operator">;</span> <span class="uscript-comment">// So Previous can now be used as the Previous Mutator</span>
+                                <span class="uscript-comment">// in the next pass thru the for Loop.  </span>
+      <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">Self</span><span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>NextMutator<span class="uscript-operator">;</span> <span class="uscript-comment">// Make a place in the List</span>
+
+    Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">=</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">;</span> <span class="uscript-comment">// place it 1st after BaseMutator</span>
+
+    <span class="uscript-comment">// Here's an example that illustrates how a Mutator might also register itself as a</span>
+    <span class="uscript-comment">// special Mutator such as a DamageMutator:</span>
+    <span class="uscript-comment">// A similar call would be made to</span>
+    <span class="uscript-comment">// RegisterMessageMutator and RegisterHUDMutator if required.</span>
+    Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>RegisterDamageMutator<span class="uscript-operator">(</span><span class="uscript-keyword">Self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>  <span class="uscript-comment">// End PreBeginPlay.</span>
+
+<span class="uscript-comment">//=================================================================</span>
+<span class="uscript-comment">// Finding a copy of this Mutator and destroying it in our PreBeginPlay messes</span>
+<span class="uscript-comment">// up the DamageMutator Linked List since we're registered as a DamageMutator,</span>
+<span class="uscript-comment">// so this function removes our Mutator from the List.  We would need similar</span>
+<span class="uscript-comment">// functions for UnLinking from MessageMutator and HUDMutator Lists if we were</span>
+<span class="uscript-comment">// registered as them.</span>
+<span class="uscript-keyword">function</span> UnLinkDamageMutator<span class="uscript-operator">(</span>Mutator M<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> bNotFirst<span class="uscript-operator">;</span> 
+  <span class="uscript-keyword">local</span> Mutator C<span class="uscript-operator">,</span> Previous<span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>C <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>DamageMutator<span class="uscript-operator">;</span> C <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">;</span> C <span class="uscript-operator">=</span> C<span class="uscript-operator">.</span>NextDamageMutator<span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>C <span class="uscript-operator">==</span> M<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+      <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    bNotFirst <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+    Previous <span class="uscript-operator">=</span> C<span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bNotFirst<span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    Previous<span class="uscript-operator">.</span>NextDamageMutator <span class="uscript-operator">=</span> C<span class="uscript-operator">.</span>NextDamageMutator<span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span>
+  <span class="uscript-operator">{</span>
+    Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>DamageMutator <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>DamageMutator<span class="uscript-operator">.</span>NextDamageMutator<span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>The call to the new function, UnLinkDamageMutator(), must be made before the Mutator copy is destroyed because a reference to M, the copy, is passed to the new function.  The Linked Lists for Damage, Message, and HUD Mutators are linked in reverse order so there is no "Base" Mutator in these lists.  In this example, Level.Game.DamageMutator points to the last DamageMutator to be linked to the list instead of the first, so it's rather dynamical and the new function contains code to deal with this.  MessageMutators and HUDMutators would require similar new functions to handle their own types.</p>
+<hr class="thin"><h2><a name="0.7"></a>Embedding a Mutator in a Map</h2>
+<p>Once an embedded Mutator has been properly written, it can be compiled in the normal fashion to create a &lt;MutatorName&gt;.u file (replace &lt;MutatorName&gt; with actual file name) that can be added to a map in the following manner:</p>
+<ol><li>Make sure this Mutator is NOT listed in the "EditPackages" section of your <a href="unrealtournament-ini.html">UnrealTournament.ini</a> file!</li>
+<li>Make sure &lt;MutatorName&gt;.u IS located in your UnrealTournament/System Folder.</li>
+<li>Start a fresh UnrealEd session and open your Map for editing.</li>
+<li><p>In the Command entry field at the bottom of the UED window type:</p>
+<pre class="paraverbatim"> <em class="em3">obj load file= &lt;MutatorName&gt;.u package=MyLevel</em></pre></li>
+<li>Locate your mutator in the <a href="actor-class-browser.html">Actor Classes</a> browser: Actor &gt;&gt; Info &gt;&gt; Mutator &gt;&gt; &lt;MutatorName&gt; and add it somewhere in your map. Place only ONE instance of this Mutator in your Map.</li>
+<li>Build and Save your map &ndash; the embedded Mutator code with your settings will be saved away in the map.</li>
+</ol>
+<p>If you subsequently delete the single instance of the Mutator from your map, then re-Build and re-Save, the Mutator code will be deleted from the map and you will have to repeat all these steps to embed it again. (See <a href="mylevel.html">MyLevel</a> and <a href="embedding-code.html">Embedding Code</a> for more on this)</p>
+<p><em class="em2">Note:</em>  For UT2003 and UT2004, in order to complete step 5 and actually add the mutator actor into your map, you need to specify the mutator as placeable. This is easily achieved by adding the command word when you define the class as below:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MutEmbeddedTest <span class="uscript-keyword">extends</span> Mutator <span class="uscript-keyword">placeable</span><span class="uscript-operator">;</span></pre><h2><a name="0.8"></a>Putting It All Together</h2>
+<p>The following, heavily commented, code is a complete embedded Mutator developed for a specific map.  The map is a DeathMatch type that pits players against each other in long, narrow hallways with only the Chainsaw and the ImpactHammer to start out with.  The player's normal Enforcers are replaced by Chainsaws whenever the players spawn.  The map may contain other weapons including Enforcers lying around to be picked up, but the players get no Enforcers when they spawn.  Additionally, the damage that Bots can inflict with Chainsaws and Hammers is reduced because they have a distinct advantage with those weapons in the narrow hallways.  Therefore this Mutator is registered as a DamageMutator so that it can receive calls to MutatorTakeDamage().</p>
+<pre class="uscript"><span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// EmbeddedMutator.</span>
+<span class="uscript-comment">// *** for use as an Embedded or Conventional Mutator ***</span>
+<span class="uscript-comment">// Replaces the Player's Enforcer with the Chainsaw or other weapon</span>
+<span class="uscript-comment">// An Embedded Mutator for placing INSIDE a UT Map or</span>
+<span class="uscript-comment">// can also be used in the conventional manner.</span>
+<span class="uscript-comment">// Author:  Dawn, with much assistance from Norbert Bogenrieder aka Beppo</span>
+<span class="uscript-comment">// Tested only on version 4.36</span>
+<span class="uscript-comment">// Version 1.0  06/24/2002 10:19:56 AM</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// To embed this Mutator in a Map:</span>
+<span class="uscript-comment">// 1. Make sure this Mutator is NOT listed in the "EditPackages" section of your</span>
+<span class="uscript-comment">//    UnrealTournament.ini file!</span>
+<span class="uscript-comment">// 2. Make sure "EmbeddedMutator.u" IS located in your UnrealTournament/System</span>
+<span class="uscript-comment">//    Folder.</span>
+<span class="uscript-comment">// 3. Start a fresh UED session and open your Map for editing.</span>
+<span class="uscript-comment">// 4. In the Command entry field at the bottom of the UED window type:</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">//         obj load file=EmbeddedMutator.u package=MyLevel</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">// 5. Open the Actor class Browser and scroll down to find</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">//         Actor-&gt;Info-&gt;Mutator-&gt;EmbeddedMutator</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">// 6. Highlight "EmbeddedMutator" in the browser and then select a surface</span>
+<span class="uscript-comment">//    somewhere in your map, right-click on the surface, and in the pop-up</span>
+<span class="uscript-comment">//    menu that appears, choose "Add EmbeddedMutator Here".  Place only ONE</span>
+<span class="uscript-comment">//    instance of this Mutator in your Map.</span>
+<span class="uscript-comment">// 7. The resulting Actor that is placed in your map can be double-clicked on</span>
+<span class="uscript-comment">//    to bring up the "EmbeddedMutator Properties" browser where you can select</span>
+<span class="uscript-comment">//    the Enforcer Replacement weapon, the Bot Rating, and more.</span>
+<span class="uscript-comment">// 8. Build and Save your map - the embedded Mutator code with your settings</span>
+<span class="uscript-comment">//    will be saved away in the map.</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">// If you subsequently delete the single instance of the Mutator from your map,</span>
+<span class="uscript-comment">// and then reBuild and reSave, the Mutator code will be deleted from the map</span>
+<span class="uscript-comment">// and you will have to repeat all these steps to embed it again.</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">class</span> EmbeddedMutator <span class="uscript-keyword">extends</span> Mutator <span class="uscript-keyword">config</span><span class="uscript-operator">(</span>EmbeddedMutator<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bPreBPInitialized<span class="uscript-operator">,</span> bPostBPInitialized<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> BotFactor<span class="uscript-operator">;</span>  <span class="uscript-comment">// Relative damage that Bots inflict compared to Players</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">string</span> TheReplacement<span class="uscript-operator">;</span>  <span class="uscript-comment">// Weapon that will replace Enforcer</span>
+<span class="uscript-keyword">var</span> DeathMatchPlus DM<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">enum</span> EBotRating  <span class="uscript-comment">// Damage that Bots give Players</span>
+<span class="uscript-operator">{</span>
+  Poor<span class="uscript-operator">,</span>  <span class="uscript-comment">// quarter damage</span>
+  Fair<span class="uscript-operator">,</span>  <span class="uscript-comment">// half the damage</span>
+  Good<span class="uscript-operator">,</span>  <span class="uscript-comment">//three quarter damage</span>
+  EqualToPlayers  <span class="uscript-comment">// full damage</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">enum</span> ERWeaponType <span class="uscript-comment">// Replacement Weapon type.</span>
+<span class="uscript-operator">{</span>
+  Chainsaw<span class="uscript-operator">,</span>
+  Enforcer<span class="uscript-operator">,</span>
+  DoubleEnforcer<span class="uscript-operator">,</span>
+  ImpactHammer<span class="uscript-operator">,</span>
+  Minigun2<span class="uscript-operator">,</span>
+  PulseGun<span class="uscript-operator">,</span>
+  Ripper<span class="uscript-operator">,</span>
+  ShockRifle<span class="uscript-operator">,</span>
+  SuperShockRifle<span class="uscript-operator">,</span>
+  SniperRifle<span class="uscript-operator">,</span>
+  UT_BioRifle<span class="uscript-operator">,</span>
+  UT_Eightball<span class="uscript-operator">,</span>
+  UT_FlakCannon<span class="uscript-operator">,</span>
+  Redeemer
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// Variables which the Level designer can adjust:</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">config</span> <span class="uscript-type">bool</span> bDebug<span class="uscript-operator">;</span>  <span class="uscript-comment">// Enable some logging to the log file</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">config</span> ERWeaponType EnforcerReplacement<span class="uscript-operator">;</span> <span class="uscript-comment">// accessible to Level Designer</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">config</span> EBotRating BotRating<span class="uscript-operator">;</span> <span class="uscript-comment">// accessible to Level Designer</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">config</span> <span class="uscript-type">bool</span> bUseBotRatingOnMeleeWeapsOnly<span class="uscript-operator">;</span>  <span class="uscript-comment">// Which Weapons will Bots inflict less damage with</span>
+
+<span class="uscript-comment">// PreBeginPlay will be used mainly to Bootstrap load this Mutator by linking it</span>
+<span class="uscript-comment">// into the Mutator List as the 1st Mutator in a possible chain of Mutators.</span>
+<span class="uscript-keyword">function</span> PreBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> Mutator M<span class="uscript-operator">,</span> Previous<span class="uscript-operator">,</span> Temp<span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bDebug<span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    Log<span class="uscript-operator">(</span><span class="uscript-string">"**** Entered EmbeddedMutator PreBeginPlay"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Log<span class="uscript-operator">(</span><span class="uscript-string">"**** And bPreBPInitialized is "</span><span class="uscript-operator">$</span><span class="uscript-type">string</span><span class="uscript-operator">(</span>bPreBPInitialized<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bPreBPInitialized <span class="uscript-operator">)</span> <span class="uscript-comment">// older versions of UT call this function twice but we</span>
+                                       <span class="uscript-comment">// only want to run our code once!</span>
+  <span class="uscript-operator">{</span>
+    bPreBPInitialized <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Add the mutator by linking it into the Mutator List ala Beppo.</span>
+    <span class="uscript-comment">// this Embedded Mutator makes sense to be 1st after the BaseMutator</span>
+    <span class="uscript-comment">// in the Mutator List...</span>
+    <span class="uscript-comment">// But first, check for and destroy an already loaded version</span>
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>M <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">;</span> M <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span> M <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>NextMutator<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>GetItemName<span class="uscript-operator">(</span><span class="uscript-type">string</span><span class="uscript-operator">(</span>M<span class="uscript-operator">.</span><span class="uscript-keyword">class</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> GetItemName<span class="uscript-operator">(</span><span class="uscript-type">string</span><span class="uscript-operator">(</span><span class="uscript-keyword">Self</span><span class="uscript-operator">.</span><span class="uscript-keyword">class</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-comment">// Found Self or a copy?</span>
+      <span class="uscript-operator">{</span>
+        Previous<span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>NextMutator<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>M <span class="uscript-operator">!=</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">)</span> <span class="uscript-comment">// This is the other version</span>
+        <span class="uscript-operator">{</span>
+          <span class="uscript-comment">// Unlink from DamageMutator List BEFORE destroying this version.  We</span>
+          <span class="uscript-comment">// would need to call a similar function to UnLink from MessageMutator</span>
+          <span class="uscript-comment">// and HUDMutator Lists if we were registered as them.</span>
+          UnLinkDamageMutator<span class="uscript-operator">(</span>M<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// do this BEFORE M.Destroy()!</span>
+          M<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+      <span class="uscript-operator">}</span>
+      <span class="uscript-keyword">else</span>  <span class="uscript-comment">// this will happen at least the 1st time thru the For Loop.</span>
+      <span class="uscript-operator">{</span>
+        Previous <span class="uscript-operator">=</span> M<span class="uscript-operator">;</span> <span class="uscript-comment">// So Previous can now be used as the Previous Mutator</span>
+                                <span class="uscript-comment">// in the next pass thru the for Loop.</span>
+      <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-comment">// We need to Bootstrap this instance into the List</span>
+    <span class="uscript-keyword">Self</span><span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>NextMutator<span class="uscript-operator">;</span> <span class="uscript-comment">// Make a place in the List</span>
+
+    Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">=</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">;</span> <span class="uscript-comment">// place it 1st after BaseMutator</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bDebug<span class="uscript-operator">)</span> Log<span class="uscript-operator">(</span><span class="uscript-string">"**** Mutator "</span><span class="uscript-operator">$</span><span class="uscript-type">string</span><span class="uscript-operator">(</span><span class="uscript-keyword">Self</span><span class="uscript-operator">)</span><span class="uscript-operator">$</span><span class="uscript-string">" is added to the list"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Now register our self as a DamageMutator. A similar call would be made to</span>
+    <span class="uscript-comment">// RegisterMessageMutator and RegisterHUDMutator if required.</span>
+    Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>RegisterDamageMutator<span class="uscript-operator">(</span><span class="uscript-keyword">Self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    BotFactor <span class="uscript-operator">=</span> GetBotRating<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// How much will we modify Bot-inflicted damage?</span>
+    TheReplacement <span class="uscript-operator">=</span> GetRWeaponType<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//What's the Enforcer replacement weapon?</span>
+    DM <span class="uscript-operator">=</span> DeathMatchPlus<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bDebug<span class="uscript-operator">)</span>
+
+    <span class="uscript-operator">{</span>
+      LogMutatorInfo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      Log<span class="uscript-operator">(</span><span class="uscript-string">"**** Leaving EmbeddedMutator PreBeginPlay"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>  <span class="uscript-comment">// End PreBeginPlay:  Our Mutator is linked into the Mutator List</span>
+
+<span class="uscript-comment">// Write some informative stuff to the log</span>
+<span class="uscript-keyword">function</span> LogMutatorInfo<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> Mutator M<span class="uscript-operator">;</span>
+
+  Log<span class="uscript-operator">(</span><span class="uscript-string">"**** Current MutatorList:"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>M <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">;</span> M <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span> M <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>NextMutator<span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    Log<span class="uscript-operator">(</span><span class="uscript-string">"****     "</span><span class="uscript-operator">$</span><span class="uscript-type">string</span><span class="uscript-operator">(</span>M<span class="uscript-operator">.</span><span class="uscript-keyword">class</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  Log<span class="uscript-operator">(</span><span class="uscript-string">"**** Current DamageMutatorList:"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>M <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>DamageMutator<span class="uscript-operator">;</span> M <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">;</span> M <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>NextDamageMutator<span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    Log<span class="uscript-operator">(</span><span class="uscript-string">"****     "</span><span class="uscript-operator">$</span><span class="uscript-type">string</span><span class="uscript-operator">(</span>M<span class="uscript-operator">.</span><span class="uscript-keyword">Class</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-comment">// Finding a copy of this Mutator and destroying it in our PreBeginPlay messes</span>
+<span class="uscript-comment">// up the DamageMutator Linked List since we're registered as a DamageMutator,</span>
+<span class="uscript-comment">// so this function removes our Mutator from the List.  We would need similar</span>
+<span class="uscript-comment">// functions for UnLinking from MessageMutator and HUDMutator Lists if we were</span>
+<span class="uscript-comment">// registered as them.</span>
+<span class="uscript-keyword">function</span> UnLinkDamageMutator<span class="uscript-operator">(</span>Mutator M<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> bNotFirst<span class="uscript-operator">;</span> 
+  <span class="uscript-keyword">local</span> Mutator C<span class="uscript-operator">,</span> Previous<span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>C <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>DamageMutator<span class="uscript-operator">;</span> C <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">;</span> C <span class="uscript-operator">=</span> C<span class="uscript-operator">.</span>NextDamageMutator<span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>C <span class="uscript-operator">==</span> M<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+      <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    bNotFirst <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+    Previous <span class="uscript-operator">=</span> C<span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bNotFirst<span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    Previous<span class="uscript-operator">.</span>NextDamageMutator <span class="uscript-operator">=</span> C<span class="uscript-operator">.</span>NextDamageMutator<span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span>
+  <span class="uscript-operator">{</span>
+    Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>DamageMutator <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>DamageMutator<span class="uscript-operator">.</span>NextDamageMutator<span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+<span class="uscript-comment">//==============================================================================</span>
+<span class="uscript-comment">// We already added ourselves to the Mutator List in our PreBeginPlay, but</span>
+<span class="uscript-comment">// GameInfo.InitGame() will erroneously add us again unless we intercept the</span>
+<span class="uscript-comment">// call with our own AddMutator function and prevent it.</span>
+<span class="uscript-keyword">function</span> AddMutator<span class="uscript-operator">(</span>Mutator M<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>M <span class="uscript-operator">==</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Don't add us.</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>AddMutator<span class="uscript-operator">(</span>M<span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// keep the chain unbroken</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">float</span> GetBotRating<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">switch</span><span class="uscript-operator">(</span> BotRating <span class="uscript-operator">)</span>  <span class="uscript-comment">// accessible to Level Designer</span>
+  <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">case</span> Poor:
+      <span class="uscript-keyword">return</span> <span class="uscript-number">0.25</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">case</span> Fair:
+      <span class="uscript-keyword">return</span> <span class="uscript-number">0.5</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">case</span> Good:
+      <span class="uscript-keyword">return</span> <span class="uscript-number">0.75</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">case</span> EqualToPlayers:
+      <span class="uscript-keyword">return</span> <span class="uscript-number">1.0</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">default</span>:
+      <span class="uscript-keyword">return</span> <span class="uscript-number">0.5</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">string</span> GetRWeaponType<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">switch</span><span class="uscript-operator">(</span> EnforcerReplacement <span class="uscript-operator">)</span>  <span class="uscript-comment">// accessible to Level Designer</span>
+  <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">case</span> Chainsaw:
+      <span class="uscript-keyword">return</span> <span class="uscript-string">"Botpack.Chainsaw"</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">case</span> Enforcer:
+      <span class="uscript-keyword">return</span> <span class="uscript-string">"Botpack.Enforcer"</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">case</span> DoubleEnforcer:
+      <span class="uscript-keyword">return</span> <span class="uscript-string">"Botpack.DoubleEnforcer"</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">case</span> ImpactHammer:
+      <span class="uscript-keyword">return</span> <span class="uscript-string">"Botpack.ImpactHammer"</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">case</span> Minigun2:
+      <span class="uscript-keyword">return</span> <span class="uscript-string">"Botpack.Minigun2"</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">case</span> PulseGun:
+      <span class="uscript-keyword">return</span> <span class="uscript-string">"Botpack.PulseGun"</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">case</span> Ripper:
+      <span class="uscript-keyword">return</span> <span class="uscript-string">"Botpack.Ripper"</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">case</span> ShockRifle:
+      <span class="uscript-keyword">return</span> <span class="uscript-string">"Botpack.ShockRifle"</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">case</span> SuperShockRifle:
+      <span class="uscript-keyword">return</span> <span class="uscript-string">"Botpack.SuperShockRifle"</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">case</span> SniperRifle:
+      <span class="uscript-keyword">return</span> <span class="uscript-string">"Botpack.SniperRifle"</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">case</span> UT_BioRifle:
+      <span class="uscript-keyword">return</span> <span class="uscript-string">"Botpack.UT_BioRifle"</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">case</span> UT_Eightball:
+      <span class="uscript-keyword">return</span> <span class="uscript-string">"Botpack.UT_Eightball"</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">case</span> UT_FlakCannon:
+      <span class="uscript-keyword">return</span> <span class="uscript-string">"Botpack.UT_FlakCannon"</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">case</span> Redeemer:
+      <span class="uscript-keyword">return</span> <span class="uscript-string">"Botpack.WarheadLauncher"</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">default</span>:
+      <span class="uscript-keyword">return</span> <span class="uscript-string">"Botpack.Chainsaw"</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// Called just before PlayerPawn is Spawned.  We use it to adjust a Player's</span>
+<span class="uscript-comment">// Inventory to our liking</span>
+<span class="uscript-keyword">function</span> ModifyPlayer<span class="uscript-operator">(</span> Pawn PlayerPawn <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> Inventory MyEnforcer<span class="uscript-operator">;</span>
+
+  MyEnforcer <span class="uscript-operator">=</span> PlayerPawn<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Enforcer'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>MyEnforcer <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    MyEnforcer<span class="uscript-operator">.</span>DropInventory<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Remove it from Player's Inventory</span>
+    MyEnforcer<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Remove it from the game</span>
+  <span class="uscript-operator">}</span>
+
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> DM <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-comment">// Who knows, it might happen ...</span>
+    <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+  DM<span class="uscript-operator">.</span>GiveWeapon<span class="uscript-operator">(</span>PlayerPawn<span class="uscript-operator">,</span>TheReplacement<span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Give Replacement for Enforcer</span>
+
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> NextMutator <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    NextMutator<span class="uscript-operator">.</span>ModifyPlayer<span class="uscript-operator">(</span>PlayerPawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// We call MutatorTakeDamage because we have found that Bots over-excel in</span>
+<span class="uscript-comment">// Melee-only  weapons maps.  We want to reduce the damage Bots inflict by a</span>
+<span class="uscript-comment">// controlled amount.</span>
+<span class="uscript-keyword">function</span> MutatorTakeDamage<span class="uscript-operator">(</span> <span class="uscript-keyword">out</span> <span class="uscript-type">int</span> ActualDamage<span class="uscript-operator">,</span> Pawn Victim<span class="uscript-operator">,</span> Pawn InstigatedBy<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> Vector HitLocation<span class="uscript-operator">,</span>
+                        <span class="uscript-keyword">out</span> Vector Momentum<span class="uscript-operator">,</span> <span class="uscript-type">name</span> DamageType<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-comment">// Check that InstigatedBy is still a valid Bot - Bots can disappear between</span>
+  <span class="uscript-comment">// the time this function is called and the time it is run!</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> InstigatedBy <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">&amp;&amp;</span> InstigatedBy<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Bot'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bUseBotRatingOnMeleeWeapsOnly<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>InstigatedBy<span class="uscript-operator">.</span>Weapon <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> InstigatedBy<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span>bMeleeWeapon<span class="uscript-operator">)</span>
+      <span class="uscript-operator">{</span>
+        AlterDamage<span class="uscript-operator">(</span>ActualDamage<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bDebug<span class="uscript-operator">)</span> Log<span class="uscript-operator">(</span><span class="uscript-string">"**** Melee Only Damage adjusted for Bot's "</span><span class="uscript-operator">$</span>GetItemName<span class="uscript-operator">(</span><span class="uscript-type">string</span><span class="uscript-operator">(</span>InstigatedBy<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span><span class="uscript-keyword">class</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+    <span class="uscript-operator">{</span>
+      AlterDamage<span class="uscript-operator">(</span>ActualDamage<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bDebug<span class="uscript-operator">)</span> Log<span class="uscript-operator">(</span><span class="uscript-string">"**** Damage adjusted for Bot's "</span><span class="uscript-operator">$</span>GetItemName<span class="uscript-operator">(</span><span class="uscript-type">string</span><span class="uscript-operator">(</span>InstigatedBy<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span><span class="uscript-keyword">class</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-comment">// Give any other DamageMutators in the chain their chance at it</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> NextDamageMutator <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bDebug<span class="uscript-operator">)</span> Log<span class="uscript-operator">(</span><span class="uscript-string">"**** Another DamageMutator is being called!"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    NextDamageMutator<span class="uscript-operator">.</span>MutatorTakeDamage<span class="uscript-operator">(</span> ActualDamage<span class="uscript-operator">,</span> Victim<span class="uscript-operator">,</span> InstigatedBy<span class="uscript-operator">,</span> HitLocation<span class="uscript-operator">,</span> Momentum<span class="uscript-operator">,</span> DamageType <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> AlterDamage<span class="uscript-operator">(</span><span class="uscript-keyword">out</span> <span class="uscript-type">int</span> ActualDamage<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bDebug<span class="uscript-operator">)</span> Log<span class="uscript-operator">(</span><span class="uscript-string">"Potential Bot-inflicted Damage: "</span><span class="uscript-operator">$</span>ActualDamage<span class="uscript-operator">$</span><span class="uscript-string">"  "</span><span class="uscript-operator">$</span>BotFactor<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  ActualDamage<span class="uscript-operator">*=</span>BotFactor<span class="uscript-operator">;</span>  <span class="uscript-comment">// Adjust the Bot's Damage</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bDebug<span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    Log<span class="uscript-operator">(</span><span class="uscript-string">"***Actual Bot-inflicted Damage: "</span><span class="uscript-operator">$</span>ActualDamage<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Log<span class="uscript-operator">(</span><span class="uscript-string">""</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// End:  Players get a Replacement for Enforcer when Spawning</span>
+<span class="uscript-comment">// and Bots inflict less Damage if desired.</span>
+
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+     bDebug<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+     BotRating<span class="uscript-operator">=</span>Fair  <span class="uscript-comment">// An empirically determined default for Chainsaw Matches</span>
+     bUseBotRatingOnMeleeWeapsOnly<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     EnforcerReplacement<span class="uscript-operator">=</span><span class="uscript-string">"Botpack.Chainsaw"</span>
+<span class="uscript-operator">}</span></pre><p>In the event that the above code is to be tested or used as a conventional, non-embedded Mutator, the following associated .int and .ini text is provided:</p>
+<h2><a name="0.9"></a>EmbeddedMutator.int</h2>
+<pre class="uscript"><span class="uscript-operator">[</span>Public<span class="uscript-operator">]</span>
+Object<span class="uscript-operator">=</span><span class="uscript-operator">(</span><span class="uscript-type">Name</span><span class="uscript-operator">=</span>EmbeddedMutator<span class="uscript-operator">.</span>EmbeddedMutator<span class="uscript-operator">,</span><span class="uscript-keyword">Class</span><span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-operator">,</span>MetaClass<span class="uscript-operator">=</span>Engine<span class="uscript-operator">.</span>Mutator<span class="uscript-operator">,</span>
+Description<span class="uscript-operator">=</span><span class="uscript-string">"EmbeddedMutator,Replace Player's Enforcer with Chainsaw"</span><span class="uscript-operator">)</span></pre><h2><a name="0.10"></a>EmbeddedMutator.ini</h2>
+<pre class="uscript"><span class="uscript-operator">[</span>EmbeddedMutator<span class="uscript-operator">.</span>EmbeddedMutator<span class="uscript-operator">]</span>
+bDebug<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+BotRating<span class="uscript-operator">=</span>Fair
+bUseBotRatingOnMeleeWeapsOnly<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+EnforcerReplacement<span class="uscript-operator">=</span><span class="uscript-string">"Botpack.Chainsaw"</span></pre><hr class="thin"><h2><a name="0.11"></a>Conclusion</h2>
+<p>A method for embedding a Mutator in a UT map has been described and sample code, including a fully debugged example, has been provided.  This method is useful for mappers who want to permanently alter gameplay within a particular map without the burden of requiring a separate Mutator to be maintained, and for adventurous server admins who want to control which Mutators are used on a map-by-map basis in a map list.</p>
+<hr class="thin"><p>Dawn &lt;<a href="mailto:arkdesign@psln.com">arkdesign@psln.com</a>&gt;</p>
+<h2><a name="0.12"></a>Questions and Comments</h2>
+<p><em class="em2">Legal:</em> Great job! So, with this I can, say, double all damage then? Is something like it in there already, I'm not sure... <img alt=":hmm:" src="emoticons/hmm.gif" align="middle"></p>
+<p><em class="em2">Mosquito:</em> Wow.  This is so useful, thanks Dawn.  You should post this up over at <a href="http://www.thewavelength.com">[The Wavelength]</a>.  More people can read it then.</p>
+<p><em class="em2">StrikeFerret:</em> Did I miss it, or didn't this cover, say, embedding it in a GameType instead of a Map?</p>
+<p><em class="em2">Wormbo:</em> To always use a mutator in your gametype just spawn and add it to the list somewhere in the <a href="gameinfo.html">GameInfo</a>'s initialization functions, preferably in <code>InitGame()</code>, where all other mutators are created, too. You could also extend <a href="dmmutator.html">DMMutator</a>, add your mutator's functionality there and use it as your gametype's base mutator class.</p>
+<p><em class="em2">Reaper_Monkey:</em> Okay how can i make a mutator only apply to a zone on a map? as this says i can only have one.. so i assume its global for all of the map? And i want to have a mutators affect only in an area.. any ideas?</p>
+<p><em class="em2">Sweavo:</em> Nice!  Reading the first paragraph reminded me of <a href="http://mapmixer.oceaniaut.com/">http://mapmixer.oceaniaut.com/</a> that StarWeaver told me about.  I've not tried it, but it's worth checking out and possibly rolling into this page</p>
+<p><em class="em2">Xian:</em> Reaper_Monkey, try checking the Player zone, for example if you want to get double damage in a zone called "Battle Arena", just do something like this:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> MutatorTakeDamage <span class="uscript-operator">(</span><span class="uscript-keyword">out</span> <span class="uscript-type">int</span> Damage<span class="uscript-operator">,</span> Pawn Victim<span class="uscript-operator">,</span> Pawn InstigatedBy<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> Vector HitLocation<span class="uscript-operator">,</span> 
+                            <span class="uscript-keyword">out</span> Vector Momentum<span class="uscript-operator">,</span> <span class="uscript-type">name</span> DamageType<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>MutatorTakeDamage<span class="uscript-operator">(</span>Damage<span class="uscript-operator">,</span>Victim<span class="uscript-operator">,</span>InstigatedBy<span class="uscript-operator">,</span>HitLocation<span class="uscript-operator">,</span>Momentum<span class="uscript-operator">,</span>DamageType<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>InstigatedBy <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>InstigatedBy<span class="uscript-operator">.</span>PlayerReplicationInfo <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>InstigatedBy<span class="uscript-operator">.</span>PlayerLocation <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>InstigatedBy<span class="uscript-operator">.</span>PlayerLocation<span class="uscript-operator">.</span>LocationName <span class="uscript-operator">!=</span> <span class="uscript-string">"Battle Arena"</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>InstigatedBy<span class="uscript-operator">.</span>PlayerZone <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>InstigatedBy<span class="uscript-operator">.</span>PlayerZone<span class="uscript-operator">.</span>ZoneName <span class="uscript-operator">!=</span> <span class="uscript-string">"Battle Arena"</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    Damage <span class="uscript-operator">*=</span> <span class="uscript-number">2</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Not tested, but should be good. Note that it won't work if you call it "BaTTle ArENa" (as you have probably guessed)</p>
+<hr class="thin"><p><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Introduction", "#0.1");
+menuItemAdd("Elements of an embedded Mutator", "#0.2");
+menuItemAdd("Registering an embedded Mutator", "#0.3");
+menuItemAdd("Registering Special Mutator Types", "#0.4");
+menuItemAdd("Checking for Multiple Instances", "#0.5");
+menuItemAdd("Unlinking Special Mutator Types", "#0.6");
+menuItemAdd("Embedding a Mutator in a Map", "#0.7");
+menuItemAdd("Putting It All Together", "#0.8");
+menuItemAdd("EmbeddedMutator.int", "#0.9");
+menuItemAdd("EmbeddedMutator.ini", "#0.10");
+menuItemAdd("Conclusion", "#0.11");
+menuItemAdd("Questions and Comments", "#0.12");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Writing_And_Using_An_Embedded_Mutator">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Writing_And_Using_An_Embedded_Mutator">View other revisions</a><br>Last edited April 28, 2006 20:14 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Writing_And_Using_An_Embedded_Mutator">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Writing_And_Using_An_Embedded_Mutator">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I'm a doctor, not a mechanic
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

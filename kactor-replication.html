@@ -1,0 +1,454 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: KActor Replication</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=KActor_Replication; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=KActor Replication">KActor Replication</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>How it works</h2>
+<p>The code is based on the replication technique found in <a href="kcar.html">KCar</a>. Every tick, the server checks the location, linear and angular velocity of the actor, and if it differs much from when the last replication occured or if more time than MaxNetUpdateInterval has elapsed, the state of the actor on the server will be stored in a variable that is replicated to clients. On recieving the new state, the actor on the client will apply the new state to itself.</p>
+<p>Note that RemoteRole is set to ROLE_SimulatedProxy, bNetNotify is set to true (so that PostNetReceive is called on the client) and the <a href="karmaparams.html">KarmaParams</a> property bClientOnly is set to false (so Karma is simulated on the server as well as the client).</p>
+<h2><a name="0.2"></a>The code</h2>
+<pre class="uscript"><span class="uscript-keyword">class</span> LawDogsKActor <span class="uscript-keyword">extends</span> KActor
+    <span class="uscript-keyword">placeable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> MaxNetUpdateInterval<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> NextNetUpdateTime<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> KRigidBodyState KState<span class="uscript-operator">,</span> KRepState<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bNewKState<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> StateCount<span class="uscript-operator">,</span> LastStateCount<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">replication</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">unreliable</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span>
+        KRepState<span class="uscript-operator">,</span> StateCount<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> Delta<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    PackState<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//Pack current state to be replicated</span>
+<span class="uscript-keyword">function</span> PackState<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> bChanged<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>KIsAwake<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    KGetRigidBodyState<span class="uscript-operator">(</span>KState<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    bChanged <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">&gt;</span> NextNetUpdateTime<span class="uscript-operator">;</span>
+    bChanged <span class="uscript-operator">=</span> bChanged <span class="uscript-operator">||</span> VSize<span class="uscript-operator">(</span>KRBVecToVector<span class="uscript-operator">(</span>KState<span class="uscript-operator">.</span>Position<span class="uscript-operator">)</span> <span class="uscript-operator">-</span> KRBVecToVector<span class="uscript-operator">(</span>KRepState<span class="uscript-operator">.</span>Position<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">5</span><span class="uscript-operator">;</span>
+    bChanged <span class="uscript-operator">=</span> bChanged <span class="uscript-operator">||</span> VSize<span class="uscript-operator">(</span>KRBVecToVector<span class="uscript-operator">(</span>KState<span class="uscript-operator">.</span>LinVel<span class="uscript-operator">)</span> <span class="uscript-operator">-</span> KRBVecToVector<span class="uscript-operator">(</span>KRepState<span class="uscript-operator">.</span>LinVel<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+    bChanged <span class="uscript-operator">=</span> bChanged <span class="uscript-operator">||</span> VSize<span class="uscript-operator">(</span>KRBVecToVector<span class="uscript-operator">(</span>KState<span class="uscript-operator">.</span>AngVel<span class="uscript-operator">)</span> <span class="uscript-operator">-</span> KRBVecToVector<span class="uscript-operator">(</span>KRepState<span class="uscript-operator">.</span>AngVel<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bChanged<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        NextNetUpdateTime <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">+</span> MaxNetUpdateInterval<span class="uscript-operator">;</span>
+        KRepState <span class="uscript-operator">=</span> KState<span class="uscript-operator">;</span>
+        StateCount<span class="uscript-operator">++</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//New state recieved.</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> PostNetReceive<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>StateCount <span class="uscript-operator">==</span> LastStateCount<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//Apply new state.</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> <span class="uscript-type">bool</span> KUpdateState<span class="uscript-operator">(</span><span class="uscript-keyword">out</span> KRigidBodyState newState<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">//This should never get called on the server - but just in case!</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority <span class="uscript-operator">||</span> StateCount <span class="uscript-operator">==</span> LastStateCount<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+        
+    <span class="uscript-comment">//Apply received data as new position of actor.</span>
+    newState <span class="uscript-operator">=</span> KRepState<span class="uscript-operator">;</span>
+    StateCount <span class="uscript-operator">=</span> LastStateCount<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    MaxNetUpdateInterval<span class="uscript-operator">=</span><span class="uscript-number">0.5</span>
+
+    StaticMesh<span class="uscript-operator">=</span>StaticMesh<span class="uscript-name">'MiscPhysicsMeshes.Barrels.Barrel'</span>
+
+    Begin Object <span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>KarmaParams <span class="uscript-type">Name</span><span class="uscript-operator">=</span>KarmaParams0
+        KMass<span class="uscript-operator">=</span><span class="uscript-number">0.5</span>
+        bHighDetailOnly<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+        bKAllowRotate<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+        KFriction<span class="uscript-operator">=</span><span class="uscript-number">0.2</span>
+        KRestitution<span class="uscript-operator">=</span><span class="uscript-number">0.5</span>
+        KImpactThreshold<span class="uscript-operator">=</span><span class="uscript-number">1000.0</span>
+        bClientOnly<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+        <span class="uscript-type">Name</span><span class="uscript-operator">=</span><span class="uscript-string">"KarmaParams0"</span>
+    End Object
+    KParams<span class="uscript-operator">=</span>KarmaParams<span class="uscript-name">'KarmaParams0'</span>
+
+    RemoteRole<span class="uscript-operator">=</span>ROLE_SimulatedProxy
+    bNetNotify<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.3"></a>Related Topics</h2>
+<ul><li><a href="kactor.html">KActor</a></li>
+</ul>
+<p><em class="em2">Foxpaw</em>: I think this page could be called something else.. KActor is just a class that you can use to make karma physics objects.. kind of like staticmeshactor. Any actor can have a static mesh, and any actor can use Karma physics.. so I think this should have a more general name seeing as this applies to more than just KActors.</p>
+<p><em class="em2">Kaoh</em>: Yeah but the replication technique is special for karma actors. Its not needed for other actors, So I feel it applies.</p>
+<p><em class="em2">Foxpaw:</em> What I'm saying is, KActor is just a class that happens to use Karma physics. There are many karma actors that aren't KActors, so I think a more general name would be better.</p>
+<p><em class="em2">UsAaR33:</em> Just wondering.. what is the point of that PostNetReceive() event?</p>
+<p><em class="em2">Foxpaw:</em> Err.. hmm. I hate to pick holes in someone's work, but you're right. In fact, that code is going to produce slide-show-esque physics client side, (as the physics never actually simulate client side, they get reset to the most recent server version every time the physics is simulated) and err, yeah. It's not doing half the stuff that it looks like it should be doing. However, if it was tested on the same machine, (so no latency or bandwidth limits) it would APPEAR as though it was working perfectly.</p>
+<p>Here's how I would have done it: (note that this code has not been tested or compiled in any way, I'm going on experience here. Some tweaks may be necessary. I also removed the "threshold" stuff, but you could put that back in if you really felt it was necessary.)</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> ReplicatedKActor <span class="uscript-keyword">extends</span> KActor <span class="uscript-keyword">placeable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">struct</span> RepState
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">var</span> KRigidBodyState <span class="uscript-keyword">State</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">var</span> <span class="uscript-type">byte</span>        Timestamp<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span>     bUpdateState<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">byte</span>     LastTimeStamp<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> RepState RepKState<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">replication</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">unreliable</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span>
+    RepKState<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> Delta<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Tick<span class="uscript-operator">(</span> Delta <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  
+  PackState<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//Pack current state to be replicated</span>
+<span class="uscript-keyword">function</span> PackState<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> bChanged<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> KRigidBodyState KState<span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>KIsAwake<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+    <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+  KGetRigidBodyState<span class="uscript-operator">(</span>KState<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> KState <span class="uscript-operator">==</span> RepKState<span class="uscript-operator">.</span><span class="uscript-keyword">State</span> <span class="uscript-operator">)</span>
+    <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+  RepKState<span class="uscript-operator">.</span><span class="uscript-keyword">State</span> <span class="uscript-operator">=</span> KState<span class="uscript-operator">;</span>
+  RepKState<span class="uscript-operator">.</span>TimeStamp<span class="uscript-operator">++</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//New state recieved.</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> PostNetReceive<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostNetRecieve<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> RepKState<span class="uscript-operator">.</span>TimeStamp <span class="uscript-operator">!=</span> LastTimeStamp <span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    LastTimeStamp <span class="uscript-operator">=</span> RepKState<span class="uscript-operator">.</span>TimeStamp<span class="uscript-operator">;</span>
+    bUpdateState <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//Apply new state.</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> <span class="uscript-type">bool</span> KUpdateState<span class="uscript-operator">(</span><span class="uscript-keyword">out</span> KRigidBodyState newState<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>KUpdateState<span class="uscript-operator">(</span> newState <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ 
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bUpdateState <span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    newState <span class="uscript-operator">=</span> KRepState<span class="uscript-operator">;</span>
+    bUpdateState <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+
+  <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+  StaticMesh<span class="uscript-operator">=</span>StaticMesh<span class="uscript-name">'MiscPhysicsMeshes.Barrels.Barrel'</span>
+
+  Begin Object <span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>KarmaParams <span class="uscript-type">Name</span><span class="uscript-operator">=</span>KarmaParams0
+    KMass<span class="uscript-operator">=</span><span class="uscript-number">0.5</span>
+    bHighDetailOnly<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+    bKAllowRotate<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    KFriction<span class="uscript-operator">=</span><span class="uscript-number">0.2</span>
+    KRestitution<span class="uscript-operator">=</span><span class="uscript-number">0.5</span>
+    KImpactThreshold<span class="uscript-operator">=</span><span class="uscript-number">1000.0</span>
+    bClientOnly<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+    <span class="uscript-type">Name</span><span class="uscript-operator">=</span><span class="uscript-string">"KarmaParams0"</span>
+  End Object
+  KParams<span class="uscript-operator">=</span>KarmaParams<span class="uscript-name">'KarmaParams0'</span>
+
+  RemoteRole<span class="uscript-operator">=</span>ROLE_SimulatedProxy
+  bNetNotify<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">CIpen:</em>  Well I don't mean to break anyone's hearts but KCar isn't a KActor.  KCar extends from KVehicle, and KVehicle extends from Vehicle.  Lastly, Vehicle extends from Pawn.</p>
+<p>Even though it's not in KCar, I found this code that might help in SCar:</p>
+<pre class="uscript">cpptext
+<span class="uscript-operator">{</span>
+#ifdef WITH_KARMA
+    <span class="uscript-comment">// Actor interface.</span>
+    virtual UBOOL Tick<span class="uscript-operator">(</span><span class="uscript-type">FLOAT</span> DeltaTime<span class="uscript-operator">,</span> <span class="uscript-keyword">enum</span> ELevelTick TickType<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    virtual void PostNetReceive<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// SVehicle interface.</span>
+    virtual void UpdateVehicle<span class="uscript-operator">(</span><span class="uscript-type">FLOAT</span> DeltaTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// SCar interface.</span>
+    virtual void ProcessCarInput<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    virtual void ChangeGear<span class="uscript-operator">(</span>UBOOL bReverse<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    virtual void PackState<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+#endif
+<span class="uscript-operator">}</span></pre><p>I find this interesting because I Have tried to make a rock that you could shoot and blow up(had health).</p>
+<p><em class="em2">Solid Snake:</em> This was written before SCar existed, aka UT2003. The above solution allowed for Karma to be replicated over the network thus allowing it to be used in network games for whatever reason you needed it for.</p>
+<p><em class="em2">ShrapnelMagnet:</em> I was hoping to replicate a simple box-like KActor in Unreal Tournament 2004. I'd like players to be able to roll boxes around in a little game, but I'm having trouble getting the KActor to replicate across the network. I see a lot of code here, but not being a big coder myself, I'm not sure what works or what doesn't. Any help would be appreciated, thanks.</p>
+<p><em class="em2">EricBlade:</em> Well, I have tested the above 2 sets of code, as well as the code from a package I found called "GoodKarma".. the "GoodKarma" developer appears to have disappeared off the face of the planet about a year or so ago, along with the small handful of users who claimed they'd seen it work.  Not a bit of this seems to actually function, at least on engine build 2226.  As far as I can tell, when running as dedicated server, karma is completely not simulated on the server.  Using all three of the codes that I mentioned above, placing the modified kactor in a level, and using the following:</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> DoPush<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> vector StartTrace<span class="uscript-operator">,</span> EndTrace<span class="uscript-operator">,</span> HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Actor hit<span class="uscript-operator">;</span>
+
+    StartTrace <span class="uscript-operator">=</span> Location <span class="uscript-operator">+</span> EyePosition<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    EndTrace <span class="uscript-operator">=</span> StartTrace <span class="uscript-operator">+</span> <span class="uscript-number">196</span> <span class="uscript-operator">*</span> vector<span class="uscript-operator">(</span>Controller<span class="uscript-operator">.</span>GetViewRotation<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    hit <span class="uscript-operator">=</span> Trace<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> EndTrace<span class="uscript-operator">,</span> StartTrace<span class="uscript-operator">,</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    Debug<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">$</span><span class="uscript-string">": I hit a "</span><span class="uscript-operator">$</span>hit<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>hit <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        hit<span class="uscript-operator">.</span>KWake<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+       hit<span class="uscript-operator">.</span>KAddImpulse<span class="uscript-operator">(</span><span class="uscript-number">34000</span> <span class="uscript-operator">*</span> <span class="uscript-operator">(</span><span class="uscript-operator">-</span>hitnormal<span class="uscript-operator">)</span><span class="uscript-operator">,</span> location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+       bumpfactor <span class="uscript-operator">=</span> <span class="uscript-number">7</span><span class="uscript-operator">;</span> <span class="uscript-comment">// we add several wait-ticks before next bump, so we aren't adding that to it too</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>results in my log file on the server saying that my Pawn hit the "ball", accompanied by absolutely nothing.  Same thing works in single player, with any of those codes.  Logging the "ball"'s location property every tick, tells me that it's not moving anywhere, either.  If I shoot it, it starts moving on the client, but not on the server.</p>
+<p>... and right after posting that, I had an apparently brilliant idea.  Setting bClientOnly = false in DefaultProps doesn't work, but it does work if done in PreBeginPlay().  This results in the physics being simulated completely seperately on both ends.   The code from the LawDogsKActor seems to get them following each other for the first tick or so, but very quickly you realise that the server has your KActor in a totally different place than the client put it.  Foxpaw's seems to lock the KActor in place on the server, while making the client simulate somewhat slowly.  The "GoodKarma" code has no effect over and above LawDogs.  </p>
+<p><em class="em2">EricBlade:</em> Well, I spent all night playing with this, and thought I'd put up what I have, and see if anyone had any further suggestions.  It's sort of a combination of all the code i've seen for dealing with this.. I was hoping to get something forgiveably accurate enough that I could do a little one-on-one soccer with, but unfortunatly, I don't think it's possible to get anywhere near that accurate.. but I will definitely take suggestions.  The following code does not have a horribly lagging simulation, but at reasonably decent speeds using my test-ball (the severed head mesh from Land of the Dead), a moment or two after kicking it, the ball will snap into the place the server simulated it at, which is usually fairly close to where it came to rest on the client, however it can sometimes be quite a bit away.  I also just now tested this on a test map that had about 6 of these on it.  Then with only 2.  Having more than one of these on a level causes absolute chaos, with the objects seemingly randomly warping about in the level.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> Ball <span class="uscript-keyword">extends</span> Actor<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> MaxNetUpdateInterval<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> NextNetUpdateTime<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> LastUpdateTime<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> KRigidBodyState KState<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bChanged<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> counter<span class="uscript-operator">;</span>
+
+
+<span class="uscript-keyword">struct</span> repinfo <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">var</span> KRigidBodyState <span class="uscript-keyword">state</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">var</span> <span class="uscript-type">float</span> timestamp<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> repinfo KRepState<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">replication</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">unreliable</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span>
+        KRepState<span class="uscript-operator">,</span> bChanged<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> Delta<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>KIsAwake<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+            counter <span class="uscript-operator">=</span> <span class="uscript-number">30</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span> <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>counter <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span> counter<span class="uscript-operator">--</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        PackState<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> PackState<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>counter <span class="uscript-operator">&lt;</span> <span class="uscript-number">1</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>KIsAwake<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    bChanged <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    KGetRigidBodyState<span class="uscript-operator">(</span>KState<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>VSize<span class="uscript-operator">(</span>KRBVecToVector<span class="uscript-operator">(</span>KState<span class="uscript-operator">.</span>Position<span class="uscript-operator">)</span> <span class="uscript-operator">-</span> KRBVecToVector<span class="uscript-operator">(</span>KRepState<span class="uscript-operator">.</span><span class="uscript-keyword">state</span><span class="uscript-operator">.</span>Position<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">10</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-comment">//log(self@"Position Change");</span>
+        bChanged <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>VSize<span class="uscript-operator">(</span>KRBVecToVector<span class="uscript-operator">(</span>KState<span class="uscript-operator">.</span>LinVel<span class="uscript-operator">)</span> <span class="uscript-operator">-</span> KRBVecToVector<span class="uscript-operator">(</span>KRepState<span class="uscript-operator">.</span><span class="uscript-keyword">state</span><span class="uscript-operator">.</span>LinVel<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">10</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-comment">//log(self@"LinVel Change");</span>
+        bChanged <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>VSize<span class="uscript-operator">(</span>KRBVecToVector<span class="uscript-operator">(</span>KState<span class="uscript-operator">.</span>AngVel<span class="uscript-operator">)</span> <span class="uscript-operator">-</span> KRBVecToVector<span class="uscript-operator">(</span>KRepState<span class="uscript-operator">.</span><span class="uscript-keyword">state</span><span class="uscript-operator">.</span>AngVel<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">10</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-comment">//log(self@"AngVel");</span>
+        bChanged <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bChanged <span class="uscript-operator">==</span> <span class="uscript-keyword">false</span> <span class="uscript-operator">&amp;&amp;</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">&gt;</span> NextNetUpdateTime<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-comment">//log(self@"MaxNetUpdateInterval reached");</span>
+        bChanged <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bChanged <span class="uscript-operator">==</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        KRepState<span class="uscript-operator">.</span><span class="uscript-keyword">state</span> <span class="uscript-operator">=</span> KState<span class="uscript-operator">;</span>
+        NextNetUpdateTime <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">+</span> MaxNetUpdateInterval<span class="uscript-operator">;</span>
+        KRepState<span class="uscript-operator">.</span>timestamp <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>TimeSeconds<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> <span class="uscript-type">bool</span> KUpdateState<span class="uscript-operator">(</span><span class="uscript-keyword">out</span> KRigidBodyState newState<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bChanged <span class="uscript-operator">==</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span> <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>LastUpdateTime <span class="uscript-operator">&gt;</span> KRepState<span class="uscript-operator">.</span>timestamp<span class="uscript-operator">)</span> <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    newState <span class="uscript-operator">=</span> KRepState<span class="uscript-operator">.</span><span class="uscript-keyword">state</span><span class="uscript-operator">;</span>
+    LastUpdateTime <span class="uscript-operator">=</span> KRepState<span class="uscript-operator">.</span>timestamp<span class="uscript-operator">;</span>
+    bChanged <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> PreBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    KarmaParams<span class="uscript-operator">(</span>KParams<span class="uscript-operator">)</span><span class="uscript-operator">.</span>bClientOnly <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+    MaxNetUpdateInterval<span class="uscript-operator">=</span><span class="uscript-number">0.2</span>
+    bBlockZeroExtentTraces <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span>
+    bBlockNonZeroExtentTraces <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span>
+    <span class="uscript-comment">//NetUpdateFrequency = 1</span>
+    <span class="uscript-comment">//bUpdateSimulatedPosition=true</span>
+    <span class="uscript-comment">//bGameRelevant=true</span>
+    bAlwaysRelevant<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    bCollideWorld<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    bNetNotify<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    RemoteRole<span class="uscript-operator">=</span>ROLE_SimulatedProxy
+    DrawScale<span class="uscript-operator">=</span><span class="uscript-number">2.75</span>
+    Physics<span class="uscript-operator">=</span>PHYS_Karma
+    Begin Object <span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>KarmaParams <span class="uscript-type">Name</span><span class="uscript-operator">=</span>KParams0
+        bHighDetailOnly         <span class="uscript-operator">=</span>   <span class="uscript-keyword">False</span>
+        bKNonSphericalInertia   <span class="uscript-operator">=</span>   <span class="uscript-keyword">False</span>
+        KActorGravScale         <span class="uscript-operator">=</span>   <span class="uscript-number">0.55</span>
+        KAngularDamping         <span class="uscript-operator">=</span>   <span class="uscript-number">0.2</span>
+        KBuoyancy               <span class="uscript-operator">=</span>   <span class="uscript-number">1.01</span>
+        KLinearDamping          <span class="uscript-operator">=</span>   <span class="uscript-number">0.2</span>
+        KMass                   <span class="uscript-operator">=</span>   <span class="uscript-number">0.45</span>
+        KStartEnabled           <span class="uscript-operator">=</span>   <span class="uscript-keyword">False</span>
+        KFriction               <span class="uscript-operator">=</span>   <span class="uscript-number">0.40</span>
+        KRestitution            <span class="uscript-operator">=</span>   <span class="uscript-number">0.50</span>
+        KImpactThreshold        <span class="uscript-operator">=</span>   <span class="uscript-number">5</span>
+    End Object
+    KParams<span class="uscript-operator">=</span>KarmaParams<span class="uscript-name">'KParams0'</span>
+    StaticMesh<span class="uscript-operator">=</span>StaticMesh<span class="uscript-name">'UZGMeshes.Body.Head'</span>
+    DrawType<span class="uscript-operator">=</span>DT_StaticMesh
+<span class="uscript-comment">//   bNoDelete=True</span>
+     bCollideActors<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     bBlockActors<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     bBlockPlayers<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     bProjTarget<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     bBlockKarma<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-operator">}</span></pre><hr class="thin"><p><a href="category-custom-class.html">Category Custom Class</a><br><a href="category-tutorial.html">Category Tutorial</a><br><a href="refactor-me.html">Refactor Me</a><br><a href="category-to-do.html">Category To Do</a> &ndash; If this really is stuff unique to <a href="karma.html">Karma</a> and <a href="replication.html">Replication</a> then Replication/Karma<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Replication/Karma&referrerid=KActor_Replication">?</a>, Karma/Replication<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Karma/Replication&referrerid=KActor_Replication">?</a> or [Karma Replication]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Karma_Replication&referrerid=KActor_Replication">?</a> might be a better location for this. Otherwise this should probably be folded into the grand topic of <a href="replication.html">Replication</a>. See <a href="replication-discussing.html">Replication/Discussing</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("How it works", "#0.1");
+menuItemAdd("The code", "#0.2");
+menuItemAdd("Related Topics", "#0.3");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=KActor_Replication">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=KActor_Replication">View other revisions</a><br>Last edited November 26, 2006 13:00 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=KActor_Replication">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/KActor_Replication">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Cogito, ergo sum
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

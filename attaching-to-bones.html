@@ -1,0 +1,184 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Attaching To Bones</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Attaching_To_Bones; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Attaching To Bones">Attaching To Bones</a></h1>
+	<div class="wiki"><p>A bone<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Bone&referrerid=Attaching_To_Bones">?</a> is part of a <a href="skeletal-mesh.html">skeletal mesh</a>.  The standard skeletal mesh for the <a href="pawn.html">pawn</a> includes the head, right leg, left leg, right foot, left foot, right hand, left hand, right shoulder, left shoulder, and the spine.  Using <a href="unrealscript.html">UnrealScript</a>, you can attach almost anything to any bone of a given mesh.</p>
+<p>Here, we'll discuss how you can attach actors to bones.  For instance if you wanted an actor to follow a pawn around, you could attach it to a bone of that pawn.  Or, if you wanted to attach emitters to the legs of a pawn, you would have to attach the emitters to both leg bones. An example of this is the Speed Combo in <a href="unreal-tournament-2003.html">UT2003</a>.</p>
+<h2><a name="0.1"></a>Introduction</h2>
+<p>We'll start by putting you through a very basic walkthrough.  We'll spawn a custom trigger, attach it to the 'spine' of the pawn and then we will spawn Emitters and attach them to both legs.  I suggest making a new package and call it AttachingToBones or something easy (see <a href="set-up-package-folders.html">Set Up Package Folders</a> for help with this).</p>
+<h2><a name="0.2"></a>Step One</h2>
+<p>First, we need to create the custom trigger.  Create the following:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> SpineTrigger <span class="uscript-keyword">extends</span> Trigger<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//We aren't going to make this do anything because</span>
+<span class="uscript-comment">//this is just a walkthrough on how you can attach something to a bone</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+      bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">False</span> <span class="uscript-comment">//We want this false so you can see that it actually attached itself to the spine.</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.3"></a>Step Two</h2>
+<p>Now we need to spawn this trigger and attach it to the pawn.  The following mutator code should do this with no problem at all.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MutAttachToBones <span class="uscript-keyword">extends</span> Mutator<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> trigger BoneTrigger<span class="uscript-operator">;</span> <span class="uscript-comment">//We need this variable or, it won't recognize what your trying to attach.</span>
+
+<span class="uscript-keyword">function</span> ModifyPlayer<span class="uscript-operator">(</span>Pawn Other<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> xPawn x<span class="uscript-operator">;</span>
+   x <span class="uscript-operator">=</span> xPawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  BoneTrigger <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'SpineTrigger'</span><span class="uscript-operator">,</span> x<span class="uscript-operator">,</span><span class="uscript-operator">,</span> x<span class="uscript-operator">.</span>Location<span class="uscript-operator">,</span> x<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  x<span class="uscript-operator">.</span>AttachToBone<span class="uscript-operator">(</span>BoneTrigger<span class="uscript-operator">,</span> <span class="uscript-name">'spine'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//AttachToBone I believe is a native function so it can work in all actors.</span>
+                             <span class="uscript-comment">//'spine' is the bone name.  If you wanted you could replace this with any other bone name.</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+GroupName<span class="uscript-operator">=</span><span class="uscript-string">"AttachingStuffToBone"</span>
+FriendlyName<span class="uscript-operator">=</span><span class="uscript-string">"AttachingStuffToBone"</span>
+Description<span class="uscript-operator">=</span><span class="uscript-string">"Attaching Stuff ToBone.|| This will attach the triggers and the emitters to the pawn.."</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.4"></a>Step Three</h2>
+<p>Next, we will put attaching emitters into the mix.  Add the following bits of code. (pulled from the SpeedCombo source)</p>
+<pre class="uscript">    <span class="uscript-keyword">var</span> xEmitter LeftTrail<span class="uscript-operator">,</span> RightTrail<span class="uscript-operator">;</span> <span class="uscript-comment">//Put this line just under the first variable</span>
+
+    <span class="uscript-comment">//Put these lines of code just under your BoneTrigger lines of code.</span>
+    LeftTrail <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'SpeedTrail'</span><span class="uscript-operator">,</span> x<span class="uscript-operator">,</span><span class="uscript-operator">,</span> x<span class="uscript-operator">.</span>Location<span class="uscript-operator">,</span> x<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//SpeedTrail is already created :).</span>
+    x<span class="uscript-operator">.</span>AttachToBone<span class="uscript-operator">(</span>LeftTrail<span class="uscript-operator">,</span> <span class="uscript-name">'lfoot'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//lfoot = Left Foot</span>
+
+    RightTrail <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'SpeedTrail'</span><span class="uscript-operator">,</span> x<span class="uscript-operator">,</span><span class="uscript-operator">,</span> x<span class="uscript-operator">.</span>Location<span class="uscript-operator">,</span> x<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    x<span class="uscript-operator">.</span>AttachToBone<span class="uscript-operator">(</span>RightTrail<span class="uscript-operator">,</span> <span class="uscript-name">'rfoot'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span><span class="uscript-comment">//rfoot = Right Foot</span></pre><h2><a name="0.5"></a>Step Four</h2>
+<p>Compile <img alt=":)" src="emoticons/smile.gif" align="middle">.  Your basically done now.  All you have to do is create our .INT file for the mutator and the package that you put the code in.  When all is well, load up <a href="unreal-tournament-2003.html">UT2003</a>.  Start a match with your Mutator selected.  When the match starts, go to your console and type <em class="em2">behindview 1</em>.  Now walk around.  You should see the trigger attached to your spine and the emitters attached to your feet.</p>
+<h2><a name="0.6"></a>Related Topics</h2>
+<ul><li><a href="bone-names.html">Bone Names</a></li>
+</ul>
+<h2><a name="0.7"></a>Discussion</h2>
+<p><em class="em2">EricBlade:</em> I'm attempting to attach a beam emitter to a player, which works great, using the normal bHardAttach and SetBase(), however, I wanted a little more realism for attachment, so I attached it to the player's Right Hand bone.  This works great, as long as I'm not in first person view.  If I'm in first person view, the emitter is invisible.  Is this because the player pawn isn't drawn, while in first person?  Is there a way around that?</p>
+<p><em class="em2">SuperApe:</em> You guessed it.  Third-person view draws the xPawn just like you see other teammates and enemies.  But, First-person view draws entirely different meshes for your weapons and turns off your xPawn.  If you want your beam emitter to be on the "weapon hand", first I'd make sure you know which one it is (since you can configure it to be Right, Left, Center or Hidden in UT200x), then I'd try two things: 1) try to "piggy back" on the First-Person Weapon mesh so you automatically get it's walk/run bobbing motion, then if not that, 2) try attaching your beam emitter to the Controller instead and make your own bobbing to try and match the First-Person weapon meshes.  It seems #2 would be decidedly more difficult, but it's something to try.</p>
+<p><em class="em2">Xian:</em> Not sure how it works in UE2, since UE1 doesn't have bones (well it does, but no support for it from UScript), but I for one would keep a pointer to the attachemnt then use RenderOverlays and Canvas.DrawActor();</p>
+<p>OK this is how I'd do it in UE1, IF I had bone support:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> AttachIt <span class="uscript-operator">(</span>PlayerController Other<span class="uscript-operator">)</span> <span class="uscript-comment">// at least I think the PalyerController is the main "player" in UE2</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> Actor MyAttachment<span class="uscript-operator">;</span> <span class="uscript-comment">// Obviously &lt;Actor&gt; here would be replaced by your Object type</span>
+
+  MyAttachment <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> Other<span class="uscript-operator">,</span><span class="uscript-operator">,</span> Other<span class="uscript-operator">.</span>Location<span class="uscript-operator">,</span> Other<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  Other<span class="uscript-operator">.</span>AttachToBone<span class="uscript-operator">(</span>MyAttachment<span class="uscript-operator">,</span><span class="uscript-name">'whatever'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  Xian<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>MyAttachment <span class="uscript-operator">=</span> MyAttachment<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Ok that'd be the basic attachment (small reference, I didn't get the point of the xPawn conversion... it's just useless code since the function is available to all Actor class... anyway...)</p>
+<p>And this is in a your PlayerPawn (I assume it's the PlayerController in UE2):</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> RenderOverlays <span class="uscript-operator">(</span>Canvas Canvas<span class="uscript-operator">)</span> <span class="uscript-comment">// if this function doesn't exist in UE2 use PostRender</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>MyAttachment <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+     Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>MyAttachment<span class="uscript-operator">,</span><span class="uscript-keyword">False</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-comment">// don't forget to call the super :)</span>
+<span class="uscript-operator">}</span></pre><p>I'm sorry I can't give you a detailed enough example but if you worked with both engines you'll know how to port what I showed you properly. Although I doubt it's the case but if it still doesn't work try setting bHidden to False in your attachment(s) <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">SuperApe:</em> I see the economy of this suggestion.  I think it depends on the detail you'd want from this attachment.  If you want it to interact with the world in 3D, as a beam emitter shooting from the arm might, a HUDOverlay may not do it.</p>
+<p><em class="em2">Xian:</em> well Canvas.DrawActor() is limited to drawing ONLY the mesh itself. However... there are ways around it. Remember the Pulse Gun from UT ? It has the beam sprite/model, the green long one. You could use that in another effect or a "fake" projectile which would have 0 damage with a bit of adjusted code. This approach might work in UE2 if you have such a firing animation/sprite/model. So what I am saying is use DrawActor() for the mesh but the firing effect or whatever it does would be a separate thing... although you could prolly use a PostRender() call in that as well if it is all just texture drawing and not real animation (where Actor&rarr;Effects classes should be used). But I think you get the idea <img alt=":)" src="emoticons/smile.gif" align="middle"> Such code "hacks" are quite efficient if done properly. Engine limitations should not stop you.</p>
+<p><em class="em2">EricBlade:</em> What I ended up doing is, since I'm moving a projector and emitter and light around every tick, anyway, I just made it so that the emitter gets reset to GetBoneCoords('rhand',1).Origin as it's position, and that works just about as well <img alt=":)" src="emoticons/smile.gif" align="middle">  </p>
+<script type="text/javascript"><!--
+ menuItemAdd("Introduction", "#0.1");
+menuItemAdd("Step One", "#0.2");
+menuItemAdd("Step Two", "#0.3");
+menuItemAdd("Step Three", "#0.4");
+menuItemAdd("Step Four", "#0.5");
+menuItemAdd("Related Topics", "#0.6");
+menuItemAdd("Discussion", "#0.7");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Attaching_To_Bones">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Attaching_To_Bones">View other revisions</a><br>Last edited April 14, 2006 17:34 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Attaching_To_Bones">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Attaching_To_Bones">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>The three virtues of a programmer: Laziness, Impatience, and Hubris. (Larry Wall)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

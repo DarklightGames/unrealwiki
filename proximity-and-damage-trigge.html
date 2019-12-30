@@ -1,0 +1,315 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Proximity- And Damage-Triggered Doors</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Proximity-_And_Damage-Triggered_Doors; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Proximity- And Damage-Triggered Doors">Proximity- And Damage-Triggered Doors</a></h1>
+	<div class="wiki"><p>This tutorial will show you a way to create doors that can open when shot or when a player approaches it. The door will close after some time if no player is near it anymore.</p>
+<p>Using this type of door might help a lot when porting Quake maps. It might add a new tactical twist to your map since players now can't rely on the opponent being near a door when it opens. On the other hand, closing doors will not be as harmful for a fire fight anymore because the players can simply shoot it to instantly reopen it, even if the door hasn't finished closing yet.</p>
+<h2><a name="0.1"></a>Prerequisites</h2>
+<p>In this tutorial we will be creating a multi-part door. When any of the door parts is hit, the whole door should open, i.e. all parts should start moving at the same time. Unfortunalety, regular movers don't provide the neccessary functionality, so we need to use the custom <a href="damagetriggermover.html">DamageTriggerMover</a>. Single-part doors with similar functionality are probably possible with a regular <a href="mover.html">Mover</a> as well, but will require a different trigger setup then.</p>
+<p>Our door mechanism will consist of:</p>
+<ul><li>two <a href="damagetriggermover.html">DamageTriggerMover</a>s as the door parts (You can add more movers to your door, if you like. This trigger/mover system can be extended quite easily.)</li>
+<li>one <a href="trigger.html">Trigger</a> to detect player proximity</li>
+<li>one <a href="triggeredcondition.html">TriggeredCondition</a> to store the Trigger's state for...</li>
+<li>one <a href="scriptedtrigger.html">ScriptedTrigger</a> (1) that closes the door after some time when no player is nearby</li>
+<li>another <a href="scriptedtrigger.html">ScriptedTrigger</a> (2) that opens the door when a player touches the Trigger</li>
+</ul>
+<h2><a name="0.2"></a>Door Movers</h2>
+<p>Place your DamageTriggerMovers like you would place any regular mover. Set their Object &rarr; InitialState to <em class="em1">TriggerToggle</em>, match their ReturnGroup &rarr; ReturnGroup names and give them the same MoverEvents &rarr; DamageEvent names. It's probably also a good idea to set their Mover &rarr; MoverEncroachType to <em class="em1">ME_CrushWhenEncroach</em> or <em class="em1">ME_IgnoreWhenEncroach</em>, so they don't get out of sync when something blocks one of them.</p>
+<p>Now you need to decide, which of your movers will be the leader of your door's <em class="em1">ReturnGroup</em>. This "leading mover" will receive the events for opening or closing the door. Set its Events &rarr; <a href="tag.html">Tag</a> to the <a href="event.html">event</a> you want to control the door with. That event will be fired by the ScriptedTriggers and should be unique for each door. You also need to specify an event name in MoverEvents &rarr; OpenedEvent, that will be used by ScriptedTrigger (1) to find out, when to start checking whether the door should close again.</p>
+<p>Example of mover properties so far:</p>
+<table class="paratable-border" border=0 cellspacing=0 cellpadding=0><tr valign=top><td align=center><em class="em3">Property</em></td>
+<td align=center><em class="em3">Leading Mover</em></td>
+<td align=center><em class="em3">Other Door Parts</em></td>
+</tr>
+<tr valign=top><td><em class="em2">Events &rarr; Tag</em></td>
+<td>MyDoor</td>
+<td>&mdash;</td>
+</tr>
+<tr valign=top><td><em class="em2">Mover &rarr; MoverEncroachType</em></td>
+<td>ME_CrushWhenEncroach</td>
+<td>ME_CrushWhenEncroach</td>
+<td>You could also use <em class="em1">ME_IgnoreWhenEncraoch</em> here.</td>
+</tr>
+<tr valign=top><td><em class="em2">MoverEvents &rarr; DamageEvent</em></td>
+<td>MyDoorHit</td>
+<td>MyDoorHit</td>
+</tr>
+<tr valign=top><td><em class="em2">MoverEvents &rarr; OpenedEvent</em></td>
+<td>MyDoorOpened</td>
+<td>&mdash;</td>
+</tr>
+<tr valign=top><td><em class="em2">Object &rarr; InitialState</em></td>
+<td>TriggerToggle</td>
+<td>TriggerToggle</td>
+</tr>
+<tr valign=top><td><em class="em2">ReturnGroup &rarr; bIsLeader</em></td>
+<td>True</td>
+<td>False</td>
+</tr>
+<tr valign=top><td><em class="em2">ReturnGroup &rarr; ReturnGroup</em></td>
+<td>MyDoor</td>
+<td>MyDoor</td>
+<td>This is not associated with Tags/Events in any way, it's just convenient to use the same name as the leader's Tag.</td>
+</tr>
+</table>
+<p>After setting up the movers as described above, you can <a href="playtest.html">playtest</a> your map and the movers will do exactly... <em class="em1">nothing</em>.</p>
+<p>If your movers activate when you run into them or shoot them, something is wrong! Make sure they are really <a href="damagetriggermover.html">DamageTriggerMover</a>s and that their initial state really is TriggerToggle.</p>
+<h2><a name="0.3"></a>Door Controls</h2>
+<p>Let's add some functionality to the door. The basic door control will be handled by a <a href="scriptedtrigger.html">ScriptedTrigger</a> that opens the door when triggered and closes it again after some time. Player proximity is detected by a Trigger.</p>
+<h3><a name="0.3.1"></a>Open, Wait, Close</h3>
+<p><a href="add-an-actor.html">Add an Actor</a> &gt;&gt; Keypoint &gt;&gt; AIScript &gt;&gt; ScriptedSequence &gt;&gt; ScriptedTrigger. It will control the door movers with a script that works like this:</p>
+<pre class="paraverbatim"> <em class="em1">door is closed or closing</em>
+ <em class="em2">Wait for event</em> <em class="em1">MyDoorHit</em>
+ <em class="em2">Trigger event</em> <em class="em1">MyDoor</em> (to open the door)
+ <em class="em2">Wait for event</em> <em class="em1">MyDoorOpened</em>
+ <em class="em1">door is open</em>
+ <em class="em2">Wait</em> <em class="em1">2 seconds</em>
+ <em class="em2">If</em> <em class="em1">player is near door</em> (starts a new subsection)
+   <em class="em2">Go to</em> "<em class="em1">door is open</em>" (to wait a little longer)
+ <em class="em2">End subsection</em>
+ <em class="em2">Trigger event</em> <em class="em1">MyDoor</em> (to close the door)
+ <em class="em2">Go to</em> "<em class="em1">door is closed or closing</em>"</pre><p>The lines starting with <em class="em2">bold</em> words in the above algorithm can be translated directly into <a href="scriptedaction.html">ScriptedAction</a>s for <a href="scriptedtrigger.html">ScriptedTrigger</a> (1):</p>
+<table class="paratable-border" border=0 cellspacing=0 cellpadding=0><tr valign=top><td></td>
+<td align=center><em class="em3">Action</em></td>
+<td align=center><em class="em3">Parameter Name</em></td>
+<td align=center><em class="em3">Parameter Value</em></td>
+<td align=center><em class="em3">Comment</em></td>
+</tr>
+<tr valign=top><td>0</td>
+<td>ACTION_WaitForEvent<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ACTION_WaitForEvent&referrerid=Proximity-_And_Damage-Triggered_Doors">?</a></td>
+<td align=center>ExternalEvent</td>
+<td align=center>MyDoorHit</td>
+<td>waits for the door to be hit</td>
+</tr>
+<tr valign=top><td>1</td>
+<td>ACTION_TriggerEvent<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ACTION_TriggerEvent&referrerid=Proximity-_And_Damage-Triggered_Doors">?</a></td>
+<td align=center>Event</td>
+<td align=center>MyDoor</td>
+<td>opens the door</td>
+</tr>
+<tr valign=top><td>2</td>
+<td>ACTION_WaitForEvent<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ACTION_WaitForEvent&referrerid=Proximity-_And_Damage-Triggered_Doors">?</a></td>
+<td align=center>ExternalEvent</td>
+<td align=center>MyDoorOpened</td>
+<td>waits for the door to finish opening</td>
+</tr>
+<tr valign=top><td>3</td>
+<td>ACTION_WaitForTimer<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ACTION_WaitForTimer&referrerid=Proximity-_And_Damage-Triggered_Doors">?</a></td>
+<td align=center>PauseTime</td>
+<td align=center>2</td>
+<td>wait 2 seconds</td>
+</tr>
+<tr valign=top><td>4</td>
+<td>ACTION_IfCondition<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ACTION_IfCondition&referrerid=Proximity-_And_Damage-Triggered_Doors">?</a></td>
+<td align=center>TriggeredConditionTag</td>
+<td align=center>MyDoorProximity</td>
+<td>check, if player is near the door (see next section of this tutorial)</td>
+</tr>
+<tr valign=top><td>5</td>
+<td>ACTION_GotoAction<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ACTION_GotoAction&referrerid=Proximity-_And_Damage-Triggered_Doors">?</a></td>
+<td align=center>ActionNumber</td>
+<td align=center>3</td>
+<td>go to action 3 ("wait 2 seconds")</td>
+</tr>
+<tr valign=top><td>6</td>
+<td>ACTION_EndSection<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ACTION_EndSection&referrerid=Proximity-_And_Damage-Triggered_Doors">?</a></td>
+<td align=center>&mdash;</td>
+<td align=center>&mdash;</td>
+<td>end of the IfCondition section</td>
+</tr>
+<tr valign=top><td>7</td>
+<td>ACTION_TriggerEvent<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ACTION_TriggerEvent&referrerid=Proximity-_And_Damage-Triggered_Doors">?</a></td>
+<td align=center>Event</td>
+<td align=center>MyDoor</td>
+<td>close the door</td>
+</tr>
+<tr valign=top><td>8</td>
+<td>ACTION_GotoAction<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ACTION_GotoAction&referrerid=Proximity-_And_Damage-Triggered_Doors">?</a></td>
+<td align=center>ActionNumber</td>
+<td align=center>0</td>
+<td>go to action 0 ("wait for the door to be hit")</td>
+</tr>
+</table>
+<p>You can playtest the map again and the doors should already open when you shoot them, even though the If Condition in the script will probably throw an error because we haven't placed the specified <a href="triggeredcondition.html">TriggeredCondition</a> yet. The door doesn't yet react to player proximity, so you can get crushed it you stand between the movers when they close.</p>
+<h3><a name="0.3.2"></a>Don't hurt me!</h3>
+<p>To tell the door that a player is still nearby, we <a href="add-an-actor.html">add an actor</a> &gt;&gt; Triggers &gt;&gt; Trigger to the doorway and adjust its collision size. If a cylinder doesn't really fit the area you need, <a href="add-a-volume.html">add a volume</a> with the desired shape and match its Volume &rarr; AssociatedActorTag with the Trigger's Events &rarr; Tag. Specify the Trigger's Events &rarr; Event (in our example "MyDoorProximity") and check that its Object &rarr; InitialState is <em class="em1">NormalTrigger</em>.</p>
+<p><a href="add-an-actor.html">Add an actor</a> &gt;&gt; Triggers &gt;&gt; TriggeredCondition and set its Events &rarr; Tag to the same as the Trigger's event (in our case "MyDoorProximity", again). Match its Events &rarr; Tag with the Trigger's Events &rarr; Event and set its TriggeredCondition &rarr; bTriggerControlled to True and the other properties in that group to false.</p>
+<p>Summary of properties:</p>
+<table class="paratable-border" border=0 cellspacing=0 cellpadding=0><tr valign=top><td align=center><em class="em3">Property</em></td>
+<td align=center><em class="em3">TriggeredCondition</em></td>
+<td align=center><em class="em3">Trigger</em></td>
+</tr>
+<tr valign=top><td>Events &rarr; Event</td>
+<td align=center>&mdash;</td>
+<td align=center>MyDoorProximity</td>
+</tr>
+<tr valign=top><td>Events &rarr; Tag</td>
+<td align=center>MyDoorProximity</td>
+<td align=center>MyDoorProximityVolume<br><em class="em1">(only when using a volume as described above)</em></td>
+</tr>
+<tr valign=top><td>Object &rarr; InitialState</td>
+<td align=center>&mdash;</td>
+<td align=center>NormalTrigger</td>
+</tr>
+<tr valign=top><td>TriggeredCondition &rarr; bEnabled</td>
+<td align=center>False</td>
+</tr>
+<tr valign=top><td>TriggeredCondition &rarr; bToggled</td>
+<td align=center>False</td>
+</tr>
+<tr valign=top><td>TriggeredCondition &rarr; bTriggerControlled</td>
+<td align=center>True</td>
+</tr>
+</table>
+<p>After adding these two actors your damage-triggered door should already stay open when a player is nearby, but it still only opens when you shoot it.</p>
+<h3><a name="0.3.3"></a>Open up wide!</h3>
+<p>Our door is only missing a single feature: It doesn't open automatically when a player walks up close to it. We already have a Trigger that fires an event when a player touches it, so let's just use it to open the door.</p>
+<p>Add another ScriptedTrigger and set it up to translate the player proximity event into the door hit event, which already opens the door properly:</p>
+<table class="paratable-border" border=0 cellspacing=0 cellpadding=0><tr valign=top><td></td>
+<td align=center><em class="em3">Action</em></td>
+<td align=center><em class="em3">Parameter Name</em></td>
+<td align=center><em class="em3">Parameter Value</em></td>
+<td align=center><em class="em3">Comment</em></td>
+</tr>
+<tr valign=top><td>0</td>
+<td>ACTION_WaitForEvent<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ACTION_WaitForEvent&referrerid=Proximity-_And_Damage-Triggered_Doors">?</a></td>
+<td align=center>ExternalEvent</td>
+<td align=center>MyDoorProximity</td>
+<td>waits for a player to touch the trigger</td>
+</tr>
+<tr valign=top><td>1</td>
+<td>ACTION_WaitForTimer<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ACTION_WaitForTimer&referrerid=Proximity-_And_Damage-Triggered_Doors">?</a></td>
+<td align=center>PauseTime</td>
+<td align=center>0.01</td>
+<td>In my tests the script managed to crash the game with an Infinite Recursion message &ndash; this prevented it from happening.</td>
+</tr>
+<tr valign=top><td>2</td>
+<td>ACTION_TriggerEvent<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ACTION_TriggerEvent&referrerid=Proximity-_And_Damage-Triggered_Doors">?</a></td>
+<td align=center>Event</td>
+<td align=center>MyDoorHit</td>
+<td>triggers the other ScriptedTrigger, which opens the door</td>
+</tr>
+<tr valign=top><td>3</td>
+<td>ACTION_GotoAction<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ACTION_GotoAction&referrerid=Proximity-_And_Damage-Triggered_Doors">?</a></td>
+<td align=center>ActionNumber</td>
+<td align=center>0</td>
+<td>go to action 0 ("wait for player touch")</td>
+</tr>
+</table>
+<p>That's all! Your door should now open when it gets hit or when a player approaches it and will only close again if the player is no longer nearby.</p>
+<h2><a name="0.4"></a>Related Topics</h2>
+<ul><li><a href="mover-topics.html">Mover Topics</a></li>
+</ul>
+<h2><a name="0.5"></a>Comments</h2>
+<p><em class="em2">FreshMeat:</em> Would you kindly put some notes in here for those of us who only want to proximity trigger double doors? Trying to sort out the damage stuff from the proximity stuff has me confused.</p>
+<p><em class="em2">Wormbo:</em> Only proximity triggering can be done with regular movers and a much simpler setup. I think a good example of proximity-triggered movers is the UT2004 map <a href="http://angelmapper.com/inforeconstruct.htm">[DM-Reconstruct]</a> by AngelMapper, which uses it in a very unique way.</p>
+<p><em class="em2">Tarquin:</em> Indeed. IIRC, you just stick a <a href="trigger.html">Trigger</a> to detect player presence, and change a few settings of the mover.</p>
+<hr class="thin"><p><a href="category-mapping.html">Category Mapping</a><br><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Prerequisites", "#0.1");
+menuItemAdd("Door Movers", "#0.2");
+menuItemAdd("Door Controls", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Open, Wait, Close", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Don't hurt me!", "#0.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Open up wide!", "#0.3.3");
+menuItemAdd("Related Topics", "#0.4");
+menuItemAdd("Comments", "#0.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Proximity-_And_Damage-Triggered_Doors">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Proximity-_And_Damage-Triggered_Doors">View other revisions</a><br>Last edited August 26, 2006 6:53 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Proximity-_And_Damage-Triggered_Doors">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Proximity-_And_Damage-Triggered_Doors">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I'm a doctor, not a mechanic
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

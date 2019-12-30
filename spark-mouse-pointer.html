@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Spark/Mouse Pointer</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Spark/Mouse_Pointer; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="spark.html">Spark</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Spark/Mouse+Pointer">Mouse Pointer</a></h1>
+	<div class="wiki"><p>This page is supposed to document my attempts to create a RTS-like HUD, including (but not limited to) a mouse pointer.</p>
+<p>If everything works well, maybe parts of this can be integrated into the "core" Wiki later.</p>
+<h3><a name="0.0.1"></a>Showing a Mouse Pointer</h3>
+<p>I'm going to use a subclassed HUD for this. It seems like a clean choice to me and I don't think there is any disadvantage to an interaction other than that I need a gametype for this.</p>
+<p>First I simply want a pointer to show up, this part is pretty easy. I start by defining a var for the cursor (<tt>var SpriteWidget Cursor</tt>) and adding a texture to it in the defaultproperties (<tt>Cursor=(WidgetTexture=Material'Crosshairs.Hud.Crosshair_Cross1',TextureCoords= .. and so on)</tt>). Later I will probably do my own texture or even make it context sensitive.</p>
+<p>The next step is to draw this cursor. For this I made a simple function (so I can easily extend this later):</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> DrawCursor <span class="uscript-operator">(</span>Canvas C<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    DrawSpriteWidget <span class="uscript-operator">(</span>C<span class="uscript-operator">,</span> Cursor<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Just like a crosshair, just incredible simple. I call this function from the end of DrawHudPassC, just like a crosshair (but I don't render a usual crosshair of course, this wouldn't make sense. Besides of this, my HUD is completely empty.</p>
+<p>Next this mouse pointer needs to be moved to it's right location, this shouldn't be difficult.</p>
+<p>We can simply use the WindowsMouseX and WindowsMouseY values of the Player class which lives in PlayerController. To place our SpriteWidget at this location, we can use this simply code:</p>
+<pre class="uscript">    Cursor<span class="uscript-operator">.</span>PosX <span class="uscript-operator">=</span> PlayerOwner<span class="uscript-operator">.</span>Player<span class="uscript-operator">.</span>WindowsMouseX <span class="uscript-operator">/</span> C<span class="uscript-operator">.</span>ClipX<span class="uscript-operator">;</span>
+    Cursor<span class="uscript-operator">.</span>PosY <span class="uscript-operator">=</span> PlayerOwner<span class="uscript-operator">.</span>Player<span class="uscript-operator">.</span>WindowsMouseY <span class="uscript-operator">/</span> C<span class="uscript-operator">.</span>ClipY<span class="uscript-operator">;</span></pre><p>I divide by canvas size because the SpriteWidget struct obviously expects a scaled float value between 0 and 1.</p>
+<p>There is a small bug it seems, as both values stop a bit too early (at least in 1024x768 it only goes until 1015x740). Once I change a random setting in the menu and click on "Apply changes", this is fixed so it looks like an engine bug.</p>
+<p>Besides of this, it works very well. However, I'm not really satisfied as this somehow creates a "second cursor" to the menu cursor (which uses a different sensitivity and doesn't share the same location). It would be favorable to have a common cursor for both the menu and the game. Another way is to use a blank GUI page.</p>
+<h3><a name="0.0.2"></a>Using a GUIPage</h3>
+<p>Using the GUI system to draw the mouse (and control the game) has a few advantages, but unfortunately a few disadvantages as well. The advantages are:</p>
+<ul><li>You can use MouseX and MouseY of the GUIController. It shares the same position and sensitivity with the menu mouse pointer.</li>
+<li>Standard input and exec functions aren't active (can't be executed), this might come in handy if you want to allow both first person controls and RTS controls without key binding headaches for the user.</li>
+<li>All GUI elements are available to be drawn and used on the screen, so you don't have to create your own buttons and similar controls.</li>
+</ul>
+<p>The disadvantages (that I know about) are:</p>
+<ul><li>Standard input and exec functions aren't active...</li>
+<li>While you can catch almost every possible key event with the "OnKeyEvent" delegate, it could be a PITA because the key and state is passed in as a byte, not a convenient enumeration. So if you want to check for the "Mousewheel Up pressed" event, you have to check for key "0xEC" and state "1". Have fun doing this for 50 keys. <img alt=":)" src="emoticons/smile.gif" align="middle"> Making those keys all configurable would be even more of a PITA. This might all not be too much of a problem though, considering that RTS games are usually almost completely controlled by the mouse anyway. Implementing a few keys and shortcuts might be sufficient. It would be more convenient though if we could use an interaction for this task.</li>
+<li>The GUI code is to a large part engine controlled, so there might be unforseen troubles (I hope not...).</li>
+</ul>
+<p>Enough rambling, here is how to do it (straight and to the point):</p>
+<h4><a name="0.0.2.1"></a>Create a blank GUI page</h4>
+<p>Subclass GUIPage and set the following default properties (some of them are redundant):</p>
+<pre class="uscript">bAcceptsInput<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+bCaptureMouse<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+bRequire640x480<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+bAllowedAsLast<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+bPauseIfPossible<span class="uscript-operator">=</span><span class="uscript-keyword">false</span></pre><p>Make sure that you open this GUI page when going into strategy view (for example with ClientOpenMenu in your PlayerController).</p>
+<h4><a name="0.0.2.2"></a>Work around to get mouse input</h4>
+<p>Unfortunately I couldn't make my GUIPage really capture mouse events (when clicking anywhere on the screen). As a workaround, I create one hugeass transparent control all over the screen. I use this solely for the purpose of catching mouse events. To do this, add the following to the defaultprops of your GUIPage:</p>
+<pre class="uscript">    Begin Object <span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>GUIButton <span class="uscript-type">Name</span><span class="uscript-operator">=</span>InputControl
+        WinTop <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">2</span><span class="uscript-operator">;</span>    <span class="uscript-comment">// Ugly hack to make the control always catch mouse events</span>
+        WinLeft <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">2</span><span class="uscript-operator">;</span>
+        WinHeight <span class="uscript-operator">=</span> <span class="uscript-number">9999</span><span class="uscript-operator">;</span>
+        WinWidth <span class="uscript-operator">=</span> <span class="uscript-number">9999</span><span class="uscript-operator">;</span>
+        StyleName<span class="uscript-operator">=</span><span class="uscript-string">"NoBackground"</span>
+        OnMousePressed<span class="uscript-operator">=</span>InternalOnMousePressed
+        OnMouseRelease<span class="uscript-operator">=</span>InternalOnMouseRelease
+    End Object
+    Controls<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>GUIButton<span class="uscript-name">'InputControl'</span></pre><p>The weird seizes are because of another problem. If I use 0.0 for top and left and 1.0 for height and width (which should mean all of the screen), then the outermost pixels don't react to mouse events. Setting the borders out of the screen works (until we have monitors rendering more than tenthousand pixels).</p>
+<p>OnMousePressed and OnMouseRelease are both delegates<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Delegates&referrerid=Spark/Mouse_Pointer">?</a> which will call the appropriate function if this event occurs. InternalOnMousePressed and InternalOnMouseRelease are my functions to handle these events. Note that both functions are defined in our GUIPage, as the button control is inline.</p>
+<h4><a name="0.0.2.3"></a>Handling key events</h4>
+<p>To get key events (which actually includes axis moving like moving the mouse and mouse buttons other than the first), we use the "OnKeyEvent" delegates, but this time we use the one of the GUIPage because it will capture all key input. So add the following to your defaultprops: <tt>OnKeyEvent=InternalOnKeyEvent</tt> and don't forget to implement this function. To see how all those three functions are declared (your headers have to match for this to work), I suggest a look at <a href="guicomponent.html">GUIComponent</a>. To get more informationen about delegates, the <a href="http://udn.epicgames.com">[UDN]</a> can help.</p>
+<h3><a name="0.0.3"></a>Implementing mouse scrolling</h3>
+<p>A common feature of every RTS game is, that you can scroll the view by moving the mouse pointer to an edge of the screen. This was really easy to reimplement. When using the GUIPage method, just check for "Player.GUIController.MouseX" (and .MouseY respectively) in your PlayerMove function and make the player move accordingly. The only interesting thing is, that there doesn't seem to be a simple way to get the current screen resolution (to check weither the mouse has hit an edge). I found the easiest way to work around this to copy the "Canvas.ClipX" and "Canvas.ClipY" values of the HUD to variables in the PlayerController.</p>
+<h3><a name="0.0.4"></a>Implementing a selection rect</h3>
+<p>This will not tell you how to select units inside of a certain rectangle but how to draw it. Everyone knows this feature from Windows, etc. Implementing this is fairly straightforward again.</p>
+<p>First I created three new variables in my PlayerController, those are "bMousePressed", "SelectionRectStartX" and "SelectionRectStartY". Now in the <em class="em2">InternalOnMousePressed</em> function, I set bMousePressed to true and SelectionRectStartX/Y to the current mouse position, but only if bMousePressed wasn't true before (because this event is executes repeatedly while holding down the mousebutton).</p>
+<p>In <em class="em2">InternalOnMouseRelease</em> I simply set bMousePressed to false again. This would be the place to fire a "SelectRectUnits()" function or something like that.</p>
+<p>In my HUD code, I have a function to draw the selection rectangle. This simply checks weither bMousePressed is true and weither the current mouseposition differs from th starting positions. If yes, then I use the different drawing functions of the HUD (the Canvas to be exact) to render a simple rectangel from the start positions to the current position. </p>
+<h3><a name="0.0.5"></a>Comments</h3>
+<p><em class="em2">DJPaul</em>: The mouse the HUD uses is rendered by something like Player.Viewport.bShowMouseCursor, but you won't find the Viewport class normally (cos it's a native 'un).  UEd won't let me view it either.  This sodding wiki's <a href="viewport.html">Viewport</a> page is a load of bollocks, too &gt;:O</p>
+<p>Also, i'm not sure this page is the correct place for this.  Perhaps a Developer's Journal, or the <a href="help-desk.html">Help Desk</a> might be more appropiate.  When you've the details knocked out, feel free to add pertinate information somewhere relevant (the <a href="hudbase.html">HudBase</a> page?).</p>
+<p><em class="em2">Spark</em>: But you <em class="em2">are</em> reading my Developer's Journal right now. <img alt=":)" src="emoticons/smile.gif" align="middle"> You just can't make subpages from <a href="spark-developer-journal.html">Spark/Developer Journal</a>, so it's <a href="spark-mouse-pointer.html">Spark/Mouse Pointer</a> while in fact it would be more like Developer Journals/Spark/Mouse Pointer. <img alt=":)" src="emoticons/smile.gif" align="middle"> It's linked from my journal page.</p>
+<p>And trying to access anything of Player.Viewport results in a "unrecognized member" error. Viewport(Player) works though but there is no bShowMouseCursor and no bShowMousePointer. There is a bShowWindowsMouse in the Player class, but this one never had any effect for me.</p>
+<p><em class="em2">DJPaul:</em> I think that is waht I mean.  I have not tried using it on 2003, but it works with old UT in-game.</p>
+<p><em class="em2">Spark:</em> Ok, I go for the blank GUIPage for now because it works fairly well and hope that it won't be the wrong decision in the long run. <img alt=":)" src="emoticons/smile.gif" align="middle"> I will try to keep everything clean and as abstract as possible, just in case. Now I can finally work on the fun part, selecting and commanding units.</p>
+<p><em class="em2">NickR:</em> One problem I have is that I need to be able to use the console at the same time as using a mouse pointer. I want to be able to bind a key to go from the regular control scheme to then using a mouse and not have control over my player via my regular keys. But could that be the reason why the console doesn't work? Because all input events don't get called when a GUI Page is present?</p>
+<p>BTW bShowMouseCursor is declared in the Player Class. So you would use Player.bShowMouseCursor not Player.Viewport.bShowMouseCursor</p>
+<p>I believe Viewport is a tiny mini class (for lack of better term).  It calls the players viewport to bShowMouseCursor instead of just the player.  Or at least... that's how I think it works <img alt="O_o" src="emoticons/ohoh.gif" align="middle">... it could just be the same thing...Player.bShowMouseCursor  and  Player.Viewport.bShowMouseCursor <img alt=";)" src="emoticons/wink.gif" align="middle"></p>
+<p><em class="em2">Foxpaw:</em> Interesting thing about viewport, it isn't really a class at all, but it's interpreted as one natively. "Viewport" is a "subclass" of Player, and refers to a local player. "NetConnection" is also a "subclass" of Player, and refers to a remote player. However, neither is truly a class, but the compiler recognizes it as a class, even though it isn't really one. <img alt=":rolleyes:" src="emoticons/rolleyes.gif" align="middle"> The distinction is handled natively by the replication code.</p>
+<p><em class="em2">Pingz:</em>  A little late, but if your trying to get the screen resolution without having access to a Canvas.</p>
+<pre class="uscript">  Screen<span class="uscript-operator">.</span>x <span class="uscript-operator">=</span> myHUD<span class="uscript-operator">.</span>ResScaleX <span class="uscript-operator">*</span> <span class="uscript-number">640</span><span class="uscript-operator">;</span>
+  Screen<span class="uscript-operator">.</span>y <span class="uscript-operator">=</span> myHUD<span class="uscript-operator">.</span>ResScaleY <span class="uscript-operator">*</span> <span class="uscript-number">480</span><span class="uscript-operator">;</span></pre><p>ResScaleX/Y is set in Hud.PostRender().</p>
+<p><em class="em2">porkmanii:</em> You could also use the GetCurrentRes console command.  The GUI uses this in a couple places.  It returns a string like "1280x1024".</p>
+<pre class="uscript">  CurrentRes <span class="uscript-operator">=</span> PlayerOwner<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>ConsoleCommand<span class="uscript-operator">(</span><span class="uscript-string">"GETCURRENTRES"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p><em class="em2">EricBlade:</em> Here's a UDN page on this very topic: <a href="http://udn.epicgames.com/Two/MouseCursorInterface">http://udn.epicgames.com/Two/MouseCursorInterface</a> ..  I've plugged it's code in to try it out, and it works fantastically, but I can't think of any use for it for me. <img alt=":D" src="emoticons/biggrin.gif" align="middle"></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Showing a Mouse Pointer", "#0.0.1");
+menuItemAdd("Using a GUIPage", "#0.0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Create a blank GUI page", "#0.0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Work around to get mouse input", "#0.0.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Handling key events", "#0.0.2.3");
+menuItemAdd("Implementing mouse scrolling", "#0.0.3");
+menuItemAdd("Implementing a selection rect", "#0.0.4");
+menuItemAdd("Comments", "#0.0.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="spark.html">Spark</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Spark/Mouse_Pointer">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Spark/Mouse_Pointer">View other revisions</a><br>Last edited January 9, 2007 2:11 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Spark/Mouse_Pointer">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Spark/Mouse_Pointer">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>The three virtues of a programmer: Laziness, Impatience, and Hubris. (Larry Wall)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

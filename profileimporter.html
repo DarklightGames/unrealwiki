@@ -1,0 +1,648 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: ProfileImporter</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=ProfileImporter; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=ProfileImporter">ProfileImporter</a></h1>
+	<div class="wiki"><div class="classpath"><img src="shared//gameicons/icon-ut2003.png"> <a href="unreal-tournament-2003.html">UT2003</a> :: <a href="object.html">Object</a> &gt;&gt; <a href="actor.html">Actor</a> &gt;&gt; <a href="info.html">Info</a> &gt;&gt; <a href="internetinfo.html">InternetInfo</a> &gt;&gt; <a href="internetlink.html">InternetLink</a> &gt;&gt; <a href="tcplink.html">TcpLink</a> &gt;&gt; ProfileImporter (<a href="ladder1-46.html">Ladder1.46</a>)<br></div>
+<pre class="uscript"><span class="uscript-line">00001</span>  <span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-line">00002</span>  <span class="uscript-comment">//  Ladder.ProfileImporter</span>
+<span class="uscript-line">00003</span>  <span class="uscript-comment">//</span>
+<span class="uscript-line">00004</span>  <span class="uscript-comment">//  Handles all communication with foreign servers containing</span>
+<span class="uscript-line">00005</span>  <span class="uscript-comment">//  exported profile information</span>
+<span class="uscript-line">00006</span>  <span class="uscript-comment">//  Stores remote profile URL locations</span>
+<span class="uscript-line">00007</span>  <span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-line">00008</span>  <span class="uscript-keyword">class</span> ProfileImporter <span class="uscript-keyword">extends</span> TcpLink <span class="uscript-keyword">config</span><span class="uscript-operator">(</span>LadderProfiles<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00009</span>  
+<span class="uscript-line">00010</span>  <span class="uscript-keyword">const</span> LOGTAG <span class="uscript-operator">=</span> <span class="uscript-name">'ProfileImport'</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00011</span>  
+<span class="uscript-line">00012</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">enum</span> EImportResult
+<span class="uscript-line">00013</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00014</span>      IMPORT_BadURL<span class="uscript-operator">,</span>          <span class="uscript-comment">// Incorrect URL format</span>
+<span class="uscript-line">00015</span>      IMPORT_ResolveError<span class="uscript-operator">,</span>    <span class="uscript-comment">// Couldn't resolve URL</span>
+<span class="uscript-line">00016</span>      IMPORT_BindError<span class="uscript-operator">,</span>       <span class="uscript-comment">// Couldn't bind port</span>
+<span class="uscript-line">00017</span>      IMPORT_InvalidProfile<span class="uscript-operator">,</span>  <span class="uscript-comment">// File was not a profile</span>
+<span class="uscript-line">00018</span>      IMPORT_TimeOut<span class="uscript-operator">,</span>         <span class="uscript-comment">// Timed out waiting</span>
+<span class="uscript-line">00019</span>      IMPORT_ServerError<span class="uscript-operator">,</span>     <span class="uscript-comment">// Unspecified Foreign Host Error</span>
+<span class="uscript-line">00020</span>      IMPORT_BadRequest<span class="uscript-operator">,</span>      <span class="uscript-comment">// Receieved 400 Error</span>
+<span class="uscript-line">00021</span>      IMPORT_Unauthorized<span class="uscript-operator">,</span>    <span class="uscript-comment">// Receieved 401 Error</span>
+<span class="uscript-line">00022</span>      IMPORT_Forbidden<span class="uscript-operator">,</span>       <span class="uscript-comment">// Receieved 403 Error</span>
+<span class="uscript-line">00023</span>      IMPORT_NotFound<span class="uscript-operator">,</span>        <span class="uscript-comment">// Receieved 404 Error</span>
+<span class="uscript-line">00024</span>      IMPORT_Success          <span class="uscript-comment">// Profile Successfully Imported</span>
+<span class="uscript-line">00025</span>  <span class="uscript-operator">}</span> ImportResult<span class="uscript-operator">;</span>
+<span class="uscript-line">00026</span>  
+<span class="uscript-line">00027</span>  <span class="uscript-keyword">var</span> <span class="uscript-type">bool</span>                bWaiting<span class="uscript-operator">;</span>       <span class="uscript-comment">//Waiting for ImportResult</span>
+<span class="uscript-line">00028</span>  
+<span class="uscript-line">00029</span>  <span class="uscript-keyword">struct</span> ZipLocation
+<span class="uscript-line">00030</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00031</span>      <span class="uscript-keyword">var</span> <span class="uscript-type">string</span> ProfileURL<span class="uscript-operator">;</span>
+<span class="uscript-line">00032</span>      <span class="uscript-keyword">var</span> <span class="uscript-type">string</span> ZipName<span class="uscript-operator">;</span>
+<span class="uscript-line">00033</span>      <span class="uscript-keyword">var</span> <span class="uscript-type">string</span> ZipURL<span class="uscript-operator">;</span>
+<span class="uscript-line">00034</span>  <span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00035</span>  
+<span class="uscript-line">00036</span>  <span class="uscript-keyword">var</span> IpAddr              ServerIP<span class="uscript-operator">;</span>
+<span class="uscript-line">00037</span>  <span class="uscript-keyword">var</span> LadderGameRules     LadderRules<span class="uscript-operator">;</span>
+<span class="uscript-line">00038</span>  <span class="uscript-keyword">var</span> ProfileConfigSet    RemoteProfile<span class="uscript-operator">;</span>
+<span class="uscript-line">00039</span>  <span class="uscript-keyword">var</span> LadderQuery         QueryPage<span class="uscript-operator">;</span>
+<span class="uscript-line">00040</span>  
+<span class="uscript-line">00041</span>  <span class="uscript-keyword">var</span> Session             ImportS<span class="uscript-operator">;</span>
+<span class="uscript-line">00042</span>  <span class="uscript-keyword">var</span> WebRequest          QueryRequest<span class="uscript-operator">;</span>
+<span class="uscript-line">00043</span>  <span class="uscript-keyword">var</span> WebResponse         QueryResponse<span class="uscript-operator">;</span>
+<span class="uscript-line">00044</span>  
+<span class="uscript-line">00045</span>  <span class="uscript-keyword">var</span> <span class="uscript-type">string</span>              Buffer<span class="uscript-operator">;</span>
+<span class="uscript-line">00046</span>  <span class="uscript-keyword">var</span> <span class="uscript-type">string</span>              Header<span class="uscript-operator">;</span>
+<span class="uscript-line">00047</span>  <span class="uscript-keyword">var</span> <span class="uscript-type">string</span>              LF<span class="uscript-operator">;</span>     <span class="uscript-comment">// Line Feed</span>
+<span class="uscript-line">00048</span>  <span class="uscript-keyword">var</span> <span class="uscript-type">string</span>              CR<span class="uscript-operator">;</span>     <span class="uscript-comment">// Carriage Return</span>
+<span class="uscript-line">00049</span>  <span class="uscript-keyword">var</span> <span class="uscript-type">string</span>              Token<span class="uscript-operator">;</span>  <span class="uscript-comment">// Token Delimiter</span>
+<span class="uscript-line">00050</span>  
+<span class="uscript-line">00051</span>  <span class="uscript-keyword">var</span> <span class="uscript-type">string</span>              ProfileServerAddress<span class="uscript-operator">;</span>
+<span class="uscript-line">00052</span>  <span class="uscript-keyword">var</span> <span class="uscript-type">string</span>              RemoteProfilePath<span class="uscript-operator">;</span>
+<span class="uscript-line">00053</span>  
+<span class="uscript-line">00054</span>  <span class="uscript-comment">// Localized strings</span>
+<span class="uscript-line">00055</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span>    BeginImportText<span class="uscript-operator">;</span>
+<span class="uscript-line">00056</span>  
+<span class="uscript-line">00057</span>  <span class="uscript-comment">// Localized error messages</span>
+<span class="uscript-line">00058</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span>    ErrorText<span class="uscript-operator">;</span>
+<span class="uscript-line">00059</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span>    ErrorURLText<span class="uscript-operator">;</span>
+<span class="uscript-line">00060</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span>    ErrorResolvingText<span class="uscript-operator">;</span>
+<span class="uscript-line">00061</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span>    ErrorBindingText<span class="uscript-operator">;</span>
+<span class="uscript-line">00062</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span>    ErrorTimeoutText<span class="uscript-operator">;</span>
+<span class="uscript-line">00063</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span>    ErrorFNFText<span class="uscript-operator">;</span>
+<span class="uscript-line">00064</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span>    ErrorBadRequestText<span class="uscript-operator">;</span>
+<span class="uscript-line">00065</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span>    ErrorUnauthorizedText<span class="uscript-operator">;</span>
+<span class="uscript-line">00066</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span>    ErrorForbiddenText<span class="uscript-operator">;</span>
+<span class="uscript-line">00067</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span>    ErrorNoSession<span class="uscript-operator">;</span>
+<span class="uscript-line">00068</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span>    ErrorNoBuffer<span class="uscript-operator">;</span>
+<span class="uscript-line">00069</span>  
+<span class="uscript-line">00070</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span>    BadImportURLText<span class="uscript-operator">;</span>
+<span class="uscript-line">00071</span>  
+<span class="uscript-line">00072</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">config</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>ZipLocation<span class="uscript-operator">&gt;</span>   RemoteZips<span class="uscript-operator">;</span> <span class="uscript-comment">// Remote profile zips locations</span>
+<span class="uscript-line">00073</span>  
+<span class="uscript-line">00074</span>  <span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00075</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00076</span>      <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00077</span>      Disable<span class="uscript-operator">(</span><span class="uscript-name">'Tick'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00078</span>  
+<span class="uscript-line">00079</span>      LF <span class="uscript-operator">=</span> Chr<span class="uscript-operator">(</span><span class="uscript-number">10</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00080</span>      CR <span class="uscript-operator">=</span> Chr<span class="uscript-operator">(</span><span class="uscript-number">13</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00081</span>      Token <span class="uscript-operator">=</span> Chr<span class="uscript-operator">(</span><span class="uscript-number">21</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00082</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00083</span>  
+<span class="uscript-line">00084</span>  <span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span>
+<span class="uscript-line">00085</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00086</span>      <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Tick<span class="uscript-operator">(</span>DeltaTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00087</span>  
+<span class="uscript-line">00088</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>bWaiting<span class="uscript-operator">)</span>
+<span class="uscript-line">00089</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00090</span>          <span class="uscript-comment">// Finish importing profile data, let LadderQuery finish sending page</span>
+<span class="uscript-line">00091</span>          QueryPage<span class="uscript-operator">.</span>RemoteImport<span class="uscript-operator">(</span><span class="uscript-keyword">Self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00092</span>          Disable<span class="uscript-operator">(</span><span class="uscript-name">'Tick'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00093</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00094</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00095</span>  
+<span class="uscript-line">00096</span>  <span class="uscript-keyword">function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00097</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00098</span>      log<span class="uscript-operator">(</span>ErrorTimeoutText <span class="uscript-operator">@</span> ProfileServerAddress<span class="uscript-operator">,</span>LOGTAG<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00099</span>      ImportResult <span class="uscript-operator">=</span> IMPORT_Timeout<span class="uscript-operator">;</span>
+<span class="uscript-line">00100</span>      bWaiting <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00101</span>  
+<span class="uscript-line">00102</span>  <span class="uscript-comment">// Manually close the connection since</span>
+<span class="uscript-line">00103</span>  <span class="uscript-comment">// we didn't receive a response</span>
+<span class="uscript-line">00104</span>      Close<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00105</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00106</span>  
+<span class="uscript-line">00107</span>  <span class="uscript-comment">// Called from the Management Portal page</span>
+<span class="uscript-line">00108</span>  <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> Connect<span class="uscript-operator">(</span><span class="uscript-type">string</span> ProfileURL<span class="uscript-operator">,</span> Session TempS<span class="uscript-operator">)</span>
+<span class="uscript-line">00109</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00110</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> L<span class="uscript-operator">,</span> R<span class="uscript-operator">;</span>
+<span class="uscript-line">00111</span>  
+<span class="uscript-line">00112</span>      bWaiting <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00113</span>      Enable<span class="uscript-operator">(</span><span class="uscript-name">'Tick'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00114</span>  
+<span class="uscript-line">00115</span>      log<span class="uscript-operator">(</span> BeginImportText <span class="uscript-operator">@</span> ProfileURL<span class="uscript-operator">,</span> LOGTAG<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00116</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Left<span class="uscript-operator">(</span>ProfileURL<span class="uscript-operator">,</span> <span class="uscript-number">7</span><span class="uscript-operator">)</span> <span class="uscript-operator">~=</span> <span class="uscript-string">"http://"</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00117</span>          ProfileServerAddress <span class="uscript-operator">=</span> ParseDelimited<span class="uscript-operator">(</span>ProfileURL<span class="uscript-operator">,</span><span class="uscript-string">"/"</span><span class="uscript-operator">,</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00118</span>      <span class="uscript-keyword">else</span>
+<span class="uscript-line">00119</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00120</span>          log<span class="uscript-operator">(</span> ErrorURLText <span class="uscript-operator">@</span> <span class="uscript-string">"\"http://\"!"</span><span class="uscript-operator">,</span> LOGTAG<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00121</span>          ImportResult <span class="uscript-operator">=</span> IMPORT_BadURL<span class="uscript-operator">;</span>
+<span class="uscript-line">00122</span>          bWaiting <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00123</span>          <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00124</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00125</span>  
+<span class="uscript-line">00126</span>      ServerIP<span class="uscript-operator">.</span>Port <span class="uscript-operator">=</span> <span class="uscript-number">80</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00127</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>InStr<span class="uscript-operator">(</span>ProfileServerAddress<span class="uscript-operator">,</span> <span class="uscript-string">":"</span><span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00128</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00129</span>          Divide<span class="uscript-operator">(</span>ProfileServerAddress<span class="uscript-operator">,</span> <span class="uscript-string">":"</span><span class="uscript-operator">,</span> L<span class="uscript-operator">,</span> R<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00130</span>          ProfileServerAddress <span class="uscript-operator">=</span> L<span class="uscript-operator">;</span>
+<span class="uscript-line">00131</span>          ServerIP<span class="uscript-operator">.</span>Port <span class="uscript-operator">=</span> <span class="uscript-type">int</span><span class="uscript-operator">(</span>R<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00132</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00133</span>  
+<span class="uscript-line">00134</span>      RemoteProfilePath <span class="uscript-operator">=</span> <span class="uscript-string">"/"</span> <span class="uscript-operator">$</span> ParseDelimited<span class="uscript-operator">(</span>ProfileURL<span class="uscript-operator">,</span><span class="uscript-string">"/"</span><span class="uscript-operator">,</span><span class="uscript-number">4</span><span class="uscript-operator">,</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00135</span>  
+<span class="uscript-line">00136</span>      Buffer <span class="uscript-operator">=</span> <span class="uscript-string">""</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00137</span>      SetTimer<span class="uscript-operator">(</span><span class="uscript-number">20.0</span><span class="uscript-operator">,</span> <span class="uscript-keyword">False</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00138</span>      ImportS <span class="uscript-operator">=</span> TempS<span class="uscript-operator">;</span>
+<span class="uscript-line">00139</span>      Resolve<span class="uscript-operator">(</span> ProfileServerAddress <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00140</span>      <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00141</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00142</span>  
+<span class="uscript-line">00143</span>  <span class="uscript-keyword">event</span> ResolveFailed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00144</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00145</span>      log<span class="uscript-operator">(</span> ErrorResolvingText <span class="uscript-operator">@</span> ProfileServerAddress<span class="uscript-operator">,</span> LOGTAG<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00146</span>      ImportResult <span class="uscript-operator">=</span> IMPORT_ResolveError<span class="uscript-operator">;</span>
+<span class="uscript-line">00147</span>      bWaiting <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00148</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00149</span>  
+<span class="uscript-line">00150</span>  <span class="uscript-keyword">event</span> Resolved<span class="uscript-operator">(</span>IpAddr NumericIP<span class="uscript-operator">)</span>
+<span class="uscript-line">00151</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00152</span>      <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> NumericIP<span class="uscript-operator">.</span>Addr <span class="uscript-operator">==</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+<span class="uscript-line">00153</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00154</span>          log<span class="uscript-operator">(</span> ErrorResolvingText <span class="uscript-operator">@</span> ProfileServerAddress<span class="uscript-operator">,</span> LOGTAG<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00155</span>          ImportResult <span class="uscript-operator">=</span> IMPORT_ResolveError<span class="uscript-operator">;</span>
+<span class="uscript-line">00156</span>          bWaiting <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00157</span>          <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00158</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00159</span>      ServerIP<span class="uscript-operator">.</span>Addr <span class="uscript-operator">=</span> NumericIP<span class="uscript-operator">.</span>Addr<span class="uscript-operator">;</span>
+<span class="uscript-line">00160</span>  
+<span class="uscript-line">00161</span>      <span class="uscript-comment">// Bind the local port.</span>
+<span class="uscript-line">00162</span>      <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> BindPort<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+<span class="uscript-line">00163</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00164</span>          log<span class="uscript-operator">(</span> ErrorBindingText<span class="uscript-operator">,</span> LOGTAG<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00165</span>          ImportResult <span class="uscript-operator">=</span> IMPORT_BindError<span class="uscript-operator">;</span>
+<span class="uscript-line">00166</span>          bWaiting <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00167</span>          <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00168</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00169</span>  <span class="uscript-comment">// Everything went OK - proceed to open connection</span>
+<span class="uscript-line">00170</span>      Open<span class="uscript-operator">(</span> ServerIP <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00171</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00172</span>  
+<span class="uscript-line">00173</span>  <span class="uscript-keyword">event</span> Opened<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00174</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00175</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>LinkMode <span class="uscript-operator">!=</span> MODE_Line<span class="uscript-operator">)</span>
+<span class="uscript-line">00176</span>          LinkMode <span class="uscript-operator">=</span> MODE_Line<span class="uscript-operator">;</span>
+<span class="uscript-line">00177</span>  
+<span class="uscript-line">00178</span>      SetTimer<span class="uscript-operator">(</span><span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-keyword">False</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>       <span class="uscript-comment">// Stop timeout counter</span>
+<span class="uscript-line">00179</span>  
+<span class="uscript-line">00180</span>      <span class="uscript-comment">// Check header of file first, to make sure it's a valid file</span>
+<span class="uscript-line">00181</span>      RequestFile<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00182</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00183</span>  
+<span class="uscript-line">00184</span>  <span class="uscript-comment">// Connection was closed by foreign host - Check header for response code</span>
+<span class="uscript-line">00185</span>  <span class="uscript-keyword">event</span> Closed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00186</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00187</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> Result<span class="uscript-operator">;</span>
+<span class="uscript-line">00188</span>  
+<span class="uscript-line">00189</span>  <span class="uscript-comment">// First find header and respond accordingly</span>
+<span class="uscript-line">00190</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>SeperateHeaders<span class="uscript-operator">(</span>Buffer<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00191</span>          Result <span class="uscript-operator">=</span> ProcessHeaders<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00192</span>      <span class="uscript-keyword">else</span>
+<span class="uscript-line">00193</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00194</span>          ImportResult <span class="uscript-operator">=</span> IMPORT_ServerError<span class="uscript-operator">;</span>
+<span class="uscript-line">00195</span>          bWaiting <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00196</span>          <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00197</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00198</span>  
+<span class="uscript-line">00199</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Result <span class="uscript-operator">==</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00200</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00201</span>          ImportResult <span class="uscript-operator">=</span> IMPORT_ServerError<span class="uscript-operator">;</span>
+<span class="uscript-line">00202</span>          bWaiting <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00203</span>          <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00204</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00205</span>  
+<span class="uscript-line">00206</span>   <span class="uscript-comment">/*    Possible Response Codes:
+<span class="uscript-line">00207</span>          "200"   ; OK
+<span class="uscript-line">00208</span>          "201"   ; Created
+<span class="uscript-line">00209</span>          "202"   ; Accepted
+<span class="uscript-line">00210</span>          "204"   ; No Content
+<span class="uscript-line">00211</span>          "301"   ; Moved Permanently
+<span class="uscript-line">00212</span>          "302"   ; Moved Temporarily
+<span class="uscript-line">00213</span>          "304"   ; Not Modified
+<span class="uscript-line">00214</span>          "400"   ; Bad Request
+<span class="uscript-line">00215</span>          "401"   ; Unauthorized
+<span class="uscript-line">00216</span>          "403"   ; Forbidden
+<span class="uscript-line">00217</span>          "404"   ; Not Found
+<span class="uscript-line">00218</span>          "500"   ; Internal Server Error
+<span class="uscript-line">00219</span>          "501"   ; Not Implemented
+<span class="uscript-line">00220</span>          "502"   ; Bad Gateway
+<span class="uscript-line">00221</span>          "503"   ; Service Unavailable
+<span class="uscript-line">00222</span>  */</span>
+<span class="uscript-line">00223</span>      <span class="uscript-keyword">switch</span> <span class="uscript-operator">(</span>Result<span class="uscript-operator">)</span>
+<span class="uscript-line">00224</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00225</span>      <span class="uscript-keyword">case</span> <span class="uscript-string">"200"</span>:
+<span class="uscript-line">00226</span>      <span class="uscript-comment">// Buffer should now only contain the actual document</span>
+<span class="uscript-line">00227</span>      <span class="uscript-comment">// Fill ImportS from document info</span>
+<span class="uscript-line">00228</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FillSessionInfo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00229</span>              ImportResult <span class="uscript-operator">=</span> IMPORT_Success<span class="uscript-operator">;</span>
+<span class="uscript-line">00230</span>          <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00231</span>      <span class="uscript-keyword">case</span> <span class="uscript-string">"400"</span>:
+<span class="uscript-line">00232</span>          log<span class="uscript-operator">(</span> ErrorBadRequestText<span class="uscript-operator">,</span> LOGTAG<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00233</span>          ImportResult <span class="uscript-operator">=</span> IMPORT_BadRequest<span class="uscript-operator">;</span>
+<span class="uscript-line">00234</span>          <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00235</span>      <span class="uscript-keyword">case</span> <span class="uscript-string">"401"</span>:
+<span class="uscript-line">00236</span>          log<span class="uscript-operator">(</span> ErrorUnauthorizedText<span class="uscript-operator">,</span> LOGTAG<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00237</span>          ImportResult <span class="uscript-operator">=</span> IMPORT_Unauthorized<span class="uscript-operator">;</span>
+<span class="uscript-line">00238</span>          <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00239</span>      <span class="uscript-keyword">case</span> <span class="uscript-string">"403"</span>:
+<span class="uscript-line">00240</span>          log<span class="uscript-operator">(</span> ErrorForbiddenText<span class="uscript-operator">,</span> LOGTAG<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00241</span>          ImportResult <span class="uscript-operator">=</span> IMPORT_Forbidden<span class="uscript-operator">;</span>
+<span class="uscript-line">00242</span>          <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00243</span>      <span class="uscript-keyword">default</span>:
+<span class="uscript-line">00244</span>          log<span class="uscript-operator">(</span> ErrorFNFText<span class="uscript-operator">,</span> LOGTAG<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00245</span>          ImportResult <span class="uscript-operator">=</span> IMPORT_NotFound<span class="uscript-operator">;</span>
+<span class="uscript-line">00246</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00247</span>      bWaiting <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00248</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00249</span>  
+<span class="uscript-line">00250</span>  <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> FillSessionInfo<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00251</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00252</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> Line<span class="uscript-operator">;</span>
+<span class="uscript-line">00253</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> Type<span class="uscript-operator">;</span>
+<span class="uscript-line">00254</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> Info<span class="uscript-operator">;</span>
+<span class="uscript-line">00255</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> bValidProfile<span class="uscript-operator">;</span>
+<span class="uscript-line">00256</span>  
+<span class="uscript-line">00257</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> Token1<span class="uscript-operator">,</span> Token2<span class="uscript-operator">,</span> Token3<span class="uscript-operator">,</span> Token4<span class="uscript-operator">,</span> Token5<span class="uscript-operator">,</span> Token6<span class="uscript-operator">,</span> Token7<span class="uscript-operator">;</span>
+<span class="uscript-line">00258</span>  
+<span class="uscript-line">00259</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ImportS <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00260</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00261</span>          log<span class="uscript-operator">(</span> ErrorNoSession<span class="uscript-operator">,</span> LOGTAG<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00262</span>          ImportResult <span class="uscript-operator">=</span> IMPORT_ServerError<span class="uscript-operator">;</span>
+<span class="uscript-line">00263</span>          <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00264</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00265</span>  
+<span class="uscript-line">00266</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Buffer <span class="uscript-operator">==</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00267</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00268</span>          log<span class="uscript-operator">(</span>ErrorNoBuffer<span class="uscript-operator">,</span> LOGTAG<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00269</span>          ImportResult <span class="uscript-operator">=</span> IMPORT_ServerError<span class="uscript-operator">;</span>
+<span class="uscript-line">00270</span>          <span class="uscript-keyword">return</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00271</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00272</span>      <span class="uscript-keyword">else</span>
+<span class="uscript-line">00273</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00274</span>          <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Left<span class="uscript-operator">(</span>Buffer<span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">~=</span> CR<span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>Left<span class="uscript-operator">(</span>Buffer<span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">~=</span> LF<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+<span class="uscript-line">00275</span>              Buffer <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>Buffer<span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00276</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00277</span>  
+<span class="uscript-line">00278</span>      <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span>ReadBufferedLine<span class="uscript-operator">(</span>Line<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00279</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00280</span>          Divide<span class="uscript-operator">(</span>Line<span class="uscript-operator">,</span>Chr<span class="uscript-operator">(</span><span class="uscript-number">58</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span>Type<span class="uscript-operator">,</span>Info<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00281</span>  
+<span class="uscript-line">00282</span>          Token1 <span class="uscript-operator">=</span> ParseDelimited<span class="uscript-operator">(</span>Info<span class="uscript-operator">,</span>Token<span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00283</span>          Token2 <span class="uscript-operator">=</span> ParseDelimited<span class="uscript-operator">(</span>Info<span class="uscript-operator">,</span>Token<span class="uscript-operator">,</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00284</span>          Token3 <span class="uscript-operator">=</span> ParseDelimited<span class="uscript-operator">(</span>Info<span class="uscript-operator">,</span>Token<span class="uscript-operator">,</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00285</span>          Token4 <span class="uscript-operator">=</span> ParseDelimited<span class="uscript-operator">(</span>Info<span class="uscript-operator">,</span>Token<span class="uscript-operator">,</span><span class="uscript-number">4</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00286</span>          Token5 <span class="uscript-operator">=</span> ParseDelimited<span class="uscript-operator">(</span>Info<span class="uscript-operator">,</span>Token<span class="uscript-operator">,</span><span class="uscript-number">5</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00287</span>          Token6 <span class="uscript-operator">=</span> ParseDelimited<span class="uscript-operator">(</span>Info<span class="uscript-operator">,</span>Token<span class="uscript-operator">,</span><span class="uscript-number">6</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00288</span>          Token7 <span class="uscript-operator">=</span> ParseDelimited<span class="uscript-operator">(</span>Info<span class="uscript-operator">,</span>Token<span class="uscript-operator">,</span><span class="uscript-number">7</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00289</span>  
+<span class="uscript-line">00290</span>          <span class="uscript-keyword">switch</span> <span class="uscript-operator">(</span>Type<span class="uscript-operator">)</span>
+<span class="uscript-line">00291</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00292</span>          <span class="uscript-keyword">case</span> <span class="uscript-string">"Profile"</span>:
+<span class="uscript-line">00293</span>              ImportS<span class="uscript-operator">.</span>setValue<span class="uscript-operator">(</span><span class="uscript-string">"ProfileName"</span><span class="uscript-operator">,</span>Token1<span class="uscript-operator">,</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00294</span>              ImportS<span class="uscript-operator">.</span>setValue<span class="uscript-operator">(</span><span class="uscript-string">"GameType"</span><span class="uscript-operator">,</span>Token2<span class="uscript-operator">,</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00295</span>              ImportS<span class="uscript-operator">.</span>setValue<span class="uscript-operator">(</span><span class="uscript-string">"MaxMaps"</span><span class="uscript-operator">,</span>Token3<span class="uscript-operator">,</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00296</span>              ImportS<span class="uscript-operator">.</span>setValue<span class="uscript-operator">(</span><span class="uscript-string">"GameName"</span><span class="uscript-operator">,</span>Token4<span class="uscript-operator">,</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00297</span>              ImportS<span class="uscript-operator">.</span>setValue<span class="uscript-operator">(</span><span class="uscript-string">"ACClass"</span><span class="uscript-operator">,</span>Token5<span class="uscript-operator">,</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00298</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Token6 <span class="uscript-operator">!=</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span> ImportS<span class="uscript-operator">.</span>setValue<span class="uscript-operator">(</span><span class="uscript-string">"CustomGameLoc"</span><span class="uscript-operator">,</span>Token6<span class="uscript-operator">,</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00299</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Token7 <span class="uscript-operator">!=</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span> ImportS<span class="uscript-operator">.</span>setValue<span class="uscript-operator">(</span><span class="uscript-string">"CustomACLoc"</span><span class="uscript-operator">,</span>Token7<span class="uscript-operator">,</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00300</span>              bValidProfile <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00301</span>              <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00302</span>  
+<span class="uscript-line">00303</span>          <span class="uscript-keyword">case</span> <span class="uscript-string">"Map"</span>:
+<span class="uscript-line">00304</span>              ImportS<span class="uscript-operator">.</span>setMap<span class="uscript-operator">(</span>Token1<span class="uscript-operator">,</span><span class="uscript-type">int</span><span class="uscript-operator">(</span>Token2<span class="uscript-operator">)</span><span class="uscript-operator">,</span><span class="uscript-keyword">True</span><span class="uscript-operator">,</span><span class="uscript-type">bool</span><span class="uscript-operator">(</span>Token3<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00305</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Token4 <span class="uscript-operator">!=</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span> AddRemoteZipLocation<span class="uscript-operator">(</span>Token1<span class="uscript-operator">,</span>Token4<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00306</span>              <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00307</span>  
+<span class="uscript-line">00308</span>          <span class="uscript-keyword">case</span> <span class="uscript-string">"Mutator"</span>:
+<span class="uscript-line">00309</span>              ImportS<span class="uscript-operator">.</span>setMutator<span class="uscript-operator">(</span>Token2<span class="uscript-operator">,</span><span class="uscript-keyword">True</span><span class="uscript-operator">,</span><span class="uscript-type">bool</span><span class="uscript-operator">(</span>Token3<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00310</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Token4 <span class="uscript-operator">!=</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span> AddRemoteZipLocation<span class="uscript-operator">(</span>Token2<span class="uscript-operator">,</span>Token4<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00311</span>  
+<span class="uscript-line">00312</span>          <span class="uscript-keyword">case</span> <span class="uscript-string">"Data"</span>:
+<span class="uscript-line">00313</span>              ImportS<span class="uscript-operator">.</span>setValue<span class="uscript-operator">(</span>Token1<span class="uscript-operator">,</span>Token2<span class="uscript-operator">,</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00314</span>              <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00315</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00316</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00317</span>  
+<span class="uscript-line">00318</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bValidProfile<span class="uscript-operator">)</span>
+<span class="uscript-line">00319</span>          <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00320</span>  
+<span class="uscript-line">00321</span>      ImportResult <span class="uscript-operator">=</span> IMPORT_InvalidProfile<span class="uscript-operator">;</span>
+<span class="uscript-line">00322</span>      <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00323</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00324</span>  
+<span class="uscript-line">00325</span>  <span class="uscript-keyword">function</span> AddRemoteZipLocation<span class="uscript-operator">(</span><span class="uscript-type">string</span> PackageName<span class="uscript-operator">,</span> <span class="uscript-type">string</span> PackageLocation<span class="uscript-operator">)</span>
+<span class="uscript-line">00326</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00327</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+<span class="uscript-line">00328</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> ZipFound<span class="uscript-operator">;</span>
+<span class="uscript-line">00329</span>  
+<span class="uscript-line">00330</span>      <span class="uscript-keyword">local</span> ZipLocation Zip<span class="uscript-operator">;</span>
+<span class="uscript-line">00331</span>  
+<span class="uscript-line">00332</span>      i <span class="uscript-operator">=</span> InStr<span class="uscript-operator">(</span>PackageName<span class="uscript-operator">,</span> <span class="uscript-string">"."</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00333</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">!=</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00334</span>          PackageName <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>PackageName<span class="uscript-operator">,</span>i<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00335</span>  
+<span class="uscript-line">00336</span>      Zip<span class="uscript-operator">.</span>ProfileURL <span class="uscript-operator">=</span> ProfileServerAddress <span class="uscript-operator">$</span> RemoteProfilePath<span class="uscript-operator">;</span>
+<span class="uscript-line">00337</span>      Zip<span class="uscript-operator">.</span>ZipName <span class="uscript-operator">=</span> PackageName<span class="uscript-operator">;</span>
+<span class="uscript-line">00338</span>      Zip<span class="uscript-operator">.</span>ZipURL <span class="uscript-operator">=</span> PackageLocation<span class="uscript-operator">;</span>
+<span class="uscript-line">00339</span>  
+<span class="uscript-line">00340</span>      <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> RemoteZips<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00341</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00342</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>RemoteZips<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ProfileURL <span class="uscript-operator">~=</span> Zip<span class="uscript-operator">.</span>ProfileURL <span class="uscript-operator">&amp;&amp;</span> RemoteZips<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ZipName <span class="uscript-operator">~=</span> Zip<span class="uscript-operator">.</span>ZipName<span class="uscript-operator">)</span>
+<span class="uscript-line">00343</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00344</span>              ZipFound <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00345</span>              <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00346</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00347</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00348</span>  
+<span class="uscript-line">00349</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ZipFound<span class="uscript-operator">)</span> RemoteZips<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Zip<span class="uscript-operator">;</span>
+<span class="uscript-line">00350</span>      <span class="uscript-keyword">else</span> RemoteZips<span class="uscript-operator">[</span>RemoteZips<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Zip<span class="uscript-operator">;</span>
+<span class="uscript-line">00351</span>  
+<span class="uscript-line">00352</span>      SaveConfig<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00353</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00354</span>  
+<span class="uscript-line">00355</span>  <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> FindRemoteZipLocation<span class="uscript-operator">(</span><span class="uscript-type">string</span> PackageName<span class="uscript-operator">,</span> <span class="uscript-type">string</span> ProfileURL<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">bool</span> bAllowOtherLocations<span class="uscript-operator">)</span>
+<span class="uscript-line">00356</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00357</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+<span class="uscript-line">00358</span>  
+<span class="uscript-line">00359</span>      i <span class="uscript-operator">=</span> InStr<span class="uscript-operator">(</span>PackageName<span class="uscript-operator">,</span> <span class="uscript-string">"."</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00360</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">!=</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span> PackageName <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>PackageName<span class="uscript-operator">,</span>i<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00361</span>  
+<span class="uscript-line">00362</span>      <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>i <span class="uscript-operator">&lt;</span> RemoteZips<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00363</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>RemoteZips<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ZipName <span class="uscript-operator">~=</span> PackageName<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>RemoteZips<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ProfileURL <span class="uscript-operator">~=</span> ProfileURL<span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>bAllowOtherLocations<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+<span class="uscript-line">00364</span>              <span class="uscript-keyword">return</span> RemoteZips<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ZipURL<span class="uscript-operator">;</span>
+<span class="uscript-line">00365</span>  
+<span class="uscript-line">00366</span>      <span class="uscript-keyword">return</span> <span class="uscript-string">""</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00367</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00368</span>  
+<span class="uscript-line">00369</span>  <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> SeperateHeaders<span class="uscript-operator">(</span><span class="uscript-type">string</span> WebPage<span class="uscript-operator">)</span>
+<span class="uscript-line">00370</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00371</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+<span class="uscript-line">00372</span>  
+<span class="uscript-line">00373</span>      <span class="uscript-comment">//CR$LF$CR$LF seperates header and document</span>
+<span class="uscript-line">00374</span>      i <span class="uscript-operator">=</span> InStr<span class="uscript-operator">(</span>WebPage<span class="uscript-operator">,</span> CR<span class="uscript-operator">$</span>LF<span class="uscript-operator">$</span>CR<span class="uscript-operator">$</span>LF<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00375</span>  
+<span class="uscript-line">00376</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">==</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00377</span>          <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00378</span>  
+<span class="uscript-line">00379</span>      Header <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>WebPage<span class="uscript-operator">,</span> i<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00380</span>      Buffer <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>WebPage<span class="uscript-operator">,</span> i <span class="uscript-operator">+</span> <span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00381</span>      <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00382</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00383</span>  
+<span class="uscript-line">00384</span>  <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> ProcessHeaders<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00385</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00386</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Header <span class="uscript-operator">==</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00387</span>          <span class="uscript-keyword">return</span> <span class="uscript-string">""</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00388</span>  
+<span class="uscript-line">00389</span>      <span class="uscript-comment">//Remove all CR, leaving only LF</span>
+<span class="uscript-line">00390</span>      Header <span class="uscript-operator">=</span> RemoveStr<span class="uscript-operator">(</span>Header<span class="uscript-operator">,</span>CR<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00391</span>  
+<span class="uscript-line">00392</span>      <span class="uscript-comment">//Parse Response Code from server, ex. HTTP/1.1 200 OK</span>
+<span class="uscript-line">00393</span>      <span class="uscript-keyword">return</span> Mid<span class="uscript-operator">(</span>ParseDelimited<span class="uscript-operator">(</span>Header<span class="uscript-operator">,</span>LF<span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span><span class="uscript-number">9</span><span class="uscript-operator">,</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00394</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00395</span>  
+<span class="uscript-line">00396</span>  <span class="uscript-keyword">event</span> ReceivedText<span class="uscript-operator">(</span><span class="uscript-type">string</span> Text<span class="uscript-operator">)</span>
+<span class="uscript-line">00397</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00398</span>      Buffer <span class="uscript-operator">=</span> Buffer <span class="uscript-operator">$</span> Text<span class="uscript-operator">;</span>
+<span class="uscript-line">00399</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00400</span>  
+<span class="uscript-line">00401</span>  <span class="uscript-keyword">event</span> ReceivedLine<span class="uscript-operator">(</span><span class="uscript-type">string</span> Line<span class="uscript-operator">)</span>
+<span class="uscript-line">00402</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00403</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> Result<span class="uscript-operator">;</span>
+<span class="uscript-line">00404</span>  
+<span class="uscript-line">00405</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>SeperateHeaders<span class="uscript-operator">(</span>Line<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00406</span>          Result <span class="uscript-operator">=</span> ProcessHeaders<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00407</span>  
+<span class="uscript-line">00408</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Result <span class="uscript-operator">==</span> <span class="uscript-string">"200"</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00409</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00410</span>          Result <span class="uscript-operator">=</span> FindContentType<span class="uscript-operator">(</span>Line<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00411</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Result <span class="uscript-operator">~=</span> <span class="uscript-string">"text/plain"</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00412</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00413</span>              RequestFile<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00414</span>              LinkMode <span class="uscript-operator">=</span> Mode_Text<span class="uscript-operator">;</span>
+<span class="uscript-line">00415</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00416</span>          <span class="uscript-keyword">else</span>
+<span class="uscript-line">00417</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00418</span>              ImportResult <span class="uscript-operator">=</span> IMPORT_InvalidProfile<span class="uscript-operator">;</span>
+<span class="uscript-line">00419</span>              bWaiting <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00420</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00421</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00422</span>  
+<span class="uscript-line">00423</span>      <span class="uscript-keyword">else</span>
+<span class="uscript-line">00424</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00425</span>          ImportResult <span class="uscript-operator">=</span> IMPORT_NotFound<span class="uscript-operator">;</span>
+<span class="uscript-line">00426</span>          bWaiting <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00427</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00428</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00429</span>  
+<span class="uscript-line">00430</span>  <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> FindContentType<span class="uscript-operator">(</span><span class="uscript-type">string</span> Text<span class="uscript-operator">)</span>
+<span class="uscript-line">00431</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00432</span>      <span class="uscript-keyword">local</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span><span class="uscript-type">string</span><span class="uscript-operator">&gt;</span> Lines<span class="uscript-operator">;</span>
+<span class="uscript-line">00433</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> Tmp<span class="uscript-operator">;</span>
+<span class="uscript-line">00434</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">,</span> j<span class="uscript-operator">;</span>
+<span class="uscript-line">00435</span>  
+<span class="uscript-line">00436</span>      Buffer <span class="uscript-operator">=</span> Text<span class="uscript-operator">;</span>
+<span class="uscript-line">00437</span>      <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span>ReadBufferedLine<span class="uscript-operator">(</span>Tmp<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00438</span>          Lines<span class="uscript-operator">[</span>Lines<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Tmp<span class="uscript-operator">;</span>
+<span class="uscript-line">00439</span>  
+<span class="uscript-line">00440</span>      <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>Lines<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00441</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00442</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Left<span class="uscript-operator">(</span>Lines<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">,</span><span class="uscript-number">13</span><span class="uscript-operator">)</span> <span class="uscript-operator">~=</span> <span class="uscript-string">"Content-Type:"</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00443</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00444</span>              Tmp <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>Lines<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">,</span><span class="uscript-number">14</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00445</span>              j <span class="uscript-operator">=</span> InStr<span class="uscript-operator">(</span>Tmp<span class="uscript-operator">,</span><span class="uscript-string">";"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00446</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">&gt;=</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00447</span>                  Tmp <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>Tmp<span class="uscript-operator">,</span>j<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00448</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00449</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00450</span>  
+<span class="uscript-line">00451</span>      <span class="uscript-keyword">return</span> Tmp<span class="uscript-operator">;</span>
+<span class="uscript-line">00452</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00453</span>  
+<span class="uscript-line">00454</span>  <span class="uscript-keyword">function</span> RequestFile<span class="uscript-operator">(</span><span class="uscript-type">int</span> RequestType<span class="uscript-operator">)</span>
+<span class="uscript-line">00455</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00456</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> RequestMethod<span class="uscript-operator">,</span> ControlText<span class="uscript-operator">;</span>
+<span class="uscript-line">00457</span>  
+<span class="uscript-line">00458</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>RequestType <span class="uscript-operator">==</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00459</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00460</span>          RequestMethod <span class="uscript-operator">=</span> <span class="uscript-string">"HEAD"</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00461</span>          ControlText <span class="uscript-operator">=</span> <span class="uscript-string">"Keep-Alive"</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00462</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00463</span>      <span class="uscript-keyword">else</span>
+<span class="uscript-line">00464</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00465</span>          RequestMethod <span class="uscript-operator">=</span> <span class="uscript-string">"GET"</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00466</span>          ControlText <span class="uscript-operator">=</span> <span class="uscript-string">"close"</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00467</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00468</span>  
+<span class="uscript-line">00469</span>      SendText<span class="uscript-operator">(</span>RequestMethod<span class="uscript-operator">@</span>RemoteProfilePath<span class="uscript-operator">@</span><span class="uscript-string">"HTTP/1.1"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00470</span>      SendText<span class="uscript-operator">(</span><span class="uscript-string">"Host:"</span><span class="uscript-operator">@</span>ProfileServerAddress<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00471</span>      SendText<span class="uscript-operator">(</span><span class="uscript-string">"Accept: text/plain"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                 <span class="uscript-comment">// Accept only plain txt files</span>
+<span class="uscript-line">00472</span>      SendText<span class="uscript-operator">(</span><span class="uscript-string">"User-agent: ProfileManager; UT2003"</span><span class="uscript-operator">@</span>Level<span class="uscript-operator">.</span>EngineVersion<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00473</span>      SendText<span class="uscript-operator">(</span><span class="uscript-string">"Pragma: no-cache"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                   <span class="uscript-comment">// Do not allow proxies to send cached information</span>
+<span class="uscript-line">00474</span>      SendText<span class="uscript-operator">(</span><span class="uscript-string">"Cache-control: no-cache"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00475</span>      SendText<span class="uscript-operator">(</span><span class="uscript-string">"Connection:"</span><span class="uscript-operator">@</span>ControlText<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                    <span class="uscript-comment">// No further information to be sent</span>
+<span class="uscript-line">00476</span>      SendText<span class="uscript-operator">(</span><span class="uscript-string">""</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00477</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00478</span>  
+<span class="uscript-line">00479</span>  <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> ReadBufferedLine<span class="uscript-operator">(</span><span class="uscript-keyword">out</span> <span class="uscript-type">string</span> Text<span class="uscript-operator">)</span>
+<span class="uscript-line">00480</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00481</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+<span class="uscript-line">00482</span>  
+<span class="uscript-line">00483</span>      i <span class="uscript-operator">=</span> InStr<span class="uscript-operator">(</span>Buffer<span class="uscript-operator">,</span> LF<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00484</span>  
+<span class="uscript-line">00485</span>      <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>i <span class="uscript-operator">==</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00486</span>          <span class="uscript-keyword">return</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00487</span>  
+<span class="uscript-line">00488</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Mid<span class="uscript-operator">(</span>Buffer<span class="uscript-operator">,</span> i<span class="uscript-number">-1</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> CR<span class="uscript-operator">)</span>
+<span class="uscript-line">00489</span>          Text <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>Buffer<span class="uscript-operator">,</span> i<span class="uscript-number">-1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00490</span>      <span class="uscript-keyword">else</span> Text <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>Buffer<span class="uscript-operator">,</span> i<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00491</span>  
+<span class="uscript-line">00492</span>      Buffer <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>Buffer<span class="uscript-operator">,</span> i<span class="uscript-number">+1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00493</span>      <span class="uscript-keyword">return</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00494</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00495</span>  
+<span class="uscript-line">00496</span>  <span class="uscript-comment">// Copied from BufferedTcpLink</span>
+<span class="uscript-line">00497</span>  <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> ParseDelimited<span class="uscript-operator">(</span><span class="uscript-type">string</span> Text<span class="uscript-operator">,</span> <span class="uscript-type">string</span> Delimiter<span class="uscript-operator">,</span> <span class="uscript-type">int</span> Count<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">bool</span> bToEndOfLine<span class="uscript-operator">)</span>
+<span class="uscript-line">00498</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00499</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> Result<span class="uscript-operator">;</span>
+<span class="uscript-line">00500</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> Found<span class="uscript-operator">,</span> i<span class="uscript-operator">;</span>
+<span class="uscript-line">00501</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> s<span class="uscript-operator">;</span>
+<span class="uscript-line">00502</span>  
+<span class="uscript-line">00503</span>      Result <span class="uscript-operator">=</span> <span class="uscript-string">""</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00504</span>      Found <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00505</span>  
+<span class="uscript-line">00506</span>      <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>Len<span class="uscript-operator">(</span>Text<span class="uscript-operator">)</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00507</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00508</span>          s <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> i<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00509</span>          <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>InStr<span class="uscript-operator">(</span>Delimiter<span class="uscript-operator">,</span> s<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00510</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00511</span>              <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Found <span class="uscript-operator">==</span> Count<span class="uscript-operator">)</span>
+<span class="uscript-line">00512</span>              <span class="uscript-operator">{</span>
+<span class="uscript-line">00513</span>                  <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bToEndOfLine<span class="uscript-operator">)</span>
+<span class="uscript-line">00514</span>                      <span class="uscript-keyword">return</span> Result<span class="uscript-operator">$</span>Mid<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> i<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00515</span>                  <span class="uscript-keyword">else</span>
+<span class="uscript-line">00516</span>                      <span class="uscript-keyword">return</span> Result<span class="uscript-operator">;</span>
+<span class="uscript-line">00517</span>              <span class="uscript-operator">}</span>
+<span class="uscript-line">00518</span>  
+<span class="uscript-line">00519</span>              Found<span class="uscript-operator">++</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00520</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00521</span>          <span class="uscript-keyword">else</span>
+<span class="uscript-line">00522</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00523</span>              <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Found <span class="uscript-operator">&gt;=</span> Count<span class="uscript-operator">)</span>
+<span class="uscript-line">00524</span>                  Result <span class="uscript-operator">=</span> Result <span class="uscript-operator">$</span> s<span class="uscript-operator">;</span>
+<span class="uscript-line">00525</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00526</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00527</span>  
+<span class="uscript-line">00528</span>      <span class="uscript-keyword">return</span> Result<span class="uscript-operator">;</span>
+<span class="uscript-line">00529</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00530</span>  
+<span class="uscript-line">00531</span>  <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> RemoveStr<span class="uscript-operator">(</span><span class="uscript-type">string</span> Source<span class="uscript-operator">,</span><span class="uscript-type">string</span> mask<span class="uscript-operator">)</span>
+<span class="uscript-line">00532</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00533</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+<span class="uscript-line">00534</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> left<span class="uscript-operator">,</span>right<span class="uscript-operator">;</span>
+<span class="uscript-line">00535</span>  
+<span class="uscript-line">00536</span>      i <span class="uscript-operator">=</span> InStr<span class="uscript-operator">(</span>Source<span class="uscript-operator">,</span>mask<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00537</span>      <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">!=</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00538</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00539</span>          Divide<span class="uscript-operator">(</span>Source<span class="uscript-operator">,</span>mask<span class="uscript-operator">,</span>left<span class="uscript-operator">,</span>right<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00540</span>          Source <span class="uscript-operator">=</span> Left<span class="uscript-operator">$</span>Right<span class="uscript-operator">;</span>
+<span class="uscript-line">00541</span>          i <span class="uscript-operator">=</span> InStr<span class="uscript-operator">(</span>Source<span class="uscript-operator">,</span>Mask<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00542</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00543</span>  
+<span class="uscript-line">00544</span>      <span class="uscript-keyword">return</span> Source<span class="uscript-operator">;</span>
+<span class="uscript-line">00545</span>  <span class="uscript-operator">}</span></pre></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ProfileImporter">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=ProfileImporter">View other revisions</a><br>Last edited February 17, 2003 23:05 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=ProfileImporter">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/ProfileImporter">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>There is no spoon
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

@@ -1,0 +1,230 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: UT Vertex Animations From MilkShape</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=UT_Vertex_Animations_From_MilkShape; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=UT Vertex Animations From MilkShape">UT Vertex Animations From MilkShape</a></h1>
+	<div class="wiki"><p>This tutorial is specific to <a href="milkshape.html">MilkShape</a> for making models and importing them into Unreal Tournament. </p>
+<h2><a name="0.1"></a>Create a Kickass Model</h2>
+<p>Find a good tutorial on modeling with <a href="milkshape.html">MilkShape</a>.  Once you have successfully created your <a href="mesh.html">mesh</a>, including texturing and animation, you're ready to go on to step 2.</p>
+<h2><a name="0.2"></a>Export Your Mesh to Unreal Format</h2>
+<p>In order to get your model into unreal you must first prepare for it. This involves creating a package which is a little complex, but gets easier with time.</p>
+<p>First off, you need to set up your folders so Unreal will know where to look for them when we tell it to  make our package.</p>
+<p>Under your UnrealTournament folder, create a new folder with the name of your package (or what it will be, e.g. "MyCustomGuns"). Then, under your package folder place new folders with the following names: Classes, Models, Textures, which are required, and some non-required folders like Sounds(but you have to make new sounds and import them with code).</p>
+<ul><li>Also worth noting, packages can contain more than one class in them so any other models you make using this tutorial can be placed within the same package... but beware of size if you plan to distribute.</li>
+</ul>
+<p>After you have exported your model into the UT format &ndash; (that is the <tt>_a.3d</tt> and <tt>_d.3d</tt> files from the export list of MilkShape), save them in the <tt>Models</tt> folder you just made under your package folder.</p>
+<ul><li>At this point, you may want to use <a href="unrealfx.html">UnrealFX</a> to spice up your model. It allows models to be set to special face flags, one poly at a time. E.g. You could make a particular surface environment mapped, which makes it shiny once ingame.</li>
+</ul>
+<p>Once you export from MilkShape you'll end up with 2 files ending with .3d. (One will end with _a.3d and the other with _d.3d). MilkShape also makes a .uc file, but it is no where near complete. You will definitely need to edit this but it is a good base.</p>
+<h2><a name="0.3"></a>Importing Your Model</h2>
+<p>Now modify the .uc file for importing the mesh into Unreal Tournament. (Or make a new one if you are able.  If you want to have a look at an .uc file that's properly set up for mesh importing, check one that was generated by <a href="meshmaker.html">MeshMaker</a>.)</p>
+<p>This can be created or edited in any text editor. (I use Notepad cause it's simple, but there are many other programs you can use.) Move or save this .uc file in your <tt>Classes</tt> folder that is under your package's folder. This is what it should look like.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> testGun <span class="uscript-keyword">expands</span> Actor<span class="uscript-operator">;</span>
+
+<span class="uscript-exec">#exec MESH IMPORT MESH=myGun ANIVFILE=MODELS\gun1_a.3d DATAFILE=MODELS\gun1_d.3d X=0 Y=0 Z=0</span>
+<span class="uscript-exec">#exec MESH ORIGIN MESH=myGun X=0 Y=0 Z=0</span>
+
+<span class="uscript-exec">#exec MESH SEQUENCE MESH=myGun SEQ=All STARTFRAME=0 NUMFRAMES=25</span>
+<span class="uscript-exec">#exec MESH SEQUENCE MESH=myGun SEQ=Still STARTFRAME=0 NUMFRAMES=1</span>
+<span class="uscript-exec">#exec MESH SEQUENCE MESH=myGun SEQ=Fire STARTFRAME=1 NUMFRAMES=20</span>
+<span class="uscript-exec">#exec MESH SEQUENCE MESH=myGun SEQ=Reload STARTFRAME=21 NUMFRAMES=5</span>
+
+<span class="uscript-exec">#exec MESHMAP NEW MESHMAP=myGun MESH=myGun</span>
+<span class="uscript-exec">#exec MESHMAP SCALE MESHMAP=myGun X=1 Y=1 Z=.5</span>
+
+<span class="uscript-exec">#exec TEXTURE IMPORT NAME=myGunTex1 FILE=TEXTURES\guntex1.pcx GROUP=Skins FLAGS=2</span>
+<span class="uscript-exec">#exec TEXTURE IMPORT NAME=myGunTex1 FILE=TEXTURES\guntex1.pcx GROUP=Skins PALETTE=myGunTex1</span>
+
+<span class="uscript-exec">#exec TEXTURE IMPORT NAME=myGunTex2 FILE=TEXTURES\guntex2.pcx GROUP=Skins FLAGS=2</span>
+<span class="uscript-exec">#exec TEXTURE IMPORT NAME=myGunTex2 FILE=TEXTURES\guntex2.pcx GROUP=Skins PALETTE=myGunTex1</span>
+
+<span class="uscript-exec">#exec MESHMAP SETTEXTURE MESHMAP=myGun NUM=1 TEXTURE=myGunTex1</span>
+<span class="uscript-exec">#exec MESHMAP SETTEXTURE MESHMAP=myGun NUM=2 TEXTURE=myGunTex2</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+  DrawType<span class="uscript-operator">=</span>DT_Mesh
+  Mesh<span class="uscript-operator">=</span>myGun
+<span class="uscript-operator">}</span></pre><p>It may be difficult to see what's going on here, so let's take a look at all of the types of statements you'll need in your file.</p>
+<h3><a name="0.3.1"></a>Class Definition</h3>
+<pre class="uscript"><span class="uscript-keyword">class</span> MyGun <span class="uscript-keyword">expands</span> Actor<span class="uscript-operator">;</span></pre><p>Ok, this is a problem. When MilkShape made .uc file it didn't know anything about what you wanted out of your mesh, so it just set it up to expand (or acts as) a generic <a href="actor.html">Actor</a>. This is rarely (if ever) what you'll want when you get to the point of really using your mesh for something (like for a weapon or character). Even if it's just a <a href="decoration.html">Decoration</a>, you'll want to change this. For now just set this field to expand <a href="ut-decoration.html">UT Decoration</a>, you won't be able to use it as a weapon, but you'll know its ingame and see it in the mesh viewer.</p>
+<p>For now, replace "MyGun" with what you want to call your new object. Do not include any spaces. (This new object name must also match the name of the .uc file or you will get an error when compiling, so save the .uc file as the same name.)</p>
+<h3><a name="0.3.2"></a>Mesh Import</h3>
+<pre class="uscript"><span class="uscript-exec">#exec MESH IMPORT MESH=myGun ANIVFILE=MODELS\mygun1_a.3d DATAFILE=MODELS\mygun1_d.3d X=0 Y=0 Z=0</span></pre><p>This one's easy. Just replace the <tt>_a.3d</tt> and <tt>_d.3d</tt> names with the names of your .3d files and the mesh name to whatever you like, e.g. "MESH=Pistol". This tells the Unreal compiler where to find your .3d files. In this example, the .3d files would be stored in the Models folder under your package folder.</p>
+<h3><a name="0.3.3"></a>Origin Definition</h3>
+<pre class="uscript"><span class="uscript-exec">#exec MESH ORIGIN MESH=myGun X=0 Y=0 Z=0</span></pre><p>For most items like weapons or pickup items, you'll want to just leave this statement as is, except for changing the mesh name. The MESH ORIGIN statement sets up where the center of the mesh is. In other words, the point where your mesh will rotate around and move from, as well as the center of its mass and is used in colision detection.</p>
+<p>You can also use the MESH ORIGIN statement to set the initial rotation values of your mesh. If you've modeled a weapon and it ends up facing the wrong direction in the game, you can fix that here. You do that by adding PITCH, ROLL, and/or YAW values to the statement. The values aren't normal angles though as the unreal engine relies on a system using of multiples of 16 units. A value of 64 means 90 degrees, a value of 128 means 180 degrees, 256 means 360 degrees, etc. So this statement:</p>
+<pre class="uscript"><span class="uscript-exec">#exec MESH ORIGIN MESH=myGun X=0 Y=0 Z=0 PITCH=32 ROLL=128 YAW=-64</span></pre><p>...would mean a pitch of 45 degrees, a roll of 180 degrees, and a yaw of -90 degrees. Also, when MilkShape exports the models are usually off by 90 degrees of yaw, I almost always have to set it to YAW=64 or -64.</p>
+<h3><a name="0.3.4"></a>Animation Sequences</h3>
+<pre class="uscript"><span class="uscript-exec">#exec MESH SEQUENCE MESH=myGun SEQ=All STARTFRAME=0 NUMFRAMES=25</span>
+<span class="uscript-exec">#exec MESH SEQUENCE MESH=myGun SEQ=Still STARTFRAME=0 NUMFRAMES=1</span>
+<span class="uscript-exec">#exec MESH SEQUENCE MESH=myGun SEQ=Fire STARTFRAME=1 NUMFRAMES=20 RATE=24</span>
+<span class="uscript-exec">#exec MESH SEQUENCE MESH=myGun SEQ=Reload STARTFRAME=21 NUMFRAMES=5 RATE=7.5</span></pre><p>If your mesh includes animation (even some <a href="decoration.html">Decoration</a>s do), you'll need to name your animation sequences in these statements. When MilkShape generates .uc files it is does not know which sequences go where as it is all one line of anims to it. Usually, the first sequence name is called "All" and simply includes all of your animation frames. Create a MESH SEQUENCE statement for each of your animation sequences and name them something descriptive. You can also add a "RATE=" statement to the end of the anim seq line. This sets up how long it will take to play the sequence, in frames per second (unless it is only 1 frame long). MilkShape by default uses 24 fps so a RATE of 24 will set animations to the same speed as in MilkShape.</p>
+<p>The animations should have been made in MilkShape as one long animation of all the sequences one after another (this gets to be a large file if making a player model).  While making your model, since all the sequences will run together, it is good to write down the sequences as well as their starting frame number, and their length of frames.</p>
+<p>If your mesh does not include any animation, you can just use something like this (which is good for weapon pickup and third person view meshes). </p>
+<pre class="uscript"><span class="uscript-exec">#exec MESH SEQUENCE MESH=myGun SEQ=All STARTFRAME=0 NUMFRAMES=1</span>
+<span class="uscript-exec">#exec MESH SEQUENCE MESH=myGun SEQ=Still STARTFRAME=0 NUMFRAMES=1</span></pre><h3><a name="0.3.5"></a>Meshmap to Mesh Associations</h3>
+<pre class="uscript"><span class="uscript-exec">#exec MESHMAP NEW MESHMAP=myGun MESH=myGun</span></pre><p>This must match as it tells the compiler which uv mapping coordinates to use with your mesh, it will not compile if incorrect. I suggest leaving this as is because it is correct this way, just swap the name here with your class name. (...see a pattern? everything must represent the name of your class.)</p>
+<h3><a name="0.3.6"></a>Meshmap Scaling</h3>
+<pre class="uscript"><span class="uscript-exec">#exec MESHMAP SCALE MESHMAP=myGun X=1 Y=1 Z=.5</span></pre><p>Scaling is an important concept to understand. The way that MilkShape's "units" relate to Unreal units is easy &ndash; 1:1...  as in 1 MilkShape unit will become 1 Unreal unit. That way if you treat 16 units in MilkShape as 1 foot (as it is in UT, roughly), you should be able to set your scaling to "X=1 Y=1 Z=.5". The Z axis of meshes is always half of the others in UT.</p>
+<h3><a name="0.3.7"></a>Texture and Palette Import</h3>
+<pre class="uscript"><span class="uscript-exec">#exec TEXTURE IMPORT NAME=myGunTex1 FILE=TEXTURES\guntex1.pcx GROUP=Skins FLAGS=2</span>
+<span class="uscript-exec">#exec TEXTURE IMPORT NAME=myGunTex1 FILE=TEXTURES\guntex1.pcx GROUP=Skins PALETTE=myGunTex1</span></pre><p>For every new <a href="texture-ut.html">Texture (UT)</a> image that your mesh uses, you'll need a line to import it. Give it a descriptive name in place of "myGunTex1" and fill in the name of your .pcx file. In this example, the .pcx files would be in the <tt>Textures</tt> folder under your package folder. Some people put textures in the models folder but I do not, that is what the <tt>Textures</tt> folder is for.</p>
+<p class="indent1"><em class="em1">Note:</em> The height and width of your textures need to be "powers of 2." In other words, both the height and the width need to be one of these numbers: 1, 2, 4, 8, 16, 32, 64, 128, or 256. You can go higher (512, 1024, etc), but that doesn't seem to be typical when using the Unreal engine (yet). The height and width do not need to be the same, so a 64 x 32 image is fine, even a 256 x 2 is allowed if you need it.</p>
+<h3><a name="0.3.8"></a>Meshmap to Texture Associations</h3>
+<p>These statements associate the UV mapping of your mesh with specific textures. In MilkShape, you will get one of these for each Group you create. Each Group will be a "surface" that is numbered 1, 2, 3, etc.. The "NUM=1" line says to associate the first surface with the myGunTex1 texture. NUM=3 shows how you can use the same textures over again on different groups.</p>
+<p>Since the maximum number of surfaces allowed is 8, you would never have more than 8 of these statments per mesh.</p>
+<h3><a name="0.3.9"></a>Default Properties</h3>
+<p>Setting the default properties correctly is <em class="em1">very important</em>.</p>
+<pre class="uscript"><span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+  DrawType<span class="uscript-operator">=</span>DT_Mesh
+  Mesh<span class="uscript-operator">=</span>MyGun
+<span class="uscript-operator">}</span></pre><p><a href="actor-ut-display.html">DrawType</a> simply tells the engine that you want this to be a mesh. Most models will be "DT_Mesh". (Except for effects, they will normally use "DT_Particle" but use a mesh for the vertex location and animation).</p>
+<p>Remember to save your .uc file in the <tt>Classes</tt> folder under your package folder and name it the same as the class. The example here would have been named MyGun.uc.</p>
+<h2><a name="0.4"></a>Adding Code</h2>
+<p>If you already have the code, you can add it to the .uc file to tell UT what you want your model to actually "do" or "be" ingame.</p>
+<p>Currently, your mesh is just a 3D object with no properties or behaviors. You'll typically want to use your mesh as a weapon, character, pickup item, or at least something you can interact with in some way. The way to do that is by scripting your .uc file so that it "expands" on an existing type of object, such as <a href="tournamentweapon.html">TournamentWeapon</a> (for weapons), <a href="pawn-ut.html">Pawn (UT)</a> (for players or creatures or inanimate things that are interactive), or Decoration (for stuff like furniture). Each type of object that you can create (there are many), has a set of properties that you can set. One of the properties you can set is which mesh (or meshes) to use. Some objects may have multiple meshes associated with them. For instance, a weapon has a "first person" version of the mesh that includes the player's hand and part of his arm, as well as a "pickup" version that is used to show that weapon sitting on the ground (rotating?) and a "third person" view which is what other players will see you carrying. (maybe with a small set of anims of its own.) The field labeled "Mesh" ("Mesh=MyGun") is the model that will show up in the Mesh Viewer in UnrealEd.</p>
+<p>Here's an example. The part in quotes after LodMesh would be the reference to your mesh (which can be imported seperately in another .uc file).</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MyGun <span class="uscript-keyword">extends</span> Decoration<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+  bCanBeBase<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+  ItemName<span class="uscript-operator">=</span><span class="uscript-string">"Colt Peacemaker"</span>
+  Mesh<span class="uscript-operator">=</span>LodMesh<span class="uscript-name">'MyCustomGuns.MyGun'</span>
+  CollisionRadius<span class="uscript-operator">=</span><span class="uscript-number">18.790000</span>
+  CollisionHeight<span class="uscript-operator">=</span><span class="uscript-number">6.750000</span>
+  Mass<span class="uscript-operator">=</span><span class="uscript-number">10.000000</span>
+  Buoyancy<span class="uscript-operator">=</span><span class="uscript-number">15.000000</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.5"></a>Import It Into the Game!</h2>
+<p>When you have your .uc files, your .3d model files, and your .pcx texture files in place, you're ready to actually import your mesh into your package, so that it's ready to use in Unreal Tournament.</p>
+<ol><li>First, delete the .u package file with the name of this package(if it already exists) from the \UnrealTournament\System folder.</li>
+<li>Next, go in your UnrealTournament\System folder and find the file called <a href="unrealtournament-ini.html">UnrealTournament.ini</a> and scroll down or search for the line beginning with "[Editor.EditorEngine]" then scroll down the lines below it untill you hit "EditPackages" and at the end of that list, add a new editpackage with your package name. </li>
+<li>For example, "EditPackages=MyCustomGuns" then save the .ini file without changing anything else.</li>
+<li>Now in a command prompt (MS-DOS prompt) in the \UnrealTournament\System directory type in "ucc make" (or under your start menu, choose "run" and type "C:\UnrealTournament\System\ucc make" if thats the location of your UT folder).</li>
+<li>You will then see a dos window pop up and load a list of all the packages listed in the UnrealTournament.ini file untill it gets to your package name, then it will proceed to load the components from the folders you made. </li>
+</ol>
+<p>If you've done everything right, and you recieve no errors or warnings, your mesh is ready to go. Fire up <a href="unrealed-3.html">UnrealEd</a> and check it out in the mesh viewer.</p>
+<p>For more help with using the UCC pragram, see <a href="compiling-with-ucc.html">Compiling With UCC</a>.</p>
+<p>Oh yeah, for weapons, you may need to delete your .u package file and adjust the alignment in your .uc file then re-compile quite a few times to get it right so don't be discouraged, you will learn it with practice and keeping notes.</p>
+<p>(To align your weapon's first person view, just add the line <tt>PlayerViewOffset</tt> in default properties (either in the .uc before a re-compile or in advanced options ingame by typing "preferences" in the console) and give a value for each of the X, Y, and Z coordinates. Z being up and down in Unreal. And remember, <tt>PlayerViewOffset</tt> manipulates <em class="em1">your perspective</em> of the weapon, <em class="em1">not the actual weapon</em>!)</p>
+<p><a href="category-tutorial.html">Category Tutorial</a></p>
+<hr class="thin"><p><em class="em2">Tarquin:</em> Probably. We could perhaps clean this area up. Some questions, which we should answer &amp; discuss on the page <a href="milkshape.html">MilkShape</a>:</p>
+<ul><li>what pages do we have on MilkShape?</li>
+<li>how should we organize them?</li>
+<li>what should we call them?</li>
+</ul>
+<script type="text/javascript"><!--
+ menuItemAdd("Create a Kickass Model", "#0.1");
+menuItemAdd("Export Your Mesh to Unreal Format", "#0.2");
+menuItemAdd("Importing Your Model", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Class Definition", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Mesh Import", "#0.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Origin Definition", "#0.3.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Animation Sequences", "#0.3.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Meshmap to Mesh Associations", "#0.3.5");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Meshmap Scaling", "#0.3.6");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Texture and Palette Import", "#0.3.7");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Meshmap to Texture Associations", "#0.3.8");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Default Properties", "#0.3.9");
+menuItemAdd("Adding Code", "#0.4");
+menuItemAdd("Import It Into the Game!", "#0.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=UT_Vertex_Animations_From_MilkShape">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=UT_Vertex_Animations_From_MilkShape">View other revisions</a><br>Last edited November 14, 2003 1:00 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=UT_Vertex_Animations_From_MilkShape">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/UT_Vertex_Animations_From_MilkShape">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I don't need to test my programs. I have an error-correcting modem.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

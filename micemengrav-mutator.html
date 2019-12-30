@@ -1,0 +1,216 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: MiceMenGrav Mutator</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=MiceMenGrav_Mutator; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=MiceMenGrav Mutator">MiceMenGrav Mutator</a></h1>
+	<div class="wiki"><p>MiceMenGrav: A Mutator Tutorial for <a href="unreal-tournament-2003.html">UT2003</a>.</p>
+<ul><li>Coders: Wedge, <a href="thepelkus.html">ThePelkus</a></li>
+<li>Author: <a href="thepelkus.html">ThePelkus</a></li>
+</ul>
+<p>This is a beginner level mutator development tutorial. The reader should have a basic knowledge of UnrealScript and should be able to make a basic mutator. This tutorial will help the reader understand potential uses for the following classes:</p>
+<ul><li><a href="mutator.html">Mutator</a></li>
+<li><a href="gamerules.html">GameRules</a></li>
+<li><a href="guipage.html">GUIPage</a></li>
+<li><a href="inventory.html">Inventory</a></li>
+</ul>
+<p>This mutator was implemented in UT2003. We have no development experience on other versions of Unreal, so we are not sure how specific this code is to UT2003.</p>
+<h2><a name="0.1"></a>Conceptual Origins</h2>
+<p>This mutator is the combination of two other mutators:</p>
+<ul><li><em class="em1">MiceMen</em>, coded by Wedge, affects the player size based on the current configuration and the number of player kills.</li>
+<li><em class="em1">GravMod</em>, coded by ThePelkus, draws players together when they attack each other.</li>
+</ul>
+<h2><a name="0.2"></a>Code Download</h2>
+<p>While snippets of the source are shown below when relevant, the full source is available <a href="http://kai.curtisforhire.com/downloads/micemengrav.zip">[here]</a>. While there is no candy surprise, there are plenty of comments to keep you in the know.</p>
+<h2><a name="0.3"></a>Making your own GameRules</h2>
+<p>The <a href="gamerules.html">GameRules</a> class is easy to bend to your purposes. Like the <a href="mutator.html">Mutator</a> objects, the <a href="gamerules.html">GameRules</a> objects live in a linked list. When the game needs to do something using the <a href="gamerules.html">GameRules</a> objects, it recurses through the list, giving each object a chance to do its thing. Technically speaking, the game is not responsible for making sure that every object in the list gets its turn at bat &ndash; that's why you'll need lines like this one:</p>
+<pre class="uscript">    <span class="uscript-comment">/* Sampled from a ModifyPlayer definition in a custom mutator */</span>
+    <span class="uscript-comment">// If there is another mutator in the chain</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> NextMutator <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        <span class="uscript-comment">// Call this method in the next mutator; pass the same parameters</span>
+        NextMutator<span class="uscript-operator">.</span>ModifyPlayer<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>Keeping this list structure in mind, all we need to do to have a little fun is derive our own rules and override some of the member functions!</p>
+<h3><a name="0.3.1"></a>Placing your rules in your project</h3>
+<p>Before you go overriding functions left and right, you want to incorporate your custom rules into your mutator so that you can check changes as you make them. As we just said, the hook for the engine is a chain of <a href="gamerules.html">GameRules</a> objects that lives somewhere in the system. Specifically, this chain is accessed as <em class="em2">Level.Game.GameRulesModifiers</em> from any <a href="actor.html">Actor</a> class. How convenient, then, that <a href="mutator.html">Mutator</a> is a subclass of <a href="actor.html">Actor</a>!</p>
+<p>To add your rules to the chain, just add the following code to PostBeginPlay() in the mutator that you derived from the <a href="mutator.html">Mutator</a> class:</p>
+<pre class="uscript"><span class="uscript-comment">/* The following code assumes that you have a variable called myRules representing your rules; see MutMiceMen.uc for an example. */</span>
+
+    <span class="uscript-comment">// Add the rules object to the list of GameRules in the game</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>GameRulesModifiers <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>GameRulesModifiers <span class="uscript-operator">=</span> myRules<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>GameRulesModifiers<span class="uscript-operator">.</span>AddGameRules<span class="uscript-operator">(</span>myRules<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><h3><a name="0.3.2"></a>Building GravShot into our custom rules</h3>
+<p>We derived a class called MiceMenRules from <a href="gamerules.html">GameRules</a> so that we could take advantage of some of the built-in functionality. In fact, almost all of the GravShot functionality lives in the NetDamage function of our custom rules.</p>
+<p>As stated in the <a href="gamerules.html">GameRules</a> page, the NetDamage function "<em class="em1">allows the GameRules to modify the damage (return value) and momentum. The OriginalDamage parameter should be passed to the next GameRules without any modifications.</em>" Technically, GravShot doesn't alter either of these values. But NetDamage also takes as parameters the attacking pawn (InstigatedBy) and the target pawn (Injureed). Using these two pawns, our rules:</p>
+<ul><li>Calculate the normalized vector from the victim to the instigator</li>
+</ul>
+<pre class="uscript">            <span class="uscript-comment">// Get normalized vector from target to shooter</span>
+            myVec <span class="uscript-operator">=</span> Normal<span class="uscript-operator">(</span>InstigatedBy<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> Injured<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><ul><li>Scale that vector</li>
+</ul>
+<pre class="uscript">            <span class="uscript-comment">// Set up multiplier vector</span>
+            multVec<span class="uscript-operator">.</span>x <span class="uscript-operator">=</span> mutInstance<span class="uscript-operator">.</span>MovementMultiplier <span class="uscript-operator">*</span> <span class="uscript-number">100</span><span class="uscript-operator">;</span>
+            multVec<span class="uscript-operator">.</span>y <span class="uscript-operator">=</span> mutInstance<span class="uscript-operator">.</span>MovementMultiplier <span class="uscript-operator">*</span> <span class="uscript-number">100</span><span class="uscript-operator">;</span>
+            multVec<span class="uscript-operator">.</span>z <span class="uscript-operator">=</span> mutInstance<span class="uscript-operator">.</span>MovementMultiplier <span class="uscript-operator">*</span> <span class="uscript-number">100</span><span class="uscript-operator">;</span>
+
+            <span class="uscript-comment">// scale normalized vector; better way?</span>
+            myVec <span class="uscript-operator">=</span> myVec <span class="uscript-operator">*</span> multVec<span class="uscript-operator">;</span></pre><ul><li>Add the scaled vector to the victim's velocity.</li>
+</ul>
+<pre class="uscript">            Injured<span class="uscript-operator">.</span>AddVelocity<span class="uscript-operator">(</span>myVec<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>Note once again that, after all of the GravShot code, the NetDamage member of the next <a href="gamerules.html">GameRules</a> object (if it exists) is called with the same parameters.</p>
+<p>With this mutator active, the Injured pawn is moved towards the InstigatedBy pawn by some fixed amount. We'll see where this amount is set later when we look at the config menu. For practice you might try making the scaling factor situational e.g. scale based on distance or damage inflicted.</p>
+<h3><a name="0.3.3"></a>Building MiceMen into our custom rules</h3>
+<p>The MiceMen part of the mutator overrides the ScoreKill member of the rules. From the <a href="gamerules.html">GameRules</a> page, we know that the ScoreKill function "<em class="em1">Augements the action taken when a player scores a kill. Not the score itself, but having to do with the Controllers involved in the Kill.</em>"</p>
+<p>The following two lines of code are all that we added to the ScoreKill method:</p>
+<pre class="uscript">    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Killer <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Killer<span class="uscript-operator">.</span>Pawn <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        mutInstance<span class="uscript-operator">.</span>ChangePlayerSize<span class="uscript-operator">(</span>Killer<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">,</span> mutInstance<span class="uscript-operator">.</span>GetScaleFor<span class="uscript-operator">(</span>Killer<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>In this case, the Killer parameter (a <a href="controller.html">Controller</a>) is used for its associated pawn. This pawn is passed to ChangePlayerSize(), a custom function in our mutator, along with a scaling factor. The scaling factor is calculated using GetScaleFor(), yet another custom function in our mutator, which also takes the pawn associated with Killer as a parameter. Again, after our code is called, ScoreKill is called in the next <a href="gamerules.html">GameRules</a> object.</p>
+<p>Clearly a lot of the logic for MiceMen is included in the mutator, so let's take a look at that now!</p>
+<h2><a name="0.4"></a>Making your own Mutator, briefly</h2>
+<p>Presumably you already have the basics of making a mutator down, so we're just going to show you what we did with ours.</p>
+<h3><a name="0.4.1"></a>PostBeginPlay()</h3>
+<p>Our PostBeginPlay() code is pretty standard, going through the following steps:</p>
+<ol><li>Call method in parent class</li>
+<li>Instantiate derived <a href="gamerules.html">GameRules</a></li>
+<li>Initialize mutator instance in derived <a href="gamerules.html">GameRules</a></li>
+<li>Add <a href="gamerules.html">GameRules</a> to GameRulesModifiers linked list</li>
+</ol>
+<p>The only really odd step in there is Step 3. Because the mutator class contains functions and data needed for the MiceMen scaling in the rules, the rules contain an instance of the mutator. It may seem a little circular, but it works out fine.</p>
+<h3><a name="0.4.2"></a>ModifyPlayer()</h3>
+<p>The <a href="mutator.html">Mutator</a> page lists the following description for the ModifyPlayer() function:</p>
+<blockquote><p>This function can be used to update the player's inventory, speed, and other attributes. this function should always call ModifyPlayer() on the next mutator in the chain (a call to the superclass method would do the trick).</p>
+</blockquote><p>We used ModifyPlayer() to do the following:</p>
+<dl><dt>Scale the player</dt><dd>Player scaling is handled in our custom functions called <em class="em1">ChangePlayerSize()</em> and <em class="em1">GetScaleFor()</em>. The comments included in the code make the function self-explanatory. Unfortunately, we're uncertain as to whether certain functions are necessary.</dd><dt>Create a custom <a href="inventory.html">Inventory</a> item to scale the player's weapon</dt><dd>In order to make sure that the player's weapon model scales properly when weapons are switched, the player is given a WeaponScaler, a custom class we derived from <a href="inventory.html">Inventory</a>.</dd></dl>
+<h2><a name="0.5"></a>Making your own Inventory items</h2>
+<p>In earlier revisions of this mutator, the player weapon would not resize to match the player scale when the player switched weapons. Our solution: we derived a class from <a href="inventory.html">Inventory</a> that would handle the resizing for us.</p>
+<p>Our use of <a href="inventory.html">Inventory</a>-related functionality was very minimal. The <a href="inventory.html">Inventory</a> class has a method called <em class="em1">OwnerEvent</em>. This method is called - surprise, surprise - whenever an event is triggered in owner. Since we wanted to change the rescale the player weapon whenever the weapon was changed, we watched for an event called 'ChangedWeapon':</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> OwnerEvent<span class="uscript-operator">(</span><span class="uscript-type">name</span> EventName<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>EventName <span class="uscript-operator">==</span> <span class="uscript-name">'ChangedWeapon'</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     WeaponAttachment<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span>ThirdPersonActor<span class="uscript-operator">)</span><span class="uscript-operator">.</span>SetCollisionSize<span class="uscript-operator">(</span>WeaponAttachment<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span>ThirdPersonActor<span class="uscript-operator">)</span><span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>CollisionRadius <span class="uscript-operator">*</span> Instigator<span class="uscript-operator">.</span>DrawScale<span class="uscript-operator">,</span> WeaponAttachment<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span>ThirdPersonActor<span class="uscript-operator">)</span><span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>CollisionHeight <span class="uscript-operator">*</span> Instigator<span class="uscript-operator">.</span>DrawScale<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+     WeaponAttachment<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span>ThirdPersonActor<span class="uscript-operator">)</span><span class="uscript-operator">.</span>SetDrawScale<span class="uscript-operator">(</span>WeaponAttachment<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span>ThirdPersonActor<span class="uscript-operator">)</span><span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>DrawScale <span class="uscript-operator">*</span> Instigator<span class="uscript-operator">.</span>DrawScale<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>When this event occurred, the collision and draw size were rescaled based on the player's DrawScale. Note that these properties were only set on the third person mesh as indicated by the use of <a href="weaponattachment.html">WeaponAttachment</a> and <em class="em1">ThirdPersonActor</em> above. Also note that the player is referred to as <em class="em1">Instigator</em> since we need a <a href="pawn.html">Pawn</a> to get a <a href="weapon.html">weapon</a>.</p>
+<h2><a name="0.6"></a>Using GUIPage to configure your muator, super briefly!</h2>
+<p>This section is unnecessary as the information that would go here is explained perfectly well over in <a href="mutator-config-gui-ut2003.html">Mutator Config GUI (UT2003)</a>. In fact, most of the config code for this mutator was taken straight from the provided example code.</p>
+<p>While <a href="mutator-config-gui-ut2003.html">Mutator Config GUI (UT2003)</a> is fairly complete in terms of explaining the connection between GUI items and mutator variables, it's also a good idea to look through the documentation on other classes in the <a href="gui-class-hierarchy.html">GUI Class Hierarchy</a> to make sure you don't fall victim to the old problems of giant checkboxes and the like.</p>
+<h2><a name="0.7"></a>Problems</h2>
+<p>It's true - we're not perfect, which makes this problematic as a tutorial. Help us make this tutorial more useful for beginners by helping us catch the following bugs:</p>
+<h3><a name="0.7.1"></a>Levitating players</h3>
+<p>Just run around for a little while and it won't take long until you'll see some of the other players flying around in midair. It's been hard for us to establish exactly when this happens, so even figuring that out would be very useful.</p>
+<p><em class="em2">Tricadex</em> - I think this is caused by problems with the collision box and crouching</p>
+<h3><a name="0.7.2"></a>Funny skeletons</h3>
+<p>Resizing players seems to do funny things to their corpses. We attempted to fix this problem using the <em class="em1">BoneRefresh()</em> method of the <a href="actor.html">Actor</a> class, but it's not clear whether there are still funny effects.</p>
+<p>Feel free to add comments to this page to help us fix these problems!</p>
+<h2><a name="0.8"></a>About this mutator</h2>
+<p>The MiceMenGrav mutator is a class project from the <a href="http://www.bcc.ctc.edu">[Bellevue Community College]</a> <a href="http://gaming.bcc.ctc.edu">[gaming curriculum]</a> in Bellevue, WA. This program is also responsible for the <a href="vampireshoppers.html">VampireShoppers</a> mutator.</p>
+<hr class="thin"><pre class="paraverbatim"> <a href="category-tutorial.html">Category Tutorial</a></pre><script type="text/javascript"><!--
+ menuItemAdd("Conceptual Origins", "#0.1");
+menuItemAdd("Code Download", "#0.2");
+menuItemAdd("Making your own GameRules", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Placing your rules in your project", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Building GravShot into our custom rules", "#0.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Building MiceMen into our custom rules", "#0.3.3");
+menuItemAdd("Making your own Mutator, briefly", "#0.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>PostBeginPlay()", "#0.4.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>ModifyPlayer()", "#0.4.2");
+menuItemAdd("Making your own Inventory items", "#0.5");
+menuItemAdd("Using GUIPage to configure your muator, super briefly!", "#0.6");
+menuItemAdd("Problems", "#0.7");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Levitating players", "#0.7.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Funny skeletons", "#0.7.2");
+menuItemAdd("About this mutator", "#0.8");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=MiceMenGrav_Mutator">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=MiceMenGrav_Mutator">View other revisions</a><br>Last edited August 30, 2005 11:30 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=MiceMenGrav_Mutator">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/MiceMenGrav_Mutator">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I search for solutions in this order: Past Code, Unreal Source, Wiki, BUF, groups.yahoo, google, screaming at monitor. (RegularX)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

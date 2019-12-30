@@ -1,0 +1,212 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Adding An Adrenaline Combo With A Mutator</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Adding_An_Adrenaline_Combo_With_A_Mutator; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Adding An Adrenaline Combo With A Mutator">Adding An Adrenaline Combo With A Mutator</a></h1>
+	<div class="wiki"><p>This tutorial will show how to create an adrenaline combo and add the combo to all players through a mutator. The specific adrenaline combo that we are making is called the Bullet Time combo. What this adrenaline combo will allow us to do is once the combo is activated, gameplay speed will slowdown allowing all players to enter into "Bullet Time" like in the matrix trilogies.</p>
+<h2><a name="0.1"></a>Getting Started</h2>
+<p>First off, we will need to create the directory structure in the UT2004 directory. Create a folder named "MutBulletTimeCombo". Then inside this folder, create another folder called "Classes". For more information on the package structure, see <a href="set-up-package-folders.html">Set Up Package Folders</a>.</p>
+<p>We will create our script files in the this directory. Next, go into the system directory and locate the ut2004.ini file. Open up the file and do a search for Editor.EditorEngine. In this section, you will see many "EditPackages=X" where X is a package name. Our package is MutBulletTimeCombo, so at the end of that list, add the line "EditPackages=MutBulletTimeCombo".</p>
+<h2><a name="0.2"></a>Creating Combo Class</h2>
+<p>Create a new file in your preferred text editor and save the file as ComboBulletTime.uc. Inside that file, create a class called ComboBulletTime and have it extend the Combo class. This way, we gain access to the Combo class's functions and member variables. These will help us in creating our own adrenaline combo. Here is the code you will need:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> ComboBulletTime <span class="uscript-keyword">extends</span> Combo<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> fOrigGameSpeed<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">/*
+This function will get called when right combination is entered.
+*/</span>
+<span class="uscript-keyword">function</span> StartEffect<span class="uscript-operator">(</span>xPawn P<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+     fOrigGameSpeed <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>GameSpeed<span class="uscript-operator">;</span>
+     Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>SetGameSpeed<span class="uscript-operator">(</span><span class="uscript-number">0.05</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-comment">/*
+This function gets called when adrenaline is all gone.
+*/</span>
+<span class="uscript-keyword">function</span> StopEffect<span class="uscript-operator">(</span>xPawn P<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+     Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>SetGameSpeed<span class="uscript-operator">(</span>fOrigGameSpeed<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+     fOrigGameSpeed <span class="uscript-operator">=</span> <span class="uscript-number">1.0</span><span class="uscript-operator">;</span>
+     Duration <span class="uscript-operator">=</span> <span class="uscript-number">3</span><span class="uscript-operator">;</span>
+     ExecMessage <span class="uscript-operator">=</span> <span class="uscript-string">"Bullet Time!"</span>
+     keys<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+     keys<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-number">2</span><span class="uscript-operator">;</span>
+     keys<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+     keys<span class="uscript-operator">[</span><span class="uscript-number">3</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-number">2</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>The two functions called StartEffect and StopEffect both do exactly what the name implies. The variable Level is an object of the LevelInfo class declared in the Actor class. You have access to this variable because Combo extends from the Info class which then extends from the Actor class. Inside the LevelInfo class, there is a variable called Game which is an object of the GameInfo class. Take a look at these classes to see what these contain. Inside the GameInfo class, there is a function called SetGameSpeed that changes the value of GameSpeed within that same class. Here, we will change the game speed to be 0.05. The game speed is based on a percentage. A game speed of 1.0 means the game speed will be at 100%. We want to slow the game down, so a game speed of 5% will do the job. If you notice, we declared our own variable called fOrigGameSpeed. This is used to get the current game speed setting, which is usually 1.0, to set the speed back to once the adrenaline combo wears off.</p>
+<p>The next thing to mention is the keys array in the default properties. These are where the combination of keys are declared that the player must press in order to get the combo activated. If you take a look at the Combo class, there are numbers which go with the direction the player presses. 1 is up, 2 is down, 4 is left, and 8 is right. In this example, the player must press "Up, Down, Up, Down" in that order when the player has full adrenaline to activate the combo.</p>
+<p>Also in the default properties, you will notice the duration variable being declared to three. The reason for this is that we have set the game speed to 5%. So, 3 seconds running at 5% game speed will probably take like 15 seconds for the adrenaline to where off.</p>
+<h2><a name="0.3"></a>Mutator</h2>
+<p>Here, we will be adding a class called MutBulletTimeCombo, so create a new file of the same name and the .uc extension. When declaring the MutBulletTimeCombo class, have it extend Mutator. The code to add the Adrenaline combo to every player is below:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MutBulletTimeCombo <span class="uscript-keyword">extends</span> Mutator<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> xPlayer NotifyPlayer<span class="uscript-operator">[</span><span class="uscript-number">32</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+     <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+
+     <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> <span class="uscript-number">32</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+     <span class="uscript-operator">{</span>
+          <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>NotifyPlayer<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+          <span class="uscript-operator">{</span>
+               NotifyPlayer<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ClientReceiveCombo<span class="uscript-operator">(</span><span class="uscript-string">"MutBulletTimeCombo.ComboBulletTime"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+               NotifyPlayer<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+          <span class="uscript-operator">}</span>
+
+     <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> IsRelevant<span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> <span class="uscript-type">byte</span> bSuperRelevant<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+     <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+
+     <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>xPlayer<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+     <span class="uscript-operator">{</span>
+          <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span><span class="uscript-number">16</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+      <span class="uscript-operator">{</span>
+           <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>xPlayer<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>ComboNameList<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">~=</span> <span class="uscript-string">"MutBulletTimeCombo.ComboBulletTime"</span><span class="uscript-operator">)</span>
+                    <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+               <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>xPlayer<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>ComboNameList<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span>
+               <span class="uscript-operator">{</span>
+                    xPlayer<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>ComboNameList<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-string">"MutBulletTimeCombo.ComboBulletTime"</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+               <span class="uscript-operator">}</span>
+          <span class="uscript-operator">}</span>
+          <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> <span class="uscript-number">32</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+          <span class="uscript-operator">{</span>
+               <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>NotifyPlayer<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+               <span class="uscript-operator">{</span>
+                    NotifyPlayer<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> xPlayer<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                    SetTimer<span class="uscript-operator">(</span><span class="uscript-number">0.5</span><span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                    <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+               <span class="uscript-operator">}</span>
+          <span class="uscript-operator">}</span>
+     <span class="uscript-operator">}</span>
+     <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>NextMutator <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+          <span class="uscript-keyword">return</span> NextMutator<span class="uscript-operator">.</span>IsRelevant<span class="uscript-operator">(</span>Other<span class="uscript-operator">,</span> bSuperRelevant<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+     <span class="uscript-keyword">else</span>
+          <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    FriendlyName <span class="uscript-operator">=</span> <span class="uscript-string">"Bullet Time Combo"</span>
+    Description <span class="uscript-operator">=</span> <span class="uscript-string">"Adds the bullet time combo (UDUD). The combo slows all gameplay down, but allows players aim to be more accurate, as seen in the Matrix trilogies."</span>
+<span class="uscript-operator">}</span></pre><p>The description and the FriendlyName will be shown in the mutator list. The Timer function above will notify each player in the level about the new combo. To access the combo, you need to put in the package name, followed by the combo class. In this case, we add ComboBulletTime class in the MutBulletTimeCombo package. Now every player is like Neo!</p>
+<p>ToDo: Add more description about the IsRelavant Function.</p>
+<h2><a name="0.4"></a>Comments</h2>
+<p><em class="em2">Mad:</em> I hope this tutorial helps you in understanding how combos work and how it can be activated through a mutator. I recommend grabbing the sniper rifle upon performing this combo and get your headshots in. Feel free to leave any comments or make any suggestions about this tutorial. </p>
+<p><em class="em2">Metal_Maniac:</em> I get the way it works, but what if you wanted to make something similar to the berzerk combo, or you wanted to make a mutator that gives you all the default weapons, and they all have infinite ammo, but for a limited time, and at the end of that time limit, your character explodes and dies, I'd call it "KamiKaze Mania combo", so if anyone has a suggestion on how to make that, please reply.</p>
+<p><em class="em2">tornWolf:</em> Just from a best practices point of view, it would likely be better to declare an int (const if we could) MAX_PLAYERS so that if the game will allow a different number than 32 players, that can be updated once in the code.  I'm a noob so I may be wrong, just thought I'd throw that in.</p>
+<hr class="thin"><p><a href="category-tutorial.html">Category Tutorial</a><br>[Category Coding]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Category_Coding&referrerid=Adding_An_Adrenaline_Combo_With_A_Mutator">?</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Getting Started", "#0.1");
+menuItemAdd("Creating Combo Class", "#0.2");
+menuItemAdd("Mutator", "#0.3");
+menuItemAdd("Comments", "#0.4");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Adding_An_Adrenaline_Combo_With_A_Mutator">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Adding_An_Adrenaline_Combo_With_A_Mutator">View other revisions</a><br>Last edited May 16, 2007 1:09 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Adding_An_Adrenaline_Combo_With_A_Mutator">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Adding_An_Adrenaline_Combo_With_A_Mutator">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Mostly Harmless
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

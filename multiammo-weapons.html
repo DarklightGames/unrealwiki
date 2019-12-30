@@ -1,0 +1,1018 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Multiammo Weapons</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Multiammo_Weapons; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Multiammo Weapons">Multiammo Weapons</a></h1>
+	<div class="wiki"><p>The last two versions of  the ChaosUT mods have made use of weapons that have multiple types of ammo. In the UT version we made a new weapon for each ammo type. Then when you picked up one of these weapons, we gave the user all of the other weapons based on the ammo types just with out any ammo. Once a user found a different ammo type in a map, that version of the weapon now had ammo which the user now could use. This help to create the illusion of one weapon that can fire different ammo types. However this method was not fool proof. For example if you dropped the weapon or die with these weapons then only the standard weapon ammo type could be picked up. </p>
+<p>UT2003 provided us with a way to correct the issues and truly make one weapon that can support more than 2 ammo types. I will attempt to walk you through how we did it for a Grenade Launcher. Keep in mind that this code is what worked. Its not the best code and I am sure there are other ways that are more elegant in handling this task. This is my first tut so forgive a few mistakes as I try to learn how to write these better. I will to post at first the key functions then the complete source at the end. But with that out of the way lets start.</p>
+<h2><a name="0.1"></a>Requirements of Grenade Launcher</h2>
+<p>Here is a list of what we want our Grenade Launcher to do:</p>
+<ul><li>The Grenade Launcher must support at least four types of Grenades. Standard, Poison, Napalm and Flash. </li>
+<li>The user can switch ammo any time they have another ammo type to use in the Grenade Launcher</li>
+<li>The Grenade Launcher should have a timed Grenade as one fire type and an instant hit/explosion as the other fire type for each style of grenade</li>
+<li>The Grenade Launcher should have an visible indicator (new skin on weapon mesh) on which ammo type you have loaded other than the Ammo Counter</li>
+</ul>
+<p>Now that we have a design goal lets see how this can be done. </p>
+<p>The basic plan of attack is like so:</p>
+<ul><li>We will add new fire mode(s) to handle the new each of the new ammo types  </li>
+<li>Each ammo will have two fire modes one for the timed grenade another for the instant grenade</li>
+<li>We will reset the attachment and pickup classes to the players viewing this weapon (or if it was dropped) so anyone can see what ammo is currently loaded into the weapon</li>
+<li>We will use an EXEC in the weapon class to do the ammo changing</li>
+<li>We will need a separate weapon pickup and attachment class for each ammo type</li>
+</ul>
+<h2><a name="0.2"></a>Needed Functions</h2>
+<p>The main part we need is to do the actual swapping of the ammo types. We should use a variable to store which ammo is currently loaded (we will use var int Count for that). This should be a global and not a local function for reasons we will get to later. The basics are first we check to see if we have any ammo. Then we should not allow an ammo change if we are firing the weapon. We start at our current count and then look at the next available ammo type. If we have ammo of that type we will try to change to it. We do this by removing the current fire class. Spawning a new fire class for the new ammo type. We then change the ammo to that type. We repeat this process so we change both the current firing modes. Then we remove the current attachment and pickup classes and replace them with correct ones. We do this so that the 3rd player views and the dropped pickups will have the right skin and ammo types</p>
+<pre class="uscript"><span class="uscript-comment">// manual key function to swich ammo out</span>
+<span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> ChangeAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Inventory Inv<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Check to see if they even have ammo to switch</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+      <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// dont let them chang ammo if they are firing</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>bIsFiring <span class="uscript-operator">||</span> FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>bIsFiring<span class="uscript-operator">)</span>
+       <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>bChangedAmmo<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Count <span class="uscript-operator">==</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+      <span class="uscript-operator">{</span>
+         Count <span class="uscript-operator">+=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+
+         Inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoNapalm'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+         <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Inv  <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span>  <span class="uscript-operator">&amp;&amp;</span> Ammunition<span class="uscript-operator">(</span>inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+         <span class="uscript-operator">{</span>
+             bChangedAmmo<span class="uscript-operator">=</span><span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// Remove old fire mode 0</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// primary fire</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Primary_napalm'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>ThisModeNum <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> Instigator<span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass <span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoNapalm'</span><span class="uscript-operator">;</span>    <span class="uscript-comment">// need these two to change the ammo</span>
+             Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Ammunition<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// Remove old fire mode 1</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// secondary fire</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Secondary_napalm'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>ThisModeNum <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> Instigator<span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmonapalm'</span><span class="uscript-operator">;</span>
+             Ammo<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Ammunition<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+             <span class="uscript-comment">// Remove old Attchment and spawn new one with correct skin</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> AttachmentClass <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+               DetachFromPawn<span class="uscript-operator">(</span>instigator<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             AttachmentClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_NapalmAttachment'</span><span class="uscript-operator">;</span>
+             AttachToPawn<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             PickupClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_NapalmPickup'</span><span class="uscript-operator">;</span>
+             <span class="uscript-keyword">Break</span><span class="uscript-operator">;</span>
+         <span class="uscript-operator">}</span>
+      <span class="uscript-operator">}</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Count <span class="uscript-operator">==</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span>
+      <span class="uscript-operator">{</span>
+         Count <span class="uscript-operator">+=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+         Inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoFlash'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+         <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Inv  <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span>  <span class="uscript-operator">&amp;&amp;</span> Ammunition<span class="uscript-operator">(</span>inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+         <span class="uscript-operator">{</span>
+             bChangedAmmo<span class="uscript-operator">=</span><span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// Remove old fire mode 0</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// primary fire</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Primary_flash'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>ThisModeNum <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> Instigator<span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoFlash'</span><span class="uscript-operator">;</span>    <span class="uscript-comment">// need these two to change the ammo</span>
+             Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Ammunition<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// Remove old fire mode 1</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// secondary fire</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Secondary_flash'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>ThisModeNum <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> Instigator<span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoFlash'</span><span class="uscript-operator">;</span>
+             Ammo<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Ammunition<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+             <span class="uscript-comment">// Remove old Attchment and spawn new one with correct skin</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> AttachmentClass <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+               DetachFromPawn<span class="uscript-operator">(</span>instigator<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             AttachmentClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_FlashAttachment'</span><span class="uscript-operator">;</span>
+             AttachToPawn<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             PickupClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_FlashPickup'</span><span class="uscript-operator">;</span>
+             <span class="uscript-keyword">Break</span><span class="uscript-operator">;</span>
+         <span class="uscript-operator">}</span>
+      <span class="uscript-operator">}</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Count <span class="uscript-operator">==</span> <span class="uscript-number">2</span><span class="uscript-operator">)</span>
+      <span class="uscript-operator">{</span>
+         Count <span class="uscript-operator">+=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+         Inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoPoison'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+         <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Inv  <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span>  <span class="uscript-operator">&amp;&amp;</span> Ammunition<span class="uscript-operator">(</span>inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+         <span class="uscript-operator">{</span>
+             bChangedAmmo<span class="uscript-operator">=</span><span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// Remove old fire mode 0</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// primary fire</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Primary_poison'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>ThisModeNum <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> Instigator<span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoPoison'</span><span class="uscript-operator">;</span>    <span class="uscript-comment">// need these two to change the ammo</span>
+             Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Ammunition<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// Remove old fire mode 1</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// secondary fire</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Secondary_poison'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>ThisModeNum <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> Instigator<span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmopoison'</span><span class="uscript-operator">;</span>
+             Ammo<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Ammunition<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+             <span class="uscript-comment">// Remove old Attchment and spawn new one with correct skin</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> AttachmentClass <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+               DetachFromPawn<span class="uscript-operator">(</span>instigator<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             AttachmentClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_PoisonAttachment'</span><span class="uscript-operator">;</span>
+             AttachToPawn<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             PickupClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_PoisonPickup'</span><span class="uscript-operator">;</span>
+             <span class="uscript-keyword">Break</span><span class="uscript-operator">;</span>
+         <span class="uscript-operator">}</span>
+      <span class="uscript-operator">}</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Count <span class="uscript-operator">==</span> <span class="uscript-number">3</span><span class="uscript-operator">)</span>
+      <span class="uscript-operator">{</span>
+         count <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// reset counter on last type of ammo</span>
+         Inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoStandard'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+         <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Inv  <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span>  <span class="uscript-operator">&amp;&amp;</span> Ammunition<span class="uscript-operator">(</span>inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+         <span class="uscript-operator">{</span>
+             bChangedAmmo<span class="uscript-operator">=</span><span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// Remove old fire mode 0</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// primary fire</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Primary'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>ThisModeNum <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> Instigator<span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoStandard'</span><span class="uscript-operator">;</span>
+             Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Ammunition<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// Remove old fire mode 1</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// secondary fire</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Secondary'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>ThisModeNum <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> Instigator<span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoStandard'</span><span class="uscript-operator">;</span>
+             Ammo<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Ammunition<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+             <span class="uscript-comment">// Remove old Attchment and spawn new one with correct skin</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> AttachmentClass <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 DetachFromPawn<span class="uscript-operator">(</span>instigator<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             AttachmentClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Attachment'</span><span class="uscript-operator">;</span>
+             AttachToPawn<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             PickupClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Pickup'</span><span class="uscript-operator">;</span>
+             <span class="uscript-keyword">Break</span><span class="uscript-operator">;</span>
+         <span class="uscript-operator">}</span>
+      <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    bChangedAmmo<span class="uscript-operator">=</span><span class="uscript-keyword">false</span><span class="uscript-operator">;</span> <span class="uscript-comment">// set to flase as we have changed ammo at this point and need to reset the flag</span>
+<span class="uscript-operator">}</span></pre><p>The next key function is the ammo check. The default HasAmmo only looks at the current fire types. With a weapon that has more than one, this is no good. We changed ours to look for the inventory types of each possible ammo type:</p>
+<pre class="uscript"><span class="uscript-comment">// needed to overide the weapons call as we have a multi-ammo weapon</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+       <span class="uscript-keyword">local</span> Inventory Inv<span class="uscript-operator">;</span>
+
+       inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoNapalm'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+       <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>inv <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span>  <span class="uscript-operator">&amp;&amp;</span> Ammunition<span class="uscript-operator">(</span>inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+         <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+       inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoFlash'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+       <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>inv <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span>  <span class="uscript-operator">&amp;&amp;</span> Ammunition<span class="uscript-operator">(</span>inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+         <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+       inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoPoison'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+       <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>inv <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span>  <span class="uscript-operator">&amp;&amp;</span> Ammunition<span class="uscript-operator">(</span>inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+         <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+       inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoStandard'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+       <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>inv <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span>  <span class="uscript-operator">&amp;&amp;</span> Ammunition<span class="uscript-operator">(</span>inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+         <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+       <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span> <span class="uscript-comment">// if we got this far no ammo for nade launcher</span>
+<span class="uscript-operator">}</span></pre><p>The next function we needed to change was the Outofammo(). The reason for this change is that the standard Outofammo function is not aware that you have more than one ammo type. So it should check to see if you have any of the other ammotypes in your current inventory. If it does not find any you are truly out of ammo. If it does, then you should change ammo types:</p>
+<pre class="uscript"><span class="uscript-comment">// needed to add this check for a multi-ammo weapon</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> OutOfAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+   <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">==</span> NM_Standalone <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>Instigator<span class="uscript-operator">.</span>IsLocallyControlled<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+      <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoAmount <span class="uscript-operator">&gt;=</span> FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoPerFire<span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">&amp;&amp;</span> FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">&amp;&amp;</span> Ammo<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoAmount <span class="uscript-operator">&gt;=</span> FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoPerFire<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span> <span class="uscript-comment">// we have ammo return</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            ChangeAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// meaning we have some type of nade ammo change to it</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-comment">//if we have gotten to this point we are really out of ammo...better swich weapons</span>
+            DoAutoSwitch<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+     <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>That is the basics you will need. What if your new ammo type required a 1st person view mesh change? If you pickup up a dropped version what skin/mesh will be displayed on your screen? What about network replications? How does the animations play? What happens when a users tries to fire during an ammo change? What happens if you run out of ammo while your firing? This is where we have to get a bit ugly as the code above will have all of these are issues. </p>
+<h2><a name="0.3"></a>Complete Code</h2>
+<p>Since we have more than one weapon that supports multi-ammo types we decided to use a parent class and place in some specific code to help with network replication, changing of the mesh/skins and animations.</p>
+<p>The parent class of the weapon is this:</p>
+<pre class="uscript"><span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// ChaosWeapon</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">class</span> ChaosWeapon <span class="uscript-keyword">extends</span> Weapon <span class="uscript-keyword">abstract</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> count<span class="uscript-operator">;</span>                        <span class="uscript-comment">// use this to keep track of the current selected ammo and replicate this to clients</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bChangedAmmo<span class="uscript-operator">;</span>      <span class="uscript-comment">// use this flag to break out of loop  in change ammo functions and replicate this to clients</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">Int</span> OldCount<span class="uscript-operator">;</span>                   <span class="uscript-comment">// used to tell us when to play the "changeammo" function and do not replicate this to clients</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bPlayChangeAmmo<span class="uscript-operator">;</span> <span class="uscript-comment">// used by the Animnotify to tell use when to change mesh/skins and do not replicate this to clients</span>
+
+<span class="uscript-keyword">replication</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// Things the server should send to the client.</span>
+    <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Role<span class="uscript-operator">==</span>ROLE_Authority <span class="uscript-operator">)</span>
+        count<span class="uscript-operator">,</span> bChangedAmmo<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// functions called by client on server</span>
+    <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Role<span class="uscript-operator">&lt;</span>ROLE_Authority <span class="uscript-operator">)</span>
+        ChangeAmmo<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//---</span>
+<span class="uscript-comment">// ChangeAmmo</span>
+<span class="uscript-comment">//   *Switches ammo types.</span>
+<span class="uscript-comment">//   *Implemented in subclasses.</span>
+<span class="uscript-comment">// ---</span>
+<span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> ChangeAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//---</span>
+<span class="uscript-comment">// Timer</span>
+<span class="uscript-comment">//   * This is needed to help us prevent playing animations client side during a relaod.</span>
+<span class="uscript-comment">// ---</span>
+<span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">function</span> Timer <span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+   <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>          <span class="uscript-comment">// call to super</span>
+   <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bPlayChangeAmmo<span class="uscript-operator">)</span>    <span class="uscript-comment">// dont play the animtions if we are reloading</span>
+     bPlayChangeAmmo<span class="uscript-operator">=</span><span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-comment">//---</span>
+<span class="uscript-comment">// PutDown()</span>
+<span class="uscript-comment">//   * This is needed to help prevent ANs for multi-ammo weapons.</span>
+<span class="uscript-comment">// ---</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> PutDown<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> Mode<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ClientState <span class="uscript-operator">==</span> WS_BringUp <span class="uscript-operator">||</span> ClientState <span class="uscript-operator">==</span> WS_ReadyToFire<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-comment">// For our multi-ammo weapons Instigator.PendingWeapon maybe none so check for that</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>PendingWeapon <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>Instigator<span class="uscript-operator">.</span>PendingWeapon<span class="uscript-operator">.</span>bForceSwitch<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>Mode <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> Mode <span class="uscript-operator">&lt;</span> NUM_FIRE_MODES<span class="uscript-operator">;</span> Mode<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span>Mode<span class="uscript-operator">]</span><span class="uscript-operator">.</span>bFireOnRelease <span class="uscript-operator">&amp;&amp;</span> FireMode<span class="uscript-operator">[</span>Mode<span class="uscript-operator">]</span><span class="uscript-operator">.</span>bIsFiring<span class="uscript-operator">)</span>
+                    <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>IsLocallyControlled<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>Mode <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> Mode <span class="uscript-operator">&lt;</span> NUM_FIRE_MODES<span class="uscript-operator">;</span> Mode<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span>Mode<span class="uscript-operator">]</span><span class="uscript-operator">.</span>bIsFiring<span class="uscript-operator">)</span>
+                    ClientStopFire<span class="uscript-operator">(</span>Mode<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ClientState <span class="uscript-operator">!=</span> WS_BringUp <span class="uscript-operator">&amp;&amp;</span> HasAnim<span class="uscript-operator">(</span>PutDownAnim<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+                PlayAnim<span class="uscript-operator">(</span>PutDownAnim<span class="uscript-operator">,</span> PutDownAnimRate<span class="uscript-operator">,</span> <span class="uscript-number">0.0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        ClientState <span class="uscript-operator">=</span> WS_PutDown<span class="uscript-operator">;</span>
+
+        SetTimer<span class="uscript-operator">(</span><span class="uscript-number">0.3</span><span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>Mode <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> Mode <span class="uscript-operator">&lt;</span> NUM_FIRE_MODES<span class="uscript-operator">;</span> Mode<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+  FireMode<span class="uscript-operator">[</span>Mode<span class="uscript-operator">]</span><span class="uscript-operator">.</span>bServerDelayStartFire <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+  FireMode<span class="uscript-operator">[</span>Mode<span class="uscript-operator">]</span><span class="uscript-operator">.</span>bServerDelayStopFire <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+ <span class="uscript-operator">}</span>
+    Instigator<span class="uscript-operator">.</span>AmbientSound <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    OldWeapon <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span> <span class="uscript-comment">// return false if preventing weapon switch</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-comment">//---</span>
+<span class="uscript-comment">// State WaitforAmmoChange</span>
+<span class="uscript-comment">// This state helps to pause the guns unitl so that</span>
+<span class="uscript-comment">// We can switch ammos</span>
+<span class="uscript-comment">// ---</span>
+<span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">State</span> WaitforAmmoChange
+<span class="uscript-operator">{</span>
+   <span class="uscript-keyword">Ignores</span> ServerStartFire<span class="uscript-operator">,</span> ServerStopFire<span class="uscript-operator">,</span> ClientWeaponSet<span class="uscript-operator">,</span> Fire<span class="uscript-operator">,</span> ClientStopFire<span class="uscript-operator">,</span>ClientStartFire<span class="uscript-operator">;</span>
+
+
+ Begin:
+       <span class="uscript-comment">// put the fire modes to "sleep" while we run the ammo chaning animations</span>
+       <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+            FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>GotoState<span class="uscript-operator">(</span><span class="uscript-name">'ChangeAmmo'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+       <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+            FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>GotoState<span class="uscript-operator">(</span><span class="uscript-name">'ChangeAmmo'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+       <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">==</span> NM_DedicatedServer<span class="uscript-operator">)</span>
+         Sleep<span class="uscript-operator">(</span><span class="uscript-number">1.75</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+       <span class="uscript-comment">// Ok back to normal</span>
+       GotoState<span class="uscript-operator">(</span><span class="uscript-name">''</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Let me touch on a few parts of the above code. The count var became useful to replicate to the clients. We can use that to display client message when your changing ammo as well as help figure out which mesh/skin to change to. The next three, bChangedAmmo, OldCount, bPlayChangeAmmo were all used to help avoid network animation issues. Basically they help to tell the client when then need to change skins/mesh for the new ammo types as well as help syncing of animations in network play. The modify PutDown() was needed to help avoid AN in the logs. The only weirdo thing their is the WaitforAmmoChange state. We needed to disallow people from playing firing animations. In on-line games you would hit the change ammo key and as soon as the animation started to play you could spam the fire key. This would cause the fire animations to play however no new projectile would be spawned. Thus it looked like a bug. Using this we help to lock out user fire commands during the ammo switch and this allows the animations to play with out being interrupted. The Sleep(1.75) is an ugly hack but this cause the weapon to sleep during the reloading. Again maybe a cleaner way to do this. But it accomplishes the effect and disallows any firing during the ammo change.</p>
+<p>You also probably saw that FireMode[0].GotoState('ChangeAmmo') command. And you should realize that that is not a standard state in the weapon fire class. You are correct. With multi ammo we have some issues to work around in the fire class. Again these basically help to avoid the user from firing during an ammo change. As well as they help to address when you the ammo changes and weapon changes happen automatically. Here is the parent class we use for all changing ammo fire modes:</p>
+<pre class="uscript"><span class="uscript-comment">//==============================================================================</span>
+<span class="uscript-comment">// CUT_ProjectileFire - by DJPaul</span>
+<span class="uscript-comment">//   *$Id: CUT_ProjectileFire.uc,v 1.4 2003/07/01 12:32:54 Wormbo Exp $</span>
+<span class="uscript-comment">//   *All variable ammo types should derive from this class.</span>
+<span class="uscript-comment">//==============================================================================</span>
+<span class="uscript-keyword">class</span> CUT_ProjectileFire <span class="uscript-keyword">extends</span> ProjectileFire <span class="uscript-keyword">abstract</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// This function below will handle the automatic reload of the weapon</span>
+<span class="uscript-comment">// if we have another ammo type when the current one runes out</span>
+<span class="uscript-keyword">function</span> StopFiring<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+     <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Weapon<span class="uscript-operator">.</span>Ammo<span class="uscript-operator">[</span>ThisModeNum<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoAmount <span class="uscript-operator">&lt;=</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+       GotoState<span class="uscript-operator">(</span><span class="uscript-name">'ChangeAmmo'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-comment">// This function will disallow at the playing of the client side animation</span>
+<span class="uscript-comment">// During a reload</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> AllowFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">return</span> <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>AllowFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>ChaosWeapon<span class="uscript-operator">(</span>Weapon<span class="uscript-operator">)</span><span class="uscript-operator">.</span>bPlayChangeAmmo<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+
+<span class="uscript-comment">// We need this state to previent the client side fire animations</span>
+<span class="uscript-comment">// to play while the "reload" animations are playing</span>
+<span class="uscript-keyword">State</span> ChangeAmmo
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">Ignores</span> PlayFireEnd<span class="uscript-operator">,</span> PlayFiring<span class="uscript-operator">,</span> PlayStartHold<span class="uscript-operator">,</span> PlayPreFire<span class="uscript-operator">;</span>
+
+
+  Begin:
+     Sleep<span class="uscript-operator">(</span><span class="uscript-number">0.5</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>         <span class="uscript-comment">// Wait for current firing animation to finnish</span>
+     Weapon<span class="uscript-operator">.</span>OutOfAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>   <span class="uscript-comment">// change the ammo</span>
+     Sleep<span class="uscript-operator">(</span><span class="uscript-number">1.50</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>         <span class="uscript-comment">// lets the animations play before we try to fire</span>
+     GotoState<span class="uscript-operator">(</span><span class="uscript-name">''</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>        <span class="uscript-comment">// ok ready to rock...</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> StartBerserk<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    FireRate <span class="uscript-operator">=</span> <span class="uscript-keyword">default</span><span class="uscript-operator">.</span>FireRate <span class="uscript-operator">*</span> <span class="uscript-number">0.75</span><span class="uscript-operator">;</span>
+    FireAnimRate <span class="uscript-operator">=</span> <span class="uscript-keyword">default</span><span class="uscript-operator">.</span>FireAnimRate <span class="uscript-operator">/</span> <span class="uscript-number">0.75</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>You can see now why we replicated the bPlayChangeAmmo to help avoid the issues of animations in network play. </p>
+<p>Now for the complete GenadeLauncher code we used:</p>
+<pre class="uscript"><span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// GrenadeLauncher - by DJPaul</span>
+<span class="uscript-comment">// $Id: GrenadeLauncher.uc,v 1.34 2003/07/13 01:03:23 jb Exp $</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">class</span> GrenadeLauncher <span class="uscript-keyword">extends</span> ChaosWeapon <span class="uscript-keyword">config</span><span class="uscript-operator">(</span>user<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> sound Nadelauncher_select1<span class="uscript-operator">;</span>
+
+
+<span class="uscript-comment">// AI Interface</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">float</span> GetAIRating<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> Bot B<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> EnemyDist<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">local</span> vector EnemyDir<span class="uscript-operator">;</span>
+
+ B <span class="uscript-operator">=</span> Bot<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>B <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Enemy <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+  <span class="uscript-keyword">return</span> AIRating<span class="uscript-operator">;</span>
+
+ EnemyDir <span class="uscript-operator">=</span> B<span class="uscript-operator">.</span>Enemy<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> Instigator<span class="uscript-operator">.</span>Location<span class="uscript-operator">;</span>
+ EnemyDist <span class="uscript-operator">=</span> VSize<span class="uscript-operator">(</span>EnemyDir<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> EnemyDist <span class="uscript-operator">&gt;</span> <span class="uscript-number">750</span> <span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> EnemyDist <span class="uscript-operator">&gt;</span> <span class="uscript-number">2000</span> <span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+   <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> EnemyDist <span class="uscript-operator">&gt;</span> <span class="uscript-number">3500</span> <span class="uscript-operator">)</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-number">0.2</span><span class="uscript-operator">;</span>
+   <span class="uscript-keyword">return</span> <span class="uscript-operator">(</span>AIRating <span class="uscript-operator">-</span> <span class="uscript-number">0.3</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> EnemyDir<span class="uscript-operator">.</span>Z <span class="uscript-operator">&lt;</span> <span class="uscript-operator">-</span><span class="uscript-number">0.5</span> <span class="uscript-operator">*</span> EnemyDist <span class="uscript-operator">)</span>
+   <span class="uscript-keyword">return</span> <span class="uscript-operator">(</span>AIRating <span class="uscript-operator">-</span> <span class="uscript-number">0.3</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-operator">}</span>
+ <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Enemy<span class="uscript-operator">.</span>Weapon <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> B<span class="uscript-operator">.</span>Enemy<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span>bMeleeWeapon <span class="uscript-operator">)</span>
+  <span class="uscript-keyword">return</span> <span class="uscript-operator">(</span>AIRating <span class="uscript-operator">+</span> <span class="uscript-number">0.35</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> EnemyDist <span class="uscript-operator">&lt;</span> <span class="uscript-number">400</span> <span class="uscript-operator">)</span>
+  <span class="uscript-keyword">return</span> <span class="uscript-operator">(</span>AIRating <span class="uscript-operator">+</span> <span class="uscript-number">0.2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">return</span> FMax<span class="uscript-operator">(</span>AIRating <span class="uscript-operator">+</span> <span class="uscript-number">0.2</span> <span class="uscript-operator">-</span> <span class="uscript-operator">(</span>EnemyDist <span class="uscript-operator">-</span> <span class="uscript-number">400</span><span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-number">0.0008</span><span class="uscript-operator">,</span> <span class="uscript-number">0.2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/* BestMode()
+choose between regular or alt-fire
+*/</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">byte</span> BestMode<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> vector EnemyDir<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> EnemyDist<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">local</span> bot B<span class="uscript-operator">;</span>
+
+ B <span class="uscript-operator">=</span> Bot<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>B <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Enemy <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+  <span class="uscript-keyword">return</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+
+ EnemyDir <span class="uscript-operator">=</span> B<span class="uscript-operator">.</span>Enemy<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> Instigator<span class="uscript-operator">.</span>Location<span class="uscript-operator">;</span>
+ EnemyDist <span class="uscript-operator">=</span> VSize<span class="uscript-operator">(</span>EnemyDir<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> EnemyDist <span class="uscript-operator">&gt;</span> <span class="uscript-number">700</span> <span class="uscript-operator">)</span>
+   <span class="uscript-keyword">return</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Enemy<span class="uscript-operator">.</span>Weapon <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> B<span class="uscript-operator">.</span>Enemy<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span>bMeleeWeapon <span class="uscript-operator">)</span>
+  <span class="uscript-keyword">return</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>EnemyDist <span class="uscript-operator">&lt;</span> <span class="uscript-number">400</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>EnemyDir<span class="uscript-operator">.</span>Z <span class="uscript-operator">&gt;</span> <span class="uscript-number">30</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+  <span class="uscript-keyword">return</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">&lt;</span> <span class="uscript-number">0.65</span> <span class="uscript-operator">)</span>
+  <span class="uscript-keyword">return</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">return</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">float</span> SuggestAttackStyle<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>AIController<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>AIController<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Skill <span class="uscript-operator">&lt;</span> <span class="uscript-number">3</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+  <span class="uscript-keyword">return</span> <span class="uscript-number">0.4</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-number">0.8</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">float</span> SuggestDefenseStyle<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-operator">-</span><span class="uscript-number">0.4</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+<span class="uscript-comment">// End AI Interface</span>
+
+
+<span class="uscript-comment">// charge is used to both increase volecity and for the time delay if app,</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">float</span> ChargeBar<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>bIsFiring<span class="uscript-operator">)</span>
+       <span class="uscript-keyword">return</span> FMin<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>HoldTime<span class="uscript-operator">/</span>GrenadeLauncher_SecondaryFireModeAbstract<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>MaxStrength<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+       <span class="uscript-keyword">return</span> <span class="uscript-number">0.0</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> tick <span class="uscript-operator">(</span><span class="uscript-type">float</span> dt<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+   <span class="uscript-comment">// check for an ammo change and if so...change the 1st view skin..</span>
+   <span class="uscript-comment">// and play a reloading animation</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>OldCount <span class="uscript-operator">!=</span> Count<span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>
+        OldCount <span class="uscript-operator">=</span> Count<span class="uscript-operator">;</span>
+        bPlayChangeAmmo<span class="uscript-operator">=</span><span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+        PlayChangeAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">function</span> PlayChangeAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+     <span class="uscript-comment">// Because we have to swtich the skin we will have the animation call (via an amin notify)</span>
+     <span class="uscript-comment">// the PlayAmmoMeshSwitch() function to ensure we are snyced as we dont want to swtich the</span>
+     <span class="uscript-comment">// skin until we have finnshed playing the AmmoDown animation</span>
+
+     <span class="uscript-comment">// use this timer to let animtions finnish playing </span>
+     SetTimer<span class="uscript-operator">(</span><span class="uscript-number">2.0</span><span class="uscript-operator">,</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+     <span class="uscript-comment">// Play the down animations here</span>
+     PlayAnim<span class="uscript-operator">(</span><span class="uscript-name">'AmmoDown'</span><span class="uscript-operator">,</span> <span class="uscript-number">1.25</span><span class="uscript-operator">,</span> <span class="uscript-number">0.3</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PlayAmmoMeshSwitch<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+   <span class="uscript-comment">// The animnotify will fire off this function when the weapon is playing the Ammodown animation at the 9th frame</span>
+   <span class="uscript-comment">// and the bPlayChangeAmmo flag is used to know that we are indeed in a changing of ammo sequnce</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bPlayChangeAmmo<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-comment">// Change 1st Skin here</span>
+        Skins<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>Texture<span class="uscript-name">'ChaosTex_001.Nades.Chaos_Nadelauncher_id1'</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">Switch</span> <span class="uscript-operator">(</span>Count<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">Case</span> <span class="uscript-number">1</span>:
+            Skins<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Texture<span class="uscript-name">'ChaosTex_001.Nades.Chaos_NadeFlame'</span><span class="uscript-operator">;</span>
+            Skins<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Texture<span class="uscript-name">'ChaosTex_001.Nades.Chaos_Nadeshell'</span><span class="uscript-operator">;</span>
+            Skins<span class="uscript-operator">[</span><span class="uscript-number">3</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> FinalBlend<span class="uscript-name">'XEffectMat.Shield.RedShell'</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>PlayerController<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                  PlayerController<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">.</span>ReceiveLocalizedMessage<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'NapalmAmmoChangeNotification'</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-keyword">none</span><span class="uscript-operator">,</span> <span class="uscript-keyword">none</span><span class="uscript-operator">,</span> FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span><span class="uscript-keyword">Class</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            PlayOwnedSound<span class="uscript-operator">(</span>Nadelauncher_select1<span class="uscript-operator">,</span> SLOT_Interact<span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">Case</span> <span class="uscript-number">2</span>:
+            Skins<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Texture<span class="uscript-name">'ChaosTex_001.Nades.chaos_nadeflash'</span><span class="uscript-operator">;</span>
+            Skins<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Texture<span class="uscript-name">'ChaosTex_001.Nades.Chaos_NadeshellFlash'</span><span class="uscript-operator">;</span>
+            Skins<span class="uscript-operator">[</span><span class="uscript-number">3</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Shader<span class="uscript-name">'XGameShaders.PlayerShaders.LightningHit'</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>PlayerController<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 PlayerController<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">.</span>ReceiveLocalizedMessage<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'FlashAmmoChangeNotification'</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-keyword">none</span><span class="uscript-operator">,</span> <span class="uscript-keyword">none</span><span class="uscript-operator">,</span> FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span><span class="uscript-keyword">Class</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            PlayOwnedSound<span class="uscript-operator">(</span>Nadelauncher_select1<span class="uscript-operator">,</span> SLOT_Interact<span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">Case</span> <span class="uscript-number">3</span>:
+             Skins<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Texture<span class="uscript-name">'ChaosTex_001.Nades.chaos_nadepoison'</span><span class="uscript-operator">;</span>
+             Skins<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Texture<span class="uscript-name">'ChaosTex_001.Nades.Chaos_NadeshellPoison'</span><span class="uscript-operator">;</span>
+             Skins<span class="uscript-operator">[</span><span class="uscript-number">3</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> FinalBlend<span class="uscript-name">'XEffectMat.goop.GoopFB'</span><span class="uscript-operator">;</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>PlayerController<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 PlayerController<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">.</span>ReceiveLocalizedMessage<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'PoisonAmmoChangeNotification'</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-keyword">none</span><span class="uscript-operator">,</span> <span class="uscript-keyword">none</span><span class="uscript-operator">,</span> FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span><span class="uscript-keyword">Class</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             PlayOwnedSound<span class="uscript-operator">(</span>Nadelauncher_select1<span class="uscript-operator">,</span> SLOT_Interact<span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">default</span>:
+            Skins<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Texture<span class="uscript-name">'ChaosTex_001.Nades.chaos_nadeexplo'</span><span class="uscript-operator">;</span>
+            Skins<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Texture<span class="uscript-name">'ChaosTex_001.Nades.Chaos_Nadeshell'</span><span class="uscript-operator">;</span>
+            Skins<span class="uscript-operator">[</span><span class="uscript-number">3</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Texture<span class="uscript-name">'WeaponSkins.Skins.GrenadeTex'</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>PlayerController<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                  PlayerController<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">.</span>ReceiveLocalizedMessage<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'ExplosiveAmmoChangeNotification'</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-keyword">none</span><span class="uscript-operator">,</span> <span class="uscript-keyword">none</span><span class="uscript-operator">,</span> FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span><span class="uscript-keyword">Class</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            PlayOwnedSound<span class="uscript-operator">(</span>Nadelauncher_select1<span class="uscript-operator">,</span> SLOT_Interact<span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-comment">// now we have changed the skins on the 1st views play the Ammoup animation</span>
+        Playanim<span class="uscript-operator">(</span><span class="uscript-name">'AmmoUp'</span><span class="uscript-operator">,</span> <span class="uscript-number">1.2</span><span class="uscript-operator">,</span> <span class="uscript-number">0.3</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+     <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-comment">// needed to overide the weapons call as we have a multi-ammo weapon</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+       <span class="uscript-keyword">local</span> Inventory Inv<span class="uscript-operator">;</span>
+
+       inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoNapalm'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+       <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>inv <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span>  <span class="uscript-operator">&amp;&amp;</span> Ammunition<span class="uscript-operator">(</span>inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+         <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+       inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoFlash'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+       <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>inv <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span>  <span class="uscript-operator">&amp;&amp;</span> Ammunition<span class="uscript-operator">(</span>inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+         <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+       inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoPoison'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+       <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>inv <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span>  <span class="uscript-operator">&amp;&amp;</span> Ammunition<span class="uscript-operator">(</span>inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+         <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+       inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoStandard'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+       <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>inv <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span>  <span class="uscript-operator">&amp;&amp;</span> Ammunition<span class="uscript-operator">(</span>inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+         <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+       <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span> <span class="uscript-comment">// if we got this far no ammo for nade launcher</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// needed to add this check for a multi-ammo weapon</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> BringUp<span class="uscript-operator">(</span><span class="uscript-keyword">optional</span> Weapon PrevWeapon<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    OutOfAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// check to make sure we have some type of ammo</span>
+    <span class="uscript-comment">// Make sure we load the right skin... but don't wast server time with this...</span>
+    <span class="uscript-keyword">If</span><span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">!=</span> NM_DedicatedServer<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Skins<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>Texture<span class="uscript-name">'ChaosTex_001.Nades.Chaos_Nadelauncher_id1'</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Count <span class="uscript-operator">==</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            Skins<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Texture<span class="uscript-name">'ChaosTex_001.Nades.Chaos_NadeFlame'</span><span class="uscript-operator">;</span>
+            Skins<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Texture<span class="uscript-name">'ChaosTex_001.Nades.Chaos_Nadeshell'</span><span class="uscript-operator">;</span>
+            Skins<span class="uscript-operator">[</span><span class="uscript-number">3</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> FinalBlend<span class="uscript-name">'XEffectMat.Shield.RedShell'</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Count <span class="uscript-operator">==</span> <span class="uscript-number">2</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            Skins<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Texture<span class="uscript-name">'ChaosTex_001.Nades.chaos_nadeflash'</span><span class="uscript-operator">;</span>
+            Skins<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Texture<span class="uscript-name">'ChaosTex_001.Nades.Chaos_NadeshellFlash'</span><span class="uscript-operator">;</span>
+            Skins<span class="uscript-operator">[</span><span class="uscript-number">3</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Shader<span class="uscript-name">'XGameShaders.PlayerShaders.LightningHit'</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Count <span class="uscript-operator">==</span> <span class="uscript-number">3</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+             Skins<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Texture<span class="uscript-name">'ChaosTex_001.Nades.chaos_nadepoison'</span><span class="uscript-operator">;</span>
+             Skins<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Texture<span class="uscript-name">'ChaosTex_001.Nades.Chaos_NadeshellPoison'</span><span class="uscript-operator">;</span>
+             Skins<span class="uscript-operator">[</span><span class="uscript-number">3</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> FinalBlend<span class="uscript-name">'XEffectMat.goop.GoopFB'</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span>
+        <span class="uscript-operator">{</span>
+            Skins<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Texture<span class="uscript-name">'ChaosTex_001.Nades.chaos_nadeexplo'</span><span class="uscript-operator">;</span>
+            Skins<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Texture<span class="uscript-name">'ChaosTex_001.Nades.Chaos_Nadeshell'</span><span class="uscript-operator">;</span>
+            Skins<span class="uscript-operator">[</span><span class="uscript-number">3</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span> Texture<span class="uscript-name">'WeaponSkins.Skins.GrenadeTex'</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+     <span class="uscript-operator">}</span>
+     <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>BringUp<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// needed to add this check for a multi-ammo weapon</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> OutOfAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+   <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">==</span> NM_Standalone <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>Instigator<span class="uscript-operator">.</span>IsLocallyControlled<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+      <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoAmount <span class="uscript-operator">&gt;=</span> FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoPerFire<span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">&amp;&amp;</span> FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">&amp;&amp;</span> Ammo<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoAmount <span class="uscript-operator">&gt;=</span> FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoPerFire<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span> <span class="uscript-comment">// we have ammo return</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            ChangeAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// meaning we have some type of nade ammo change to it</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-comment">//if we have gotten to this point we are really out of ammo...better swich weapons</span>
+            DoAutoSwitch<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+     <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-comment">// manual key function to swich ammo out</span>
+<span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> ChangeAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+   <span class="uscript-keyword">local</span> Inventory Inv<span class="uscript-operator">;</span>
+
+   <span class="uscript-comment">// Check to see if they even have ammo to switch</span>
+   <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+     <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+   <span class="uscript-comment">// dont let them chang ammo if they are firing</span>
+   <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>bIsFiring <span class="uscript-operator">||</span> FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>bIsFiring<span class="uscript-operator">)</span>
+       <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+   <span class="uscript-comment">//DJP: Stops stuff firing when the type switches (when out of ammo).</span>
+   <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">&amp;&amp;</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Controller <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+   <span class="uscript-operator">{</span>
+        Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Controller<span class="uscript-operator">.</span>bFire <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+        Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Controller<span class="uscript-operator">.</span>bAltFire <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+   <span class="uscript-operator">}</span>
+
+
+    <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>bChangedAmmo<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Count <span class="uscript-operator">==</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+      <span class="uscript-operator">{</span>
+         Count <span class="uscript-operator">+=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+
+         Inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoNapalm'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+         <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Inv  <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span>  <span class="uscript-operator">&amp;&amp;</span> Ammunition<span class="uscript-operator">(</span>inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+         <span class="uscript-operator">{</span>
+             bChangedAmmo<span class="uscript-operator">=</span><span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// Remove old fire mode 0</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// primary fire</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Primary_napalm'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>ThisModeNum <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> Instigator<span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass <span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoNapalm'</span><span class="uscript-operator">;</span>    <span class="uscript-comment">// need these two to change the ammo</span>
+             Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Ammunition<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// Remove old fire mode 1</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// secondary fire</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Secondary_napalm'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>ThisModeNum <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> Instigator<span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmonapalm'</span><span class="uscript-operator">;</span>
+             Ammo<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Ammunition<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+             <span class="uscript-comment">// Remove old Attchment and spawn new one with correct skin</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> AttachmentClass <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+               DetachFromPawn<span class="uscript-operator">(</span>instigator<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             AttachmentClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_NapalmAttachment'</span><span class="uscript-operator">;</span>
+             AttachToPawn<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             PickupClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_NapalmPickup'</span><span class="uscript-operator">;</span>
+             <span class="uscript-keyword">Break</span><span class="uscript-operator">;</span>
+         <span class="uscript-operator">}</span>
+      <span class="uscript-operator">}</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Count <span class="uscript-operator">==</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span>
+      <span class="uscript-operator">{</span>
+         Count <span class="uscript-operator">+=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+         Inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoFlash'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+         <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Inv  <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span>  <span class="uscript-operator">&amp;&amp;</span> Ammunition<span class="uscript-operator">(</span>inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+         <span class="uscript-operator">{</span>
+             bChangedAmmo<span class="uscript-operator">=</span><span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// Remove old fire mode 0</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// primary fire</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Primary_flash'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>ThisModeNum <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> Instigator<span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoFlash'</span><span class="uscript-operator">;</span>    <span class="uscript-comment">// need these two to change the ammo</span>
+             Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Ammunition<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// Remove old fire mode 1</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// secondary fire</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Secondary_flash'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>ThisModeNum <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> Instigator<span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoFlash'</span><span class="uscript-operator">;</span>
+             Ammo<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Ammunition<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+             <span class="uscript-comment">// Remove old Attchment and spawn new one with correct skin</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> AttachmentClass <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+               DetachFromPawn<span class="uscript-operator">(</span>instigator<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             AttachmentClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_FlashAttachment'</span><span class="uscript-operator">;</span>
+             AttachToPawn<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             PickupClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_FlashPickup'</span><span class="uscript-operator">;</span>
+             <span class="uscript-keyword">Break</span><span class="uscript-operator">;</span>
+         <span class="uscript-operator">}</span>
+      <span class="uscript-operator">}</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Count <span class="uscript-operator">==</span> <span class="uscript-number">2</span><span class="uscript-operator">)</span>
+      <span class="uscript-operator">{</span>
+         Count <span class="uscript-operator">+=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+         Inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoPoison'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+         <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Inv  <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span>  <span class="uscript-operator">&amp;&amp;</span> Ammunition<span class="uscript-operator">(</span>inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+         <span class="uscript-operator">{</span>
+             bChangedAmmo<span class="uscript-operator">=</span><span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// Remove old fire mode 0</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// primary fire</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Primary_poison'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>ThisModeNum <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> Instigator<span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoPoison'</span><span class="uscript-operator">;</span>    <span class="uscript-comment">// need these two to change the ammo</span>
+             Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Ammunition<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// Remove old fire mode 1</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// secondary fire</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Secondary_poison'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>ThisModeNum <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> Instigator<span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmopoison'</span><span class="uscript-operator">;</span>
+             Ammo<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Ammunition<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+             <span class="uscript-comment">// Remove old Attchment and spawn new one with correct skin</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> AttachmentClass <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+               DetachFromPawn<span class="uscript-operator">(</span>instigator<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             AttachmentClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_PoisonAttachment'</span><span class="uscript-operator">;</span>
+             AttachToPawn<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             PickupClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_PoisonPickup'</span><span class="uscript-operator">;</span>
+             <span class="uscript-keyword">Break</span><span class="uscript-operator">;</span>
+         <span class="uscript-operator">}</span>
+      <span class="uscript-operator">}</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Count <span class="uscript-operator">==</span> <span class="uscript-number">3</span><span class="uscript-operator">)</span>
+      <span class="uscript-operator">{</span>
+         count <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// reset counter on last type of ammo</span>
+         Inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoStandard'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+         <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Inv  <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span>  <span class="uscript-operator">&amp;&amp;</span> Ammunition<span class="uscript-operator">(</span>inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>HasAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+         <span class="uscript-operator">{</span>
+             bChangedAmmo<span class="uscript-operator">=</span><span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// Remove old fire mode 0</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// primary fire</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Primary'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>ThisModeNum <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> Instigator<span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoStandard'</span><span class="uscript-operator">;</span>
+             Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Ammunition<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// Remove old fire mode 1</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-comment">// secondary fire</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Secondary'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>ThisModeNum <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> Instigator<span class="uscript-operator">;</span>
+             FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoStandard'</span><span class="uscript-operator">;</span>
+             Ammo<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Ammunition<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+             <span class="uscript-comment">// Remove old Attchment and spawn new one with correct skin</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> AttachmentClass <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+                 DetachFromPawn<span class="uscript-operator">(</span>instigator<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             AttachmentClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Attachment'</span><span class="uscript-operator">;</span>
+             AttachToPawn<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             PickupClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Pickup'</span><span class="uscript-operator">;</span>
+             <span class="uscript-keyword">Break</span><span class="uscript-operator">;</span>
+         <span class="uscript-operator">}</span>
+      <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    bChangedAmmo<span class="uscript-operator">=</span><span class="uscript-keyword">false</span><span class="uscript-operator">;</span> <span class="uscript-comment">// set to flase as we have changed ammo at this point and need to reset the flag</span>
+    GoToState<span class="uscript-operator">(</span><span class="uscript-name">'WaitforAmmoChange'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// "Pauses" the gun so that the player can load the new ammo</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">function</span> GiveTo<span class="uscript-operator">(</span>Pawn Other<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> Pickup Pickup<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> Inventory Inv<span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>GiveTo<span class="uscript-operator">(</span>Other<span class="uscript-operator">,</span> Pickup<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+ <span class="uscript-comment">// add empty ammo for player (for Mutant, Last Man Standing and AllAmmo)</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bDeleteMe <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  Inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoStandard'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Inv <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+   Inv <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoStandard'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+   Ammunition<span class="uscript-operator">(</span>Inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>AmmoAmount <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+   Inv<span class="uscript-operator">.</span>GiveTo<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  Inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoNapalm'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Inv <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+   Inv <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoNapalm'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+   Ammunition<span class="uscript-operator">(</span>Inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>AmmoAmount <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+   Inv<span class="uscript-operator">.</span>GiveTo<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  Inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoPoison'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Inv <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+   Inv <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoPoison'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+   Ammunition<span class="uscript-operator">(</span>Inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>AmmoAmount <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+   Inv<span class="uscript-operator">.</span>GiveTo<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  Inv <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoFlash'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Inv <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+   Inv <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoFlash'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+   Ammunition<span class="uscript-operator">(</span>Inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>AmmoAmount <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+   Inv<span class="uscript-operator">.</span>GiveTo<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+ <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>Whew. Big and ugly. Again I should touch on a few key points. In the tick we needed to modify it to tell the client that we have changed ammo and we need to play the changeammo animations as well as change the skin. That's where the vars from the ChaosWeapon were used. The PlayChangeAmmo() was used to kick off the animation of the changing of the ammo. However we uses different skins for the different ammo type loaded into the 1st view of the weapon. So we needed to change the skins. We want to wait until the 1st model is out of view before we change the skin. We used an AnimNotify in the animation file to do this. We broke the animation up into two parts, an Ammodown then and Ammoup. Ammodown plays the "unloading" part. At the 2nd to the last frame of that AmmoDown animation we set up the AnimNotify to call the PlayAmmoMeshSwitch() function. This function will then change to the new skin (or mesh) and then play the up animation. Thus the skin/mesh changing all happens out of view of the player and when see the AmmoUp animation play its playing with the correct skin (or mesh). Please note that for this example we just changed the skin. In the other weapons we had to change the weapon mesh and did that in the PlayAmmoMeshSwitch() as well. We also play to the client a change ammo message. This is not needed. The BringUp() function needed to be modify to handle the dropped weapons. With out a check for the skins (or mesh) you would get the default skin/mesh of the weapon and not the current loaded ammo skin/mesh. The rest is more or less standard "stuff'.</p>
+<p>A couple of things I should mention.</p>
+<ul><li>Using this method you will may need a new attachment class for each of the other ammo types. This attachment class can be a subclass of the default attachment class you use in your weapon. Nothing special is need here just change any skins/mesh in this attachment class if it applies. </li>
+<li>You will also need to have a new weapon pickup for each of the other ammo type that you have. This handles the case of you having a different ammo type loaded when you toss your weapon or die. If you did not add a new pickup, then the person that picks up your dropped weapon is left with the original ammo and not the ammo you have it loaded with. Here is an example of one:</li>
+</ul>
+<pre class="uscript"><span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// GrenadeLauncher_Napalmpickup</span>
+<span class="uscript-comment">// $Id: GrenadeLauncher_Napalmpickup.uc,v 1.9 2003/07/12 20:48:44 jb Exp $</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">class</span> GrenadeLauncher_Napalmpickup <span class="uscript-keyword">extends</span> GrenadeLauncher_pickup<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//over ride this to give out proper ammo to Nade (Napalm ammo)</span>
+<span class="uscript-keyword">function</span> inventory SpawnCopy<span class="uscript-operator">(</span> pawn Other <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> inventory Copy<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">local</span> Weapon W<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> GrenadeLauncher GL<span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Inventory <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>
+  Copy <span class="uscript-operator">=</span> Inventory<span class="uscript-operator">;</span>
+  Inventory <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+ <span class="uscript-operator">}</span>
+ <span class="uscript-keyword">else</span>
+  Copy <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span>InventoryType<span class="uscript-operator">,</span>Other<span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-keyword">rot</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// add in the Napalm nade stuff here</span>
+    W <span class="uscript-operator">=</span> Weapon<span class="uscript-operator">(</span>copy<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">// Clean up "old" fire mode(s)</span>
+    <span class="uscript-comment">// primary fire</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>W<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+      W<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">// Set Primary Fire to Napalm Stuff</span>
+    W<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Primary_napalm'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    W<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>ThisModeNum <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    W<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> W<span class="uscript-operator">;</span>
+    W<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> Other<span class="uscript-operator">;</span>
+    W<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass <span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmoNapalm'</span><span class="uscript-operator">;</span>    <span class="uscript-comment">// need these two to change the ammo</span>
+    W<span class="uscript-operator">.</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Ammunition<span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>W<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// secondary fire</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>W<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+       W<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">// Set secondary Fire to Napalm Stuff</span>
+    W<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_Secondary_napalm'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    W<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>ThisModeNum <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+    W<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> W<span class="uscript-operator">;</span>
+    W<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> Other<span class="uscript-operator">;</span>
+    W<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeAmmonapalm'</span><span class="uscript-operator">;</span>
+    W<span class="uscript-operator">.</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Ammunition<span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>w<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    W<span class="uscript-operator">.</span>PickupClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_NapalmPickup'</span><span class="uscript-operator">;</span>
+    W<span class="uscript-operator">.</span>AttachmentClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'GrenadeLauncher_NapalmAttachment'</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Finally set the Count of the nade launcher to Napalm and give it to em :)</span>
+    GL <span class="uscript-operator">=</span> GrenadeLauncher<span class="uscript-operator">(</span>copy<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>GL <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+       GL<span class="uscript-operator">.</span>Count<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+
+ Copy<span class="uscript-operator">.</span>GiveTo<span class="uscript-operator">(</span> Other<span class="uscript-operator">,</span> <span class="uscript-keyword">self</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">return</span> Copy<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>This ammo pickup looks a lot like our change ammo function and its very simular to that other than a few tweaks. So did you make it through this tut? I hope that this gives you the basics on how to handle a weapon that can fire more than one ammo types. It also should avoid all of the issues with animations, network play and handle out of ammo, change ammo and droppen weapon issues. Thanks for your time.</p>
+<p><em class="em2">Jb:</em> Fixed an error that produced AN on the weapon pickup class. Sorry saw it only a few times and never had a chance to go back and fix it till now.</p>
+<p><em class="em2">Zer0:</em> This needs updating for UT2004, there are some weird issues with FireModes in 2k4. I can't get firemodes to change at all in 04, various type mismatch/destroy is not a member of Firemode/bad or missing etc errors.</p>
+<p><em class="em2">zugy:</em> Hmmm...Is there a way to get this working in 2k4? It'd help out a LOT for the grenade code I'm working on for Project Torlan...</p>
+<hr class="thin"><p><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Requirements of Grenade Launcher", "#0.1");
+menuItemAdd("Needed Functions", "#0.2");
+menuItemAdd("Complete Code", "#0.3");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Multiammo_Weapons">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Multiammo_Weapons">View other revisions</a><br>Last edited July 2, 2005 3:04 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Multiammo_Weapons">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Multiammo_Weapons">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Mostly Harmless
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

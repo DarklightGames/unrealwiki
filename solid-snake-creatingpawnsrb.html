@@ -1,0 +1,179 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Solid Snake/CreatingPawnsRB Part1</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Solid_Snake/CreatingPawnsRB_Part1; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="solid-snake.html">Solid Snake</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Solid+Snake/CreatingPawnsRB+Part1">CreatingPawnsRB Part1</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Creating your own pawn class - Part 1</h2>
+<h3><a name="0.1.1"></a>Introduction</h3>
+<p>This is going to be a long tutorial, as this is a fairly large part of Unreal. Keep in mind that, this was solely pursued by me because I wanted to start developing and prototyping with Unreal Engine 3.0. Unreal Tournament 2007 will have its own Pawn classes and so forth, so this is not intended to replace those but rather to allow me (and you) to get a working pawn class in RoboBlitz ... which you can then start prototyping your own mod. This part of the tutorial will mainly talk about code and how things have changed between Unreal Engine 2.x and Unreal Engine 3.x. The AnimTree Editor is a complex beast, and will be explained in Part 2. Part 3 will wrap everything up.</p>
+<h3><a name="0.1.2"></a>Pawn.uc</h3>
+<p>The pawn.uc in RoboBlitz when exported is rather skeletal. I would imagine that since this was mainly Epic's code a lot of the source script had to be stripped away for legal reasons. However, it appears that it is largely unchanged and we can assume a lot of things are the same between Unreal Engine 2.x's version with Unreal Engine 3.x's version. There appears to still be a whole bunch of booleans you can set to control certain aspects of the Pawn, and other various things as well. There also appears to be certain relics left over from UT2003/UT2004 as well.</p>
+<pre class="uscript"><span class="uscript-line">00001</span>  <span class="uscript-keyword">var</span>     vector  serpentinedir<span class="uscript-operator">;</span>      
+<span class="uscript-line">00002</span>  <span class="uscript-keyword">var</span>     <span class="uscript-type">float</span>   serpentinedist<span class="uscript-operator">;</span>
+<span class="uscript-line">00003</span>  <span class="uscript-keyword">var</span>     <span class="uscript-type">float</span>   serpentinetime<span class="uscript-operator">;</span> </pre><p>I guess this could be just due to laziness, but it could be used for other things possibly. Although I am pretty sure this is in reference to the Serpentine level in UT2003. Other than that there does appear to be new functions/events as well, some are to do with Kismet and others are just handling different areas. Have a look in the exported source code yourself and you'll see what I mean. However, scanning the Pawn.uc and Actor.uc, it appears that there are some things really different between Unreal Engine 2.x's implementation and Unreal Engine 3.x's implementation. For a start, there doesn't appear to be anything which controlled the actual rendering of the pawn. In Unreal Engine 2.x you had the almighty DT_DrawType enum, which told the object how to render, and various variables which hold the reference to what to render such as 'Mesh', 'StaticMesh', 'Texture' and so forth. There also doesn't seem to be a lot of things other aspects too, but within the default properties, there appears to be a whole bunch of inline objects being created and assigned to an array called 'Components'.</p>
+<h3><a name="0.1.3"></a>Components</h3>
+<p>This is one of the key differences between Unreal Engine 2.x and Unreal Engine 3.x. Unreal Engine 3.x organises a lot of areas into components. This means that rendering, collision, sound and other bits and pieces are all organised by their respective components. In this case, we will look at rendering specifically. If you simply extend Pawn, and create your own subclass with no changes and add it in  UnrealED 4.0, all you see if the 'Eagle head' sprite and nothing more. Seems that anything you do, doesn't to do anything. How I figured out how this works was by comparing the Pawn class with Skeletal Mesh Actor class. The Skeletal Mesh Actor class, allows you to add a skeletal mesh into UnrealED 4.0 ... and so this is what I wrote ... which seemed to work just fine.</p>
+<pre class="uscript"><span class="uscript-line">00001</span>  <span class="uscript-keyword">class</span> xPawn <span class="uscript-keyword">extends</span> Pawn
+<span class="uscript-line">00002</span>        <span class="uscript-keyword">placeable</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00003</span>  
+<span class="uscript-line">00004</span>  <span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Pawn<span class="uscript-operator">)</span> <span class="uscript-keyword">const</span> <span class="uscript-keyword">editconst</span> LightEnvironmentComponent LightEnvironment<span class="uscript-operator">;</span>
+<span class="uscript-line">00005</span>  
+<span class="uscript-line">00006</span>  <span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-line">00007</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00008</span>    Begin Object <span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>DynamicLightEnvironmentComponent <span class="uscript-type">Name</span><span class="uscript-operator">=</span>MyLightEnvironment ObjName<span class="uscript-operator">=</span>MyLightEnvironment Archetype<span class="uscript-operator">=</span>DynamicLightEnvironmentComponent<span class="uscript-name">'Engine.Default__DynamicLightEnvironmentComponent'</span>
+<span class="uscript-line">00009</span>      bEnabled<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+<span class="uscript-line">00010</span>      <span class="uscript-type">Name</span><span class="uscript-operator">=</span><span class="uscript-string">"MyLightEnvironment"</span>
+<span class="uscript-line">00011</span>      ObjectArchetype<span class="uscript-operator">=</span>DynamicLightEnvironmentComponent<span class="uscript-name">'Engine.Default__DynamicLightEnvironmentComponent'</span>
+<span class="uscript-line">00012</span>    End Object
+<span class="uscript-line">00013</span>    LightEnvironment<span class="uscript-operator">=</span>MyLightEnvironment
+<span class="uscript-line">00014</span>  
+<span class="uscript-line">00015</span>    Begin Object <span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>SkeletalMeshComponent <span class="uscript-type">Name</span><span class="uscript-operator">=</span>SkeletalMeshComponent0 ObjName<span class="uscript-operator">=</span>SkeletalMeshComponent0 Archetype<span class="uscript-operator">=</span>SkeletalMeshComponent<span class="uscript-name">'Engine.Default__SkeletalMeshComponent'</span>
+<span class="uscript-line">00016</span>      LightEnvironment<span class="uscript-operator">=</span>MyLightEnvironment
+<span class="uscript-line">00017</span>      CollideActors<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-line">00018</span>      BlockZeroExtent<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-line">00019</span>      benablefullanimweightbodies<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-line">00020</span>      <span class="uscript-type">Name</span><span class="uscript-operator">=</span><span class="uscript-string">"SkeletalMeshComponent0"</span>
+<span class="uscript-line">00021</span>      ObjectArchetype<span class="uscript-operator">=</span>SkeletalMeshComponent<span class="uscript-name">'Engine.Default__SkeletalMeshComponent'</span>
+<span class="uscript-line">00022</span>    End Object
+<span class="uscript-line">00023</span>    Mesh<span class="uscript-operator">=</span>SkeletalMeshComponent0
+<span class="uscript-line">00024</span>  
+<span class="uscript-line">00025</span>    Components<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>SkeletalMeshComponent0
+<span class="uscript-line">00026</span>    Components<span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>MyLightEnvironment
+<span class="uscript-line">00027</span>    <span class="uscript-type">Name</span><span class="uscript-operator">=</span><span class="uscript-string">"Default__xPawn"</span>
+<span class="uscript-line">00028</span>    ObjectArchetype<span class="uscript-operator">=</span>Actor<span class="uscript-name">'Engine.Default__Pawn'</span>
+<span class="uscript-line">00029</span>  <span class="uscript-operator">}</span></pre><p>Seems to obvious when you read it doesn't it? Its obvious that you would create an inline skeletal mesh component, which of course handles the rendering of the skeletal mesh. Of course, this is obvious now that I've shown you the code and how it all connects together. Anyways, why I used Component[0] and Component[3] is because I wanted to override the parent classes Component array. If you look in there, it looks like this:</p>
+<pre class="uscript"><span class="uscript-line">00001</span>     Components<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Sprite
+<span class="uscript-line">00002</span>     Components<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>CollisionCylinder
+<span class="uscript-line">00003</span>     Components<span class="uscript-operator">(</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Arrow</pre><p>So, this is the reason why simply extending the Pawn class only presented us initially with the Eagle Head [of Doom?] sprite in UnrealED 4.0. Its because the first component was a sprite rendering one [ahhhh!]. So I overrided that with the skeletal mesh component. This probably means that during the creation of my Pawn that a sprite component does actually get created as well and never used, thus creating a little overhead ... but we will just need to put up with that as Pawn is a really useful class handling all sorts of other things we can't really be bothered with coding all over again. As you can also see, collision is handled by the CollisionCylinder component. There are other forms of collision components as well, such as ones for static mesh components, cube components and so forth but for now we can look into that another day. The Arrow component is the actual arrow you see in UnrealED 4.0 and is never seen in game (mostly because it has the 'HiddenGame' boolean set to true in the class, ArrowComponent). I also added the light component as well, mainly because SkeletalMeshActor also had it as well. Lastly, Pawn already defined the Mesh variable correctly, they just didn't seem to link it up properly. So this is why the inline skeletal mesh component is hooked up that variable.</p>
+<h3><a name="0.1.4"></a>Graphics?</h3>
+<p>This is the basic pawn class I created. When I place that in UnrealED 4.0 it puts down a pawn but with no mesh. Which is obvious as I haven't told it what to render. From here, it is mostly UnrealED 4.0 work, and some 3DSMax + Character Studio + ActorX work.</p>
+<div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[CreatingYourOwnPawn_AnimSetEditor]" src="images/creatingyourownpawn-animsete.png"></div>
+</td>
+</tr>
+</table>
+</div>
+<p>So after a one or two hours I imported all of the animations for one of the characters from UT2003 (They never seemed to release the character source art for UT2004). An early warning for those trying to import than Human Male character set, it seems that they used two different sets of bones for the animations. I am unsure how they managed to import all of them successfully, but you would need to do some serious work to actually get it all to work. Hence why I used the Human Female character set as all the animations worked together. Maybe they used a combination? It also seems that there were some animations in UT2003 not released here ... or something anyways as I don't have the fullset of animations. Oh well, it doesn't really matter anyways.</p>
+<p>From here you can add some new lines into your skeletal mesh component default properties section which winds up looking like this.</p>
+<pre class="uscript"><span class="uscript-line">00001</span>    Begin Object <span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>SkeletalMeshComponent <span class="uscript-type">Name</span><span class="uscript-operator">=</span>SkeletalMeshComponent0 ObjName<span class="uscript-operator">=</span>SkeletalMeshComponent0 Archetype<span class="uscript-operator">=</span>SkeletalMeshComponent<span class="uscript-name">'Engine.Default__SkeletalMeshComponent'</span>
+<span class="uscript-line">00002</span>      SkeletalMesh<span class="uscript-operator">=</span>SkeletalMesh<span class="uscript-name">'ProjectXB.SkeletalMesh.HumaleFemaleA'</span>
+<span class="uscript-line">00003</span>      AnimSets<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>AnimSet<span class="uscript-name">'ProjectXB.Animation.HumanFemaleAnimSet'</span>
+<span class="uscript-line">00004</span>      LightEnvironment<span class="uscript-operator">=</span>MyLightEnvironment
+<span class="uscript-line">00005</span>      CollideActors<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-line">00006</span>      BlockZeroExtent<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-line">00007</span>      benablefullanimweightbodies<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-line">00008</span>      <span class="uscript-type">Name</span><span class="uscript-operator">=</span><span class="uscript-string">"SkeletalMeshComponent0"</span>
+<span class="uscript-line">00009</span>      ObjectArchetype<span class="uscript-operator">=</span>SkeletalMeshComponent<span class="uscript-name">'Engine.Default__SkeletalMeshComponent'</span>
+<span class="uscript-line">00010</span>    End Object
+<span class="uscript-line">00011</span>    Mesh<span class="uscript-operator">=</span>SkeletalMeshComponent0</pre><p>And thats it! After you recompile, you can now add your pawn into UnrealED 4.0, and it should create a pawn with that mesh in place like. To get a basic player controller up and running, you can use UT2004's PlayerController class. The pawn + controller scheme seems to be still in place and works in the same way. You create a pawn, then get a controller to possess it.</p>
+<h3><a name="0.1.5"></a>Conclusion</h3>
+<p>This concludes part one of this tutorial. Hopefully this tutorial has shown you how to create your own renderable pawn in Unreal Engine 3.x. As again, like my other tutorials, I have skimmed over a lot of the basic details which I believe are well covered by other tutorials either on the Wiki or on the internet. I realize that I have not created a step by step process of doing all those, but have rather pointed out key areas which are new. If any critical parts are missing, please feel free to add it in, or request the information from me. I figured most of this out in around three to four hours of playing with code and a lot of debugging, so I may have assumed too much knowledge. Anyways, I think this covers most things.</p>
+<p>Part two will discuss about the ideology and the method of the AnimTree and the AnimTree Editor. This is a very powerful way of adding animation into Unreal Engine 3.0 without getting the programmers too involved in the process. This is an excellent way to move forward as this kind of work you want the animators (who make the animations in 3DSMax/Maya or whatever else) to create how the animations will work ingame. This greatly improves work flow, and it also means that animators can control how their animations are used in game.</p>
+<h4><a name="0.1.5.1"></a>Comments</h4>
+<p>How do you export pawn.uc?</p>
+<hr class="thin"><p><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Creating your own pawn class - Part 1", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Introduction", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Pawn.uc", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Components", "#0.1.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Graphics?", "#0.1.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Conclusion", "#0.1.5");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Comments", "#0.1.5.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="solid-snake.html">Solid Snake</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Solid_Snake/CreatingPawnsRB_Part1">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Solid_Snake/CreatingPawnsRB_Part1">View other revisions</a><br>Last edited June 17, 2007 4:11 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Solid_Snake/CreatingPawnsRB_Part1">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Solid_Snake/CreatingPawnsRB_Part1">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I'm a doctor, not a mechanic
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

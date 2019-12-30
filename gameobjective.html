@@ -1,0 +1,219 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: GameObjective</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=GameObjective; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=GameObjective">GameObjective</a></h1>
+	<div class="wiki"><div class="classpath"><img src="shared//gameicons/icon-ut2003.png"> <a href="unreal-tournament-2003.html">UT2003</a> :: <a href="actor.html">Actor</a> &gt;&gt; <a href="navigationpoint.html">NavigationPoint</a> &gt;&gt; <a href="jumpdest.html">JumpDest</a> &gt;&gt; <a href="jumpspot.html">JumpSpot</a> &gt;&gt; GameObjective (package UnrealGame)<br></div>
+<p>Actors of class <em class="em2">GameObjective</em> (or rather subclasses thereof) are part of UT2003's <a href="bot-support.html">bot support</a>.  </p>
+<p>While a GameObjective is "active", <a href="bot.html">bot</a>s of one team seek it out, bots of the other try and defend it. When the attacking team reaches it, they "disable" it in some way &ndash; the various subclasses tell the bots that they need to do (can a coder confirm this bit?). This is used to implement CTF flags, Domination points, and so on.</p>
+<p>Ways to disable:</p>
+<ul><li><a href="destroyableobjective.html">DestroyableObjective</a> does it when the objective's Health reaches zero. </li>
+<li><a href="keyinventory.html">KeyInventory</a> in conjunction with a <a href="lockedobjective.html">LockedObjective</a> when a player bearing the key approaches the locked objective.</li>
+<li><a href="triggeredobjective.html">TriggeredObjective</a> when a player triggers the objective.</li>
+</ul>
+<p>The GameObjective actor can be tied to defense points created with <a href="unrealscriptedsequence.html">UnrealScriptedSequence</a>s, and routes to the objective are defined with <a href="assaultpath.html">AssaultPath</a>s.</p>
+<h2><a name="0.1"></a>Coding with GameObjectives </h2>
+<p>Normally, a GameObjective will be added to a map manually by level designers, but it <em class="em1">is</em> possible to have game code spawn GameObjective objects (of subclasses where bStatic and bNoDelete are both set to False), but since they're not part of the navigation network bots won't find them.  To facilitate that anyway, overwrite TellBotHowToDisable in your GameObjective subclass and direct the bot to a nearby regular actor (either a static NavigationPoint that has been pathed or an actor not derived from NavigationPoint at all).</p>
+<p>You might also need to set the bCollideWhenPlacing property to False so that the spawn actually succeeds if you try to spawn it at the map origin.  This is one reason why the code might work on some maps and not on others.</p>
+<p>Another trap here is that GameObjective contains a built in <a href="linked-list.html">linked list</a> which can get corrupted into a circular list if you spawn GOs at runtime. (Depending on the order that AllActors passes the existing GOs). This will cause anything using the linked list to crash the game (infinite loop).</p>
+<p>The problem is that GameObjective's PostBeginPlay assumes no more GameObjectives are spawned after the first's PostBeginPlay is called. The solution is to fix the list yourself with something like:</p>
+<pre class="uscript">   prevGO <span class="uscript-operator">=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">;</span>
+   <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'GameObjective'</span><span class="uscript-operator">,</span> GO<span class="uscript-operator">)</span>
+   <span class="uscript-operator">{</span>
+      <span class="uscript-comment">//Clear NextObjective on all, since GameObjective code has got it wrong</span>
+      GO<span class="uscript-operator">.</span>NextObjective <span class="uscript-operator">=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">;</span>
+      <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>prevGO <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+      <span class="uscript-operator">{</span>
+         prevGO<span class="uscript-operator">.</span>NextObjective <span class="uscript-operator">=</span> GO<span class="uscript-operator">;</span>
+         GO<span class="uscript-operator">.</span>bFirstObjective <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+      <span class="uscript-operator">}</span>
+      <span class="uscript-keyword">else</span>
+         GO<span class="uscript-operator">.</span>bFirstObjective <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+      prevGO <span class="uscript-operator">=</span> GO<span class="uscript-operator">;</span>
+   <span class="uscript-operator">}</span></pre><p>Ideally do this in an override of GO.PostBeginPlay. Then you don't have to care what else (like TeamAI) might keep its own reference to the list, as that will happen later.</p>
+<h2><a name="0.2"></a>Properties</h2>
+<h3><a name="0.2.1"></a>Main</h3>
+<dl><dt>name Event</dt><dd>Inherited from <a href="actor.html">Actor</a>.  Event that is fired when this objective has been disabled.</dd><dt>bool bTeamControlled</dt><dd>Disabling this objective changes the objective's team rather than removing it.  (Used for <a href="domination.html">Domination</a> control points.)</dd><dt>bool bAccruePoints</dt><dd>If set, the controlling team accrues points.  (Can be used for Unreal Tournament-style Domination control points.)</dd><dt>byte DefenderTeamIndex</dt><dd><a href="team-number.html">Team number</a> of the team defending this objective : 0=red, 1=blue.</dd><dt>byte DefensePriority</dt><dd>Used to set objective order.  Objectives that should be completed first should be given a higher DefensePriority.  The last objective should have a DefensePriority of 0, and each previous objective should have its DefensePriority increased by one.</dd><dt>int Score</dt><dd>If the bAccruePoints property is set, score given to the team holding this objective every second.  Otherwise, score given to player who completes/disables this objective.</dd></dl>
+<h3><a name="0.2.2"></a>Bot Support</h3>
+<dl><dt>name DefenseScriptTags</dt><dd><a href="tag.html">Tag</a> of <a href="unrealscriptedsequence.html">UnrealScriptedSequence</a>s used by bots that defend this objective.</dd><dt>name AreaVolumeTag</dt><dd>Optional tag of a <a href="volume.html">Volume</a> defining the base area around this objective.  Used by the game to determine whether a bot is close to this objective.</dd><dt>float BaseRadius</dt><dd>Radius of a simple base area around this objective.  Can be used instead of or in addition to AreaVolumeTag.</dd><dt>float BaseExitTime</dt><dd>Time (in seconds) it takes a bot to get entirely away from the base.  In <a href="ctfgame-ut.html">CTF</a>, used by bots to make a guess whether an enemy has already left the base after taking the flag.</dd></dl>
+<h3><a name="0.2.3"></a>Localized</h3>
+<dl><dt>string ObjectiveName (localized)</dt><dd>Human-readable name of this objective.</dd><dt>string DestructionMessage (localized)</dt><dd>Message displayed when this objective has been destroyed.</dd><dt>string LocationPrefix (localized)</dt><dd>Text displayed before the human-readable objective name as a player's location in the scoreboard.</dd><dt>string LocationPostfix (localized)</dt><dd>(Text displayed after)</dd></dl>
+<h2><a name="0.3"></a>Hidden Properties</h2>
+<h3><a name="0.3.1"></a>General</h3>
+<dl><dt>bool bDisabled</dt><dd>Set by DisableObjective when this objective has been disabled/destroyed.</dd><dt>byte StartTeam</dt><dd>Initial value of DefenderTeamIndex.  Set by PostBeginPlay and used solely by the Reset function.</dd></dl>
+<h3><a name="0.3.2"></a>Bot Support</h3>
+<dl><dt><a href="unrealscriptedsequence.html">UnrealScriptedSequence</a> DefenseScripts</dt><dd>First <a href="unrealscriptedsequence.html">UnrealScriptedSequence</a> in a linked list of defense scripts associated with this objective.  PostBeginPlay looks for scripts whose <a href="tag.html">Tag</a> matches the objective's DefenseScriptTags property and initializes the DefenseScripts variable with a reference to the first script in the linked list.</dd><dt>bool bHasShootSpots</dt><dd>Used exclusively by [Bombing Run]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Bombing_Run&referrerid=GameObjective">?</a> bot support and specifies whether a goal has associated <a href="shootspot.html">ShootSpot</a>s from where the bomb can be shot through the hoop.  Set by PostBeginPlay in <a href="xbombdelivery.html">xBombDelivery</a>, used by <a href="bombingrunsquadai.html">BombingRunSquadAI</a>.</dd><dt><a href="assaultpath.html">AssaultPath</a> AlternatePaths</dt><dd>References the first of a <a href="linked-list.html">linked list</a> of AssaultPaths associated with this GameObjective. All paths for a GameObjective are stored in a single list according to the order they are encountered by the AllActors <a href="iterator.html">iterator</a> function ignoring any priority or path specifications.</dd><dt><a href="volume.html">Volume</a> MyBaseVolume</dt><dd>Initialized with a reference to the <a href="volume.html">volume</a> specified by the AreaVolumeTag property (see above).  Used by BotNearObjective.</dd></dl>
+<h3><a name="0.3.3"></a>Linked List</h3>
+<dl><dt>bool bFirstObjective</dt><dd>Used internally to link all objectives by their NextObjective property in PostBeginPlay.  Set to True only for the first objective in the linked list.</dd><dt><a href="gameobjective.html">GameObjective</a> NextObjective</dt><dd>Links to the next objective in the linked objective list.</dd></dl>
+<h2><a name="0.4"></a>Functions</h2>
+<h3><a name="0.4.1"></a>General</h3>
+<dl><dt>PostBeginPlay()</dt><dd>Performs several initialization tasks:<ul><li>Finds the first <a href="unrealscriptedsequence.html">UnrealScriptedSequence</a> in the <a href="linked-list.html">linked list</a> whose <a href="tag.html">Tag</a> matches the tag given by the DefenseScriptTags property and stores a reference to it in the DefenseScripts variable.</li>
+<li>Chains all GameObjective actors found in the map to a list linked by the NextObjective variable.  The first GameObjective actor in the list has its bFirstObjective variable set to <code>True</code>.  The SetObjectiveLists function in <a href="teamai.html">TeamAI</a> (and other functions there) use this to find the start of the chain.</li>
+<li>Initializes the AlternatePaths <a href="linked-list.html">linked list</a> of <a href="assaultpath.html">AssaultPath</a> actors with a matching ObjectiveTag. Every AssaultPath added to the list will check, whether it is the first or last (known) node in each of its paths and correct the bFirstPath and bLastPath properties accordingly.</li>
+<li>Finds the <a href="volume.html">Volume</a> specified by the AreaVolumeTag property and stores a reference to it in the MyBaseVolume variable.</li>
+<li>If the bAccruePoints property is set, starts the timer with a one-second interval.</li>
+</ul>
+</dd><dt>Timer()</dt><dd>If the bAccruePoints property is set, adds the number of points specified in the Score property to the total score of the team currently holding this objective. </dd><dt>float GetDifficulty()</dt><dd>Returns a generic "difficulty" value.  Only implemented by the <a href="xbombdelivery.html">xBombDelivery</a> subclass of GameObjective and used by function PreferShootScore in <a href="bombingrunsquadai.html">BombingRunSquadAI</a> to make a decision whether a bot prefers shooting through the hoop or making a touchdown.</dd><dt>function PlayAlarm()</dt><dd>Can be overwritten in subclasses to play an alarm (for instance when a domination point or a flag is taken).  Must be explicitely called.</dd><dt>DisableObjective( <a href="pawn.html">Pawn</a> Instigator )</dt><dd>Called when this objective has been disabled.  The default implementation fires the objective's <a href="event.html">Event</a>, gives points to the attackers and changes the attacking bots' orders.  Various other classes call DisableObjective:<ul><li><a href="destroyableobjective.html">DestroyableObjective</a> does it when the objective's Health reaches zero.</li>
+<li><a href="keyinventory.html">KeyInventory</a> in conjunction with a <a href="lockedobjective.html">LockedObjective</a> when a player bearing the key approaches the locked objective.</li>
+<li><a href="triggeredobjective.html">TriggeredObjective</a> when a player triggers the objective.</li>
+</ul>
+</dd></dl>
+<h3><a name="0.4.2"></a>Bot Support</h3>
+<dl><dt>bool BotNearObjective( <a href="bot.html">Bot</a> B )</dt><dd>Returns whether the given <a href="bot.html">Bot</a> is "near" this objective.  Uses the volume specified through the AreaVolumeTag property and the BaseRadius property to figure that out.</dd><dt>bool OwnsDefenseScript( <a href="unrealscriptedsequence.html">UnrealScriptedSequence</a> S )</dt><dd>Checks and returns whether the given <a href="unrealscriptedsequence.html">UnrealScriptedSequence</a> is in the list of defense scripts for this objective.</dd><dt>bool TellBotHowToDisable( <a href="bot.html">Bot</a> B)</dt><dd>Tells the given bot how to disable this objective; the default implementation simply shows the bot a path to it.  Only returns True if valid and useable orders were given to the bot.  Called by CheckSquadObjectives in <a href="squadai.html">SquadAI</a> (which in turn is indirectly called by a <a href="bot.html">Bot</a> itself).</dd><dt>int GetNumDefenders()</dt><dd>Returns the number of players and bots currently defending this objective.  Used by the GetLeastDefendedObjective and GetMostDefendedObjective functions in <a href="teamai.html">TeamAI</a> (which in turn are used to make a decision about where to send bots for attack or defense).</dd></dl>
+<h3><a name="0.4.3"></a>Information</h3>
+<dl><dt>string GetHumanReadableName() (simulated)</dt><dd>Inherited from <a href="actor.html">Actor</a>.  Returns a human-readable name for this objective.  Used for logging.</dd><dt>bool BetterObjectiveThan( <a href="gameobjective.html">GameObjective</a> Best, byte DesiredTeamNum, byte RequesterTeamNum )</dt><dd>Solely used to display WillowWhisp<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=WillowWhisp&referrerid=GameObjective">?</a>s to show (human) players the path to the next objective.</dd></dl>
+<h2><a name="0.5"></a>Known Subclasses</h2>
+<pre class="paraverbatim"> <a href="gameobjective.html">GameObjective</a>
+  +- <a href="asobj-energycore-spawn.html">ASOBJ EnergyCore Spawn</a> (UT2004 only)
+  +- <a href="ctfbase.html">CTFBase</a>
+  +- <a href="destroyableobjective.html">DestroyableObjective</a>
+  |   +- ONSPowerCore<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ONSPowerCore&referrerid=GameObjective">?</a>
+  |       +- ONSPowerCoreBlue<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ONSPowerCoreBlue&referrerid=GameObjective">?</a>
+  |       +- ONSPowerCoreRed<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ONSPowerCoreRed&referrerid=GameObjective">?</a>
+  |       +- ONSPowerNode<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ONSPowerNode&referrerid=GameObjective">?</a>
+  |           +- <a href="onspowernodeneutral.html">ONSPowerNodeNeutral</a>
+  +- <a href="dominationpoint.html">DominationPoint</a>
+  |   +- <a href="xdompoint.html">xDomPoint</a>
+  |       +- <a href="xdompoint.html">xDomPointA</a>
+  |       +- <a href="xdompoint.html">xDomPointB</a>
+  +- <a href="lockedobjective.html">LockedObjective</a> (UT2003 only)
+  +- ProximityObjective<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ProximityObjective&referrerid=GameObjective">?</a> (UT2004 only)
+  |   +- <a href="asobj-energycore-delivery.html">ASOBJ EnergyCore Delivery</a>
+  |       +- <a href="holdobjective.html">HoldObjective</a>
+  |       +- <a href="lockedobjective.html">LockedObjective</a>
+  |       +- <a href="useobjective.html">UseObjective</a>
+  +- <a href="touchableobjective.html">TouchableObjective</a> (custom class)
+  +- <a href="triggeredobjective.html">TriggeredObjective</a>
+  +- <a href="xbombdelivery.html">xBombDelivery</a>
+  +- <a href="xbombspawn.html">xBombSpawn</a></pre><h2><a name="0.6"></a>Related Topics</h2>
+<ul><li><a href="bot-pathing.html">Bot Pathing</a></li>
+<li><a href="teamai.html">TeamAI</a></li>
+<li><a href="squadai.html">SquadAI</a></li>
+<li><a href="gametype.html">Gametype</a></li>
+</ul>
+<h3><a name="0.6.1"></a>Questions/Comments</h3>
+<p><em class="em2">MythOpus:</em> I want to set my <a href="holdobjective.html">HoldObjective</a> to start out with no team.  Since 2,3 and 255 are completely ignored, how can I do this?  Also, even when I have the bTeamControlled set to true and the red team completes the objective, the blue team is still left defending it and cannot retake control.  Does anyone know how to make this possible?</p>
+<p><em class="em2">Ironblayde:</em> Is there some advantage to setting up an AreaVolumeTag? Under what circumstances would the game use this, and to what end? I didn't find any other pages on the Wiki that mention this property, so I'm curious as to whether anyone knows more about it.</p>
+<p><em class="em2">SuperApe:</em> Added subclass tree.  Marked up propeties, functions.</p>
+<p><em class="em2">IceCreamYou:</em> Should DefenderTeamIndex be set to 0 or 1 for normal objectives?  Also, I'm confused about DefensePriority: as I understand it, this field is for ordering your objectives, not setting which ones are more important as this page would currently imply.</p>
+<p><em class="em2">SuperApe:</em> To answer your question: That depends on which team the GameObjective is defended by. (0=red, 1=blue)</p>
+<p><em class="em2">IceCreamYou:</em> Numbering in Assault, unlike other gametypes, is relative.  0=attackers, 1=defenders (and even that doesn't apply when setting up playerstarts).  However, after experimentation, I found that the number in DefenderTeamIndex has absolutely no effect on anything.  I also changed the passage about DefensePriority to better reflect its usage.</p>
+<p><em class="em2">SuperApe:</em> Different gametypes will use that property as advertised, a few will not (as you found that AS is the <em class="em1">odd duck</em> in the group).  But, on futher experimentation (say, in a CTF, BR or DDOM map), you'll find this property does what it's supposed to do.  </p>
+<hr class="thin"><p><a href="category-class-ut2003.html">Category Class (UT2003)</a></p>
+<p><a href="category-class-ut2004.html">Category Class (UT2004)</a></p>
+<p><a href="category-class-tree.html">Category Class Tree</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Coding with GameObjectives ", "#0.1");
+menuItemAdd("Properties", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Main", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Bot Support", "#0.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Localized", "#0.2.3");
+menuItemAdd("Hidden Properties", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>General", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Bot Support", "#0.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Linked List", "#0.3.3");
+menuItemAdd("Functions", "#0.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>General", "#0.4.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Bot Support", "#0.4.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Information", "#0.4.3");
+menuItemAdd("Known Subclasses", "#0.5");
+menuItemAdd("Related Topics", "#0.6");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Questions/Comments", "#0.6.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=GameObjective">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=GameObjective">View other revisions</a><br>Last edited December 27, 2006 10:15 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=GameObjective">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/GameObjective">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Cogito, ergo sum
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

@@ -1,0 +1,747 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Karma Ragdoll Injury System</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Karma_Ragdoll_Injury_System; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Karma Ragdoll Injury System">Karma Ragdoll Injury System</a></h1>
+	<div class="wiki"><p><em class="em2">Note to reader:</em> This page represents an incomplete <em class="em1">investigation</em> into switching players' pawns into and out of ragdoll mode.  Some considerable mileage was made but the implementation does not work in network play.</p>
+<hr class="thin"><p>(Note: this text cut from <a href="karma-ragdoll.html">Karma Ragdoll</a>.  Karma Ragdoll should be definition and description.  All these ideas deserve their own page).</p>
+<p>This is an idea first proposed on the Wiki by Soldat. Essentially, the idea is that when a player is damaged by a weapon, they will go into Karma Ragdoll mode for a brief period, depending on the severity of the hit, and then get back up. So, for instance, a hit from an assault rifle may merely cause you to stumble for a split second before regaining control while a direct hit from a rocket would send you through the air to end up as a heap on the ground, which (if still alive) would then attempt to crawl back up onto its feet. Soldat came up with the following function which will activate the Ragdoll Physics on a Pawn. It needs to be placed in a subclass of Pawn or called on the Pawn externally (it would require some modification to do that, but could be modified to work in a mutators' damage modification function):</p>
+<pre class="uscript"><span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> KarmaMe<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> KarmaParamsSkel SkelParams<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">String</span> RagSkelName<span class="uscript-operator">;</span>
+
+  RagSkelName <span class="uscript-operator">=</span> Species<span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>GetRagSkelName<span class="uscript-operator">(</span>GetMeshName<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  KMakeRagdollAvailable<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                    <span class="uscript-comment">// allocate a space for the incoming ragdoll</span>
+
+  skelParams <span class="uscript-operator">=</span> KarmaParamsSkel<span class="uscript-operator">(</span>KParams<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                      <span class="uscript-comment">// create a new skelParams object based off current KParams</span>
+  skelParams<span class="uscript-operator">.</span>KSkeleton <span class="uscript-operator">=</span> RagSkelName<span class="uscript-operator">;</span>                         <span class="uscript-comment">// with our new ragdoll</span>
+  KParams <span class="uscript-operator">=</span> skelParams<span class="uscript-operator">;</span>                                       <span class="uscript-comment">// and now, voila! KParams is the new skelParams</span>
+
+  KSetBlockKarma<span class="uscript-operator">(</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                       <span class="uscript-comment">// without this line, I fall THROUGH the floor... gross</span>
+
+  SetPhysics<span class="uscript-operator">(</span>PHYS_KarmaRagdoll<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                              <span class="uscript-comment">// actually create the ragdoll</span>
+<span class="uscript-operator">}</span></pre><p>While a neat system, and easy enough to get implemented mostly, it has run into a slight problem: neither Soldat nor myself (I am also trying to implement this, though slightly differently, for my mod) has been able to find a "perfect" way to get the player to get back up after becoming a ragdoll. I have merged our attempts into a single list and described why each did not work quite as planned:</p>
+<h4><a name="0.0.0.1"></a>Removing the Actors Skeleton/Resetting the Karma Parameters, and changing Physics back to PHYS_Walking </h4>
+<pre class="uscript"><span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> UnKarmaMe<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    KarmaParamsSkel<span class="uscript-operator">(</span>KParams<span class="uscript-operator">)</span><span class="uscript-operator">.</span>KSkeleton <span class="uscript-operator">=</span> <span class="uscript-string">""</span><span class="uscript-operator">;</span>
+
+    SetPhysics<span class="uscript-operator">(</span>PHYS_Walking<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> UnKarmaMe2<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    KParams <span class="uscript-operator">=</span> <span class="uscript-keyword">default</span><span class="uscript-operator">.</span>KParams<span class="uscript-operator">;</span>
+
+    SetPhysics<span class="uscript-operator">(</span>PHYS_Walking<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Though in effect the same thing (Removing the Skeleton and Setting the Karma Parameters back to default) it was worth trying both. Neither had any effect. When the physics was set back to PHYS_Walking, the player fell through the floor and out of the world. This was later found to be a result of Karma Ragdoll simulation disabling the regular physics' collision in order to use its own. Setting bCollideWorld to true when you set the physics back to PHYS_Walking will prevent the player from falling through the floor, but it still won't get back up or do anything except look around and shoot. (Because its "state" hasn't changed in the Pawn class, it still thinks it's walking.) However, no animations will play and it will not move anywhere.</p>
+<h4><a name="0.0.0.2"></a>Freezing the Ragdoll</h4>
+<pre class="uscript"><span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> UnKarmaMe3<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    KFreezeRagdoll<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    SetPhysics<span class="uscript-operator">(</span>PHYS_Walking<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>This was tried by Soldat and caused the ragdoll to freeze. Aside from not falling into the floor, this was no more successful than removing the skeleton.</p>
+<h4><a name="0.0.0.3"></a>Spawn a New Pawn above the Ragdoll </h4>
+<p>Soldat's initial idea was to simply destroy the ragdoll and spawn a new pawn on top of where the ragdoll used to be. The problem with this, was that it would telefrag anyone the ragdoll fell under. Another problem was that it didn't have a cool animation to show the person getting back up. <img alt=":P" src="emoticons/tongue.gif" align="middle"> The telefragging was solved with a suggestion from Mysterial and expanded by CheshireCat to disable the collision on the new pawn until it was no longer touching anyone else, then reenable it. The only existing problem with this method is that there is no real smooth way of showing the player get back up. As I understand, this is the current method that Soldat is experimenting with.</p>
+<h3><a name="0.0.1"></a>Animating a Ragdoll</h3>
+<p>A short study revealed that merely setting the Physics to PHYS_KarmaRagdoll with cause serious problems with animation and will prevent any animations from being played, even if physics is reset to PHYS_Walking immediately after the call to change it to PHYS_KarmaRagdoll. In other words, the pawn does not have to spend any time being a ragdoll to cause this effect. I am still researching this find out a way to get animations to work after returning the physics to normal. Soldat (I believe) is using the last method detailed above (making a new pawn to replace the old one) and is trying to find a way to make it look like the new pawn is actually the old pawn getting up.</p>
+<h2><a name="0.1"></a>Discussion</h2>
+<p><em class="em2">Foxpaw:</em> This page has been mainly refactored from [Words About Karma Ragdoll Deaths]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Words_About_Karma_Ragdoll_Deaths&referrerid=Karma_Ragdoll_Injury_System">?</a> along with some stuff I wrote myself. Credit for all of the ideas provided has been given to their respective authors, I believe. I hope I didn't leave anyone out. By the way, Soldat, I had an idea - you may be able to set the person to a crouching idle animation and tween to a standing animation, then, you could make it so when the player lands flat on the ground, it kicks up a dust cloud or something like that, that would obscure the jump from lying down to the crouching position. Let me know how that turns out if you try it, I'm going to continue working on a way to get the original pawn to move again.</p>
+<p><em class="em2">Foxpaw:</em> Eureka! I've gotten the thing to animate again after returning from ragdoll mode. It wipes out the current position and replaces it with the default but at least it doesn't require spawning a new pawn and moving over all of the health, etc. from it. All you have to do is change the mesh. So basically, call something like the following:</p>
+<pre class="uscript"><span class="uscript-comment">// Reenables animations after returning from Karma Ragdoll simulation. Requires a global</span>
+<span class="uscript-comment">// variable SafeMesh, which is a mesh object which we can be guaranteed that this object</span>
+<span class="uscript-comment">// is not. If we try to do this with the same mesh that we are it will not work, therefore,</span>
+<span class="uscript-comment">// it is imperative that a player never be the mesh stored in safemesh. An alternative</span>
+<span class="uscript-comment">// is to have two "safe meshes" and check to see if the players mesh == the first safemesh,</span>
+<span class="uscript-comment">// if so use the second safemesh. Otherwise just use the first. This function assumes a</span>
+<span class="uscript-comment">// safemesh that is guaranteed to never be what the player is set to.</span>
+<span class="uscript-keyword">function</span> ReinitializeMesh<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> Mesh OldMesh<span class="uscript-operator">;</span>
+
+  OldMesh <span class="uscript-operator">=</span> Mesh<span class="uscript-operator">;</span>
+  LinkMesh<span class="uscript-operator">(</span> SafeMesh <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  LinkMesh<span class="uscript-operator">(</span> OldMesh <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>I also noticed that you must be careful to not engage the ragdoll simulation for too short of a time. When ragdoll simulation first begins, your limbs are all concentrated in one spot and they spread out until they are in the correct position. This takes only a fraction of a second, though it may vary on different computers. If you try to use the karma injury system for something mild like a glancing blow that just moves you for a split second it will make you turn into a ball of limbs instead!</p>
+<p><em class="em2">Foxpaw:</em> I noticed a small problem, but it may be solveable by a bit of number fudging. The momentum imparted by various weapons varies immensely. Assault Rifle and Lightning gun are only 1, minigun is 1200, each flak shard is 10000, rockets are 50000, shock gun primary 60000, flak grenades 75000, and the shock combo in excess of 130000. The problem, here, of course, is if I set it up so that a rocket puts him down for 3 seconds, he's out like a light if he gets hit by a shock combo. If, however, it's set so that a shock combo merely keeps him out for 5 seconds, the minigun/AR/lightning gun do diddly squat. Aside from the fact that you have to wait a while for the target to recover, it's pretty fun. I did notice a couple of things though: A) your ragdoll assumes you were standing. Getting ragdolled while crouching does not produce the same effect. B) Ragdolls have a tendancy to "fall through" very thin surfaces. (IE A 'grate' over a pit of slime)  Though cool, the pawn gets stuck when it recovers. This occurs with my "pawns", regular pawns may act differently.</p>
+<p><em class="em2">Chema:</em> Great! and... weird!!  I had been trying the UnKarma stuff for a few days.  I also got stuck by the animation.  Here is a full (I think) UnKarmaMe(), incluiding the double mesh link:</p>
+<pre class="uscript"><span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> UnKarmaMe<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Mesh OldMesh<span class="uscript-operator">;</span>
+
+    SetPhysics<span class="uscript-operator">(</span>PHYS_Walking<span class="uscript-operator">)</span><span class="uscript-operator">;</span>   <span class="uscript-comment">// Reset physics</span>
+    bCollideWorld <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>       <span class="uscript-comment">// And world collision</span>
+                                <span class="uscript-comment">// (KActors use KSetBlockKarma for that)</span>
+    SetCollision<span class="uscript-operator">(</span><span class="uscript-keyword">true</span><span class="uscript-operator">,</span> <span class="uscript-keyword">true</span> <span class="uscript-operator">,</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Block actors and players again</span>
+
+    OldMesh <span class="uscript-operator">=</span> Mesh<span class="uscript-operator">;</span>
+    LinkMesh<span class="uscript-operator">(</span> SafeMesh <span class="uscript-operator">)</span><span class="uscript-operator">;</span>       <span class="uscript-comment">// Global mesh, you will not see it</span>
+    LinkMesh<span class="uscript-operator">(</span> OldMesh <span class="uscript-operator">)</span><span class="uscript-operator">;</span>        <span class="uscript-comment">// This puts your mesh back</span>
+<span class="uscript-operator">}</span></pre><p>The doble mesh link is really weird, but works.  And it is dificult to find what to do whit all those native functions, wich we don't have an idea what really do.</p>
+<p>Now, to fix the abrupt standing, we could try an immediate crouch, or better, I saw somewhere a function to initialize the mesh anim before spawn.</p>
+<p><em class="em2">Foxpaw:</em> My pawn comes up in the crouching position. It was as simple as adding PlayAnim( 'Crouch' ); after you relink the oldmesh. (I'm pretty sure that those parameters are optional. I use a wrapper for animation with my "pawns," so my syntax is slightly different.)The real problem is not the starting animation, but how to get the starting animation to be something very close to what the ragdoll was using, I think. I have had ragdolls get their foot caught in tiles on the floor and not end up falling over, just kind of going limp - in that instance the standing is better. I've been experimenting the the dark magic of manual skeleton rotation - I have a hunch but I'm not quite sure how I'll go about it. If you could read the rotation of all of the bones, you could manually set them after relinking the mesh and then from there tween to an animation. However, obtaining the bones rotation is not as simple as calling the GetBoneRotation, as that only returns the rotation relative to where the current animation says that it should be. Bones seem to use a haphazard mix of absolute and relative locations and rotations, as well as even having their own internal coordinate system for each bone! For that reason it's a bit confusing. <a href="skeletal-mesh.html">Skeletal Mesh</a> has a listing of skeletal animation functions and a short description of those that I have experimented with. Unforunately, I haven't played with all of the parameters of the functions. There's another interesting thing that should be considered, but maybe this is only a problem with the juggernaut skeleton that I'm using: The juggernaut skeleton has an overwhelming tendancy to fall to its knees, then fall flat to its face. This may be because of the limits on the bones though. It generally performs this if hit by a "singular, direct" type of attack, like a direct hit from rocket, shock rifle, etc. Multiple-hit type weapons like flak work fine, and if a rocket hits the ground nearby the results are believable. One more thing. My pawns don't have this problem because of the way that they are scripted, but the built in pawns suffer a set amount of impulse whenever they get hit as a ragdoll. It does not use the actual momentum of the gun, and I don't think it applies it to the actual bone hit either. The following is a slighly modified excerpt from the code I use (the code I use is in an else block and has an argument Bone instead of declaring it.)</p>
+<pre class="uscript">  <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> Dummy<span class="uscript-operator">;</span> <span class="uscript-comment">// Just to satisfy an out argument.</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">name</span> Bone<span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Physics <span class="uscript-operator">==</span> PHYS_KarmaRagdoll <span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    Bone <span class="uscript-operator">=</span> GetClosestBone<span class="uscript-operator">(</span> HitLocation<span class="uscript-operator">,</span> Normal<span class="uscript-operator">(</span>Momentum<span class="uscript-operator">)</span><span class="uscript-operator">,</span> Dummy <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    KAddImpulse<span class="uscript-operator">(</span>momentum<span class="uscript-operator">,</span> hitlocation<span class="uscript-operator">,</span> Bone<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+
+  <span class="uscript-comment">// If you wanted you could collapse this to take up less space you could also just do:</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> Dummy<span class="uscript-operator">;</span> <span class="uscript-comment">// Just to satisfy an out argument.</span>
+
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Physics <span class="uscript-operator">==</span> PHYS_KarmaRagdoll <span class="uscript-operator">)</span>
+    KAddImpulse<span class="uscript-operator">(</span>momentum<span class="uscript-operator">,</span> hitlocation<span class="uscript-operator">,</span> GetClosestBone<span class="uscript-operator">(</span> HitLocation<span class="uscript-operator">,</span> Normal<span class="uscript-operator">(</span>Momentum<span class="uscript-operator">)</span><span class="uscript-operator">,</span> Dummy <span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>I have no idea why Digital Extremes used that RagSkelVel and SkelParams.KShotStrength nonsense. This looks way more ragdollish and much cooler as it allows for multiple sources of force to be acting in rapid succession. IE when you get nailed at close range with the flak cannon. (Of course you probrably wouldn't survive anyways but maybe if you had lots of shields and health)</p>
+<p><em class="em2">Foxpaw:</em> I got the getting up part a bit better. Your position on the ground is now recreated once the mesh is reset, but only on key bones. So now I'm a running dilapitated pile of crumpled up bones. <img alt=":P" src="emoticons/tongue.gif" align="middle"> I'll try to find an efficient way to tween out the dilapitatedness into normal movement.</p>
+<p><em class="em2">Chema:</em> Houston, I can get up... but can't crouch!  </p>
+<p>Adding PlayAnim( 'Crouch' ); to UnKarmaMe doesn't work.  Actually, it works normally, but not when I'm Karmed: I stand up, but don't crouch.  If I call UnKarmaMe again, from console, then it works.  Simply put: I can't animate the mesh in the same call that UnKarmaMe, no matter if I put in a different function.  </p>
+<p>Any idea whats wrong with me?  And with my code? (hehe). Are you doing anything special apart of the stuff in the previous UnKarmaMe()?  I'm setting my TestxPawn trough the URL (dm-gael?Game=Test.TestGame?Class=Test.TestxPawn), but there should be a scripted way to do it for a game.  An equivalent of the CheckReplacement of the Mutators? (Thanks for all your help!)</p>
+<p><em class="em2">Foxpaw:</em> It may be that the animation won't play on the same call. As you may have noticed, (maybe, it's kind of hard to see.) For a short time after becoming a ragdoll you are just a ball of concentrated body parts. It is possible that your ragdollness persists until the next tick. Or something. The 'personnell' on my mod are completely custom - I've written my own classes for everything below actor, because Pawns have lots of built in junk. <img alt=":P" src="emoticons/tongue.gif" align="middle"> It has an attached "Mesh Controller" which monitors animation, etc. and would play the idling animation the next opportunity it got... so if it cannot indeed be called from the same function it would try again the next tick. That may be why mine goes back to the idling animation while yours requires a second call. I believe that you can use checkreplacement in mutators to replace your xpawn with the one you have made.. I haven't tested it but I believe that you can because I think that checkreplacement is called from within spawn, before the controller would make its Possess call, which I believe does not occur until after the spawn has returned. I haven't tested that part out, the order that the controller stuff goes in because I just wrap the controller class, so I don't really use it for anything.</p>
+<p><em class="em2">Foxpaw:</em> I noticed another thing, but it might not be a big deal for your application. If you really clobber a ragdoll sometimes it will suffer a simerror as a result of its joints being spun so fast. This will, by default, result in it being destroyed - definately a bad thing if the player was merely injured! You can set bDestroyOnSimError in its KParams to prevent this, but it doesn't protect against everything. bKImportantRagdoll (maybe doesn't have a K, I don't remember for sure) might also be good because it prevents the ragdoll from being destroyed if the system runs low on memory and wants to make a new ragdoll. The simerror thing may not apply in your application, because generally that will only result from things such as flak to the head at point blank or similar events, which would kill the pawn anyway. It might also be worth investigating what effects mutators that affect the ragdolls will have. I'm not sure about Floaty Cadavers, but I know that Slow Motion Corpses works by slowing down the entire Karma Ragdoll simulation system. This would slow down injured players as well. I don't know if that's a problem or not, but it's worth checking out.</p>
+<p><em class="em2">OBWANDO:</em> I took a few hours fighting with this, and it wouldnt work at all in any way. Heres what I found... If you want to get the pawns to go back to their original animated mesh, you need to link with another VALID different mesh. If you try to link with a null or non-specified mesh, it will simply not link at all which then you will wind up linking the original named mesh and that does absolutely nothing. In the end heres what seemed to work for me:</p>
+<p>In my pawn class (RBxPawn.uc):</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-keyword">Global</span><span class="uscript-operator">)</span> mesh SafeMesh<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> KarmaMe<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> KarmaParamsSkel SkelParams<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">String</span> RagSkelName<span class="uscript-operator">;</span>
+
+  SafeMesh <span class="uscript-operator">=</span> Mesh<span class="uscript-operator">;</span>                                            <span class="uscript-comment">// This is where I am getting the pawn's original mesh</span>
+  RagSkelName <span class="uscript-operator">=</span> Species<span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>GetRagSkelName<span class="uscript-operator">(</span>GetMeshName<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  KMakeRagdollAvailable<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                    <span class="uscript-comment">// allocate a space for the incoming ragdoll</span>
+
+  skelParams <span class="uscript-operator">=</span> KarmaParamsSkel<span class="uscript-operator">(</span>KParams<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                      <span class="uscript-comment">// create a new skelParams object based off current KParams</span>
+  skelParams<span class="uscript-operator">.</span>KSkeleton <span class="uscript-operator">=</span> RagSkelName<span class="uscript-operator">;</span>                         <span class="uscript-comment">// with our new ragdoll</span>
+  KParams <span class="uscript-operator">=</span> skelParams<span class="uscript-operator">;</span>                                       <span class="uscript-comment">// and now, voila! KParams is the new skelParams</span>
+
+  KSetBlockKarma<span class="uscript-operator">(</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                        <span class="uscript-comment">// without this line, I fall THROUGH the floor... gross</span>
+
+  SetPhysics<span class="uscript-operator">(</span>PHYS_KarmaRagdoll<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                              <span class="uscript-comment">// actually create the ragdoll</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> UnKarmaMe<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  KarmaParamsSkel<span class="uscript-operator">(</span>KParams<span class="uscript-operator">)</span><span class="uscript-operator">.</span>KSkeleton <span class="uscript-operator">=</span> <span class="uscript-string">""</span><span class="uscript-operator">;</span>
+
+  SetPhysics<span class="uscript-operator">(</span>PHYS_Walking<span class="uscript-operator">)</span><span class="uscript-operator">;</span>        <span class="uscript-comment">// Reset physics</span>
+  bCollideWorld <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>            <span class="uscript-comment">// And world collision</span>
+                                         <span class="uscript-comment">// (KActors use KSetBlockKarma for that)</span>
+  SetCollision<span class="uscript-operator">(</span><span class="uscript-keyword">true</span><span class="uscript-operator">,</span> <span class="uscript-keyword">true</span> <span class="uscript-operator">,</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Block actors and players again</span>
+
+  LinkMesh<span class="uscript-operator">(</span> SkeletalMesh<span class="uscript-name">'Weapons.AssaultRifle_1st'</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// I am using a valid mesh which is not the same as the pawn's original mesh</span>
+                                   <span class="uscript-comment">// You should probably use a precached mesh for performance reasons, the gun seemed good here</span>
+  LinkMesh<span class="uscript-operator">(</span> SafeMesh <span class="uscript-operator">)</span><span class="uscript-operator">;</span>          <span class="uscript-comment">// Link the pawn's original mesh and we're done!</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">Foxpaw:</em> I believe that is the same as what I wrote above. SafeMesh DOES need to be defined as a mesh, I guess I should have explicitly stated that. The OldMesh is the mesh that we want to return to and is read in the unkarmatize function on my "livingthing" class. (This is the "livingthing" equivalent of the unkarmame function.) I could have sworn we discussed the idea of using two safemeshes in case, for whatever reason, the pawn was using one of those meshes, I don't see that anywhere on this page though so maybe I just imagined it. <img alt=":P" src="emoticons/tongue.gif" align="middle"> Should we remove the failed attempts listed above or leave them so others can learn that those methods don't work and why the didn't work?</p>
+<p><em class="em2">OBWANDO:</em> I would say leave it in place, it shows the evolution of the learning curve to a final conclusion. You did mention (or i assumed) that there were 2 safemeshes, but I did not know that 1 had to be explicitly defined, and that was what threw me, and could others. I wouldn't have made it this far without everything being available to read.</p>
+<p><em class="em2">Foxpaw:</em> Okay. Both safemeshes would actually need to be defined, but you can usually get away with using just one, depending on the application. In this instance it's highly unlikely that a pawn would have a first person weapon mesh as their mesh so you could get away with the way you did it. </p>
+<p><em class="em2">Foxpaw:</em> I've noticed one small issue but it's not that big of a deal. If you rotate bones using Unrealscript, the karma ragdoll is not rotated appropriately. The visual representation of it is, but the actual collision/simulation information remains unchanged. That's probrably not a big issue, I've been experimenting with rotating bones to have the player "get back up" from whatever position they ended up in. In this instance, the simulation can be slightly innaccurate if you are hit again while getting up.</p>
+<p><em class="em2">Foxpaw:</em> I almost forgot - there's a big problem with this code, but it might not be that hard to work around. There's a limit on the number of ragdolls that you can have in play at any time. I believe it may be per zone, however. The limit appears to be rather low, unfortunately, approximately 3 ragdolls per zone. If you had two carcasses and two injured players, one would be denied a ragdoll and would just stand still. You could work around this by using the IsRagdollAvailible, and if one is not the player could just play some other injury animation and be simulated using regular physics.</p>
+<p><em class="em2">OBWANDO:</em> I agree, I listed a piece of simple code to get the idea, but to prevent the problems from occuring here is a small snip that you could use as well to combat the problems of unavailability.</p>
+<pre class="uscript"><span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> KarmaMe<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> KarmaParamsSkel SkelParams<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">String</span> RagSkelName<span class="uscript-operator">;</span>
+
+  SafeMesh <span class="uscript-operator">=</span> Mesh<span class="uscript-operator">;</span>                                            <span class="uscript-comment">// This is where I am getting the pawn's original mesh</span>
+
+  <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> RagdollOverride <span class="uscript-operator">!=</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span>                                  <span class="uscript-comment">// Try to get the rag-doll setup.</span>
+    RagSkelName <span class="uscript-operator">=</span> RagdollOverride<span class="uscript-operator">;</span>                        <span class="uscript-comment">// If there is an override, use it first</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Species <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>                                    <span class="uscript-comment">// if not, use species.</span>
+    RagSkelName <span class="uscript-operator">=</span> Species<span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>GetRagSkelName<span class="uscript-operator">(</span> GetMeshName<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> RagSkelName <span class="uscript-operator">!=</span> <span class="uscript-string">""</span> <span class="uscript-operator">)</span>                                         <span class="uscript-comment">// If we did find one, try to allocate the space.</span>
+  <span class="uscript-operator">{</span>
+    KMakeRagdollAvailable<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                  <span class="uscript-comment">// allocate a space for the incoming ragdoll</span>
+  <span class="uscript-operator">}</span>
+    
+  <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> KIsRagdollAvailable<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> RagSkelName <span class="uscript-operator">!=</span> <span class="uscript-string">""</span> <span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>  
+    skelParams <span class="uscript-operator">=</span> KarmaParamsSkel<span class="uscript-operator">(</span>KParams<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                    <span class="uscript-comment">// create a new skelParams object based off current KParams</span>
+    skelParams<span class="uscript-operator">.</span>KSkeleton <span class="uscript-operator">=</span> RagSkelName<span class="uscript-operator">;</span>                       <span class="uscript-comment">// with our new ragdoll</span>
+    KParams <span class="uscript-operator">=</span> skelParams<span class="uscript-operator">;</span>                                     <span class="uscript-comment">// and now, voila! KParams is the new skelParams</span>
+  
+    KSetBlockKarma<span class="uscript-operator">(</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                     <span class="uscript-comment">// without this line, I fall THROUGH the floor... gross</span>
+  
+    SetPhysics<span class="uscript-operator">(</span>PHYS_KarmaRagdoll<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                            <span class="uscript-comment">// actually create the ragdoll</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">OBWANDO:</em> One thing I have noticed that that you can crash the client pretty easily if you try to do this in a dedicated network mode. On a local client there are no problems, but from what I have seen, a dedicated server will not allow the physics to change to ragdoll, so your client will show a ragdoll, but your server will still show the last known physics mode (like PHYS_Walking, or PHYS_Falling). Maybe we should look at starting a thread or page on network implementation.</p>
+<p><em class="em2">Foxpaw:</em> I don't understand what you mean by that.. how do you mean the server will "show" the last known physics mode, if it is a dedicated server? The server/client problem you are having is likely due to the KarmaMe function not being replicated.. or something like that. I haven't tested mine over network yet but it is set to be triggered when hit, if the imparted momentum is over a certain threshold. I am not sure how the autonomous proxy treats exec functions so the problem could be with that. If you want to ensure that the ragdolling is consistant on both client and server you could have a boolean variable that is replicated reliably from server to client, and a check in tick - if the variable is true and we are not in PHYS_KarmaRagdoll, then call the KarmaMe function, if the variable is false and we are in PHYS_KarmaRagdoll, then call the UnKarmaMe function. This, of course, would require those functions split into two pieces because you wouldn't want to call an exec function and have the cause the server to request that same function to be called on the client, which would then cause the server to request that same function to be called on the client again, etc. Enough talk! <img alt=":P" src="emoticons/tongue.gif" align="middle"> The implementation could be something like this: (I didn't actually compile and test this, there could be typos. It would also maybe need some tweaking to allow for running out of ragdolls. You could use a timer or whatever you want for unkarmame. I use a manually implemented timer in tick.)</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bIsRagdolling<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> RagdollThreshold<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">replication</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> ROLE<span class="uscript-operator">==</span>ROLE_Authority <span class="uscript-operator">)</span>
+    bIsRagdolling<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> TakeDamage<span class="uscript-operator">(</span><span class="uscript-type">int</span> Damage<span class="uscript-operator">,</span> Pawn Instigator<span class="uscript-operator">,</span> Vector HitLocation<span class="uscript-operator">,</span> Vector Momentum<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>DamageType<span class="uscript-operator">&gt;</span> DamageType<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>TakeDamage<span class="uscript-operator">(</span>Damage<span class="uscript-operator">,</span> Instigator<span class="uscript-operator">,</span> HitLocation<span class="uscript-operator">,</span> Momentum<span class="uscript-operator">,</span> DamageType<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority <span class="uscript-operator">&amp;&amp;</span> VSize<span class="uscript-operator">(</span>Momentum<span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> RagdollThreshold<span class="uscript-operator">)</span>
+    bIsRagdolling <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Tick<span class="uscript-operator">(</span>DeltaTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Role <span class="uscript-operator">&lt;</span> ROLE_Authority<span class="uscript-operator">)</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bIsRagdolling <span class="uscript-operator">&amp;&amp;</span> Physics <span class="uscript-operator">!=</span> PHYS_KarmaRagdoll<span class="uscript-operator">)</span>
+      KarmaMe<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>bIsRagdolling <span class="uscript-operator">&amp;&amp;</span> Physics <span class="uscript-operator">==</span> PHYS_KarmaRagdoll<span class="uscript-operator">)</span>
+      UnKarmaMe<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> KarmaMe<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-comment">// Do your karmame stuff here.</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> UnKarmaMe<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-comment">// Do your unkarmame stuff here.</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">OBWANDO:</em> Heres what I've seen. In most of the Epic code, you will see that they have the karma sequences set up so that the server's pawn doesnt actually get its physics set into KarmaRagdoll mode (Level.NetMode != NM_DedicatedServer). Only the client does. Now this may seem simple in theory, but the reality is that if you touch a floor surface, or its a bot (or a player) that jumps then the physics on the server will change and as a result the physics from the server will be replicated as part of the normal parent class replication to that physics mode. Thats where the problems begin since on the client you are in KarmaRagdoll, and the server replicates a PHYS_Walking, or whatever, but its not Ragdoll, so the client crashes since you cannot have a walking pawn that is in PHYS_KarmaRagdoll. This means you have to address the problem to prevent the client from getting the physics change unless you have restored the physics and mesh back and are ready for that PHYS mode.</p>
+<p><em class="em2">Foxpaw:</em> Ah, yes. The ragdolls aren't simulated on the server usually because that just wastes resources. They are "torn off" when they are created, so they cease to replicate. I think that the implementation I listed above should work.. I hope. I haven't tested that or played around with it, I don't really know all of the nuances of the pawn class since I don't use it for anything, but it seems logical.</p>
+<p><em class="em2">Foxpaw:</em> Apparently, the limit placed on ragdolls is optional. If you just remove the MakeRagdollAvailible part and the IsRagdollAvailible check, you can apparently make as many ragdolls as you want. Finally, my battlefields can have carcasses littered all around, instead of that stupid de-res thing. <img alt=":P" src="emoticons/tongue.gif" align="middle"></p>
+<p><em class="em2">PlaneGuy:</em> I tried the MP ragdoll code above, but it still crashes. I was thinking if being ragdolled is a state, you can set the pawn to ignore any non-ragdoll/karma related action in that state. Thoughts?</p>
+<p><em class="em2">OBWANDO:</em> Here is the code I created that successfully works. I used a manual timer since the SetTimer was too flaky for me. The server first of all is the only one that will REALLY know what mode our client is supposed to be in. When we are ragdolling, we should probably prevent the bots from moving the ragdoll, or when we come back out, the client will show the pawn pretty far away from where it should have been. and most importantly, we need to make sure the client does not try to change the physics via update from the server.</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bKarma<span class="uscript-operator">;</span> <span class="uscript-comment">// server paramater to client if you need to be set to karma mode</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bInKarma<span class="uscript-operator">;</span> <span class="uscript-comment">// server parameter letting the client know to override any physics changes to karma.</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bTickMe<span class="uscript-operator">;</span> <span class="uscript-comment">// my tick timer boolean</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bClKarma<span class="uscript-operator">;</span> <span class="uscript-comment">// the client flag that lets us know that the client is indeed in karma mode. (remember Physics will be changed from replication)</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> iTickTime<span class="uscript-operator">;</span> <span class="uscript-comment">// a timer counter since SetTimer was too flaky to use over network.</span>
+
+<span class="uscript-keyword">replication</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority <span class="uscript-operator">)</span>
+        bKarma<span class="uscript-operator">,</span> bInKarma<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> PostNetReceive<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PlayerReplicationInfo <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Setup<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'xUtil'</span><span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>FindPlayerRecord<span class="uscript-operator">(</span>PlayerReplicationInfo<span class="uscript-operator">.</span>CharacterName<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> AmbientGlow <span class="uscript-operator">==</span> <span class="uscript-number">70</span> <span class="uscript-operator">)</span>
+            AmbientGlow <span class="uscript-operator">=</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>AmbientGlow<span class="uscript-operator">;</span>
+        <span class="uscript-comment">//bNetNotify = false;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>bInKarma <span class="uscript-operator">==</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>bKarma <span class="uscript-operator">==</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Physics <span class="uscript-operator">==</span> PHYS_KarmaRagdoll<span class="uscript-operator">)</span> <span class="uscript-operator">)</span> UnKarmaMe<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// ok release karma mode go back to a pawn</span>
+
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bTickMe<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        iTickTime<span class="uscript-operator">--</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>iTickTime <span class="uscript-operator">&lt;</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+            bTickMe <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+            UnKarmaMe<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>bInKarma <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>bTearOff<span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-comment">// if we're in karma, but not dead, prevent player induced motion from occuring.</span>
+    <span class="uscript-operator">{</span>
+    Acceleration <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Velocity <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Physics <span class="uscript-operator">!=</span> PHYS_KarmaRagdoll<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>bKarma <span class="uscript-operator">==</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>bInKarma <span class="uscript-operator">==</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span> KarmaMe<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//set the Ragdoll Mode</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">==</span> NM_DedicatedServer <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+  <span class="uscript-comment">//****** ONLY LOCAL AND CLIENT STUFF BELOW HERE</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Physics <span class="uscript-operator">!=</span> PHYS_KarmaRagdoll<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>bClKarma <span class="uscript-operator">==</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>bInKarma <span class="uscript-operator">==</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span> KarmaMe<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//Seems replication isnt perfect, so lets make sure</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Controller <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> OldController <span class="uscript-operator">=</span> Controller<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>bInKarma <span class="uscript-operator">==</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>bKarma <span class="uscript-operator">==</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Physics <span class="uscript-operator">!=</span> PHYS_KarmaRagdoll<span class="uscript-operator">)</span> <span class="uscript-operator">)</span> SetPhysics<span class="uscript-operator">(</span>PHYS_KarmaRagdoll<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Enforce Ragdoll on clients</span>
+
+    TickFX<span class="uscript-operator">(</span>DeltaTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bDeRes <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        TickDeRes<span class="uscript-operator">(</span>DeltaTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-comment">// assume dead if bTearOff - for remote clients unfff unfff</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bTearOff <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bPlayedDeath <span class="uscript-operator">)</span>
+            PlayDying<span class="uscript-operator">(</span>HitDamageType<span class="uscript-operator">,</span> TakeHitLocation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> UnKarmaMe<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ROLE <span class="uscript-operator">!=</span> Role_Authority<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        
+        KarmaParamsSkel<span class="uscript-operator">(</span>KParams<span class="uscript-operator">)</span><span class="uscript-operator">.</span>KSkeleton <span class="uscript-operator">=</span> <span class="uscript-string">""</span><span class="uscript-operator">;</span>
+        SetPhysics<span class="uscript-operator">(</span>PHYS_Falling<span class="uscript-operator">)</span><span class="uscript-operator">;</span>   <span class="uscript-comment">// Reset physics</span>
+        bCollideWorld <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>       <span class="uscript-comment">// And world collision</span>
+                                    <span class="uscript-comment">// (KActors use KSetBlockKarma for that)</span>
+        SetCollision<span class="uscript-operator">(</span><span class="uscript-keyword">true</span><span class="uscript-operator">,</span> <span class="uscript-keyword">true</span> <span class="uscript-operator">,</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Block actors and players again</span>
+        
+        LinkMesh<span class="uscript-operator">(</span> SkeletalMesh<span class="uscript-name">'Weapons.AssaultRifle_1st'</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        LinkMesh<span class="uscript-operator">(</span> SafeMesh <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        bClKarma <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span> 
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Role <span class="uscript-operator">==</span> ROLE_Authority <span class="uscript-operator">)</span> <span class="uscript-operator">{</span> <span class="uscript-comment">//servers set the parameters</span>
+
+        bKarma <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+        bInKarma <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>In your KarmaMe() routine, add this to your karma code:</p>
+<pre class="uscript">    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ROLE <span class="uscript-operator">==</span> Role_Authority<span class="uscript-operator">)</span> 
+    <span class="uscript-operator">{</span>
+        bKarma <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+        bInKarma <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">!=</span> NM_DedicatedServer <span class="uscript-operator">)</span>
+    <span class="uscript-operator">}</span>
+
+<span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span> karma code etc<span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span>
+
+         SetPhysics<span class="uscript-operator">(</span>PHYS_KarmaRagdoll<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+         bClKarma <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span> <span class="uscript-comment">// dont forget to let its own client know its mesh should stay in karma mode.</span>
+    <span class="uscript-operator">}</span></pre><p>Remember, you need to set the bClKarma on the client only, the server has no idea as to what that boolean parameter is.</p>
+<p>So why check for unkarma in PostNetReceive? Simple, I need to check when it changes, and not every tick. Since normally you are not in karma, and you're karma flag is false when you are playing, no point tying up CPU cycles testing a scenario that can be predicted from the server.</p>
+<p>When you are ready to invoke the karma mode, use this piece of code:</p>
+<pre class="uscript">    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority <span class="uscript-operator">)</span> <span class="uscript-comment">// we need to set the karma ragdoll time and flag true if applicable on server only</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>bKarma <span class="uscript-operator">==</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>bInKarma <span class="uscript-operator">==</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span> <span class="uscript-comment">// if you're already in karma mode, no need to do it agin.</span>
+            bKarma<span class="uscript-operator">=</span><span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        iTickTime <span class="uscript-operator">=</span> iTickTime <span class="uscript-operator">+</span> vSize<span class="uscript-operator">(</span>momentum<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">30</span><span class="uscript-operator">;</span> <span class="uscript-comment">// or whatever you want to use.</span>
+        bTickMe <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span></pre><p>I use it in my TakeDamage function. </p>
+<p>One last thing, in you class add these to your defaultproperties:</p>
+<pre class="uscript"><span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    bKarma <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span>
+    bInKarma<span class="uscript-operator">=</span> <span class="uscript-keyword">false</span>
+    bAlwaysRelevant<span class="uscript-operator">=</span><span class="uscript-keyword">True</span> <span class="uscript-comment">// should already be set if its a pawn</span>
+    bGameRelevant<span class="uscript-operator">=</span><span class="uscript-keyword">True</span> <span class="uscript-comment">// i believe same here as above</span>
+    bTickMe <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span>
+    iTickTime <span class="uscript-operator">=</span> <span class="uscript-number">0</span>
+    bNetNotify<span class="uscript-operator">=</span><span class="uscript-keyword">true</span> <span class="uscript-comment">// important </span>
+    bClKarma <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span>
+<span class="uscript-operator">}</span></pre><p>Hopefully this will shed some light on the karna networking topic and get more mods looking and feeling realistic. I will add my code soon that will allow for you to successfully get your pawn back up correctly using bone lifters, and timing (notice I set the timer from the momentum parm in the takedamage function). I'm sure the code could be optimized and done in many ways, but it works, and its something to start from.</p>
+<p>Good luck, and if you have any questions post em, or look for me on IRC... im usually around in #unrealwiki, #unrealed, or #unrealscript.</p>
+<p><em class="em2">Foxpaw:</em> I would not recommend using bone lifters for the "getting back up" portion.. bone lifters require collision to be disabled, effectively making the player invulnerable while recovering. It would also be kind of wierd looking. I think that tweening from the dead body position back to crouching animation would be better and is probrably quite possible.</p>
+<p><em class="em2">Foxpaw:</em> I got tweening back to animation to "work." So far it doesn't look all that natural though. I have an idea how to make it more natural but I'd like to do so without any hacks.</p>
+<p><em class="em2">Foxpaw:</em> Improved the tweening.. making it faster makes the wierd nuances unnoticeable and bringing them back to the crouched position instead of standing helped as well. Now I only have one problem: the relinking of the mesh starts the person off in a standing position. This causes the person to tween from standing to crouching when they get up which looks a bit wierd. I know how I could probrably fix that but it's a hack, so I don't want to do it that way. Any ideas of how I could do this cleanly?</p>
+<p><em class="em2">OBWANDO:</em> Drop some code in here, lets take a look. I was playing with LinkSkelAnim( (anim), (mesh) ) instead of LinkMesh. Its a native as well, but from what I see in the actor.uc, it will start the mesh up in that animation.</p>
+<p><em class="em2">Foxpaw:</em> Unfortunately, since my class heirarchy is completely different, the function calls, etcetera will be different. I'll put the contents of the "skeletoncontroller" class here anyway, you can probrably see the idea. An explanation would probrably serve you better: When we return from ragdolling, before relinking the mesh we read the orientation of all of the main bones, using GetBoneCoords. The X axis of that coordinate system that it returns is a vector pointing along the length of the bone, thus giving us its rotation. I store this information, relink the meshes, then use SetBoneDirection to recreate the ragdoll's position after the relinking. The SetBoneDirection has an alpha parameter that allows us to define how much of that direction should be imposed and how much should be left to SetBoneRotation/the animations. By tweening the alpha from 1 to 0 always with the same directions, the body will go from its ragdolled position to the position dictated by its animation over the course of the time that it takes to tween the alpha. This can create wierd effects if you do it slowly, though, because of the bone heirarchy and all. If done quickly enough, however, it appears fairly smooth. The only problem with this setup is that it uses some fair network bandwidth, because for some reason setbonedirection is not simulated, even though SetBoneRotation is.</p>
+<p>There are some functions that are not related to the ragdolling in here, and some interplay with a class "UniversalThing" and "SkeletalMeshController," but you should be able to get the idea from this:</p>
+<pre class="uscript"><span class="uscript-comment">// The skeleton of a skeletal mesh.</span>
+<span class="uscript-keyword">class</span> SkeletonController <span class="uscript-keyword">extends</span> UniversalThing <span class="uscript-keyword">notplaceable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// **************************************************************************************** //</span>
+<span class="uscript-comment">// **************************************************************************************** //</span>
+<span class="uscript-comment">// **************************************************************************************** //</span>
+<span class="uscript-comment">// **************************************************************************************** //</span>
+
+<span class="uscript-keyword">struct</span> BoneData                                 <span class="uscript-comment">// A stored bone structure, used for ragdoll recovery.</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">var</span> <span class="uscript-type">name</span>      BoneName<span class="uscript-operator">;</span>                       <span class="uscript-comment">// The name of this bone.</span>
+  <span class="uscript-keyword">var</span> coords    BoneCoords<span class="uscript-operator">;</span>                     <span class="uscript-comment">// The 'coordinates' of this bone.</span>
+  <span class="uscript-keyword">var</span> rotator   Rotation<span class="uscript-operator">;</span>                       <span class="uscript-comment">// The current added rotation of this bone.</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">struct</span> TweenBoneDirection
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">var</span> <span class="uscript-type">name</span>      BoneName<span class="uscript-operator">;</span>                       <span class="uscript-comment">// The name of the bone.</span>
+  <span class="uscript-keyword">var</span> rotator   Direction<span class="uscript-operator">;</span>                      <span class="uscript-comment">// The direction of the bone.</span>
+  <span class="uscript-keyword">var</span> <span class="uscript-type">float</span>     TweenTime<span class="uscript-operator">;</span>                      <span class="uscript-comment">// Time remaining to tween.</span>
+  <span class="uscript-keyword">var</span> <span class="uscript-type">float</span>     StartTweenTime<span class="uscript-operator">;</span>                 <span class="uscript-comment">// How long to tween in total.</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> Mesh                SafeMesh1<span class="uscript-operator">,</span> SafeMesh2<span class="uscript-operator">;</span>   <span class="uscript-comment">// TODO: This is duplicated in the meshcontroller.</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>BoneData<span class="uscript-operator">&gt;</span>     Bones<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>TweenBoneDirection<span class="uscript-operator">&gt;</span> BoneTweenData<span class="uscript-operator">;</span>    <span class="uscript-comment">// Data for tweening of bone directions.</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span><span class="uscript-type">name</span><span class="uscript-operator">&gt;</span>         BoneNames<span class="uscript-operator">;</span>              <span class="uscript-comment">// Important bones that will be retained through ragdoll recovery.</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span><span class="uscript-type">name</span><span class="uscript-operator">&gt;</span>         AimBones<span class="uscript-operator">;</span>               <span class="uscript-comment">// Bones that take part in aiming.</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">name</span>                HeldBone<span class="uscript-operator">;</span>               <span class="uscript-comment">// Bone that we use for holding things.</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">name</span>                ViewBone<span class="uscript-operator">;</span>               <span class="uscript-comment">// Bone that the camera should view from.</span>
+
+<span class="uscript-keyword">var</span> actor               Flesh<span class="uscript-operator">;</span>                  <span class="uscript-comment">// Our "flesh."</span>
+
+<span class="uscript-comment">// **************************************************************************************** //</span>
+<span class="uscript-comment">// **************************************************************************************** //</span>
+<span class="uscript-comment">// **************************************************************************************** //</span>
+<span class="uscript-comment">// **************************************************************************************** //</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> postbeginplay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>postbeginplay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Initialize<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+  
+  Flesh<span class="uscript-operator">.</span>AnimBlendParams<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">1.0</span><span class="uscript-operator">,</span> <span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-number">0.2</span><span class="uscript-operator">,</span> AimBones<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>BoneNames<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+    SetBoneRot<span class="uscript-operator">(</span> BoneNames<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">,</span> <span class="uscript-keyword">Rot</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> BoneData StoreBone<span class="uscript-operator">(</span> <span class="uscript-type">name</span> BoneName <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> BoneData NewBone<span class="uscript-operator">;</span>
+  
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Flesh <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-keyword">return</span> NewBone<span class="uscript-operator">;</span>
+
+  NewBone<span class="uscript-operator">.</span>BoneName <span class="uscript-operator">=</span> BoneName<span class="uscript-operator">;</span>
+  NewBone<span class="uscript-operator">.</span>BoneCoords <span class="uscript-operator">=</span> Flesh<span class="uscript-operator">.</span>GetBoneCoords<span class="uscript-operator">(</span> BoneName <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  
+  <span class="uscript-keyword">return</span> NewBone<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>BoneData<span class="uscript-operator">&gt;</span> StoreBoneData<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>BoneData<span class="uscript-operator">&gt;</span> BoneData<span class="uscript-operator">;</span>
+  
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Flesh <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-keyword">return</span> BoneData<span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>BoneNames<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+    BoneData<span class="uscript-operator">[</span>BoneData<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> StoreBone<span class="uscript-operator">(</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>BoneNames<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+  <span class="uscript-keyword">return</span> BoneData<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-comment">// Set me back up for animation after I've ragdolled.</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> SolidifyRagdoll<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>BoneData<span class="uscript-operator">&gt;</span> BoneData<span class="uscript-operator">;</span>
+  
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Flesh <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+  
+  BoneData <span class="uscript-operator">=</span> StoreBoneData<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span> Flesh<span class="uscript-operator">.</span>Mesh <span class="uscript-operator">==</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>SafeMesh1 <span class="uscript-operator">||</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>SafeMesh1 <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>SafeMesh2 <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    Flesh<span class="uscript-operator">.</span>LinkMesh<span class="uscript-operator">(</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>SafeMesh2 <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>SafeMesh1 <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    Flesh<span class="uscript-operator">.</span>LinkMesh<span class="uscript-operator">(</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>SafeMesh1 <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> UniversalThing<span class="uscript-operator">(</span> Flesh <span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    UniversalThing<span class="uscript-operator">(</span>Flesh<span class="uscript-operator">)</span><span class="uscript-operator">.</span>InitializeMesh<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  
+  RecoverBoneData<span class="uscript-operator">(</span> BoneData <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> RecoverBoneData<span class="uscript-operator">(</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>BoneData<span class="uscript-operator">&gt;</span> BoneData <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+  
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Flesh <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>BoneData<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+    RecoverBone<span class="uscript-operator">(</span> BoneData<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> RecoverBone<span class="uscript-operator">(</span> BoneData BoneData <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Flesh <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+  Flesh<span class="uscript-operator">.</span>SetBoneLocation<span class="uscript-operator">(</span> BoneData<span class="uscript-operator">.</span>BoneName<span class="uscript-operator">,</span> BoneData<span class="uscript-operator">.</span>BoneCoords<span class="uscript-operator">.</span>Origin <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  SetBoneDir<span class="uscript-operator">(</span> BoneData<span class="uscript-operator">.</span>BoneName<span class="uscript-operator">,</span> Rotator<span class="uscript-operator">(</span> BoneData<span class="uscript-operator">.</span>BoneCoords<span class="uscript-operator">.</span>XAxis <span class="uscript-operator">)</span><span class="uscript-operator">,</span><span class="uscript-number">0.25</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> TweakBoneRotation<span class="uscript-operator">(</span> <span class="uscript-type">name</span> BoneName<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> rotator <span class="uscript-keyword">Rot</span> <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> BoneName <span class="uscript-operator">==</span> HeldBone <span class="uscript-operator">)</span>
+    <span class="uscript-keyword">Rot</span> <span class="uscript-operator">+=</span> <span class="uscript-keyword">Rot</span><span class="uscript-operator">(</span><span class="uscript-number">16384</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-comment">///// Note: This function is best described as a "hack." It allows a meshcontroller to</span>
+  <span class="uscript-comment">///// manually override bone directions by assigning a fixed direction to them. It will</span>
+  <span class="uscript-comment">///// not work properly on bones that take part in aiming, etc. It merely exists as a</span>
+  <span class="uscript-comment">///// method to retrofit existing models with bones in wierd orientations.</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// **************************************************************************************** //</span>
+<span class="uscript-comment">// **************************************************************************************** //</span>
+<span class="uscript-comment">// **************************************************************************************** //</span>
+<span class="uscript-comment">// **************************************************************************************** //</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> SetAim<span class="uscript-operator">(</span> rotator Aim <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+ 
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Flesh <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-comment">// TODO: Hackriffic. Make the transormation matrix confusitroniness. Maybe make a "skeleton" class,</span>
+  <span class="uscript-comment">// which would be owned by the Thing, that stores our current animation positions. Technically that</span>
+  <span class="uscript-comment">// should go here so maybe the meshcontroller could be instantiated.</span>
+  Flesh<span class="uscript-operator">.</span>SetRotation<span class="uscript-operator">(</span> Aim <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  
+  Aim <span class="uscript-operator">-=</span> Flesh<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>AimBones<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    Aim<span class="uscript-operator">.</span>Roll <span class="uscript-operator">=</span>  Aim<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">;</span>
+    Aim<span class="uscript-operator">.</span>Yaw  <span class="uscript-operator">=</span> <span class="uscript-operator">-</span>Aim<span class="uscript-operator">.</span>Pitch<span class="uscript-operator">;</span>
+    Aim<span class="uscript-operator">.</span>Pitch <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    SetBoneRot<span class="uscript-operator">(</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>AimBones<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">,</span> Aim <span class="uscript-operator">/</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>AimBones<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  
+  <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> vector FindBoneLocation<span class="uscript-operator">(</span> <span class="uscript-type">name</span> Bone<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-keyword">out</span> vector <span class="uscript-keyword">Rot</span> <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> Coords Coords<span class="uscript-operator">;</span>
+  
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Flesh <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">||</span> Bone <span class="uscript-operator">==</span> <span class="uscript-name">''</span> <span class="uscript-operator">)</span> <span class="uscript-keyword">return</span> <span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  
+  Coords <span class="uscript-operator">=</span> Flesh<span class="uscript-operator">.</span>GetBoneCoords<span class="uscript-operator">(</span> Bone <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">Rot</span> <span class="uscript-operator">=</span> Coords<span class="uscript-operator">.</span>XAxis<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">return</span> Coords<span class="uscript-operator">.</span>Origin<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> rotator FindBoneRotation<span class="uscript-operator">(</span> <span class="uscript-type">name</span> Bone <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Flesh <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">||</span> Bone <span class="uscript-operator">==</span> <span class="uscript-name">''</span> <span class="uscript-operator">)</span> <span class="uscript-keyword">return</span> <span class="uscript-keyword">Rot</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">return</span> Flesh<span class="uscript-operator">.</span>GetBoneRotation<span class="uscript-operator">(</span> Bone <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// TODO: This function name is misleading.</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> vector FindHeldLocation<span class="uscript-operator">(</span> <span class="uscript-keyword">optional</span> <span class="uscript-keyword">out</span> vector <span class="uscript-keyword">Rot</span> <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Flesh <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">||</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>HeldBone <span class="uscript-operator">==</span> <span class="uscript-name">''</span> <span class="uscript-operator">)</span> <span class="uscript-keyword">return</span> <span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">return</span> FindBoneLocation<span class="uscript-operator">(</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>HeldBone<span class="uscript-operator">,</span> <span class="uscript-keyword">Rot</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// TODO: This function name is misleading.</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> vector FindHeldRotation<span class="uscript-operator">(</span> <span class="uscript-keyword">optional</span> <span class="uscript-keyword">out</span> vector Loc <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Flesh <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">||</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>HeldBone <span class="uscript-operator">==</span> <span class="uscript-name">''</span> <span class="uscript-operator">)</span> <span class="uscript-keyword">return</span> <span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  Loc <span class="uscript-operator">=</span> FindBoneLocation<span class="uscript-operator">(</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>HeldBone <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">return</span> Vector<span class="uscript-operator">(</span> FindBoneRotation<span class="uscript-operator">(</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>HeldBone <span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> SetBoneRot<span class="uscript-operator">(</span> <span class="uscript-type">name</span> BoneName<span class="uscript-operator">,</span> rotator <span class="uscript-keyword">Rot</span> <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Flesh <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+  TweakBoneRotation<span class="uscript-operator">(</span> BoneName<span class="uscript-operator">,</span> <span class="uscript-keyword">Rot</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  Flesh<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span> BoneName<span class="uscript-operator">,</span> <span class="uscript-keyword">Rot</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> SetBoneDir<span class="uscript-operator">(</span> <span class="uscript-type">name</span> BoneName<span class="uscript-operator">,</span> rotator Dir<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">float</span> TweenTime <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> TweenBoneDirection NewTween<span class="uscript-operator">;</span>
+  
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Flesh <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> TweenTime <span class="uscript-operator">!=</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    NewTween<span class="uscript-operator">.</span>BoneName <span class="uscript-operator">=</span> BoneName<span class="uscript-operator">;</span>
+    NewTween<span class="uscript-operator">.</span>Direction <span class="uscript-operator">=</span> Dir<span class="uscript-operator">;</span>
+    NewTween<span class="uscript-operator">.</span>TweenTime <span class="uscript-operator">=</span> TweenTime<span class="uscript-operator">;</span>
+    NewTween<span class="uscript-operator">.</span>StartTweenTime <span class="uscript-operator">=</span> TweenTime<span class="uscript-operator">;</span>
+    BoneTweenData<span class="uscript-operator">[</span>BoneTweenData<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> NewTween<span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  
+  Flesh<span class="uscript-operator">.</span>SetBoneDirection<span class="uscript-operator">(</span> BoneName<span class="uscript-operator">,</span> Dir<span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-number">1</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> TweenBone<span class="uscript-operator">(</span> <span class="uscript-keyword">out</span> TweenBoneDirection BoneData<span class="uscript-operator">,</span> <span class="uscript-type">float</span> Delta <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> Result<span class="uscript-operator">;</span>
+  Result <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+  
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Flesh <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-keyword">return</span> Result<span class="uscript-operator">;</span>
+
+  BoneData<span class="uscript-operator">.</span>TweenTime <span class="uscript-operator">-=</span> Delta<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> BoneData<span class="uscript-operator">.</span>TweenTime <span class="uscript-operator">&lt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    BoneData<span class="uscript-operator">.</span>TweenTime <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    Result <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+
+  Flesh<span class="uscript-operator">.</span>SetBoneDirection<span class="uscript-operator">(</span> BoneData<span class="uscript-operator">.</span>BoneName<span class="uscript-operator">,</span> BoneData<span class="uscript-operator">.</span>Direction<span class="uscript-operator">,</span><span class="uscript-operator">,</span>BoneData<span class="uscript-operator">.</span>TweenTime<span class="uscript-operator">/</span>BoneData<span class="uscript-operator">.</span>StartTweenTime <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  
+  <span class="uscript-keyword">return</span> Result<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// **************************************************************************************** //</span>
+<span class="uscript-comment">// **************************************************************************************** //</span>
+<span class="uscript-comment">// **************************************************************************************** //</span>
+<span class="uscript-comment">// **************************************************************************************** //</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span> <span class="uscript-type">float</span> Delta <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+  
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>BoneTweenData<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> TweenBone<span class="uscript-operator">(</span> BoneTweenData<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">,</span> Delta <span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+      BoneTweenData<span class="uscript-operator">.</span><span class="uscript-keyword">Remove</span><span class="uscript-operator">(</span>i<span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Tick<span class="uscript-operator">(</span> Delta <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// **************************************************************************************** //</span>
+<span class="uscript-comment">// **************************************************************************************** //</span>
+<span class="uscript-comment">// **************************************************************************************** //</span>
+<span class="uscript-comment">// **************************************************************************************** //</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+  Bonenames<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Spine
+  Bonenames<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Head
+  Bonenames<span class="uscript-operator">(</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>LShoulder
+  Bonenames<span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>RShoulder
+  Bonenames<span class="uscript-operator">(</span><span class="uscript-number">4</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>LThigh
+  Bonenames<span class="uscript-operator">(</span><span class="uscript-number">5</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>RThigh
+  Bonenames<span class="uscript-operator">(</span><span class="uscript-number">6</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>LFARM
+  Bonenames<span class="uscript-operator">(</span><span class="uscript-number">7</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>RFARM
+  Bonenames<span class="uscript-operator">(</span><span class="uscript-number">8</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>RightHand
+  Bonenames<span class="uscript-operator">(</span><span class="uscript-number">9</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>LFoot
+  Bonenames<span class="uscript-operator">(</span><span class="uscript-number">10</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>RFoot
+  Bonenames<span class="uscript-operator">(</span><span class="uscript-number">11</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Bone_Weapon
+  
+  AimBones<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Spine
+    
+  HeldBone<span class="uscript-operator">=</span>Bone_Weapon
+  ViewBone<span class="uscript-operator">=</span>Head
+
+  SafeMesh1<span class="uscript-operator">=</span>Mesh<span class="uscript-name">'Jugg.JuggMaleA'</span>
+  SafeMesh2<span class="uscript-operator">=</span>Mesh<span class="uscript-name">'Jugg.JuggFemaleA'</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">AlphaOne:</em> Could I ask anyone to please taker their time to post a <em class="em2">complete</em> solution(s) here because I'm having a hard time putting your code together. It would be REALLY nice if it was downloadable...(I like being spoon fed)</p>
+<p><em class="em2">Foxpaw:</em> Unfortunately, because all of the people working on this have different applications it's kind of hard to package one solution.. however, I suspect that a mutator could be made of this (I think theres a modifydamage function or something that could cause the karmatizing and an array of pointers to pawns and their respective karma-ing specific values could possibly be stored there. Unfortunately, since my application is highly different, I can't really be the one to do this. Most of the snippets I've provided here are fairly general, but the last one is highly specific and wouldn't work without extensive modification.</p>
+<p><em class="em2">Plane Guy:</em> RAGDOLL POSTULATION OUT OF NOWHERE. My mod involves grabbing a player pawn and dragging him around. Thing is, with the ragdoll I have to attach to a bone and karma yank the doll around BUT the server has no ragdoll (else it crashes). Would it be plausible to karma impulse the "standing" player pawn on the server and get karma-based dragging client-side? Does the flippity-floppity nature of ragdolls require I act on it directly with Karma, or will the client recognize the server has moved the doll and flail its limbs accordingly?</p>
+<p><em class="em2">Foxpaw:</em> Hmm, I'm pretty sure that it's possible to have an actor using PHYS_KarmaRagdoll on the server.. though I don't know how well xPawns handle that. Anyways, Karma ragdolls don't replicate very well, so it would probrably be best to do the bone attach to whatever they're getting dragged behind and have the dragging completely client side. (And have whatever is dragging them get replicated)</p>
+<p><em class="em2">Plane Guy:</em> Hmmmm. Well I had it working on client-side only, but when the dragging stops, the pawn reappears where it was first ragdolled. Would I have to replicate that movement BACK to the server (server is NOT the man, oh noes)? Wouldn't I have to, once replicated to the server, replicate it back to the other clients? Gee, this is getting complicated.</p>
+<p><em class="em2">Foxpaw:</em> I recall someone else having a similar issue. This seems to be a behaviour of the xPawn class, though I can't say that with 100% certainty. xPawns store movements and then go off of their saved movement - this reduces apparent lag in network games. However, it also means that if you move a Pawn by a means other than the Pawn was intended to move, the stored movements don't get updated. I'm not sure if there's an easy way around that or not, since I haven't really looked at the network stuff for Pawn.</p>
+<p><em class="em2">Dirk Fist:</em> I have'nt done much with 2k3, But could'nt the <em class="em1">Actor&gt;NavigationPoint&gt;SmallNavigationPoint&gt;Teleporter </em> accept() function, be modified for setting an actors location?</p>
+<p><em class="em2">Plane Guy:</em> I don't know if it matters, but I'm in 2K4 now. Perhaps a "ragdoll location" variable, and have the server actor.move() to it while ragdolled. It'd be choppy though, though since the server is going to update the client with its old location.</p>
+<p>The other idea I had was to karma impluse the same on all clients - replicate the impulse vector - and actor.move() only on the server. Everyone'd get a slightly different karma show, but I don't think they'd notice.</p>
+<p><em class="em2">OlympusMons:</em> Ok guys just an idea. I was thinking after reading this, I know it need a <a href="refactor-me.html">Refactor Me</a> Please! Anyways I was thinking maybe you could subclass svehicle or ONSvehicle or one of those and since those are pawns, which use skeletal anims and karma, maybe you could make the player use a pawn and hope in then when you get KO'd you hope out of the vehicle, play KO stuff, then hop back in. Just an idea anyways Im not really skilled at uscript, yet hehe, so i'm not going to attempt this, yet hehe. Well feel free to give me what for if I dunno what Im talking about.</p>
+<hr class="thin"><p><a href="refactor-me.html">Refactor Me</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Removing the Actors Skeleton/Resetting the Karma Parameters, and changing Physics back to PHYS_Walking ", "#0.0.0.1");
+menuItemAdd("Freezing the Ragdoll", "#0.0.0.2");
+menuItemAdd("Spawn a New Pawn above the Ragdoll ", "#0.0.0.3");
+menuItemAdd("Animating a Ragdoll", "#0.0.1");
+menuItemAdd("Discussion", "#0.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Karma_Ragdoll_Injury_System">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Karma_Ragdoll_Injury_System">View other revisions</a><br>Last edited September 14, 2006 5:22 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Karma_Ragdoll_Injury_System">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Karma_Ragdoll_Injury_System">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Worst-case scenario: the UEd Goblin wipes the map and burns down your house.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

@@ -1,0 +1,243 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Traversing Classes</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Traversing_Classes; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Traversing Classes">Traversing Classes</a></h1>
+	<div class="wiki"><p>This page is an extension to <a href="package.html">Package</a>.  I will attempt to explain the basic methods used in accessing and manipulating variables, functions, properties, etc. in other classes.</p>
+<p>This tutorial is designed for new scripters.  After reading this document, hopefully you will be able to:</p>
+<ul><li>Recognize if an arbitrary class is accessible from within the class you're currently editing</li>
+<li>Retrieve the values of variables defined in other classes</li>
+<li>Modify and save variables in other classes from within the class you're currently editing</li>
+<li>Execute functions in other classes</li>
+<li>Spawn new instances of other classes</li>
+<li>Gain valid references to any class from within any other class in UT (this one can be tough)</li>
+</ul>
+<p>This tutorial assumes you are already familiar with:</p>
+<ul><li><a href="class-syntax.html">Defining Classes</a></li>
+<li><a href="variable-syntax.html">Variable Types and Syntax</a></li>
+<li>Basics Structure of Class Files</li>
+<li>Class Hierarchy</li>
+<li>SubClasses &amp; ParentClasses</li>
+</ul>
+<p>After reading this tutorial, you should next learn about:</p>
+<ul><li><a href="iterator.html">Working with Iterators</a></li>
+<li>Manipulating return types for functions</li>
+<li>Working with static/default</li>
+<li>When to override functions</li>
+</ul>
+<h2><a name="0.1"></a>Variable Types</h2>
+<h3><a name="0.1.1"></a>Defining Variables</h3>
+<p>MyVar = SomeOtherVariable;</p>
+<p>Here I'm setting the value of the MyVar variable to the value of SomeOtherVariable.  Pretty simple.  Well, that's fine if SomeOtherVariable is in our own class, but what if SomeOtherVariable is in another class?  Actually, it depends a lot on where you are attempting to access this variable from, and what you want to use it for.  Another big part of how we'll do this is exactly what type of variable it is, such as a regular variable, like the ones you define at the top of your class's script, a local variable, or argument variables.  Let's define these real quick.</p>
+<dl><dt>Global variable</dt></dl>
+<p class="indent1">Defined at the beginning of the class, before any functions, after the class statement and any #exec lines.  Global variables are public variables, and can be accessed and modified by any other class.  These variables are the only kind that can be config variables (can be saved to an .ini file).  Likewise, only global variables can be defined in defaultproperties{ }. Global variables can be used throughout the class that they are defined in, as well as any child classes (without being redefined in those child classes).</p>
+<p class="indent1">Global variables look like this:</p>
+<pre class="paraverbatim">          var int NumUsers;
+          var config bool bTournament;
+          var class&lt;Pawn&gt; MyPawnType;</pre><dl><dt>Local variables</dt></dl>
+<p class="indent1">Local variables are defined in the beginning of functions, before any statements are executed.  Local variables may only be used within the function that they are defined in, and will be reset to their null value (0 for integers, "" for strings, None for actors, false for booleans, 0.00 for floats, etc.) each time that function is called.  Local variables are inaccessible to functions outside of the function it is contained in, including functions in the same class or child classes.  Local variables look like this:</p>
+<pre class="paraverbatim">          local int i;
+          local PlayerPawn P;
+          local Names[128] UserName;</pre><dl><dt>Argument variables</dt></dl>
+<p class="indent1">Argument variables are essentially local variables, which are declared and assigned a value in one step.  Argument variables are the variables you use in function definitions, such as:</p>
+<pre class="paraverbatim"> function DoSomething(string ArugmentVariableString, int ArgumentVariableInt, bool ArgumentVariableBool)</pre><p class="indent1">Argument variables, like local variables, may only be used in the function that they are defined within.  You do not need to declare argument variables manually in your function ( i.e. local bool bSomething )</p>
+<h3><a name="0.1.2"></a>Working with Variables</h3>
+<p>The key to learning how to effectively work with variables and functions in other classes is to understand the difference between a <b>class</b> and an <b>object of that class</b>.  Let's say we're working with the HealthVial class, and we want to get the value of the "HealingAmount" variable from that class.  Let's say we're doing this from a mutator (since most who read this will probably be working on their first or second mutator).</p>
+<p>There are essentially two methods to do this, depending on whether we only need the starting value of the HealingAmount variable, or whether we need the "real-time" value of the HealingAmount variable.</p>
+<p>It's helpful to think of classes (classes in this case being the actual script that you write) as templates for objects.  Inside the game engine, when it is time to create your object, the engine looks at the class for your object, and creates an object that has all of the parameters and characteristics of your script.  If a default value for any of your global variables is listed, it assigns those values to the object.  From that point on, the global variable values may be changed or affected by methods within that object, or other objects within the game.  The original default value, however, is not affected by any changes made to the object that was spawned.</p>
+<p>To understand what an "instance" is, and how to access instances of objects, think about a car lot.  Imagine you go to a car dealer, and give the dealer a list of parameters for the car that you want.  Let's say you are looking for a Ford Mustang, manual transmission, red exterior, white interior, convertible.  So, the dealer thinks for a minute, reaches under the desk, and hands you a set of keys and tells you your car is outside in the lot.  You walk outside where there are thousands of cars.  Of those thousands of cars, there are a few hundred Mustangs.  Of those few hundred Mustangs, there are about 100 that have red exteriors.  Of those, there a few dozen that have white interiors.....so on and so forth.  Your key will only work in ONE of these cars, but the dealer hasn't told you which one.  Since it isn't really feasible to try the key in every one of those thousands of cars, you're stuck.</p>
+<p>This is very similar to how objects and classes work inside the game engine.  The description you gave the dealer, describing the characteristics of the car you're looking for is like a class. Attempting to access a variable in a class without first having a valid reference to an object is like the dealer handing you they keys to the car without telling you which car they belong to, then telling you to go start it up.  You won't be able to start it up until the dealer tells you exactly which car the keys belong to.</p>
+<p>OK, so now we know the difference between a class and an object in a very basic abstract sense, but what does that *really* mean??  How does knowing this help me write a mod?  Where does the madness end?</p>
+<p>woot!  I wrote another paragragh <img alt=":)" src="emoticons/smile.gif" align="middle">  I swear I'm going to finish this document one day <img alt=":P" src="emoticons/tongue.gif" align="middle"></p>
+<p>The first, and easiest way to do this, is to call an iterator function.</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> BigHealthVial BHV1<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> BigHealthVial BHV2<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> BigHealthVial BHV3<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> HealthVial HV<span class="uscript-operator">;</span>
+    
+    
+    <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'HealthVial'</span><span class="uscript-operator">,</span> HV<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>HV<span class="uscript-operator">.</span>HealingAmount <span class="uscript-operator">&gt;</span> <span class="uscript-number">25</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>BHV1 <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+                BHV1 <span class="uscript-operator">=</span> HV<span class="uscript-operator">;</span>
+            <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>BHV2 <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+                BHV2 <span class="uscript-operator">=</span> HV<span class="uscript-operator">;</span>
+            <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>BHV3 <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+                BHV3 <span class="uscript-operator">=</span> HV<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    
+    log<span class="uscript-operator">(</span><span class="uscript-string">"Found all the Big Health Vials!"</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">}</span></pre><p>To be continued ~~~</p>
+<p>the following is a cut-n-paste from a conversation I had in IRC in which I covered most of the material I was going to write here, so I'm leaving it here (so I don't lose it) until I have time to edit and clean it up a bit:</p>
+<pre>
+well, there are two different methods
+
+in method one, you have a reference to an actual object in the game
+
+method 2, you don't have an actual object, but want to access the class anyway
+yes, a live actor
+but I think you'd be safer with doing the first way, and accessing ACTUAL health vials that exist in the game
+well, you're dealing with instance variables
+so you'll need a valid reference to each instance of the class 'HealthVial'
+ok, say we're in the game
+and we have 100 health vials in the level
+
+i want to access HealthAmount variable
+maybe something like
+if (HealthAmount != 25) { do my code }
+so far so good?
+but in the game, MedBox doesn't exist
+MedBox is a class
+(20:31) (Dorkorama|VolatileHEALTH) "in the game" is refering to the hypothetical, right?
+(20:32) (Evolution) no, in the game, referring to "as our code is executing in the game"
+
+only objects of the class 'MedBox' exist in the game
+so to access their variables, we must use a "class variable"
+so we declare a variable like: var MedBox MB;
+
+to access a variable in an object of a particular class, we must first have a class variable to work with
+the class variable will represent the objects whose variables we want to access
+
+MB is still nothing
+because we haven't assigned anything to it
+we've only declared it
+
+it means, "whatever we assign to MB, it must be this type of thing"
+(20:36) (Evolution) so then we can do an iterator
+(20:36) (Evolution) let's use Foreach AllActors
+(20:37) (Evolution) the syntax for that is "foreach allactors(&lt;class we're looking for&gt;, &lt;our class variable&gt;)
+(20:37) (Evolution) so in this case, it would be "ForEach AllActors(class'MedBox', MB)"
+
+Okay... that searches every actor and if it matches the class we're looking for it's data is copied to the class variable (MB)
+
+
+when that happens, it will execute whatever code is in the brackets
+sooooooo, ForEach AllActors(class'MedBox', MB) { if (MB.HealthAmount != 25) MB.HealthAmount = 25; }
+after it executes whatever code is in the brackets, then it will continue searching all the actors for another medbox, then it will do it all over again
+(20:41) (Evolution) is HealthVial a subclassof MedBox?
+(20:41) (Dorkorama|VolatileHEALTH) No
+(20:41) (Evolution) then that wouldn't work
+(20:41) (Dorkorama|VolatileHEALTH) Huh?
+(20:42) (Evolution) nesting foreach?
+(20:42) (Dorkorama|VolatileHEALTH) Yeah
+(20:42) (Evolution) avoid that
+(20:42) (Dorkorama|VolatileHEALTH) Crud....
+(20:42) (Evolution) until you're more familiar with using iterators, anyway
+(20:42) (Dorkorama|VolatileHEALTH) bleh....
+(20:42) (Evolution) cuz that's a real easy way to make UT grind to a halt
+(20:42) (Dorkorama|VolatileHEALTH) 8-\
+(20:43) (Evolution) if you're doing the iterator in a singlular function, like PostBeginPlay()
+(20:43) (Dorkorama|VolatileHEALTH) I still wonder what's in the latest PURE builds that makes gameplay go slower and slower
+(20:43) (Dorkorama|VolatileHEALTH) ANyway...
+(20:43) (Evolution) just do two iterators
+(20:43) (Evolution) one for medbox, one for healthvial
+</pre><pre class="paraverbatim"> To be Continued....  &mdash;<a href="evolution.html">Evolution</a></pre><p><em class="em2">Tarquin:</em> Ev, I think this will be a multi-page topic. Do you want to take material from <a href="communication-between-objec.html">Communication Between Objects</a> for this? (BTW, I think this page title is way better than "Communication Between Objects" )</p>
+<hr class="thin"><p><a href="refactor-me.html">Refactor Me</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Variable Types", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Defining Variables", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Working with Variables", "#0.1.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Traversing_Classes">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Traversing_Classes">View other revisions</a><br>Last edited April 7, 2006 3:33 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Traversing_Classes">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Traversing_Classes">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>There is no spoon
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

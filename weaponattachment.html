@@ -1,0 +1,129 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: WeaponAttachment</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=WeaponAttachment; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=WeaponAttachment">WeaponAttachment</a></h1>
+	<div class="wiki"><div class="classpath"><img src="shared//gameicons/icon-ut2003.png"> <a href="unreal-tournament-2003.html">UT2003</a> :: <a href="actor.html">Actor</a> &gt;&gt; <a href="inventoryattachment.html">InventoryAttachment</a> &gt;&gt; WeaponAttachment (Package: Engine)<br></div>
+<p>WeaponAttachment is the class that handles the visual aspect of weapons in the third person. The two main functions used are:</p>
+<dl><dt>UpdateHit</dt><dd>Used to update the properties of the attachment so the client side can correctly spawn effects.</dd><dt>ThirdPersonEffects</dt><dd>This function handles the generation of muzzle flashes, animation, tracers, ect. on the client side.  Super.ThirdPersonEffects should always be called.</dd></dl>
+<h2><a name="0.1"></a>Discussion</h2>
+<p><em class="em2">Languard:</em> For the weapons included with UT2003, the only thing this class is used for is generating sfx on the client side.  In trying to design a melee combat system, I've hammered this class quite a bit, and here's what I've found so far:</p>
+<ul><li>Changing bCollideActors is not a good idea<ul><li>Originally my thought was to use the Touch message, but this didn't work out that great.  Turns out that weapon attachments, being so close to the player model, touch the player model a lot.  Especialy when you run up against things. And since Touch can only get called so often...it makes for really spotty hit detection.</li>
+</ul>
+</li>
+<li>Animations<ul><li>You can call animations on the weapon attachment from the fire classes rather easily by using xPawn(Instigator).WeaponAttachment.PlayAnim().</li>
+</ul>
+</li>
+</ul>
+<p>I hope this is what was intended for this page.  Be gentle, it's my first wiki edit. <img alt=":D" src="emoticons/biggrin.gif" align="middle"></p>
+<p><em class="em2">HaZarD.ep:</em> I'm also working on a melee combat system. I thought about using a DoTrace() function, using the joint the attachment is attached to as StartTrace and the rotation of the weapon for the direction. The range would be long enough just to get to the end of the sword, or sth. like this. What do you think about this?</p>
+<p><em class="em2">Foxpaw:</em> I think that theres a couple of problems with using the attachment for anything authoritative:</p>
+<ol><li>It's not going to be the in the same position on client and server, so although it would be neat in single player, the combat will seem erratic in multiplayer, as swords will go straight through a person on the client and cause no harm, or a person may completely miss on the client and still kill the person, etc.</li>
+<li>The movement on the attachment is dependant on the model and skin. Not only would you need special models for you mod (with the custom swinging animations), but your specific model could give you an advantage. For instance, models with longer arms may end up having longer reach.</li>
+</ol>
+<p>What you "could" do is have all players be Karma Ragdolls all the time, and then you could pick up collisions using the Karma system as normal. This would also be very good because it would allow you to have a much more realistic response to impacts and such. However, you will have to write animations in script using impulses, and that would run very slow.</p>
+<p><em class="em2">Dok Enkephalin:</em> Maybe you could have the Touch() function only active in the frames that the melee weapon could score a 'telling' hit. The weapon would be extended away from the player during those hitframes.</p>
+<p>I haven't looked into it, but I was going to eventually. </p>
+<p><em class="em2">Orikalin:</em>I like Dok Enkphalin's idea, but im new to scripting, and last night i made a 3d model for a katar weapon that im making, ive got it completly scripted out, all that is left is the KatarAttach.uc, which i have no idea how to go about doing</p>
+<p>i made it using 3ds max and exported using ActorX, so its already got the animation sripted in, but how would i make the character dual weild it, and run low with their arms back holding the 2 katars, someone please help me T_T im so lost</p>
+<hr class="thin"><p><a href="category-class-ut2003.html">Category Class (UT2003)</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Discussion", "#0.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=WeaponAttachment">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=WeaponAttachment">View other revisions</a><br>Last edited March 9, 2005 11:52 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=WeaponAttachment">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/WeaponAttachment">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I'm a doctor, not a mechanic
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Uniquely Identify A Player</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Uniquely_Identify_A_Player; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Uniquely Identify A Player">Uniquely Identify A Player</a></h1>
+	<div class="wiki"><p>This page is concerned with how you can identify players uniquely.  It is a work in progress, so please look for gaps in the information here and, if you can find time, do small experiments to check and discover facts.</p>
+<h2><a name="0.1"></a>Introduction</h2>
+<p>Within the game, each connected player has a single PlayerController created.  Thus, if you do a <em class="em2">forallactors</em> on the <a href="playercontroller.html">PlayerController</a>s then you get all the players who are present.  But what if you want to hold on to information about a particular player after they quit, for instance <a href="sweavo-mutyoudontquitthatea.html">Sweavo/MutYouDontQuitThatEasy</a> attempts to hold your score until the end of the current game, even if you quit and rejoin.  </p>
+<h2><a name="0.2"></a>GetPlayerIDHash()</h2>
+<p><tt>PlayerController((TeamPlayerReplicationInfo(X).Owner).GetPlayerIdHash())</tt> will return the player's CD Key, or GUID.  These are intended to be unique for every installation of the game.  There are a few exceptions/caveats.</p>
+<h3><a name="0.2.1"></a>Stolen IDs</h3>
+<p>Looking at the Admin forums, there are cases of very unscrupulous individuals managing to steal the CD Keys of legitimate users.  In these cases the admins are not sympathetic to the victim because there is no way to tell whether that person is really the victim or the perpetrator.</p>
+<h3><a name="0.2.2"></a>GUID 5857a730b66505da430f3bef2b845c38</h3>
+<p>Although each installation CD has its own unique GUID, the game is deliberately set up to switch GUID to this particular value if the player changes certain settings.  See <a href="developermode.html">DeveloperMode</a> for an explanation.  It's best to simply not allow this GUID on your server.  The player will get their own GUID back when they restart their client.</p>
+<h3><a name="0.2.3"></a>Multiple players using one installation</h3>
+<p>It's not uncommon for relatives or roommates to connect from different computers at one location using the same copy of the game.  Usually this results in one player showing up as "Player" in the game.  As a coder wishing to uniquely identify players you have a choice of what to do here:</p>
+<ul><li>Refuse a connection to a session whose GUID matches a GUID that is already playing</li>
+<li>Identify players by GUID appended with an integer which is 0 for the first session, 1 for the next, etc.  This is not straightforward to do, but could lead to offering multiple profiles to a player with a given GUID</li>
+<li>Ignore the problem.  I don't recommend this as you will get "race conditions" where Player1a joins, Player1b joins, and both alter their account in some way.  Whatever player quits last will keep their changes and the other will lost theirs.</li>
+</ul>
+<h2><a name="0.3"></a>Discussion</h2>
+<script type="text/javascript"><!--
+ menuItemAdd("Introduction", "#0.1");
+menuItemAdd("GetPlayerIDHash()", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Stolen IDs", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>GUID 5857a730b66505da430f3bef2b845c38", "#0.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Multiple players using one installation", "#0.2.3");
+menuItemAdd("Discussion", "#0.3");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Uniquely_Identify_A_Player">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Uniquely_Identify_A_Player">View other revisions</a><br>Last edited May 5, 2006 15:36 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Uniquely_Identify_A_Player">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Uniquely_Identify_A_Player">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I love the smell of UnrealEd crashing in the morning. (tarquin)</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

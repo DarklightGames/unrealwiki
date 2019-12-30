@@ -1,0 +1,290 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Modifying The Bulldog</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Modifying_The_Bulldog; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Modifying The Bulldog">Modifying The Bulldog</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Introduction</h2>
+<p>A lot of people will want to play around with the demo vehicle that comes with <a href="unreal-tournament-2003.html">UT2003</a>, the Bulldog. This page holds information about how to change certain aspects of the Bulldog.</p>
+<p>The Bulldog in UT2004 is the same code, but due to the move of KVehicle from a subclass of Pawn to a subclass of Vehicle, and with all the other changes that took place for Vehicle support in UT2004, the Bulldog is broken.  To fix it, see the UT2004 Fix section on the <a href="bulldog.html">Bulldog</a> page.</p>
+<h2><a name="0.2"></a>Tutorials</h2>
+<h3><a name="0.2.1"></a>Making the Bulldog drive faster</h3>
+<p>This question was asked on the BU coding forum and is interesting because it needs general insight on how acceleration and speed are done on vehicles in general. To find out about this, an important function to observe is the following function taken from the <a href="kcar.html">KCar</a> class:</p>
+<pre class="uscript"><span class="uscript-comment">// Tell it your current throttle, and it will give you an output torque</span>
+<span class="uscript-comment">// This is currently like an electric motor</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">float</span> Engine<span class="uscript-operator">(</span><span class="uscript-type">float</span> Throttle<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> torque<span class="uscript-operator">;</span>
+    
+    torque <span class="uscript-operator">=</span> Abs<span class="uscript-operator">(</span>Throttle<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> Gear <span class="uscript-operator">*</span> InterpCurveEval<span class="uscript-operator">(</span>TorqueCurve<span class="uscript-operator">,</span> WheelSpinSpeed<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    GraphData<span class="uscript-operator">(</span><span class="uscript-string">"SpinSpeed"</span><span class="uscript-operator">,</span> WheelSpinSpeed<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    GraphData<span class="uscript-operator">(</span><span class="uscript-string">"Torque"</span><span class="uscript-operator">,</span> torque<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span> <span class="uscript-operator">*</span> torque<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>It calculates the torque of the wheels using Throttle (player presses up or down), the gear (forwards or backwards) and the wheel spin speed in combination with a torque curve. The calculated torque is in its turn applied to the KMotorTorque property of the <a href="kcarwheeljoint.html">KCarWheelJoint</a> associated with every tire (<a href="ktire.html">KTire</a>.WheelJoint). So to increase the maximum speed of the Bulldog or its acceleration, we only need to change the TorqueCurve. This can be done in the <a href="default-properties.html">Default Properties</a> of a (user written) subclass by overriding the default value in the Bulldog class.</p>
+<p>The default value for TorqueCurve in the Bulldog class is:</p>
+<pre class="uscript">TorqueCurve<span class="uscript-operator">=</span><span class="uscript-operator">(</span>Points<span class="uscript-operator">=</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>InVal<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>OutVal<span class="uscript-operator">=</span><span class="uscript-number">270</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span><span class="uscript-operator">(</span>InVal<span class="uscript-operator">=</span><span class="uscript-number">200000</span><span class="uscript-operator">,</span>OutVal<span class="uscript-operator">=</span><span class="uscript-number">270</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span><span class="uscript-operator">(</span>InVal<span class="uscript-operator">=</span><span class="uscript-number">300000</span><span class="uscript-operator">,</span>OutVal<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span></pre><p class="indent1"><em class="em2">Note:</em> If you are using UnrealEd you can't see the default properties section of the class in it's source. Instead, you can right-click the class in the class tree and choose 'Default Properties...'. The above value will be under the KCar rollout.</p>
+<p>Basically this value of TorqueCurve means the acceleration will be constant while wheel spin speed is between 0 and 200000, and that it will linearly decrease between 200000 and 300000. For RPM, these values will probably need to be divided by 65535 (see <span class="interwiki"><img 
+        alt="udncontent logo"
+        title="udncontent"
+        src="shared//InterWiki-udncontent.png">&nbsp;<a href="http://udn.epicgames.com/Two/KarmaReference">KarmaReference</a></span>). The InterpCurveEval function will probably work the three coordinates in a curve so the actual "wheel-spin &rarr; torque" relation will be a somewhat smoothed out version.</p>
+<p>To <em class="em2">increase the maximum speed</em> of the Bulldog, you can simply make the torque last on higher wheel spin speeds by increasing the last two InVal numbers.</p>
+<p>To <em class="em2">increase the acceleration</em> of the Bulldog, you can increase the value of the OutVal properties. This will not have a very noticable effect though, because the wheels will slid very much. But decreasing acceleration works very well.</p>
+<p>Be carefull though, the Bulldog is not build on such high speeds. The front wheels will quickly lift from the air and make steering impossible, and you'll run into some rock eventually and fly miles away. Of course, the steering problem could in its turn be worked around by deviding the weight of the Bulldog to have more mass in the front. Something that could be covered in a tutorial on coding <a href="karma.html">Karma</a> objects I think.</p>
+<h3><a name="0.2.2"></a>Using the TorqueCurves for Gears</h3>
+<p><em class="em2">Kaoh:</em> I would like to add some info to the TorqueCurve info, first time so i hope I do it correctly <img alt=";)" src="emoticons/wink.gif" align="middle">.</p>
+<p><em class="em2">Note</em> To do this you need to subclass the Bulldog, you cant do this when you place a bulldog or something.</p>
+<p>The Curve can be build with as much points as you want. All points consist of 2 pairs the InVal and OutVal as shown above. The Outval is the acceleration the vehicle will have, the Inval specify's the wheelspin range for what this OutVal is valid for. Check the above examples for more info on this.</p>
+<p>This means that the acceleration will always be only attached to the wheelspin. With gears you want to simulate the loss of acceleration when the car drives too slow for that gear, this can't be done with one Curve.</p>
+<p>Think of this as Gears in a car where you actually change the gear to get a better Curve for that speed.</p>
+<p>The best way to do that is to specify multiple gear ratios.</p>
+<pre class="uscript">TorqueCurve<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>Points<span class="uscript-operator">=</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>InVal<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>OutVal<span class="uscript-operator">=</span><span class="uscript-number">270</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span><span class="uscript-operator">(</span>InVal<span class="uscript-operator">=</span><span class="uscript-number">200000</span><span class="uscript-operator">,</span>OutVal<span class="uscript-operator">=</span><span class="uscript-number">270</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+TorqueCurve<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>Points<span class="uscript-operator">=</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>InVal<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>OutVal<span class="uscript-operator">=</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span><span class="uscript-operator">(</span>InVal<span class="uscript-operator">=</span><span class="uscript-number">200000</span><span class="uscript-operator">,</span>OutVal<span class="uscript-operator">=</span><span class="uscript-number">270</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span><span class="uscript-operator">(</span>InVal<span class="uscript-operator">=</span><span class="uscript-number">300000</span><span class="uscript-operator">,</span>OutVal<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span></pre><p>This will make it so that in the first gear you can only go up to 200000 wheelspin but with good acceleration. In the second gear you will now accelerate really bad till you hit that 200000 wheelspin and then accelerate good up to 300000.</p>
+<p>This is rather simple to implement to a vehicle with gears.</p>
+<p>You can now simply change the code in the engine function to use the correct Curve and add some code that switches gears.</p>
+<pre class="uscript"><span class="uscript-comment">// Tell it your current throttle, and it will give you an output torque</span>
+<span class="uscript-comment">// This is currently like an electric motor</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">float</span> Engine<span class="uscript-operator">(</span><span class="uscript-type">float</span> Throttle<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> torque<span class="uscript-operator">;</span>
+    
+    torque <span class="uscript-operator">=</span> Abs<span class="uscript-operator">(</span>Throttle<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> Gear <span class="uscript-operator">*</span> InterpCurveEval<span class="uscript-operator">(</span>TorqueCurve<span class="uscript-operator">[</span>Gear<span class="uscript-operator">]</span><span class="uscript-operator">,</span> WheelSpinSpeed<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    GraphData<span class="uscript-operator">(</span><span class="uscript-string">"SpinSpeed"</span><span class="uscript-operator">,</span> WheelSpinSpeed<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    GraphData<span class="uscript-operator">(</span><span class="uscript-string">"Torque"</span><span class="uscript-operator">,</span> torque<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span> <span class="uscript-operator">*</span> torque<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>As you can see I made of the TorqueCurve a Array so you can easely add more curves depending on the amount of gears you want.</p>
+<p>This way you can let a fith gear accelerate almost to none but a first gear with good speed.</p>
+<p><em class="em2">Note</em> The actual speed of the vehicle is based primairly on the Torque that is genererated on the wheels. The second major factor is the size of the wheels. When you increase the size of the wheels and keep the torgue the same, you will drive faster because very simply the rotation stays the same.</p>
+<p>I hope this helps some people.</p>
+<p>Thanks to Bjorn for giving this info in the first place, helped me out a lot</p>
+<p><em class="em2">Birelli:</em> If I'm reading the above code right, it needs a slight tweak in that you can't both multiply by the current gear AND reference the correct torque curve with it, unless your torque curves are all going to take into account the fact that when you kick the bulldog into second gear you're going to automatically double the torque. I think if you actually used that code above it would be readily apparent that there was a problem with it the first time you shifted gears and your acceleration suddenly doubled <img alt=";)" src="emoticons/wink.gif" align="middle">.</p>
+<p><em class="em2">Foxpaw:</em> Actually the approximate speed of the vehicle is based on the rate at which the wheels are turning multiplied by their radius, multiplied by the "coefficient of traction" which is some mangled native version of the friction of the wheels on the ground. Torque causes the wheels to accelerate. They will cease accelerating when their torque and their angular resistance to acceleration reach equilibrium. If the same amount of torque continues higher, it will increase max speed, but only to a point. (The default bulldog does not reach the equlibrium.) You might also consider than the first curve in the above will allow you to get maximum torque at ANY wheel spin speed, you need to terminate it by having the last value be 0 or whatever amount you wanted for the wheels to reach the equilibrium point. I'll refactor this into the above someday. <img alt=":P" src="emoticons/tongue.gif" align="middle"></p>
+<h3><a name="0.2.3"></a>Adding Shadow to the Bulldog</h3>
+<p>If you have driven around with the Bulldog you must have noticed that it didn't have any shadow. Adding shadow to the Bulldog would make blend much more realistically into its environment. There's a reason for not having shadow on the Bulldog though, it's because it is slow. It's even very slow when viewing the Bulldog from very close (only tested on Radeon 8500, needs confirmation for other cards). But slow or not, let's add it anyway.</p>
+<p><a href="create-a-subclass.html">Create A Subclass</a> of the Bulldog, eg "MyBulldog" in your own "MyPackage". Once you've set that up, read on. In <a href="unreal-tournament-2003.html">UT2003</a>, shadows are cast by <a href="shadowprojector.html">ShadowProjector</a>s. Our own Bulldog will need a shadow projector associated with it so add this variable:</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> ShadowProjector BulldogShadow<span class="uscript-operator">;</span></pre><p>We only have to make sure that the shadow is spawned as soon as the Bulldog is spawned. This can be done in the function PostBeginPlay(). The spawned shadow will also need to be removed as soon as the Bulldog is removed. This can be done in the function Destroyed(). Here's the code to add to you MyBulldog class:</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">!=</span> NM_DedicatedServer<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        BulldogShadow <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'ShadowProjector'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">,</span> <span class="uscript-name">''</span><span class="uscript-operator">,</span> Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        BulldogShadow<span class="uscript-operator">.</span>ShadowActor <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+        BulldogShadow<span class="uscript-operator">.</span>bBlobShadow <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+        BulldogShadow<span class="uscript-operator">.</span>LightDirection <span class="uscript-operator">=</span> Normal<span class="uscript-operator">(</span><span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">6</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        BulldogShadow<span class="uscript-operator">.</span>LightDistance <span class="uscript-operator">=</span> <span class="uscript-number">1200</span><span class="uscript-operator">;</span>
+        BulldogShadow<span class="uscript-operator">.</span>MaxTraceDistance <span class="uscript-operator">=</span> <span class="uscript-number">350</span><span class="uscript-operator">;</span>
+        BulldogShadow<span class="uscript-operator">.</span>InitShadow<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>BulldogShadow <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> BulldogShadow<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Notice that we don't need to update the shadow ourselves, the <a href="shadowprojector.html">ShadowProjector</a> will take care of that in its Tick() function. At this stage only the chassis of the Bulldog will cast a shadow. Of course, this doesn't look quite right so we'll need to add shadow to the tires too. I'll leave it to your own practice to subclass BulldogTire with your own MyBulldogTire class and add shadow casting to it.</p>
+<p>Now I assume you have created a MyBulldogTire class and added shadow casting to that one. We still have to make our MyBulldog class use those tires. <a href="kcar.html">KCar</a> has declared two variables for us to use for specifying the tires of any such vehicle:</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> <span class="uscript-operator">(</span>KCar<span class="uscript-operator">)</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>KTire<span class="uscript-operator">&gt;</span> FrontTireClass<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span>KCar<span class="uscript-operator">)</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>KTire<span class="uscript-operator">&gt;</span> RearTireClass<span class="uscript-operator">;</span></pre><p>Notice how the Bulldog class sets these to BulldogTire in its own defaultproperties. We will set them to our own tire class like this:</p>
+<pre class="uscript"><span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    FrontTireClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'MyBulldogTire'</span>
+    RearTireClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'MyBulldogTire'</span>
+<span class="uscript-operator">}</span></pre><p>And we're done. Our Bulldog and its tires will now be casting a nice shadow on the ground as well as on other static meshes like other Bulldogs. Here's a screenshot showing off the effect:</p>
+<div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[BulldogShadowOnCrop]" src="images/bulldogshadowoncrop.jpeg"></div>
+</td>
+</tr>
+</table>
+</div>
+<h2><a name="0.3"></a>Related Topics</h2>
+<ul><li><a href="vehicles.html">Vehicles</a></li>
+<li><a href="kvehicle.html">KVehicle</a><ul><li><a href="kcar.html">KCar</a><ul><li><a href="bulldog.html">Bulldog</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="kvehiclefactory.html">KVehicleFactory</a><ul><li><a href="bulldogfactory.html">BulldogFactory</a></li>
+</ul>
+</li>
+</ul>
+<h2><a name="0.4"></a>Discussion</h2>
+<p><em class="em2">Bjorn:</em> Please comment. It's my first real addition to the Wiki so I would like to know if it's ok. Also, any requests on more info are welcome.</p>
+<p><em class="em2">Highlander:</em> Looks great, i was wondering if there was any bot support (ie: ai controlled vehicles) at all.</p>
+<p><em class="em2">AZTEX:</em> Very cool, I wonderd how to increase the Bulldog's mass to make it less like a fether and more like well a brick with weel's "which it is!" (aztex_original@hotmail)</p>
+<p><em class="em2">Bjorn:</em> Thanks for these suggestions. I'll look into the AI and weight, but I don't think AI will be easy if at all doable.</p>
+<p><em class="em2">AlphaOne:</em> I think there is a solution to fast spinning wheels. It was outlined in the Karma reference at UDN. It shows that for fast spinnig hinges there is a special value that can be set to TRUE to prevent calculation errors.</p>
+<p><em class="em2">Bjorn:</em> Thanks, I'll try this out.</p>
+<p><em class="em2">Kaoh:</em> I added some Gear for TorqueCurve info, I hope i did it correctly it is my first change on Wiki. If it doesnt have enough new value please feel free to remove it again.</p>
+<p><em class="em2">Chema:</em> To tweak the Bulldog on the fly, get on it and do a "editobj bulldog" in console (and, if you have not tryed before, give a look to "editobj xPawn" -player- and "editobj LevelInfo0" -wolrd-).  More <a href="console-commands-debugging.html">Console Commands/Debugging Console Commands</a>.</p>
+<p><em class="em2">Foxpaw:</em> This may not work for all parameters - the Karma physics are only updated if you call the relevant function after changing it's values. This will work fine for some things like the torque curves, however.</p>
+<hr class="thin"><p><em class="em2">AlphaOne:</em> About the 'Slow Shadows' &mdash; to solve the problem just use proxy geometry to cast shadows. Use somthing low poly, such as the shapes used by <em class="em2">KARMA</em> to calculate collisions. That should increase the performance.</p>
+<p><em class="em2">The_Watcher:</em> Does anyone know how to go about using proxy geometry to cast shadows. I am a little confused. Thank you.</p>
+<p><em class="em2">Solid Snake:</em> What he means is that the Bulldog mesh itself has a lot of polygons and so on, which is probably not needed in creating a rather accurate yet blurry shadow. What he means is that when you want the shadow, spawn another actor which has a similiar shape to the Bulldog but a lot less polycounts and since that shape[aka 3D model] has less polys and then generate the shadow from that mesh and it will be much quicker.</p>
+<hr class="thin"><p><em class="em2">Daid303:</em> It is in the text above, but not very clear</p>
+<p>If you want it faster: TorqueCurve=(Points=((InVal=0,OutVal=270),(InVal=400000,OutVal=270),(InVal=500000,OutVal=0)))</p>
+<p>If you want it faster accalitation: TorqueCurve=(Points=((InVal=0,OutVal=500),(InVal=400000,OutVal=500),(InVal=500000,OutVal=0)))</p>
+<p><em class="em2">Daid303:</em> ProjectX if you are xtremely bored then help building up these pages: <a href="vehicles.html">Vehicles</a> <a href="kvehicle.html">KVehicle</a> <a href="kcar.html">KCar</a></p>
+<p><em class="em2">ProjectX:</em> I would but my train of thought is solely on mapping, get anywhere near coding and it de-rails, killing all the passengers (much like British rail really <img alt=":)" src="emoticons/smile.gif" align="middle"> ) Anyway i really like what your doing, but is it possible to get a 1st person view camera inside that thing? would be well good. And a sort of system that if the bulldog was not used in, say, 1 minute, it is automatically destroyed, lowers fps and also, if you drive into a pit you cant get out of, you die, respawn and wait a bit for a new bulldog. (lets just say ive done that more than once, (and not just on UT2K3  either) thankyou AA).</p>
+<p><em class="em2">Daid303:</em> The 1 min no use time isn't that hard, the "you're f*cked" code is a lot harder.</p>
+<p><em class="em2">ProjectX:</em> What i meant was that you'd kill yourself with your own weapon and then respawn and wait</p>
+<p><em class="em2">Daid303:</em>A sort like, you press AltFire, and you hear. Tick....Tick....Tick.... And the next thing you remember is ariving at the gates of hell.</p>
+<p><em class="em2">ProjectX:</em> You could, or you could just get them to shoot themselves with a rocket launcher, would be much easier, you dont need to code anything for that. Just have to shoot yourself.</p>
+<p><em class="em2">Chema:</em> Using your shield gun is more fun, and sometimes you can actually get out of the hole hammer-jumping! Of course, for the purist scripter, a "&lt;TAB&gt; suicide" would seem more logical <img alt=";-)" src="emoticons/wink.gif" align="middle"></p>
+<hr class="thin"><p><em class="em2">Chimaira:</em> If you are making a copy of the bulldog in uED (almost) all of the default-propeteries are diffrent from the original bulldog...in some places there is no value over all.</p>
+<p>So...just open the default-propeteries of your car and the bulldog and "copy" all that is in the bulldog-DP.</p>
+<p>After you´ve done that you want to save your car right? So... save the package you made your car in.</p>
+<p>It´s just one big problem......when you try to save your class with your own car it says "The file on disk(26,058)is larger than the file in memory(-1). Are you sure you want to overwrite it? 'yes/no'" </p>
+<p>If you choose yes your file is deleted (-1 means nothing).</p>
+<p>I´ve tested all the values that you need to change and i found out that it is the karma-value that messes up everything.</p>
+<p>Does anyone know how i could prevent this error or(and) tell me about any other scripting-programs.</p>
+<p><em class="em2">Daid303:</em> Easy fix: Don't use UnrealEd (Use UCC make), it seems to messup as soon as you have InLine Objects (or how is that called?) After 1 rebuild with UCC make (with custom Objects in default properties), you can step back to UnrealEd (if you want, but there are much better tools out there)</p>
+<hr class="thin"><p><em class="em2">ProjectX:</em> Does anyone know where the Uscript for the bulldog is once uve exported the scripts, i cant find it to edit it in notepad!</p>
+<p><em class="em2">BM.Deathwind:</em> I suggest using UDE to edit code.  It should be in the UT2k3 "System" folder (Or you can get it from <a href="http://unreal.epicgames.com/">http://unreal.epicgames.com/</a> ).  It builds the class heirarchy too, so you can find it that way.</p>
+<p><em class="em2">ProjectX;</em> thanx, ive got that dun now, i only have one more problem, when i load the new bulldog in a level, it appears, but when i walk up to it, and press [use] i cant get in it. The code i've changed is on a separate page: <a href="projectx-code.html">ProjectX/Code</a></p>
+<p><em class="em2">Kaoh:</em> you need to change the triggers also, make a copy of the BulldogTrigger.uc and rename it, in there you can specify the correct class for you vehicle.</p>
+<hr class="thin"><p><em class="em2">Chema:</em> A question: to add shadow to the bulldog, you have to subclass it, and then change the Vehicles.Bulldogs in the map, or in Vehicles.BulldogFactory.VehicleClass, for MyPack.BulldogShadows.  Or, as I did first, modifying the original Bulldog instead of subclassing it (Larry Wall's fault!).  Of course, for VehicleDemo.ut2, the best way is to change Vehicles.BulldogFactory.VehicleClass, but what If I had several maps with spawned Bulldogs (but no factories)?  I could edit the map, but how could I add the shadow to the original Bulls, only with code?  Maybee with an intercepting function, like UT's SpawnNotify?  Or redefining (oscuring?) the Bulldog?  </p>
+<p>Supose there is no nice ("objetive") way to do such thing, but you know, its a subjetive doubt <img alt=":-D" src="emoticons/biggrin.gif" align="middle"></p>
+<p><em class="em2">Foxpaw:</em> You could use a mutator to do that. That would likely be the best way.</p>
+<p><em class="em2">Chema:</em> But what would I do in the mutator? Redefine/obscure the bulldog class?</p>
+<p><em class="em2">Foxpaw:</em> Mutators have an event called CheckReplacement and a function called ReplaceWith. This allows you to replace all instances of a given class with another class. It is used, for instance, in the Arena mutator to change all of the weapons. Likewise you could use the mutator to replace all instances of the Bulldog with your new, modified Bulldog. That way no maps would need to be modified, and backwards compatibility would also be retained if people wanted to play a map containing your modified bulldogs but would rather use the default bulldogs. The mutator could look something like the following, with "NewBulldogClass" replaced with whatever the class name of your modified bulldog is. It might not compile or work quite right, I didn't test it. But you get the idea:</p>
+<pre class="uscript"><span class="uscript-comment">// Replace all class instances of 'BullDog' with 'NewBulldogClass'.</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CheckReplacement<span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> <span class="uscript-type">byte</span> bSuperRelevant<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span> <span class="uscript-name">'BullDog'</span> <span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>Other<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'NewBulldogClass'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    ReplaceWith<span class="uscript-operator">(</span> Other<span class="uscript-operator">,</span> NewBulldogClass <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>CheckReplacement<span class="uscript-operator">(</span> Other<span class="uscript-operator">,</span> bSuperRelevant <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><hr class="thin"><p><em class="em2">Chema:</em> On a less bizarre side, I'm planning to finish the sound and force feedback code of the bullye.  Has anyone done it already?</p>
+<p><em class="em2">Foxpaw:</em> I don't have any force feedback devices so I haven't tested that but the sounds (at least the ones I played around with) work fine. There just isn't any sounds set into the sound variables. All of the function calls, etc. are already in place, you just need to add sounds in the defaultproperties.</p>
+<p><em class="em2">Billy Boy:</em> How would I go about making the Bulldog smaller? I want to half its size for a smaller indoor arena.</p>
+<p><em class="em2">ProjectX (Finally decided to learn coding yay!!!):</em> Billy, all you do is change the static mesh scale in the default properties. I suggest you start using an IDE such as conTEXT or UDE to do your coding since UnrealEd won' let you do advanced stuff like custom models.</p>
+<p><em class="em2">Foxpaw:</em> Actually you can, it's just not very convenient. I too would not recommend using UnrealEd to modify script though. I used to just use notepad, but now I use <a href="textpad.html">TextPad</a>.</p>
+<p><em class="em2">Erdrik:</em> I've been messing around with vehicle code for awhile(submited a hovertank code in the vehicles section), but I haven't really mess around with the wheels to much. I've been trying to make smaller wheels by simply scaling down the bulldog tires, but some odd things start happening. The collision and staticmesh are scaled down, as it actually looks smaller and I can bounce grenades around it accuratly. BUT, the wheel itself rest on the ground as if it were still as big as normal, making it look like the wheel is floating a bit off the ground. I'm assuming this is becuase the new scal isn't set properly in the Karma and was wondering if anyone new where I could go in the code to fix this?</p>
+<p><em class="em2">MythOpus:</em> I had some messings with vehicle code too.  Most of the stuff I did caused errors and locked my computer up.  Sigh...  Anyways, to fix your wheel problem, I imagine that you haven't changed the position of the wheels (relative to the vehicle of course <img alt=":)" src="emoticons/smile.gif" align="middle">) .  You'll have to experiment with this until you get what your looking for but if you look in the default properties and find a property called:</p>
+<pre class="uscript">     WheelFrontAlong<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">100.000000</span>
+     WheelFrontAcross<span class="uscript-operator">=</span><span class="uscript-number">110.000000</span>
+     WheelRearAlong<span class="uscript-operator">=</span><span class="uscript-number">115.000000</span>
+     WheelRearAcross<span class="uscript-operator">=</span><span class="uscript-number">110.000000</span> 
+     WheelVert<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">15.000000</span> <span class="uscript-comment">// For vertical alignment I believe ;)</span></pre><p><em class="em2">Erdrik:</em> No I already did that. I'm not having a problem with the wheels location. The problem is that even tho the graphic of the wheel is scaled down it still rolls on the ground as if it were bigger. the strange part is that weapon traces and projectiles collide properly!?</p>
+<p><em class="em2">MythOpus:</em> Well, did you make a new collision for the wheels?  It doesn't need one <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Foxpaw:</em> Well, since it's a KTire, it's magic for Karma purposes. The original bulldog tire has a Karma collision hull but also a traditional collisionradius and collisionheight - maybe one of those is being used for the tire simulation.</p>
+<p><em class="em2">MythOpus:</em> Are you sure that the KTire has a karma collision hull?  When you turn on that view karma collision button, it doesn't show an collision...</p>
+<p><em class="em2">Foxpaw:</em> Ah. That's because it has a "Karma Primitive" collision but no polygonal collision. You can use both, but the tire has only one. The "Karma Primitive" collision has to be specified in the modelling program, but allows you to do perfect spherical collision and cylinder collision. You can view these collision hulls by checking the "Show Karma Primitives" menu item.</p>
+<p><em class="em2">MythOpus:</em> I see <img alt=":)" src="emoticons/smile.gif" align="middle">  It all becomes clear at last.</p>
+<p><em class="em2">WinterHummer:</em> I like what you all the work for the bulldog but i'm having trouble getting it to drive faster in UT2004. I've done the fix but i've tried "KMaxSpeed" Nope</p>
+<p><em class="em2">MythOpus:</em> I don't really deal with the workings of vehicles (I believe they should be EASIER to code), but I think you're better off working with UT2004's version of the vehicle code.  It's more stable and works better.  I also remember the last time I spawned a bulldog in UT2004.  It moved for around 2 seconds then it just died and nothing could budge it.  </p>
+<p><em class="em2">WinterHummer:</em> You're probably right about just working with the ut2004 SVehicle Code but its missing something and that is drivesplit. You know like front wheel driver or rear wheel drive.I got the going faster to work but now I cant get the wheelspin above 100000 &amp; change. Oh and changing the torecurve is having no effect.</p>
+<hr class="thin"><p><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Introduction", "#0.1");
+menuItemAdd("Tutorials", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Making the Bulldog drive faster", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Using the TorqueCurves for Gears", "#0.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Adding Shadow to the Bulldog", "#0.2.3");
+menuItemAdd("Related Topics", "#0.3");
+menuItemAdd("Discussion", "#0.4");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Modifying_The_Bulldog">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Modifying_The_Bulldog">View other revisions</a><br>Last edited May 1, 2006 17:13 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Modifying_The_Bulldog">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Modifying_The_Bulldog">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I'm a doctor, not a mechanic
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

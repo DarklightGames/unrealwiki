@@ -1,0 +1,329 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: UnrealScript Language Test/Discussion</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=UnrealScript_Language_Test/Discussion; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="unrealscript-language-test.html">UnrealScript Language Test</a>/<a href="http://wiki.beyondunreal.com/wiki?back=UnrealScript+Language+Test/Discussion">Discussion</a></h1>
+	<div class="wiki"><blockquote><p>Archived discussions about certain test cases</p>
+</blockquote><h2><a name="0.1"></a>error006_whileuntil</h2>
+<p><em class="em2">Evolution:</em> (can't remember if this is exactly how this one works, but it's something like this): while ( <i>expr</i> ) { ... } until ( <i>expr</i> ); compiles and works fine, though it's quite unexpected!</p>
+<p><em class="em2">Wormbo:</em> Not only "while()...until();" compiles (and evaluates both conditions at their corresponding places), but also "do { ... }", which basically is an unconditional infinite loop.</p>
+<p><em class="em2">El Muerte:</em> <tt>while (...) ... until(...);</tt> is clearly an error, it shouldn't compile and it doesn't even run properly, I think (see error006_whileuntil). <tt>while (...) do ... until (...);</tt> is the correct form. <tt>do ...</tt> should also be an error. Come to think of it, shouldn't <tt>do</tt> require braces? How do other curlybrace languages define this? <tt>while</tt> could easily accept an block or single line, but <tt>do</tt> should know where the statements end. For example, what <em class="em1">should</em> the following code do?</p>
+<pre class="uscript">    i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">do</span>
+        <span class="uscript-keyword">do</span>
+            log<span class="uscript-operator">(</span><span class="uscript-string">"x"</span><span class="uscript-operator">@</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">until</span><span class="uscript-operator">(</span>i <span class="uscript-operator">&lt;</span> <span class="uscript-number">5</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">do</span>
+        log<span class="uscript-operator">(</span><span class="uscript-string">"y"</span><span class="uscript-operator">@</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">until</span><span class="uscript-operator">(</span>i <span class="uscript-operator">&lt;</span> <span class="uscript-number">10</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>Ofcourse it should keep printing "x number". But I think this goes against the principles of the curlybrance languages (this is not perl). And another idea, shouldn't an null condition evaluate to false instead of true?</p>
+<p><em class="em2">Wormbo:</em> The compiler actually seems to handle block start and end individually.</p>
+<pre class="uscript">startwhile: <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>whilecondition<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>                    <span class="uscript-comment">// while (whilecondition) {</span>
+  <span class="uscript-comment">// code block                                      //   ...</span>
+  <span class="uscript-keyword">goto</span><span class="uscript-operator">(</span><span class="uscript-name">'startwhile'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                <span class="uscript-comment">// }</span>
+<span class="uscript-operator">}</span>
+
+startdountil:                                        <span class="uscript-comment">// do {</span>
+<span class="uscript-comment">// code block                                        //   ...</span>
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>untilcondition<span class="uscript-operator">)</span> <span class="uscript-keyword">goto</span><span class="uscript-operator">(</span><span class="uscript-name">'startdountil'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>           <span class="uscript-comment">// } until (untilcondition);</span>
+
+
+startwhileuntil: <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>whilecondition<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>               <span class="uscript-comment">// while (whilecondition) {</span>
+  <span class="uscript-comment">// code block                                      //   ...</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>untilcondition<span class="uscript-operator">)</span> <span class="uscript-keyword">goto</span><span class="uscript-operator">(</span><span class="uscript-name">'startwhileuntil'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>      <span class="uscript-comment">// } until (untilcondition);</span>
+<span class="uscript-operator">}</span>
+
+startdo:                                             <span class="uscript-comment">// do {</span>
+<span class="uscript-comment">// code block                                        //   ...</span>
+<span class="uscript-keyword">goto</span><span class="uscript-operator">(</span><span class="uscript-name">'startdo'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                     <span class="uscript-comment">// }</span></pre><p>In that context it also becomes obvious, why the do loop doesn't require braces &ndash; while doesn't require them either and the compiler doesn't seem to make a big difference there.</p>
+<h2><a name="0.2"></a>error009_invalidsuper and error010_superstates</h2>
+<p><em class="em2">Wormbo:</em> It is possible to specify classes in the Super(ClassName).FunctionCall() construction that are not a super class. On the other hand it's not possible to specify super <em class="em1">states</em>.</p>
+<p><em class="em2">SuperApe:</em> Wormbo (or anyone), can you give an example of that?</p>
+<p><em class="em2">El Muerte:</em> super states?</p>
+<p><em class="em2">SuperApe:</em> I guess I wasn't clear what Wormbo was referring to.  I was wondering which of "<tt>Super(ClassName).FunctionCall()</tt>" is code and which is explanation.  An example of it's use was what I was after.</p>
+<p><em class="em2">OlympusMons:</em> Now Im not as good as you guys, but would "<tt>Super(ClassName).FunctionCall()</tt>" return the super of the current class or the super of the class in the brackets. "<tt>Class(Super.ClassName).FunctionCall()</tt>" wouldnt that be correct, because its usually "<tt>class(class).function();</tt>" and for a super state wouldnt it be "<tt>Super.goto("StateTag")</tt>" anyways just ignore me if I dont have a clue. unless its "<tt>Super.Class(ClassName).FunctionCall()</tt>" but that kinda leaves it open for a "<tt>Super.Class(Super.ClassName).FunctionCall()</tt>" Ok now Im just being silly.</p>
+<p><em class="em2">Jimboh:</em> </p>
+<pre class="uscript"><span class="uscript-keyword">Class</span> A <span class="uscript-keyword">extends</span> Object<span class="uscript-operator">;</span>
+<span class="uscript-keyword">function</span> dothis<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-comment">// does something cool</span>
+<span class="uscript-operator">}</span></pre><pre class="uscript"><span class="uscript-keyword">Class</span> B <span class="uscript-keyword">extends</span> A<span class="uscript-operator">;</span>
+<span class="uscript-keyword">function</span> dothis<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-comment">// does something uncool</span>
+<span class="uscript-operator">}</span></pre><pre class="uscript"><span class="uscript-keyword">Class</span> C <span class="uscript-keyword">extends</span> B<span class="uscript-operator">;</span>
+<span class="uscript-keyword">function</span> dothis<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-comment">// you don't wanna be uncool, so you wanna do something cool...</span>
+<span class="uscript-keyword">Super</span><span class="uscript-operator">(</span>A<span class="uscript-operator">)</span><span class="uscript-operator">.</span>dothis<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><pre class="paraverbatim"> Thats how you use Super().</pre><p><em class="em2">OlympusMons:</em> Oh a super,super. I thought you were calling the super class not the super of the super. Still shouldnt this "<tt>Class(Super.ClassName).FunctionCall()</tt>" work?? Damn spawning and firemodes got me confused now!!</p>
+<p><em class="em2">Wormbo:</em> What I mean with "super states" is:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> SomeClass <span class="uscript-keyword">extends</span> Actor<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// Super() compiler bug:</span>
+<span class="uscript-keyword">function</span> A<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-comment">// super call to sibling class function that doesn't exist in this or the super class</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">(</span>DestroyableTrigger<span class="uscript-operator">)</span><span class="uscript-operator">.</span>SpawnEffects<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// compiles and even executes! (spawns some visual effects)</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// Super states:</span>
+
+<span class="uscript-comment">// new function, does not exist in Actor</span>
+<span class="uscript-keyword">function</span> X<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  log<span class="uscript-operator">(</span><span class="uscript-string">"SomeClass global X"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// new state, does not exist in Actor</span>
+<span class="uscript-keyword">state</span> BaseState
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">function</span> X<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    log<span class="uscript-operator">(</span><span class="uscript-string">"SomeClass BaseState X"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">// Super.X() -&gt; "Error, Unknown Function 'X' in 'Class Engine.Actor'"</span>
+    <span class="uscript-keyword">Global</span><span class="uscript-operator">.</span>X<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// logs the same</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">state</span> ExtendedState <span class="uscript-keyword">extends</span> BaseState
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">function</span> X<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    log<span class="uscript-operator">(</span><span class="uscript-string">"SomeClass ExtendedState X"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>X<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// "SomeClass BaseState X"</span>
+    <span class="uscript-keyword">Global</span><span class="uscript-operator">.</span>X<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// "SomeClass global X"</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">state</span> AnotherExtendedState <span class="uscript-keyword">extends</span> ExtendedState
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">function</span> X<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    log<span class="uscript-operator">(</span><span class="uscript-string">"SomeClass AnotherExtendedState X"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>X<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// "SomeClass ExtendedState X"</span>
+    <span class="uscript-comment">// it's not possible to call "SomeClass BaseState X" directly through a Super(Something).X() construction:</span>
+    <span class="uscript-comment">// Super(BaseState).X() -&gt; "Error, Bad class name 'BaseState'"</span>
+    <span class="uscript-comment">// Super(SomeClass.BaseState).X() -&gt; "Error, Missing ')' in 'super(classname)'"</span>
+    <span class="uscript-keyword">Global</span><span class="uscript-operator">.</span>X<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// "SomeClass global X"</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>If the object is in state AnotherExtendedState, it will log the following when X is called:</p>
+<pre class="paraverbatim"> SomeClass AnotherExtendedState X
+ SomeClass ExtendedState X
+ SomeClass BaseState X
+ SomeClass global X
+ SomeClass global X
+ SomeClass global X</pre><p>The calling structure looks like this:</p>
+<PRE class="tree">AnotherExtendedState.X()
+  +- ExtendedState.X()
+  |    +- BaseState.X()
+  |    |    +- global X()
+  |    +- global X()
+  +- global X()</PRE><p><em class="em2">OlympusMons:</em> Ahh yes thats very, very clever wormbo <img alt=":D" src="emoticons/biggrin.gif" align="middle"> How did you ever come up with that concept, might be handy for some AI or something.</p>
+<p><em class="em2">Wormbo:</em> PlayerController already uses the concept of extending states within the sme class with BaseSpectating being the base state for Spectating, AttractMode and WaitingForPawn. The Bot class makes extensive use of <a href="extending-states.html">extending states</a> as well:</p>
+<PRE class="tree">MoveToGoal
+  +- MoveToGoalWithEnemy
+  |    +- Fallback
+  |    |    +- Retreating
+  |    +- Charging
+  |    +- VehicleCharging
+  |    +- Hunting
+  +- MoveToGoalNoEnemy
+       +- Roaming
+NoGoal
+  +- RestFormation</PRE><p><em class="em2">El Muerte:</em> then what does the following do (and what should it, logically, do)?:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> B <span class="uscript-keyword">extends</span> A<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> X<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-comment">// override A.X</span>
+<span class="uscript-operator">{</span>
+  log<span class="uscript-operator">(</span><span class="uscript-string">"B.X"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>X<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// calls A.X</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">state</span> Base
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">function</span> X<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    log<span class="uscript-operator">(</span><span class="uscript-string">"Base.X"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">global</span><span class="uscript-operator">.</span>X<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// calls B.X</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">state</span> ExtendedState1 <span class="uscript-keyword">extends</span> Base
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">function</span> X<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    log<span class="uscript-operator">(</span><span class="uscript-string">"ExtendedState1.X"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>X<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// calls B{Base}.X</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">state</span> ExtendedState2 <span class="uscript-keyword">extends</span> Base
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">function</span> X<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    log<span class="uscript-operator">(</span><span class="uscript-string">"ExtendedState2.X"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">super</span><span class="uscript-operator">(</span>A<span class="uscript-operator">)</span><span class="uscript-operator">.</span>X<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// &lt;-- does this call A.X(); ??</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>I'm not behind a a computer with UE right now, so I can't test it myself</p>
+<p><em class="em2">Switch`:</em> 3369 does this</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> sbA <span class="uscript-keyword">extends</span> Actor<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> X<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-comment">// A.X</span>
+<span class="uscript-operator">{</span>
+  xlog<span class="uscript-operator">(</span><span class="uscript-string">"A.X"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> xLog <span class="uscript-operator">(</span> <span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> s <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    Log<span class="uscript-operator">(</span><span class="uscript-string">"["</span> <span class="uscript-operator">$</span>GetStateName<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">$</span> <span class="uscript-string">"]"</span> <span class="uscript-operator">@</span>S<span class="uscript-operator">,</span> <span class="uscript-type">name</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><pre class="uscript"><span class="uscript-keyword">class</span> sbB <span class="uscript-keyword">extends</span> sbA<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    X<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    gotostate<span class="uscript-operator">(</span><span class="uscript-name">'BaseState'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    X<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    gotostate<span class="uscript-operator">(</span><span class="uscript-name">'ExtendedState1'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    X<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    gotostate<span class="uscript-operator">(</span><span class="uscript-name">'ExtendedState2'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    X<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+<span class="uscript-operator">(</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">)</span></pre><pre class="uscript">ScriptLog: Fabricate sandbox<span class="uscript-operator">.</span>sbb
+sbB0: <span class="uscript-operator">[</span>sbB<span class="uscript-operator">]</span> B<span class="uscript-operator">.</span>X
+sbB0: <span class="uscript-operator">[</span>sbB<span class="uscript-operator">]</span> A<span class="uscript-operator">.</span>X
+sbB0: <span class="uscript-operator">[</span>BaseState<span class="uscript-operator">]</span> BaseState<span class="uscript-operator">.</span>X
+sbB0: <span class="uscript-operator">[</span>BaseState<span class="uscript-operator">]</span> B<span class="uscript-operator">.</span>X
+sbB0: <span class="uscript-operator">[</span>BaseState<span class="uscript-operator">]</span> A<span class="uscript-operator">.</span>X
+sbB0: <span class="uscript-operator">[</span>ExtendedState1<span class="uscript-operator">]</span> ExtendedState1<span class="uscript-operator">.</span>X
+sbB0: <span class="uscript-operator">[</span>ExtendedState1<span class="uscript-operator">]</span> BaseState<span class="uscript-operator">.</span>X
+sbB0: <span class="uscript-operator">[</span>ExtendedState1<span class="uscript-operator">]</span> B<span class="uscript-operator">.</span>X
+sbB0: <span class="uscript-operator">[</span>ExtendedState1<span class="uscript-operator">]</span> A<span class="uscript-operator">.</span>X
+sbB0: <span class="uscript-operator">[</span>ExtendedState2<span class="uscript-operator">]</span> ExtendedState2<span class="uscript-operator">.</span>X
+sbB0: <span class="uscript-operator">[</span>ExtendedState2<span class="uscript-operator">]</span> A<span class="uscript-operator">.</span>X</pre><p><em class="em2">SuperApe:</em> I appreciate the explanations and examples.  This is very informative, seeing the abilities and limits.  Thank you.</p>
+<p><em class="em2">El Muerte:</em> well, I think the result is wrong to the analogy of a normal super call in a state. So, this would be two new error cases (the super(nonParent) and the super(X) in a state. ).</p>
+<p><em class="em2">Switch`:</em> What should it call? B.X()?</p>
+<p><em class="em2">El Muerte:</em> It depends. The meaning of super has to be clearly defined in states. Either super calls the parent class or parent state. In the former super(A) should be possible and in the latter super(A) should be invalid. Maybe there needs to be a special super for states, but at this point it can't be fixed for UE2 (too much relies on the "broken" functionality).</p>
+<h2><a name="0.3"></a>error011_delegatevisibility</h2>
+<p><em class="em2">Switch`:</em> Delegates ignore private and protected keywords.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> sbA <span class="uscript-keyword">extends</span> Actor<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">delegate</span> callpriv<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">delegate</span> callprot<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> sbB B<span class="uscript-operator">;</span>
+
+    B <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'sbB'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">//B.priv(); // "Error, Can't access private function 'priv' in 'sbB'"</span>
+    <span class="uscript-comment">//B.prot(); // "Error, Can't access protected function 'prot' in 'sbB'"</span>
+
+    callpriv <span class="uscript-operator">=</span> B<span class="uscript-operator">.</span>priv<span class="uscript-operator">;</span>
+    callprot <span class="uscript-operator">=</span> B<span class="uscript-operator">.</span>prot<span class="uscript-operator">;</span>
+    callpriv<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// "Private called"</span>
+    callprot<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// "Protected called"</span>
+<span class="uscript-operator">}</span></pre><pre class="uscript"><span class="uscript-keyword">class</span> sbB <span class="uscript-keyword">extends</span> Actor<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">private</span> <span class="uscript-keyword">function</span> priv<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span> Log<span class="uscript-operator">(</span><span class="uscript-string">"Private called"</span><span class="uscript-operator">,</span><span class="uscript-type">name</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-operator">}</span>
+<span class="uscript-keyword">protected</span> <span class="uscript-keyword">function</span> prot<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span> Log<span class="uscript-operator">(</span><span class="uscript-string">"Protected called"</span><span class="uscript-operator">,</span><span class="uscript-type">name</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-operator">}</span></pre><p><em class="em2">El Muerte:</em> Well, it's partially correct. You should be able to assign private\protected functions to a delegate, but only from a class that that has access to them to begin with. This is a nice "security" exploit. Will add it as 'bug' as soon as I have the time.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("error006_whileuntil", "#0.1");
+menuItemAdd("error009_invalidsuper and error010_superstates", "#0.2");
+menuItemAdd("error011_delegatevisibility", "#0.3");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="unrealscript-language-test.html">UnrealScript Language Test</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=UnrealScript_Language_Test/Discussion">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=UnrealScript_Language_Test/Discussion">View other revisions</a><br>Last edited February 2, 2006 8:46 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=UnrealScript_Language_Test/Discussion">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/UnrealScript_Language_Test/Discussion">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Gah - a solution with more questions. (EntropicLqd)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

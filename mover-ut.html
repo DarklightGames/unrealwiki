@@ -1,0 +1,356 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Mover (UT)</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Mover_(UT); path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Mover (UT)">Mover (UT)</a></h1>
+	<div class="wiki"><div class="classpath"><img src="shared//gameicons/icon-ut.png"> <a href="unreal-tournament.html">UT</a> :: <a href="actor-ut.html">Actor (UT)</a> &gt;&gt; <a href="brush.html">Brush</a> &gt;&gt; Mover  (Package: Engine)<br></div>
+<p>(see <a href="mover.html">Mover</a> for the UT2003 version of this class)</p>
+<p>In UT <em class="em2">Movers</em> are brushes that move. They are not part of the <a href="bsp.html">BSP</a>, but look as if they are to the player.  Use them to create doors, elevators and other parts of dynamic level geometry. This page describes the class in detail. </p>
+<p>Terminology: A mover is said to "open" when it moves from key 0 to the last defined key (<em class="em1">NumKeys-1</em> for the technically-minded). Movement in the opposite direction is called "closing". Some subclasses of mover have the ability to open partially.</p>
+<h2><a name="0.1"></a>Properties</h2>
+<h3><a name="0.1.1"></a>Mover Group</h3>
+<dl><dt>bool bDamageTriggered</dt><dd>The mover is triggered by taking damage. Use for doors that open when you shoot then, for example.</dd><dt>bool bDynamicLightMover</dt><dd>Setting this to True will cause the mover to change the way it is lit as it moves. This is very useful when a mover is going between areas with different brightnesses or colors of light. Note that BrushRayTraceKey is unused if the mover is dynamically lit.<br>The process isn't perfect by any means, and often has dirty shadows and flickering between different lightings on the brush. However, it does eliminate the annoying black patches on the undersides of lifts and the sides of doors. In addition this takes quite a bit more CPU power than normal. Use this only in areas where it is needed to make the mover look decent and processing power can be spared.</dd><dt>byte BrushRaytraceKey (const)</dt><dd>This should be set to the number of a keyframe. When the map's lighting is rebuilt, the polys of the mover will always be lit as if it is in this position. (Naturally, this property is irrelevant if you have bDynamicLightMover = True.)</dd><dt>bool bSlave</dt><dd>This mover is a slave. It will follow another mover. See <a href="compound-movers.html">Compound Movers</a>.</dd><dt>bool bTriggerOnceOnly</dt><dd>Go dormant after first trigger. Note that this doesn't work for all states (see <em class="em1">Mover States</em> below).</dd><dt>name BumpEvent</dt><dd>The name of an <a href="event.html">event</a> to fire when any something bumps this mover. This allows you to have movers that can be either triggered or bumped: you have the BumpEvent trigger the mover's own Tag.</dd><dt>EBumpType BumpType</dt><dd>Determines what sort of things are counted as bumping this mover. Other things that bump it will be ignored.</dd><dt>bool bUseTriggered</dt><dd>This mover will be triggered by player grab.</dd><dt>float DamageThreshold</dt><dd>Minimum damage to trigger. Works with bDamageTriggered.</dd><dt>float DelayTime</dt><dd>Delay before starting to open.</dd><dt>int EncroachDamage</dt><dd>How much to damage encroached actors.</dd><dt>byte KeyNum</dt><dd>The number of the key that the mover is curently set to. Using the <a href="brush-context-menu.html">Brush Context Menu</a> &rarr; Mover &rarr; Key command is the same as changing this value. See <a href="keyframe.html">Keyframe</a> for more on this.</dd><dt>EMoverEncroachType MoverEncroachType</dt><dd>Tells the mover what to do when it hits an actor while trying to move. For example, when a lift returns to the low position and hits a player's head. (see <em class="em1">EMoverEncroachType</em> enum below)</dd><dt>EMoverGlideType MoverGlideType</dt><dd>How the mover moves from one position to another. (see <em class="em1">EMoverGlideType</em> enum below)</dd><dt>float MoveTime</dt><dd>Time to spend moving between keyframes.</dd><dt>byte NumKeys (const)</dt><dd>This is the number of different positions (known as <em class="em1">keys</em>) that the mover has. The maximum possible value seems to be 64.</dd><dt>float OtherTime</dt><dd>TriggerPound stay-open time.</dd><dt>name PlayerBumpEvent</dt><dd>Optional event to cause when the player bumps the mover.</dd><dt>name ReturnGroup</dt><dd>if none, same as tag</dd><dt>float StayOpenTime</dt><dd>How long to remain open before closing.</dd><dt>byte WorldRaytraceKey (const)</dt><dd>Set this to the number of the key you want the mover to affect the world at. Basically, whatever you set this to is where the mover will block light. A neat trick you can do with this property is to set it to an unused key which you have positioned somewhere outside your map. That way the mover will not cast a shadow at all. This can alleviate the annoying problem of black patches underneath movers.</dd></dl>
+<h3><a name="0.1.2"></a>MoverSounds Group </h3>
+<p>The properties in this section set the sounds played by the mover as it travels.</p>
+<dl><dt>Sound ClosedSound</dt><dd>When finish closing.</dd><dt>Sound ClosingSound</dt><dd>When start closing.</dd><dt>Sound MoveAmbientSound</dt><dd>Optional ambient sound when moving.</dd><dt>Sound OpenedSound</dt><dd>When finished opening.</dd><dt>Sound OpeningSound</dt><dd>When start opening.</dd></dl>
+<p>The sounds in UT packages like DoorsMod are designed with this system in mind, and are usually found in sets of 3, eg "md2start", "md2loop", "md2end". Use start sounds with Opening, end sounds with Opened and loop with ambient.</p>
+<p>Only MoveAmbientSound is affected by the value of Sounds &rarr; SoundVolume. The others play at full volume. (Some scripting would probably fix this for a custom class, since the Mover calls PlaySound, and this has an optional volume parameter.)</p>
+<h3><a name="0.1.3"></a>UnrealScript-Only Properties</h3>
+<dl><dt>byte PrevKeyNum</dt><dd>Previous keyframe.</dd><dt><a href="actor-ut.html">Actor (UT)</a> SavedTrigger</dt><dd>Who we were triggered by.</dd><dt>int numTriggerEvents</dt><dd>Number of times triggered (count down to untrigger)</dd><dt>Mover Leader</dt><dt>Mover Follower</dt><dd>For having multiple movers return together. (see <a href="compound-movers.html">Compound Movers</a>)</dd><dt>vector KeyPos[8]</dt><dd></dd><dt>rotator KeyRot[8]</dt><dd></dd><dt>vector BasePos, OldPos, OldPrePivot, SavedPos</dt><dd></dd><dt>rotator BaseRot, OldRot, SavedRot</dt><dd></dd><dt><a href="navigationpoint-ut.html">NavigationPoint (UT)</a> myMarker</dt><dd></dd><dt><a href="actor-ut.html">Actor (UT)</a> TriggerActor</dt><dd></dd><dt><a href="actor-ut.html">Actor (UT)</a> TriggerActor2</dt><dd></dd><dt><a href="pawn-ut.html">Pawn (UT)</a> WaitingPawn</dt><dd></dd><dt>bool bOpening, bDelaying, bClientPause</dt><dd></dd><dt>bool bPlayerOnly</dt><dd></dd><dt><a href="trigger.html">Trigger</a> RecommendedTrigger</dt><dd></dd><dt>vector SimOldPos</dt><dd></dd><dt>int SimOldRotPitch, SimOldRotYaw, SimOldRotRoll</dt><dd></dd><dt>vector SimInterpolate</dt><dd></dd><dt>vector RealPosition</dt><dd></dd><dt>rotator RealRotation</dt><dd></dd><dt>int ClientUpdate</dt><dd></dd></dl>
+<h2><a name="0.2"></a>Enums</h2>
+<h3><a name="0.2.1"></a>EMoverEncroachType</h3>
+<dl><dt>ME_StopWhenEncroach</dt><dd>Stop when we hit an actor.</dd><dt>ME_ReturnWhenEncroach</dt><dd>Return to previous position when we hit an actor.</dd><dt>ME_CrushWhenEncroach</dt><dd>Crush the poor helpless actor.</dd><dt>ME_IgnoreWhenEncroach</dt><dd>Ignore encroached actors.</dd></dl>
+<h3><a name="0.2.2"></a>EMoverGlideType</h3>
+<dl><dt>MV_MoveByTime</dt><dd>Move linearly.</dd><dt>MV_GlideByTime</dt><dd>Move with smooth acceleration.</dd></dl>
+<h3><a name="0.2.3"></a>EBumpType</h3>
+<dl><dt>BT_PlayerBump</dt><dd>Can only be bumped by player.</dd><dt>BT_PawnBump</dt><dd>Can be bumped by any pawn.</dd><dt>BT_AnyBump</dt><dd>Cany be bumped by any solid actor.</dd></dl>
+<h2><a name="0.3"></a>States</h2>
+<p>The mover states, set in the <a href="initialstate.html">InitialState</a> property determine:</p>
+<ul><li>how the mover is activated</li>
+<li>how it behaves once it has been activated</li>
+</ul>
+<p>Note that other settings affect activation behavior too:</p>
+<ul><li>the BumpType property affects <em class="em1">who</em> can activate it </li>
+<li>bDamageTriggered .....</li>
+<li>bUseTriggered ....</li>
+</ul>
+<p>The "OpenTimed" states open the mover (from key 0 to the last key), wait then close and sleep again. Only the states with "Trigger" in the name respond to triggering.</p>
+<dl><dt>None</dt><dd>The mover will not move through its keys, unless it is a slave.</dd><dt>BumpButton</dt><dd><p>This is very similar to BumpOpenTimed, but designed to be used for a button which controls another mover which is set to TriggerOpenTimed (a door, for example). </p>
+<p>Use the button mover's <em class="em2">BumpEvent</em> property to tie it to the door mover's Events &rarr; Tag. When the button is bumped, it moves and so does the door. The button is then frozen, and it will only return when the door has successfully closed. This is pretty much just a nice cosmetic touch: the button won't return until it can be used again.</p>
+<p>In brief:</p>
+<ul><li>The button mover's StayOpenTime is ignored. </li>
+<li>If the door is prevented from closing (by a player, say), the button will not return</li>
+<li>Once the door mover has finished closing, the button mover is closed.</li>
+</ul>
+</dd><dt>BumpOpenTimed</dt><dd>The mover reacts to being touched. Set <em class="em2">BumpType</em> to determine what counts as touching it. Used for buttons (though see BumpButton for special cases). Can be used for doors, although TriggerControl is better.</dd><dt>StandOpenTimed</dt><dd>The mover reacts when the engine detects a player has stood on it. Used for lifts.</dd><dt>TriggerControl</dt><dd><p>The mover opens while the trigger is active, and closes when unTriggered &ndash; ie if set up with a simple Trigger actor, as soon as the player steps out from the Trigger's radius the mover will start closing again. </p>
+<p>Example: the door to the redeemer area in UT's DM-StalwartXL and CTF-Gauntlet. (note to anyone reading this: the <a href="event.html">Event</a> page needs to explain that events can last for a duration, as in this case &ndash; there's an UnTrigger function too when a player steps out of a Trigger actor's radius.)</p>
+</dd><dt>TriggerOpenTimed</dt><dd>When triggered, the mover opens fully, waits and closes again. For related topics on triggering see the links section below.</dd><dt>TriggerPound</dt><dd><p>Similar to TriggerControl, but used for movers that open and close continuously. As soon as the corresponding trigger is activated, a mover using this state will begin the following cycle:</p>
+<ol><li>Opens as usual, with its speed determined by the MoveTime property.</li>
+<li>Pauses for a time equal to the OtherTime property.</li>
+<li>Closes as usual, with its speed determined by the MoveTime property.</li>
+<li>Pauses for a time equal to the StayOpenTime property.</li>
+</ol>
+<p>The mover loops through these actions until whatever activated the trigger leaves the trigger's collision area. When this happens, the mover immediately closes and remains at rest until triggered again.</p>
+</dd><dt>TriggerToggle</dt><dd>The mover will open when triggered and stop at the open position (the last keyframe). The next time it is triggered, it will close, and so on. Note that bTriggerOnceOnly has no effect in this state.</dd></dl>
+<h2><a name="0.4"></a>Discussion</h2>
+<p><em class="em2">Xian:</em> while trying to see how I can misuse brushes in a better and more efficient way since I don't like the way Epic coded UT as a whole, I found this code in Engine.Mover.FindTriggerActor():</p>
+<pre class="uscript">    <span class="uscript-keyword">ForEach</span> AllActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span> <span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> A<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>A<span class="uscript-operator">.</span><span class="uscript-keyword">Event</span> <span class="uscript-operator">==</span> Tag<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>A<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Trigger'</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> A<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Mover'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> A<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Counter'</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> A<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Pawn'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                bPlayerOnly <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+                <span class="uscript-keyword">return</span><span class="uscript-operator">;</span> <span class="uscript-comment">//FIXME - handle counters</span>
+            <span class="uscript-operator">}</span>
+                      <span class="uscript-operator">[</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">]</span>
+        <span class="uscript-operator">}</span></pre><p>How can a Trigger/Mover be a Pawn ? This seems like a nice logical error. Although the consequences may not be huge (since altogether the main triggering mechanism is done by movers/trigger classes), I just don't see how they could miss this... although it is trivial, check the next part:</p>
+<pre class="uscript">    bPlayerOnly <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> TriggerActor<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Trigger'</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Trigger<span class="uscript-operator">(</span>TriggerActor<span class="uscript-operator">)</span><span class="uscript-operator">.</span>TriggerType <span class="uscript-operator">==</span> TT_PlayerProximity<span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bPlayerOnly <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span> TriggerActor2 <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        bPlayerOnly <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> TriggerActor2<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Trigger'</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Trigger<span class="uscript-operator">(</span>TriggerActor<span class="uscript-operator">)</span><span class="uscript-operator">.</span>TriggerType <span class="uscript-operator">==</span> TT_PlayerProximity<span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bPlayerOnly <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            A <span class="uscript-operator">=</span> TriggerActor<span class="uscript-operator">;</span>
+            TriggerActor <span class="uscript-operator">=</span> TriggerActor2<span class="uscript-operator">;</span>
+            TriggerActor2 <span class="uscript-operator">=</span> A<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span></pre><p>My guess is the correct version is: </p>
+<pre class="uscript">    bPlayerOnly <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> TriggerActor<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Trigger'</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Trigger<span class="uscript-operator">(</span>TriggerActor<span class="uscript-operator">)</span><span class="uscript-operator">.</span>TriggerType <span class="uscript-operator">==</span> TT_PlayerProximity<span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bPlayerOnly <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span> TriggerActor2 <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+                <span class="uscript-comment">// Xian correction: TriggerActor to TriggerActor2 :)</span>
+        bPlayerOnly <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> TriggerActor2<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Trigger'</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Trigger<span class="uscript-operator">(</span>TriggerActor2<span class="uscript-operator">)</span><span class="uscript-operator">.</span>TriggerType <span class="uscript-operator">==</span> TT_PlayerProximity<span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bPlayerOnly <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            A <span class="uscript-operator">=</span> TriggerActor<span class="uscript-operator">;</span>
+            TriggerActor <span class="uscript-operator">=</span> TriggerActor2<span class="uscript-operator">;</span>
+            TriggerActor2 <span class="uscript-operator">=</span> A<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span></pre><p>Again the code as a whole works, but let's face it, the rule of <em class="em1">ntars</em> should NOT apply here and this SHOULD be fixed imo. Perhaps people who wish to take advantage of custom Mover classes which are dependant on Triggers and TriggerActor(2) pointers should rewrite this function to fix it accordingly. Any thoughts ?</p>
+<p><em class="em2">Graphik:</em> I understand the trivial bit, but unfortunately not the useful part. I mean, I'm assuming there is one.</p>
+<p><em class="em2">Xian:</em> In my opinon, the code needs a lot of optimization and checks (for example in most parts it does iterations to all Actors with their Event matching the current Tag, while proper way of doing it, is to check if the Actor has an Event set, but most importantly to not iterate at all if there is no Tag set; true it does it only in PBP, but still). This was just a code-related discussion, and I assumed coders that would create custom Movers for UT would find this interesting. If you want a useful side of it, let me put it this way: assuming I am right (and to me it looks like I am), I have yet to see a correction of logical errors which is not useful <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Graphik:</em> OK cool.</p>
+<p><em class="em2">Xian:</em> ok so an optimized version imo:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> FindTriggerActor<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Actor A<span class="uscript-operator">;</span>
+
+    TriggerActor <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    TriggerActor2 <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-comment">// Xian: if there is no tag at all, why bother ?</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Tag <span class="uscript-operator">==</span> <span class="uscript-name">''</span><span class="uscript-operator">)</span>
+             <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span> <span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> A<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>A<span class="uscript-operator">.</span><span class="uscript-keyword">Event</span> <span class="uscript-operator">!=</span> <span class="uscript-name">''</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>A<span class="uscript-operator">.</span><span class="uscript-keyword">Event</span> <span class="uscript-operator">==</span> Tag<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>A<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Trigger'</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> A<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Mover'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> A<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Counter'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                bPlayerOnly <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+                <span class="uscript-keyword">return</span><span class="uscript-operator">;</span> <span class="uscript-comment">//FIXME - handle counters</span>
+            <span class="uscript-operator">}</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>TriggerActor <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+                TriggerActor <span class="uscript-operator">=</span> A<span class="uscript-operator">;</span>
+            <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> TriggerActor2 <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+                TriggerActor2 <span class="uscript-operator">=</span> A<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> TriggerActor <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        bPlayerOnly <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>BumpType <span class="uscript-operator">==</span> BT_PlayerBump<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    bPlayerOnly <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> TriggerActor<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Trigger'</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Trigger<span class="uscript-operator">(</span>TriggerActor<span class="uscript-operator">)</span><span class="uscript-operator">.</span>TriggerType <span class="uscript-operator">==</span> TT_PlayerProximity<span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bPlayerOnly <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span> TriggerActor2 <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+                <span class="uscript-comment">// Xian: fixed TriggerActor to TriggerActor2</span>
+        bPlayerOnly <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> TriggerActor2<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Trigger'</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Trigger<span class="uscript-operator">(</span>TriggerActor2<span class="uscript-operator">)</span><span class="uscript-operator">.</span>TriggerType <span class="uscript-operator">==</span> TT_PlayerProximity<span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bPlayerOnly <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            A <span class="uscript-operator">=</span> TriggerActor<span class="uscript-operator">;</span>
+            TriggerActor <span class="uscript-operator">=</span> TriggerActor2<span class="uscript-operator">;</span>
+            TriggerActor2 <span class="uscript-operator">=</span> A<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><pre class="uscript"><span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> mover M<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">//brushes can't be deleted, so if not relevant, make it invisible and non-colliding</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>IsRelevant<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        SetCollision<span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                bCollideWorld <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Xian: :)</span>
+        SetLocation<span class="uscript-operator">(</span>Location <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">20000</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// temp since still in bsp</span>
+        bHidden <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+    <span class="uscript-operator">{</span>
+        FindTriggerActor<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-comment">// Initialize all slaves.</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bSlave <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Tag <span class="uscript-operator">!=</span> <span class="uscript-name">''</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>    <span class="uscript-comment">// Xian: tag check</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span> <span class="uscript-keyword">class</span> <span class="uscript-name">'Mover'</span><span class="uscript-operator">,</span> M<span class="uscript-operator">,</span> Tag <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> M<span class="uscript-operator">.</span>bSlave <span class="uscript-operator">)</span>
+                <span class="uscript-operator">{</span>
+                    M<span class="uscript-operator">.</span>GotoState<span class="uscript-operator">(</span><span class="uscript-name">''</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                    M<span class="uscript-operator">.</span>SetBase<span class="uscript-operator">(</span> <span class="uscript-keyword">Self</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-operator">}</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Leader <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>   
+            Leader <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ReturnGroup <span class="uscript-operator">!=</span> <span class="uscript-name">''</span><span class="uscript-operator">)</span>   <span class="uscript-comment">// Xian: tag check again</span>
+            <span class="uscript-operator">{</span>
+                <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Mover'</span><span class="uscript-operator">,</span> M <span class="uscript-operator">)</span>
+                <span class="uscript-operator">{</span>
+                    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>M <span class="uscript-operator">!=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>M<span class="uscript-operator">.</span>ReturnGroup <span class="uscript-operator">==</span> ReturnGroup<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+                    <span class="uscript-operator">{</span>
+                        M<span class="uscript-operator">.</span>Leader <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+                        M<span class="uscript-operator">.</span>Follower <span class="uscript-operator">=</span> Follower<span class="uscript-operator">;</span>
+                        Follower <span class="uscript-operator">=</span> M<span class="uscript-operator">;</span>
+                    <span class="uscript-operator">}</span>
+                <span class="uscript-operator">}</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><pre class="uscript"><span class="uscript-keyword">function</span> FinishNotify<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Pawn P<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>WaitingPawn <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>         <span class="uscript-comment">// Xian: don't iterate unless needed</span>
+
+<span class="uscript-comment">// Note: this does kinda upsets the blanace of Bot decission in case they assigned the current</span>
+<span class="uscript-comment">// instance of the Mover as their special destination, but in most cases it's all about online play; </span>
+<span class="uscript-comment">// although this is not something I recommend for UT as a whole, these changes should help for </span>
+<span class="uscript-comment">// player-only mods that require online gameplay and is made for informative purposes</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> StandingCount <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> P<span class="uscript-operator">=</span>Level<span class="uscript-operator">.</span>PawnList<span class="uscript-operator">;</span> P<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">;</span> P<span class="uscript-operator">=</span>P<span class="uscript-operator">.</span>nextPawn <span class="uscript-operator">)</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> P<span class="uscript-operator">.</span>Base <span class="uscript-operator">==</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+<span class="uscript-comment">// Xian: is it even relevant to execute code for players since they're aware of mover states ?</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>P<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Bot'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+                <span class="uscript-operator">{</span>
+                    P<span class="uscript-operator">.</span>StopWaiting<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+                    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>P<span class="uscript-operator">.</span>SpecialGoal <span class="uscript-operator">==</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>P<span class="uscript-operator">.</span>SpecialGoal <span class="uscript-operator">==</span> myMarker<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+                        P<span class="uscript-operator">.</span>SpecialGoal <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span> 
+                <span class="uscript-operator">}</span>
+
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> P <span class="uscript-operator">==</span> WaitingPawn <span class="uscript-operator">)</span>
+                    WaitingPawn <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> WaitingPawn <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>WaitingPawn<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Bot'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            WaitingPawn<span class="uscript-operator">.</span>StopWaiting<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>WaitingPawn<span class="uscript-operator">.</span>SpecialGoal <span class="uscript-operator">==</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>WaitingPawn<span class="uscript-operator">.</span>SpecialGoal <span class="uscript-operator">==</span> myMarker<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+                WaitingPawn<span class="uscript-operator">.</span>SpecialGoal <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span> 
+        <span class="uscript-operator">}</span>
+
+        WaitingPawn <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>This is how it should all be in my opinion <img alt=":)" src="emoticons/smile.gif" align="middle"> The code should execute faster. Not tested but in theory, it should be better.</p>
+<h2><a name="0.5"></a>Subclasses</h2>
+<ul><li><a href="types-of-mover.html">Types of Mover</a> is a quick overview of the different classes of mover </li>
+<li>AssertMover<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=AssertMover&referrerid=Mover_(UT)">?</a></li>
+<li><a href="attachmover.html">AttachMover</a></li>
+<li>ElevatorMover<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ElevatorMover&referrerid=Mover_(UT)">?</a></li>
+<li><a href="gradualmover.html">GradualMover</a></li>
+<li>LoopMover<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=LoopMover&referrerid=Mover_(UT)">?</a></li>
+<li>MixMover<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=MixMover&referrerid=Mover_(UT)">?</a></li>
+<li><a href="rotatingmover.html">RotatingMover</a></li>
+<li><a href="fixedmover.html">FixedMover</a> &ndash; custom class that fixes network bugs with movers than rotate in the process of opening or closing</li>
+</ul>
+<p>It's possible to change the class of a mover after it's been created, but it requires <a href="brush-hacking.html">Brush Hacking</a>.</p>
+<h2><a name="0.6"></a>Related Topics</h2>
+<ul><li><a href="mover-topics.html">Mover Topics</a> is the hub for all related articles &amp; tutorials on making specific movers</li>
+<li><a href="types-of-trigger.html">Types of Trigger</a></li>
+<li><a href="event.html">Event</a></li>
+</ul>
+<h2><a name="0.7"></a>Mover Tutorials</h2>
+<ul><li><a href="create-a-mover.html">Create A Mover</a></li>
+<li><a href="keyframe.html">Keyframe</a></li>
+<li><a href="activating-a-mover.html">Activating a Mover</a></li>
+</ul>
+<hr class="thin"><p><a href="category-class-ut.html">Category Class (UT)</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Properties", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Mover Group", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>MoverSounds Group ", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>UnrealScript-Only Properties", "#0.1.3");
+menuItemAdd("Enums", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>EMoverEncroachType", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>EMoverGlideType", "#0.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>EBumpType", "#0.2.3");
+menuItemAdd("States", "#0.3");
+menuItemAdd("Discussion", "#0.4");
+menuItemAdd("Subclasses", "#0.5");
+menuItemAdd("Related Topics", "#0.6");
+menuItemAdd("Mover Tutorials", "#0.7");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Mover_(UT)">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Mover_(UT)">View other revisions</a><br>Last edited April 10, 2006 7:01 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Mover_(UT)">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Mover_(UT)">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I love the smell of UnrealEd crashing in the morning. (tarquin)</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

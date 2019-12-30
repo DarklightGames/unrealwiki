@@ -1,0 +1,518 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Iterator</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Iterator; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Iterator">Iterator</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>The Actor List</h2>
+<p>All actors in Unreal are connected though a gigantic list (well it is actually a dynamic array, but to make life easier think of it as a list) that exists only in the native C++ code. Without this list, actors would be just plain old objects. The base of this "list" is actually the native level object (the <code>XLevel</code> property of all actors). This list exists on both client and server. When a client "receives" an actor, it is added and when its connection is closed (except with <a href="replication.html">bNetTemporary</a>), it is removed.</p>
+<p>Spawning an actor automatically adds it at the end of the list. Note that <a href="levelinfo.html">LevelInfo</a> (accessed via the <code>Level</code> property of any actor) is always the first actor. Destroying an actor automatically removes it from the list.</p>
+<p>UnrealScript's <code>ForEach</code> command makes it easy to deal with large groups of actors, for example all of the actors in a level, or all of the actors within a certain distance of another actor. <code>ForEach</code> works in conjunction with a special kind of function called <em class="em1">iterator function</em> whose purpose is to iterate through a list of actors. Most of these iterator functions use the native actor list, so sometimes it's faster to use <code>For</code> to iterate through much smaller <a href="linked-list.html">linked list</a>s like the pawn list or one of the mutator lists.</p>
+<h2><a name="0.2"></a>Syntax</h2>
+<p>All iterator function use a similar syntax:</p>
+<pre class="uscript"><span class="uscript-keyword">local</span> aClassName aVariable<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">foreach</span> IteratorFunction<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'aClassName'</span><span class="uscript-operator">,</span> aVariable<span class="uscript-operator">,</span> other parameters<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// execute something here</span>
+<span class="uscript-operator">}</span></pre><p>The variable used as the second parameter must declared to hold an instance of the class used as the first parameter. The class must be <code>class'Actor'</code> or a subclass for all iterators except AllObjects and AllDataObjects which can use <code>class'Object'</code> or any other <a href="object.html">Object</a> subclass.</p>
+<p>Iterators can also be called for other objects:</p>
+<pre class="uscript"><span class="uscript-keyword">local</span> aClassName aVariable<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">foreach</span> anotherObject<span class="uscript-operator">.</span>IteratorFunction<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'aClassName'</span><span class="uscript-operator">,</span> aVariable<span class="uscript-operator">,</span> other parameters<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// execute something here</span>
+<span class="uscript-operator">}</span></pre><p>This syntax doesn't make sense for all iterator functions, though. It is useful when using an iterator function which returns objects based on the object it was called for (e.g. ZoneActors or ChildActors) or when you want to use an iterator that isn't available in your class. (e.g. DynamicActors from an <a href="interaction.html">Interaction</a>)</p>
+<p>Note that the game will crash with the error "Unknown code token 58" when the <code>anotherObject</code> variable is <code>None</code>. Also the actor iterators should only be called in a game environment. They will cause problems (e.g. a crash with "Unknown code token 31") when executed e.g. from <a href="brushbuilder.html">BrushBuilder</a> code in the editor.</p>
+<h2><a name="0.3"></a>Definitions</h2>
+<p>To make the iterator function descriptions easier to read, the following simplifications are used:</p>
+<dl><dt>A class is a subclass of the <em class="em1">BaseClass</em></dt><dd>This means the class could be <em class="em1">BaseClass</em> itself or a direct or indirect subclass of <em class="em1">BaseClass</em>. Basically this relation corresponds to the result of the <a href="global-function.html">global function</a> <code>ClassIsChildOf(aClass, BaseClass)</code>.</dd><dt>Actor A is owned by actor B</dt><dd>This includes direct (<code>A.Owner == B</code>) and indirect ownership, i.e. also <code>A.Owner.Owner == B</code> or <code>A.Owner.Owner.Owner == B</code> etc.</dd><dt>An actor is (not) <em class="em1">bHidden</em></dt><dd>short for: "An actor's <em class="em1">bHidden</em> property is (not) set to <code>True</code>"</dd></dl>
+<p>Even though the descriptions here (and the actual declarations in Object, Actor and other classes defining iterator functions) talk about class&lt;Object/Actor&gt; as the first parameter type and Object/Actor as the second parameter type, you can and should use subclass types. The actual type of the second parameter can be narrowed down at compile-time by specifying a class literal as the first parameter:</p>
+<pre class="uscript"><span class="uscript-keyword">local</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Info<span class="uscript-operator">&gt;</span> InfoClass<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> Info I<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> Actor A<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">foreach</span> DynamicActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Info'</span><span class="uscript-operator">,</span> I<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-comment">// compiles fine</span>
+  <span class="uscript-comment">// loops through all Info actors</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">foreach</span> DynamicActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'ReplicationInfo'</span><span class="uscript-operator">,</span> I<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-comment">// compile-time error (type mismatch in second parameter)</span>
+  <span class="uscript-comment">// even though Info actors would fit into the RI variable,</span>
+  <span class="uscript-comment">// the compiler requires a perfect type match</span>
+<span class="uscript-operator">}</span>
+
+InfoClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'ReplicationInfo'</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">foreach</span> DynamicActors<span class="uscript-operator">(</span>InfoClass<span class="uscript-operator">,</span> I<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-comment">// compile-time error (type mismatch in second parameter)</span>
+  <span class="uscript-comment">// InfoClass could be None, in which case the iterator would fall back</span>
+  <span class="uscript-comment">// to class'Actor', which would not fit into a variable of type Info.</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">foreach</span> DynamicActors<span class="uscript-operator">(</span>InfoClass<span class="uscript-operator">,</span> A<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-comment">// compiles fine</span>
+  <span class="uscript-comment">// loops through all ReplicationInfo actors, but A needs to be typecasted</span>
+  <span class="uscript-comment">// if you want to access any Info or ReplicationInfo properties or functions</span>
+<span class="uscript-operator">}</span></pre><p>The descriptions here are for <a href="unreal-tournament-2004.html">UT2004</a>. They may not be accurate for other games. For example, <em class="em1">AllDataObjects</em> is specific to UT2004. <a href="unreal-tournament.html">UT</a> doesn't have <em class="em1">AllObjects</em> or <em class="em1">CollidingActors</em>. It does have <em class="em1">VisibleCollidingActors</em>, though. The <em class="em1">AllObjects</em> iterator is available in <a href="deus-ex.html">Deus Ex</a>, even though it's an UnrealEngine 1 game like UT.</p>
+<h3><a name="0.3.1"></a>Object</h3>
+<dl><dt>AllObjects (class&lt;<a href="object.html">Object</a>&gt; BaseClass, out <a href="object.html">Object</a> Object)</dt><dd>Iterates through all objects existing in the game and returns those whose class is a subclass of the <em class="em1">BaseClass</em>.<br><em class="em2">Warning:</em> By all means stay away from this iterator if you want to work with actors!</dd></dl>
+<h3><a name="0.3.2"></a>Actor</h3>
+<dl><dt>AllActors (class&lt;<a href="actor.html">Actor</a>&gt; BaseClass, out <a href="actor.html">Actor</a> Actor, optional name MatchTag)</dt><dd>Iterates through all actors in the level and returns those whose class is a subclass of the <em class="em1">BaseClass</em>. If a <em class="em1">MatchTag</em> was specified, an actor is only returned if its <em class="em1">Tag</em> matches the specified value.<br><em class="em2">Note:</em> For some base classes like <a href="navigationpoint.html">NavigationPoint</a>, <a href="pawn-ut.html">Pawn (UT)</a>, <a href="controller.html">Controller</a> or <a href="vehicle.html">Vehicle</a> there are <a href="linked-list.html">linked list</a>s (e.g. <code>Level.NavigationPointList</code> or <code>Level.Game.VehicleList</code>) which may be faster to iterate using a <em class="em1">for</em> loop than going through the entire actor list with <em class="em1">ForEach AllActors</em>.</dd><dt>DynamicActors (class&lt;<a href="actor.html">Actor</a>&gt; BaseClass, out <a href="actor.html">Actor</a> Actor, optional name MatchTag)</dt><dd>Iterates through all actors in the level and returns those whose class is a subclass of the <em class="em1">BaseClass</em>. If a <em class="em1">MatchTag</em> was specified, an actor is only returned if its <em class="em1">Tag</em> matches the specified value.<br>Internally the actor list is sorted so it starts with the static actors, followed by the non-static actors. The engine remembers the index of the first non-static actor, so this iterator can start right at that index and actually does not have to check the value of the <em class="em1">bStatic</em> property.</dd><dt>ChildActors (class&lt;<a href="actor.html">Actor</a>&gt; BaseClass, out <a href="actor.html">Actor</a> Actor)</dt><dd>Iterates through all actors in the level and returns those whose class is a subclass of the <em class="em1">BaseClass</em> and that are owned by the actor the iterator function is called on.</dd><dt>BasedActors (class&lt;<a href="actor.html">Actor</a>&gt; BaseClass, out <a href="actor.html">Actor</a> Actor)</dt><dd>Iterates over the actor's <em class="em1">Attached</em> array (i.e. all actors "standing on" this actor) and returns those actors whose class is a subclass of the <em class="em1">BaseClass</em>.</dd><dt>TouchingActors (class&lt;<a href="actor.html">Actor</a>&gt; BaseClass, out actor Actor)</dt><dd>Iterates over the actor's <em class="em1">Touching</em> array (i.e. all actors "interpenetrating" this actor) and returns those actors whose class is a subclass of the <em class="em1">BaseClass</em>.</dd><dt>TraceActors (class&lt;<a href="actor.html">Actor</a>&gt; BaseClass, out <a href="actor.html">Actor</a> Actor, out vector HitLoc, out vector HitNorm, vector End, optional vector Start, optional vector Extent)</dt><dd>Performs a trace from the start location to the end location, using the specified extent. Then iterates over the resulting list of actors hit by the trace and returns those whose class is a subclass of the <em class="em1">BaseClass</em>.<br><em class="em1">HitLocation</em> and <em class="em1">HitNormal</em> are set to the corresponding values for each of the actors returned. If no <em class="em1">Start</em> location is specified, this actor's location is used instead. If no <em class="em1">Extent</em> is specified, the zero vector is used.</dd><dt>RadiusActors (class&lt;<a href="actor.html">Actor</a>&gt; BaseClass, out <a href="actor.html">Actor</a> Actor, float Radius, optional vector Loc)</dt><dd>Iterates through all actors in the level and returns those whose class is a subclass of the <em class="em1">BaseClass</em> and whose distance to the specified location is less than <em class="em1">Radius</em> + that actor's <em class="em1">CollisionRadius</em>.<br>If no location is specified, this actor's <em class="em1">Location</em> is used instead.<br><em class="em2">Note:</em> The target actor's CollisionRadius is used regardless of its collision properties.</dd><dt>VisibleActors (class&lt;<a href="actor.html">Actor</a>&gt; BaseClass, out <a href="actor.html">Actor</a> Actor, optional float Radius, optional vector Loc)</dt><dd>Iterates through all actors in the level and performs a FastTrace from the specified location to the those actors that are not <em class="em1">bHidden</em>, whose class is a subclass of the <em class="em1">BaseClass</em> and whose distance to the specified location is less than <em class="em1">Radius</em>. If that trace does not report any collision with world geometry, the actor is returned.<br>If no location is specified, this actor's <em class="em1">Location</em> is used instead. The <em class="em1">Radius</em> defaults to 0.0 and thus should always be specified, unless only actors in that exact location should be returned.</dd><dt>VisibleCollidingActors (class&lt;<a href="actor.html">Actor</a>&gt; BaseClass, out <a href="actor.html">Actor</a> Actor, float Radius, optional vector Loc, optional bool bIgnoreHidden)</dt><dd>Fetches a list of actors within the specified <em class="em1">Radius</em> around the specified location from the collision hash. Then iterates over the resulting list of actors and performs a FastTrace from the specified location to the those actors whose class is a subclass of the <em class="em1">BaseClass</em> and (if told to <em class="em1">bIgnoreHidden</em>) that are not <em class="em1">bHidden</em>. If that trace does not report any collision with world geometry, the actor is returned.<br>If no location is specified, this actor's <em class="em1">Location</em> is used instead.</dd><dt>CollidingActors (class&lt;<a href="actor.html">Actor</a>&gt; BaseClass, out <a href="actor.html">Actor</a> Actor, float Radius, optional vector Loc)</dt><dd>Fetches a list of actors within the specified <em class="em1">Radius</em> around the specified location from the collision hash. Then iterates over the resulting list of actors and returns those actors whose class is a subclass of the <em class="em1">BaseClass</em>.<br>If no location is specified, this actor's <em class="em1">Location</em> is used instead.</dd></dl>
+<h3><a name="0.3.3"></a>ZoneInfo</h3>
+<dl><dt>ZoneActors (class&lt;<a href="actor.html">Actor</a>&gt; BaseClass, out <a href="actor.html">Actor</a> Actor)</dt><dd>Iterates through all actors in the level and returns those whose class is a subclass of the <em class="em1">BaseClass</em> and that are in the zone represented by the <a href="zoneinfo.html">ZoneInfo</a> the iterator function was called on.</dd></dl>
+<h3><a name="0.3.4"></a>GameInfo</h3>
+<dl><dt>AllDataObjects (class objClass, out <a href="object.html">Object</a> obj, string packageName)</dt><dd>Iterates through all objects existing in the game and returns those that are contained in the specified package and whose class is a subclass of the <em class="em1">BaseClass</em>.<br><em class="em2">Note:</em> This iterator will not return any objects if the specified data package is not loaded.</dd></dl>
+<h3><a name="0.3.5"></a>Performance Analysis</h3>
+<p><em class="em1">See <a href="code-optimization.html">Code Optimization</a> for more specific information.</em></p>
+<p>Iterator functions can be divided into several performance classes:</p>
+<dl><dt>object list iterators</dt><dd><ul><li>AllDataObjects</li>
+<li>AllObjects</li>
+</ul>
+<p>These iterator functions walk over the entire object list and should be avoided if somehow possible.</p>
+</dd><dt>actor list iterators</dt><dd><ul><li>AllActors</li>
+<li>ChildActors</li>
+<li>DynamicActors</li>
+<li>RadiusActors</li>
+<li>VisibleActors</li>
+<li>ZoneActors</li>
+</ul>
+<p>These iterator functions walk over the level's actor list and are considerably faster than the previous performance class.</p>
+<p><em class="em1">DynamicActors</em> skips the part of the list that contains only static actors, so it's faster than <em class="em1">AllActors</em>. Whether it also outperforms the other iterator functions in this list depends on the situation. The others perform their checks in native code, which you'd have to implement thoise checks in UnrealScript if you wanted to use DynamicActors.</p>
+<p><em class="em1">VisibleActors</em> should be used with care as it performes a <em class="em1">FastTrace</em> for every actor matching the other criterias. If you can rule out more actors with other checks, try using <em class="em1">RadiusActors</em> (or <em class="em1">DynamicActors</em> + radius check) + your additional checks + <em class="em1">FastTrace</em> instead.</p>
+</dd><dt>collision hash iterators</dt><dd><ul><li>CollidingActors</li>
+<li>VisibleCollidingActors</li>
+</ul>
+<p>These iterator functions fetch a list of actors from the collision hash instead of walking the actor list. This makes these iterators faster than their counterparts <em class="em1">RadiusActors</em> and <em class="em1">VisibleActors</em>, as long as the radius stays small. The actual meaning for "small" may vary, but starting at around 2000UU you should think about switching to an actor list iterator.<br>Even below that radius, <em class="em1">VisibleCollidingActors</em> should be used with care as it performes a FastTrace for every actor matching the other criterias. If you can rule out more actors with other checks, try using <em class="em1">CollidingActors</em> + your additional checks + <em class="em1">FastTrace</em> instead.</p>
+</dd><dt>special purpose iterators</dt><dd><ul><li>BasedActors</li>
+<li>TouchingActors</li>
+<li>TraceActors</li>
+</ul>
+<p>These iterator functions are very fast, since they walk over specific lists of actors. <em class="em1">BasedActors</em> and <em class="em1">TouchingActors</em> iterate over the <em class="em1">Attached</em> and <em class="em1">Touching</em> arrays respectively. <em class="em1">TraceActors</em> uses the result of a "multi-hit trace" as its actor list, i.e. it first does the tracing, then starts returning actors.</p>
+</dd></dl>
+<p>These performance categories are based on UT2004. There's no guarantee that they also apply to other UnrealEngine games. Especially <em class="em1">BasedActors</em> might have been implemented as actor list iterator in first generation engine games, since there's no <em class="em1">Attached</em> array.</p>
+<h2><a name="0.4"></a>Usage</h2>
+<p>Iterating actors is one of the most important concepts to understand in UnrealScripting.  There are many times when this will be the only way for you to gain valid reference to other classes for use in your function, and as such, it is essential that you gain a very familiar understanding of the methods used in iterating.</p>
+<p>AllActors is normally used with two parameters - the class, and a variable.  The variable parameter may be a global, local, or argument variable, and there are situations when it is good to use each one.  To use AllActors, first define a variable of the class you want to iterate.  Next, designate the variable that will host the reference to this class object.  Inside the brackets, specify what you want to happen each time an object of the specified class is found.  The iterator variable is always equal to the last object that was found matching that class, so if you want to get a valid reference to each object in the game of a particular type, you would need to somehow assign that object to yet another variable inside the iterator, before it continues on to the next object of that class.  </p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MyMut <span class="uscript-keyword">extends</span> Info<span class="uscript-operator">;</span>
+
+
+<span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Pawn OnlyThisPawn<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Pawn'</span><span class="uscript-operator">,</span> OnlyThisPawn<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>This above code reads something like "Look for all actors in the game that are of the class 'Pawn'.  When a Pawn is found is found, assign THAT Pawn to the variable OnlyThisPawn, then perform the statements within the next set of brackets. Once finished with those statements, look for the next actor of the class 'Pawn' and assign THAT pawn to the OnlyPawnVariable, overwriting the last value of the OnlyThisPawn variable."  But, there is only one statement there!  The break statement causes the foreach iterator to stop it's cycling through the Actors on the level.  (It will stop looking for other Actors to assign to OnlyThisPawn). This is an extremely useful way to get a valid reference to an instance of a particular class when there isn't aren't any other ways of attaching to this class.  In the example above, the iterator assigns the first actor of class'pawn' that it finds to the OnlyThisPawn variable, breaks out of the "ForEach" statement, and script execution continues through the rest of the function.  You may now use the OnlyThisPawn variable without receiving the "Access None" error in the logfile, as long as there are valid Pawns in the level when you perform this iterator.</p>
+<p>Typically, however, a ForEach statement should be used to perform a particular action on multiple instances of a class, to be most efficient.  Avoid using extensive iterators in rapidly executing code (such as Tick), and instead try to place in situations where they are only executed once or at least rarely (PostBeginPlay, BeginState are good places).  You should also avoid using iterators for assigning object variables, instead trying less resource-expensive methods of gaining valid references.  For some ideas of how to do this, see <a href="traversing-classes.html">Traversing Classes</a></p>
+<p><em class="em2">Wormbo:</em> Iterating through all Pawns is a bad example. Avoid using <code>ForEach AllActors(class'Pawn', P)</code> on the server.<br><code>For (P = Level.PawnList; P != None; P = P.NextPawn)</code> does the same and is much more efficient. Always look for a <a href="linked-list.html">linked list</a> that contains the actors you want to access before using <code>ForEach AllActors(...)</code>.</p>
+<h3><a name="0.4.1"></a>Using Iterators From Objects</h3>
+<p>Ever have an Object and want to use an iterator but realized much to your frustration that they are all defined down in Actor?  Well boys and girls, this is actually very easily worked around as demonstrated by the following example:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MyObj <span class="uscript-keyword">extends</span> Object<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> Actor MyActorRef<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> SomeNiftyFunc<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Actor AnActor<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">foreach</span> MyActorRef<span class="uscript-operator">.</span>AllActors<span class="uscript-operator">(</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> AnActor <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Since iterators are just normal functions you can treat them as such and call them from any other Object that has a reference to them.  Just be sure that your Actor reference is valid before you attempt to call an iterator on it, otherwise all sorts of "bad things" can happen.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> SomeNiftyFunc<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Actor AnActor<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> MyActorRef <span class="uscript-operator">==</span> <span class="uscript-keyword">NONE</span> <span class="uscript-operator">||</span> MyActorRef<span class="uscript-operator">.</span>bDeleteMe <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">foreach</span> MyActorRef<span class="uscript-operator">.</span>RadiusActors<span class="uscript-operator">(</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> AnActor<span class="uscript-operator">,</span> <span class="uscript-number">500</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.5"></a>Related Topics </h2>
+<ul><li>Tim Sweeney's reference: <a href="unrealscript-language-refe1.html">UnrealScript Language Reference/Advanced Language Features</a></li>
+<li><a href="flow-syntax.html">Flow Syntax</a></li>
+<li><a href="code-optimization.html">Code Optimization</a> &ndash; If your framerate drops considerably when using iterators.</li>
+<li><a href="linked-list-existing-lists.html">Linked List/Existing Lists In Unreal Tournament</a> also has some info on execution speed of the various iterator functions</li>
+</ul>
+<h2><a name="0.6"></a>Comments</h2>
+<p><em class="em2">Foxpaw:</em> Destroying actors in Iterators seems to cause some strangeness. The following code caused mysterioud GPFs for the longest time for me:</p>
+<pre class="uscript">  <span class="uscript-keyword">foreach</span> AllObjects<span class="uscript-operator">(</span> <span class="uscript-keyword">class</span><span class="uscript-name">'VehicularThing'</span><span class="uscript-operator">,</span> Old <span class="uscript-operator">)</span>
+    Old<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>It wouldn't crash as soon as I executed it, but would go for about 8 cycles or so before crashing. I believe this may cause some kind of a memory leak or something, possibly due to the internal workings of the iterators. I stopped the GPFs by doing the following, and it hasn't caused a crash since:</p>
+<pre class="uscript">  <span class="uscript-keyword">foreach</span> AllObjects<span class="uscript-operator">(</span> <span class="uscript-keyword">class</span><span class="uscript-name">'VehicularThing'</span><span class="uscript-operator">,</span> Old <span class="uscript-operator">)</span>
+    MarkedMen<span class="uscript-operator">[</span>MarkedMen<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Old<span class="uscript-operator">;</span>
+    
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>MarkedMen<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+    MarkedMen<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p><em class="em2">Daid303:</em> The killall cheat never crashed for me... but it uses DynamicActors, why are you using AllObjects? (I can't think of any slower function)</p>
+<pre class="uscript"><span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> KillAll<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>actor<span class="uscript-operator">&gt;</span> aClass<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Actor A<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> ClassIsChildOf<span class="uscript-operator">(</span>aClass<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-name">'AIController'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>KillBots<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>NumBots<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> ClassIsChildOf<span class="uscript-operator">(</span>aClass<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Pawn'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        KillAllPawns<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Pawn<span class="uscript-operator">&gt;</span><span class="uscript-operator">(</span>aClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">ForEach</span> DynamicActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span> <span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> A<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> ClassIsChildOf<span class="uscript-operator">(</span>A<span class="uscript-operator">.</span><span class="uscript-keyword">class</span><span class="uscript-operator">,</span> aClass<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            A<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">Foxpaw:</em> It may only apply to AllObjects, since that one operates on non-actors as well, and the notion of an object having been destroyed in a previous iteration doesn't really apply for garbage collection, which is what it was designed for. I'm using AllObjects because it's being called from a non-actor class, and only actors can use the AllActors, DynamicActors, etc. iterators. As far as I can tell only AllObjects is valid for use in classes not derived from actor.</p>
+<p><em class="em2">Wormbo:</em> Avoid AllObjects when AllActors or DynamicActors gives you the same results. Also when UsingAllObjects, make sure the actor you try to Destroy() isn't already destroyed (i.e. bDeleteMe should not yet be True).</p>
+<p><em class="em2">Foxpaw:</em> Well, objects not derived from Actor can't use any iterators except AllObjects, so my options are limited. Plus, since it's in the GUI, I don't really have to worry much about framerate.</p>
+<p><em class="em2">Dma:</em> Actually, you can use any iterator even in a static function in a non-actor class by doing something like this:</p>
+<pre class="uscript"><span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> Test<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+   <span class="uscript-keyword">local</span> PlayerController PC<span class="uscript-operator">;</span>
+   <span class="uscript-keyword">foreach</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Object'</span><span class="uscript-operator">.</span>AllObjects<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'PlayerController'</span><span class="uscript-operator">,</span> PC<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+      <span class="uscript-keyword">foreach</span> PC<span class="uscript-operator">.</span>AllActors<span class="uscript-operator">(</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+         <span class="uscript-comment">// ...</span>
+      <span class="uscript-operator">}</span>
+      <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+   <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">EricBlade:</em> Am I correct in my findings, that say you have a couple of actors in the world, A and B, and if you do a RadiusActors, or for that matter, any other Radius based iterator from A.location, if B.location is not within that radius, even if B collides within that radius, you will not find B in that iterator?  Example: Created a test map with a pane of glass, that was absolutely monstrously oversized from it's original dimensions, using DrawScale to make it somewhere around 20X it's original size.  I could hit it anywhere on it's plane with a hitscan weapon, and the glass would shatter.  However, hitting it with a projectile with a very small DamageRadius, no matter the amount of damage, would not cause the glass to shatter, unless it hit very near the middle.  (the shattering is done in TakeDamage() .. and logging from the Projectile showed that the VisibleCollidingActors() iterator used in Actor::HurtRadius() was not actually hitting the glass, unless it was originating from very near it's center location point.  I solved this problem by simply making projectiles do damage to what they collide with, before they do radius damage, but it seems like a pretty serious flaw for using a radius iterator for any purpose.</p>
+<p><em class="em2">SuperApe:</em> My suspicion is that RadiusActors is not collision based but works off of the object's center.  You're huge pane of glass probably has the center in the middle, while you may have shot farther away.  The note in the code mentions that RadiusActors is slow, like AllActors.  This leads me to believe that it's simply a check of AllActors for those who's Location is within the Radius of the actor in question.  IOW, something like</p>
+<pre class="uscript"><span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> VSize<span class="uscript-operator">(</span> Location <span class="uscript-operator">-</span> Actor<span class="uscript-operator">.</span>Location <span class="uscript-operator">)</span> <span class="uscript-operator">=</span><span class="uscript-operator">&lt;</span> Radius <span class="uscript-operator">)</span></pre><p>.</p>
+<p><em class="em2">EricBlade:</em> Exactly.  Now, since that's fairly useless in a world where things take up more than one point of space, what can be done to properly get all actors that have a collision within the radius?  Do a CollidingActors, with a ludicrous max radius, and then do a trace from all found actors to the source, to see if they collide within the actual radius we want to affect?  Actually, that brings up the problem of what to do if you have a room full of garbage-can sized objects too.. obviously an explosion would affect all of them, within it's blast range, but using Visible check from A to B didn't find most of them.</p>
+<p><em class="em2">SuperApe:</em> Just a guess, but couldn't you use another object just to detect damage in that area, like a volume?</p>
+<p><em class="em2">EricBlade:</em> eh, when you can fix projectile explosions the right way, why use a hacky way? <img alt=":D" src="emoticons/biggrin.gif" align="middle">  Next question ..  what are requirements to get a hit on TouchingActors() ?  I've tried it with a couple different things, and have had results that were not at all useful.  First, with a projectile, I set it's collisionradius to the damageradius, and then tried to use TouchingActors() to handle the blowing up, but got nothing operated on.  Did the same with a Fire, and got nothing <img alt=":(" src="emoticons/sad.gif" align="middle"></p>
+<p><em class="em2">SuperApe:</em> (briefly) Do it however you want.  I just suggest that mappers can use the stock tools and methods available to get the job done.  I'm pretty sure there's more than one breaking glass tut on this site alone.  And IIRC, they do use different actors to detect the collision.</p>
+<p><em class="em2">Wormbo:</em> The best way to handle a really small explosion radius is to look for actors in a much larger radius such that any actor possibly touching the real radius is included. Then you only have to do a very simple distance check from the center of the explosion to the actor's collision cylinder. I came up with the following code for a remake of the Descent 2 Gauss Cannon: (this is an <a href="instantfire.html">InstantFire</a> subclass)</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> ExtendedHurtRadius<span class="uscript-operator">(</span>vector HitLocation<span class="uscript-operator">,</span> vector AimDir<span class="uscript-operator">,</span> Actor HitActor<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> Actor Victims<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> damageScale<span class="uscript-operator">,</span> dist<span class="uscript-operator">,</span> damageAmount<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> vector dir<span class="uscript-operator">;</span>
+  
+  DamageAmount <span class="uscript-operator">=</span> RandRange<span class="uscript-operator">(</span>DamageMin<span class="uscript-operator">,</span> DamageMax<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> DamageAtten<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">foreach</span> Weapon<span class="uscript-operator">.</span>VisibleCollidingActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> Victims<span class="uscript-operator">,</span> DamageRadius <span class="uscript-operator">+</span> <span class="uscript-number">200</span><span class="uscript-operator">,</span> HitLocation<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-comment">// don't let blast damage affect fluid - VisibleCollisingActors doesn't really work for them - jag</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Victims <span class="uscript-operator">!=</span> <span class="uscript-keyword">self</span> <span class="uscript-operator">&amp;&amp;</span> Victims<span class="uscript-operator">.</span>Role <span class="uscript-operator">==</span> ROLE_Authority <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>Victims<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'FluidSurfaceInfo'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+      dist <span class="uscript-operator">=</span> DistToCylinder<span class="uscript-operator">(</span>Victims<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> HitLocation<span class="uscript-operator">,</span> Victims<span class="uscript-operator">.</span>CollisionHeight<span class="uscript-operator">,</span> Victims<span class="uscript-operator">.</span>CollisionRadius<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> dist <span class="uscript-operator">&gt;</span> DamageRadius <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+      dir <span class="uscript-operator">=</span> Normal<span class="uscript-operator">(</span>Victims<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> HitLocation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Victims <span class="uscript-operator">==</span> HitActor<span class="uscript-operator">)</span>
+        dir <span class="uscript-operator">=</span> Normal<span class="uscript-operator">(</span>dir <span class="uscript-operator">+</span> AimDir<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      damageScale <span class="uscript-operator">=</span> <span class="uscript-number">1</span> <span class="uscript-operator">-</span> FMax<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> dist <span class="uscript-operator">/</span> DamageRadius<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      Victims<span class="uscript-operator">.</span>TakeDamage<span class="uscript-operator">(</span>damageScale <span class="uscript-operator">*</span> DamageAmount<span class="uscript-operator">,</span> Instigator<span class="uscript-operator">,</span> Victims<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> <span class="uscript-number">0.5</span> <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>Victims<span class="uscript-operator">.</span>CollisionHeight <span class="uscript-operator">+</span> Victims<span class="uscript-operator">.</span>CollisionRadius<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> dir<span class="uscript-operator">,</span> damageScale <span class="uscript-operator">*</span> Momentum <span class="uscript-operator">*</span> dir<span class="uscript-operator">,</span> DamageType<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Vehicle<span class="uscript-operator">(</span>Victims<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> Vehicle<span class="uscript-operator">(</span>Victims<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Health <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+        Vehicle<span class="uscript-operator">(</span>Victims<span class="uscript-operator">)</span><span class="uscript-operator">.</span>DriverRadiusDamage<span class="uscript-operator">(</span>DamageAmount<span class="uscript-operator">,</span> DamageRadius<span class="uscript-operator">,</span> Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">,</span> DamageType<span class="uscript-operator">,</span> Momentum<span class="uscript-operator">,</span> HitLocation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/**
+Calculates a point's distance to a cylinder.
+*/</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">function</span> <span class="uscript-type">float</span> DistToCylinder<span class="uscript-operator">(</span>vector CenterDist<span class="uscript-operator">,</span> <span class="uscript-type">float</span> HalfHeight<span class="uscript-operator">,</span> <span class="uscript-type">float</span> Radius<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  CenterDist<span class="uscript-operator">.</span>X <span class="uscript-operator">=</span> VSize<span class="uscript-operator">(</span><span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">*</span> CenterDist<span class="uscript-operator">)</span> <span class="uscript-operator">-</span> Radius<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>CenterDist<span class="uscript-operator">.</span>X <span class="uscript-operator">&lt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+    CenterDist<span class="uscript-operator">.</span>X <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+  
+  CenterDist<span class="uscript-operator">.</span>Y <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+  
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>CenterDist<span class="uscript-operator">.</span>Z <span class="uscript-operator">&lt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+    CenterDist<span class="uscript-operator">.</span>Z <span class="uscript-operator">*=</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+  
+  CenterDist<span class="uscript-operator">.</span>Z <span class="uscript-operator">-=</span> HalfHeight<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>CenterDist<span class="uscript-operator">.</span>Z <span class="uscript-operator">&lt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+    CenterDist<span class="uscript-operator">.</span>Z <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+  
+  <span class="uscript-keyword">return</span> VSize<span class="uscript-operator">(</span>CenterDist<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.7"></a>Iterator Timing Comments</h2>
+<p><em class="em2">Xian:</em> I wanted to start a small discussion about the timing on these... as I was trying some experimental stuff on UE1 I tried timing it in UE2. This is the code and log (stripped of the boring stuff) from the map Flux2 with around 9-10 bots:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> PostBeginPlay <span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    Test1<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    Test2<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    Test3<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    Test4<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    Test5<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    Test6<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Test1 <span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Actor Actors<span class="uscript-operator">;</span>
+
+    StopWatch<span class="uscript-operator">(</span><span class="uscript-keyword">False</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">foreach</span> VisibleCollidingActors <span class="uscript-operator">(</span><span class="uscript-keyword">Class</span> <span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> Actors<span class="uscript-operator">,</span> <span class="uscript-number">50000</span><span class="uscript-operator">,</span> Location<span class="uscript-operator">,</span> <span class="uscript-keyword">False</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Test<span class="uscript-operator">(</span>Actors<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"Execute 1"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    Log<span class="uscript-operator">(</span><span class="uscript-string">"FINISHED !!!!!!!!!!!! TEST 1"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    StopWatch<span class="uscript-operator">(</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Test2 <span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Actor Actors<span class="uscript-operator">;</span>
+
+    StopWatch<span class="uscript-operator">(</span><span class="uscript-keyword">False</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">foreach</span> VisibleCollidingActors <span class="uscript-operator">(</span><span class="uscript-keyword">Class</span> <span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> Actors<span class="uscript-operator">,</span> <span class="uscript-number">50000</span><span class="uscript-operator">,</span> Location<span class="uscript-operator">,</span> <span class="uscript-keyword">True</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Test<span class="uscript-operator">(</span>Actors<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"Execute 2"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    Log<span class="uscript-operator">(</span><span class="uscript-string">"FINISHED !!!!!!!!!!!! TEST 2"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    StopWatch<span class="uscript-operator">(</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Test3 <span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Actor Actors<span class="uscript-operator">;</span>
+
+    StopWatch<span class="uscript-operator">(</span><span class="uscript-keyword">False</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">foreach</span> CollidingActors <span class="uscript-operator">(</span><span class="uscript-keyword">Class</span> <span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> Actors<span class="uscript-operator">,</span> <span class="uscript-number">50000</span><span class="uscript-operator">,</span> Location<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Test<span class="uscript-operator">(</span>Actors<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"Execute 3"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    Log<span class="uscript-operator">(</span><span class="uscript-string">"FINISHED !!!!!!!!!!!! TEST 3"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    StopWatch<span class="uscript-operator">(</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Test4 <span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Actor Actor<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Actor Actors<span class="uscript-operator">[</span><span class="uscript-number">512</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">,</span> j<span class="uscript-operator">;</span>
+
+    <span class="uscript-operator">--</span> i<span class="uscript-operator">;</span>
+    StopWatch<span class="uscript-operator">(</span><span class="uscript-keyword">False</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">foreach</span> AllActors <span class="uscript-operator">(</span><span class="uscript-keyword">Class</span> <span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> Actor<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>Actor<span class="uscript-operator">.</span>bHidden <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>Actor<span class="uscript-operator">.</span>bStatic <span class="uscript-operator">&amp;&amp;</span> Actor<span class="uscript-operator">.</span>bCollideActors <span class="uscript-operator">&amp;&amp;</span> Actor<span class="uscript-operator">.</span>bCollideWorld
+        <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Actor<span class="uscript-operator">.</span>CollisionHeight <span class="uscript-operator">&gt;</span> <span class="uscript-number">2</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Actor<span class="uscript-operator">.</span>CollisionRadius <span class="uscript-operator">&gt;</span> <span class="uscript-number">2</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Abs<span class="uscript-operator">(</span>VSize<span class="uscript-operator">(</span>Actor<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> Location<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&lt;=</span> <span class="uscript-number">50000</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> FastTrace<span class="uscript-operator">(</span>Actor<span class="uscript-operator">.</span>Location<span class="uscript-operator">,</span>PlayerPawn<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            Actors<span class="uscript-operator">[</span><span class="uscript-operator">++</span> i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Actor<span class="uscript-operator">;</span>
+            Log<span class="uscript-operator">(</span><span class="uscript-string">"Save 4"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"Log 4"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-operator">++</span> i<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> j <span class="uscript-operator">&lt;</span> i<span class="uscript-operator">;</span> <span class="uscript-operator">++</span> j<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Test<span class="uscript-operator">(</span>Actors<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"Execute 4"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    Log<span class="uscript-operator">(</span><span class="uscript-string">"FINISHED !!!!!!!!!!!! TEST 4"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    StopWatch<span class="uscript-operator">(</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Test5 <span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Actor Actor<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Actor Actors<span class="uscript-operator">[</span><span class="uscript-number">512</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">,</span> j<span class="uscript-operator">;</span>
+
+    <span class="uscript-operator">--</span> i<span class="uscript-operator">;</span>
+    StopWatch<span class="uscript-operator">(</span><span class="uscript-keyword">False</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">foreach</span> VisibleCollidingActors <span class="uscript-operator">(</span><span class="uscript-keyword">Class</span> <span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> Actor<span class="uscript-operator">,</span> <span class="uscript-number">50000</span><span class="uscript-operator">,</span> Location<span class="uscript-operator">,</span> <span class="uscript-keyword">True</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>Actor<span class="uscript-operator">.</span>bStatic <span class="uscript-operator">&amp;&amp;</span> Actor<span class="uscript-operator">.</span>bCollideActors <span class="uscript-operator">&amp;&amp;</span> Actor<span class="uscript-operator">.</span>bCollideWorld
+        <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Actor<span class="uscript-operator">.</span>CollisionHeight <span class="uscript-operator">&gt;</span> <span class="uscript-number">2</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Actor<span class="uscript-operator">.</span>CollisionRadius <span class="uscript-operator">&gt;</span> <span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            Actors<span class="uscript-operator">[</span><span class="uscript-operator">++</span> i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Actor<span class="uscript-operator">;</span>
+            Log<span class="uscript-operator">(</span><span class="uscript-string">"Save 5"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"Log 5"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-operator">++</span> i<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> j <span class="uscript-operator">&lt;</span> i<span class="uscript-operator">;</span> <span class="uscript-operator">++</span> j<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Test<span class="uscript-operator">(</span>Actors<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"Execute 5"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    Log<span class="uscript-operator">(</span><span class="uscript-string">"FINISHED !!!!!!!!!!!! TEST 5"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    StopWatch<span class="uscript-operator">(</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Test6 <span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Actor Actor<span class="uscript-operator">;</span>
+
+    StopWatch<span class="uscript-operator">(</span><span class="uscript-keyword">False</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">foreach</span> VisibleCollidingActors <span class="uscript-operator">(</span><span class="uscript-keyword">Class</span> <span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> Actor<span class="uscript-operator">,</span> <span class="uscript-number">50000</span><span class="uscript-operator">,</span> Location<span class="uscript-operator">,</span> <span class="uscript-keyword">True</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>Actor<span class="uscript-operator">.</span>bStatic <span class="uscript-operator">&amp;&amp;</span> Actor<span class="uscript-operator">.</span>bCollideActors <span class="uscript-operator">&amp;&amp;</span> Actor<span class="uscript-operator">.</span>bCollideWorld
+        <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Actor<span class="uscript-operator">.</span>CollisionHeight <span class="uscript-operator">&gt;</span> <span class="uscript-number">2</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Actor<span class="uscript-operator">.</span>CollisionRadius <span class="uscript-operator">&gt;</span> <span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            Test<span class="uscript-operator">(</span>Actor<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            Log<span class="uscript-operator">(</span><span class="uscript-string">"Execute 6"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"Log 6"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    Log<span class="uscript-operator">(</span><span class="uscript-string">"FINISHED !!!!!!!!!!!! TEST 6"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    StopWatch<span class="uscript-operator">(</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Test <span class="uscript-operator">(</span>Actor Actor<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    Log<span class="uscript-operator">(</span><span class="uscript-string">"Test()"</span> <span class="uscript-operator">@</span> Actor<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>It was spawned near my Controller's location so the Location pointer should be equivalent to mine. Please ignore the ugly code... My code is usually cleaner, but this was just a test so bleh... This is the log (with the irrelevant info removed):</p>
+<pre class="uscript">ScriptLog: <span class="uscript-number">22.892699</span>: FINISHED <span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span> TEST <span class="uscript-number">1</span>
+Log: Time<span class="uscript-operator">=</span><span class="uscript-number">22.902054</span> ms
+
+ScriptLog: <span class="uscript-number">11.660470</span>: FINISHED <span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span> TEST <span class="uscript-number">2</span>
+Log: Time<span class="uscript-operator">=</span><span class="uscript-number">11.670268</span> ms
+
+ScriptLog: <span class="uscript-number">8.632781</span>: FINISHED <span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span> TEST <span class="uscript-number">3</span>
+Log: Time<span class="uscript-operator">=</span><span class="uscript-number">8.639348</span> ms
+
+ScriptLog: <span class="uscript-number">7.206910</span>: FINISHED <span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span> TEST <span class="uscript-number">4</span>
+Log: Time<span class="uscript-operator">=</span><span class="uscript-number">7.212730</span> ms
+
+ScriptLog: <span class="uscript-number">11.221647</span>: FINISHED <span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span> TEST <span class="uscript-number">5</span>
+Log: Time<span class="uscript-operator">=</span><span class="uscript-number">11.227758</span> ms
+
+ScriptLog: <span class="uscript-number">11.784850</span>: FINISHED <span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span><span class="uscript-operator">!</span> TEST <span class="uscript-number">6</span>
+Log: Time<span class="uscript-operator">=</span><span class="uscript-number">11.796611</span> ms</pre><p>To my suprise, AllActors was the fastest... the only one that came close was CollidingActors. I tried it with 9000 as Radius as well... The result was that CollidingActors and AllActors were fairly in the same range (with AllActors being faster). While I do know the power of code optimization (as you can see I REALLY filtered things out <img alt=":)" src="emoticons/smile.gif" align="middle"> ), I am still surprised that the whole actor hash was faster than the colliding actor hash. I will be honest, this was at the beginning of the match, but still... I was always under the impression that VCL and CL are faster than the rest. Any comments/thoughts ?</p>
+<p><em class="em2">Wormbo:</em> Check out the descriptions above:<br>VCA &ndash; "Usually this is much faster than <code>AllActors</code> because it uses the collision hash instead of the much larger native actor list, but with a very high radius VisibleActors might be more efficient."<br>CA &ndash; "This is slightly faster than RadiusActors with radii at least up to 2000UU and much faster than VisibleActors or VisibleCollidingActors due to the visibility check those iterators have to perform for each actor."</p>
+<p>Generally the collision hash should only be used if you want to find actors with collision enabled and located within a small area. The Visible*Actors iterators always perform a FastTrace before transfering control back to the UnrealScript code inside the loop, so they must be considered a lot slower than a compareable CollidingActors or RadiusActors loop with additional filter mechanisms. And last but not least it depends on the class of actors your loop iterates over. The class always is the first thing checked, so it makes a huge difference if you iterate over class'Actor' or e.g. class'Projectile': The latter will ignore all those static mesh actors, pickups, players and so on, dramatically changing the number of actors that have to go through the full check.</p>
+<p>And another thing: Try reordering the tests. When benchmarking my own code I often found that the first iteration of the first test took longer than later tests.</p>
+<p><em class="em2">Xian:</em> I did check the descs, however considering that all of them checked the same things, the small number of bots/projectiles a.s.o. was relatively small, I was still quite surprised on the result, considering AllActors has (basically) no checks since the others have radius, traces, hidden etc. I will try reordering them and perhaps, play for longer with a SetTimer() on the traces...</p>
+<p><em class="em2">Wormbo:</em> I rewrote the iterator descriptions for UT2004 and added a performance clasification. Someone should remove obsolete discussions from this page.</p>
+<hr class="thin"><p><a href="refactor-me.html">Refactor Me</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("The Actor List", "#0.1");
+menuItemAdd("Syntax", "#0.2");
+menuItemAdd("Definitions", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Object", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Actor", "#0.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>ZoneInfo", "#0.3.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>GameInfo", "#0.3.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Performance Analysis", "#0.3.5");
+menuItemAdd("Usage", "#0.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Using Iterators From Objects", "#0.4.1");
+menuItemAdd("Related Topics ", "#0.5");
+menuItemAdd("Comments", "#0.6");
+menuItemAdd("Iterator Timing Comments", "#0.7");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Iterator">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Iterator">View other revisions</a><br>Last edited June 9, 2007 3:51 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Iterator">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Iterator">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Once I get that upgrade to 36-hour days, I will tackle that. (Mychaeel)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

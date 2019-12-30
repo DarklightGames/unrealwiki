@@ -1,0 +1,194 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Changing The Enforcer (UT)</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Changing_The_Enforcer_(UT); path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Changing The Enforcer (UT)">Changing The Enforcer (UT)</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Preface</h2>
+<p>I once made a map a while back that had every player start with a bio rifle instead of the enforcer.  The guys on BuF were a great help in getting it to work, but alas, a few formats later, the map is lost &ndash; and so, unfortunately, is the code to change the starting weapon.</p>
+<p>Rather than asking on BuF again (the old posts with the info I wanted seem to have been deleted), I decided to work out a solution on my own - it's just more fun and more rewarding that way.  It took a while of poking around other mutators and various places on the wiki, but I finally made it work.  Every player starts with a bio rifle, and does not start with the enforcer.</p>
+<p>Its been tested in multiplayer games briefly - seems to work just fine.</p>
+<p>The only problem I can see with it is that it destroys ALL enforcers in the entire map, not just the ones being held by players.  This was acceptable in my map, but it might not be in yours, and feel free to alter this tut to make it better.  Also I don't have anything to prevent the mutator from being added twice, so don't put more than one instance in your map!</p>
+<h2><a name="0.2"></a>Step 1:  Starting Out</h2>
+<p>This is a simple <a href="writing-and-using-an-embedd.html">Embedded Mutator</a>, we're going to start out by making the code to embed it into our map.  Read the Embedded Mutator tutorial for more info on this block of code.</p>
+<pre class="uscript"><span class="uscript-comment">//</span>
+<span class="uscript-comment">// BioStart.</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-keyword">class</span> BioStart <span class="uscript-keyword">expands</span> Mutator<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bPreBPInitialized<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> PreBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bPreBPInitialized <span class="uscript-operator">)</span> <span class="uscript-comment">// older versions of UT call this function twice but we</span>
+                                         <span class="uscript-comment">// only want to run our code once!</span>
+    <span class="uscript-operator">{</span>
+        bPreBPInitialized <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-comment">// Add the mutator by linking it into the Mutator List ala Beppo.</span>
+        <span class="uscript-comment">// This Embedded Mutator makes sense to be 1st after the BaseMutator</span>
+        <span class="uscript-comment">// in the Mutator List...</span>
+
+        <span class="uscript-keyword">Self</span><span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>NextMutator<span class="uscript-operator">;</span> <span class="uscript-comment">// Make a place in the List</span>
+
+        Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">=</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">;</span> <span class="uscript-comment">// place it 1st after BaseMutator</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.3"></a>Step 2:  Giving the Weapon to the Player</h2>
+<p>I used a <a href="useful-mutator-functions.html">Useful Mutator Function</a> here, namely GiveWeapon, to actually give the weapon to the player.</p>
+<p>For giving the weapon (i.e. biorifle) to the player, we are going to use the ModifyPlayer function, which gets called whenever a player spawns, and is passed a handle to the spawning player.  So we're going to call our GiveWeapon function every time a player spawns.  Simple!</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> Weapon GiveWeapon<span class="uscript-operator">(</span>Pawn PlayerPawn<span class="uscript-operator">,</span> <span class="uscript-type">string</span> aClassName<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">bool</span> bBringUp<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Weapon<span class="uscript-operator">&gt;</span> WeaponClass<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Weapon NewWeapon<span class="uscript-operator">;</span>
+
+    WeaponClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Weapon<span class="uscript-operator">&gt;</span><span class="uscript-operator">(</span>DynamicLoadObject<span class="uscript-operator">(</span>aClassName<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Class'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PlayerPawn<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>WeaponClass<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    newWeapon <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span>WeaponClass<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> newWeapon <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        newWeapon<span class="uscript-operator">.</span>RespawnTime <span class="uscript-operator">=</span> <span class="uscript-number">0.0</span><span class="uscript-operator">;</span>
+        newWeapon<span class="uscript-operator">.</span>GiveTo<span class="uscript-operator">(</span>PlayerPawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        newWeapon<span class="uscript-operator">.</span>bHeldItem <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        newWeapon<span class="uscript-operator">.</span>GiveAmmo<span class="uscript-operator">(</span>PlayerPawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        newWeapon<span class="uscript-operator">.</span>SetSwitchPriority<span class="uscript-operator">(</span>PlayerPawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        newWeapon<span class="uscript-operator">.</span>WeaponSet<span class="uscript-operator">(</span>PlayerPawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        newWeapon<span class="uscript-operator">.</span>AmbientGlow <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PlayerPawn<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'PlayerPawn'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            newWeapon<span class="uscript-operator">.</span>SetHand<span class="uscript-operator">(</span>PlayerPawn<span class="uscript-operator">(</span>PlayerPawn<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Handedness<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+            newWeapon<span class="uscript-operator">.</span>GotoState<span class="uscript-operator">(</span><span class="uscript-name">'Idle'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bBringUp <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+            PlayerPawn<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span>GotoState<span class="uscript-operator">(</span><span class="uscript-name">'DownWeapon'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            PlayerPawn<span class="uscript-operator">.</span>PendingWeapon <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+            PlayerPawn<span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> newWeapon<span class="uscript-operator">;</span>
+            PlayerPawn<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span>BringUp<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">return</span> newWeapon<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> ModifyPlayer <span class="uscript-operator">(</span>Pawn Other<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    GiveWeapon<span class="uscript-operator">(</span>Other<span class="uscript-operator">,</span> <span class="uscript-string">"Botpack.UT_BioRifle"</span><span class="uscript-operator">,</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.4"></a>Step 3:  Those Damn Enforcers</h2>
+<p>Great!  The mutator should be working already.  When you spawn you should start with the biorifle!  But then you notice that the Enforcer is still in your inventory... Damn.  Well lets get rid of those little buggers shall we?  (NOTE:  This code will remove ALL enforcers in the map.  If you wish to have enforcers on the ground in your map anyway, this will have to be modified to not remove them.)</p>
+<p>For this we are going to use the CheckReplacement function - at some point during map startup every actor in the map is passed through this function, so if that actor is an enforcer, we simply refuse it to be allowed into the map.  All mutators must return true for this function for a particular object if that object is to be allowed in.  So we'll return false simply if the actor IsA() enforcer!</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CheckReplacement <span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> <span class="uscript-type">byte</span> bSuperRelevant<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'enforcer'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.5"></a>Wrapping Up</h2>
+<p>Well there you have it!  Add this mutator into your map, and there you go.  Changing the startup weapon wasn't so hard now was it?  It certainly would have been easier for me to have a tut like this around...  Please feel free to comment in the following section.</p>
+<h2><a name="0.6"></a>Comments</h2>
+<p><em class="em2">Draconx:</em> Well its my second tut, and not particularly complicated, but its a good starting point for wannabe uscript coders (like me <img alt=":)" src="emoticons/smile.gif" align="middle">)  I havent found any problems with it for what it does, aside from those mentioned in the preface.</p>
+<p><em class="em2">Tarquin:</em> Looks good <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Preface", "#0.1");
+menuItemAdd("Step 1:  Starting Out", "#0.2");
+menuItemAdd("Step 2:  Giving the Weapon to the Player", "#0.3");
+menuItemAdd("Step 3:  Those Damn Enforcers", "#0.4");
+menuItemAdd("Wrapping Up", "#0.5");
+menuItemAdd("Comments", "#0.6");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Changing_The_Enforcer_(UT)">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Changing_The_Enforcer_(UT)">View other revisions</a><br>Last edited January 8, 2005 19:52 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Changing_The_Enforcer_(UT)">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Changing_The_Enforcer_(UT)">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Gah - a solution with more questions. (EntropicLqd)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

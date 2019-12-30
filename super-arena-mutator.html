@@ -1,0 +1,268 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Super Arena Mutator</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Super_Arena_Mutator; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Super Arena Mutator">Super Arena Mutator</a></h1>
+	<div class="wiki"><p>This tutorial was created for an Unreal Script class at <a href="http://www.bcc.ctc.edu/gaming/">[Bellevue Community College]</a></p>
+<p><a href="http://blog.itburns.com/">[Sam Beirne]</a> &amp; Jesse</p>
+<p>By the end of this tutorial you should understand how to create a mutator called &#8220;Super Arena.&#8221; This mutator lowers gravity, regenerates players&#8217; health, and increases the number of jumps that may be linked together. It also starts players off with every weapon complete with a full clip of ammo.</p>
+<pre class="uscript"><span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// SuperArenaMut:</span>
+<span class="uscript-comment">// Decreases Gravity</span>
+<span class="uscript-comment">// Increases Maximum Number of Linked Jumps</span>
+<span class="uscript-comment">// Players Regenerate Health</span>
+<span class="uscript-comment">// Players Begin With All Weapons and Full Ammo</span>
+<span class="uscript-comment">//=============================================================================</span></pre><p>The class begins with a few comments describing the function of this mutator. A comment is any line that begins with the // character. These lines are only important to other coders and have no effect on the functionality of our code.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> SuperArenaMut <span class="uscript-keyword">extends</span> Mutator<span class="uscript-operator">;</span></pre><p>In the first real line of code after the beginning block comment we declare a new class called SuperArenaMut that exends the Mutator class. Because SuperArenaMut is a child of Mutator, it inherits all of the methods and properties found in the Mutator class.</p>
+<pre class="uscript"><span class="uscript-exec">#exec OBJ LOAD File=MutatorArt.utx</span></pre><p>Exec directives like the one above tell the engine how it interact with real files, like models and textures. For the moment this is not important and this line had been copied only because it appears in the Regen mutator which is a basis for the regeneration portion of our mutator.</p>
+<pre class="uscript"><span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> RegenPerSecond<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> GravityZ<span class="uscript-operator">;</span></pre><p>Before any of our functions are declared we create two global variables to hold the amount by which players will increase health and the decrease in gravity. For greater precision, floating point values (real numbers, ex. 1.234) are used. These variables will be used later on in the code.</p>
+<pre class="uscript"><span class="uscript-keyword">event</span> PreBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    SetTimer<span class="uscript-operator">(</span><span class="uscript-number">1.0</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Once the global variables have been declared (remember, global variables must be declared <b>before</b> functions), we create our first function, PreBeginPlay(). PreBeginPlay is called right after the object is created, but before gameplay begins. We use the function to start a timer by calling SetTimer. The first parameter of SetTimer is the interval time, or how long to wait. The second tells the timer whether or not to repeat.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Controller C<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>C <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>ControllerList<span class="uscript-operator">;</span> C <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span> C <span class="uscript-operator">=</span> C<span class="uscript-operator">.</span>NextController<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>C<span class="uscript-operator">.</span>Pawn <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> C<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>Health <span class="uscript-operator">&lt;</span> C<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>HealthMax <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            C<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>Health <span class="uscript-operator">=</span> Min<span class="uscript-operator">(</span> C<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>Health<span class="uscript-operator">+</span>RegenPerSecond<span class="uscript-operator">,</span> C<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>HealthMax <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>The Timer() function is the code called each time the interval from SetTimer is reached. It creates a local Controller variable and checks every controller until it finds a Pawn (i.e. Player). When a Pawn is found its health is set to the minimum of its current health plus the regen rate or the max health. This allows the player to regenerate without ever going over the maximum health value.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> ModifyPlayer<span class="uscript-operator">(</span>Pawn Other<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> xPawn x<span class="uscript-operator">;</span>   
+    <span class="uscript-keyword">local</span> Weapon m_wTemp<span class="uscript-operator">;</span>
+
+    x <span class="uscript-operator">=</span> xPawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>x <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        x<span class="uscript-operator">.</span>MaxMultiJump <span class="uscript-operator">=</span> <span class="uscript-number">15</span><span class="uscript-operator">;</span> 
+        x<span class="uscript-operator">.</span>MultiJumpBoost <span class="uscript-operator">=</span> <span class="uscript-number">50</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    
+    Other<span class="uscript-operator">.</span>Health <span class="uscript-operator">=</span> <span class="uscript-number">199</span><span class="uscript-operator">;</span>
+
+    Other<span class="uscript-operator">.</span>GiveWeapon<span class="uscript-operator">(</span><span class="uscript-string">"XWeapons.BioRifle"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Other<span class="uscript-operator">.</span>GiveWeapon<span class="uscript-operator">(</span><span class="uscript-string">"XWeapons.FlakCannon"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Other<span class="uscript-operator">.</span>GiveWeapon<span class="uscript-operator">(</span><span class="uscript-string">"XWeapons.LinkGun"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Other<span class="uscript-operator">.</span>GiveWeapon<span class="uscript-operator">(</span><span class="uscript-string">"XWeapons.Minigun"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Other<span class="uscript-operator">.</span>GiveWeapon<span class="uscript-operator">(</span><span class="uscript-string">"XWeapons.RocketLauncher"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Other<span class="uscript-operator">.</span>GiveWeapon<span class="uscript-operator">(</span><span class="uscript-string">"XWeapons.ShockRifle"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Other<span class="uscript-operator">.</span>GiveWeapon<span class="uscript-operator">(</span><span class="uscript-string">"XWeapons.SniperRifle"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    m_wTemp <span class="uscript-operator">=</span> Weapon<span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'BioRifle'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    m_wTemp<span class="uscript-operator">.</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoAmount <span class="uscript-operator">=</span> m_wTemp<span class="uscript-operator">.</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>MaxAmmo<span class="uscript-operator">;</span>       <span class="uscript-comment">// in UT2004, instead use:  m_wTemp.MaxOutAmmo();</span>
+
+    m_wTemp <span class="uscript-operator">=</span> Weapon<span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'FlakCannon'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    m_wTemp<span class="uscript-operator">.</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoAmount <span class="uscript-operator">=</span> m_wTemp<span class="uscript-operator">.</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>MaxAmmo<span class="uscript-operator">;</span>       <span class="uscript-comment">// in UT2004, instead use:  m_wTemp.MaxOutAmmo();</span>
+
+    m_wTemp <span class="uscript-operator">=</span> Weapon<span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'LinkGun'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    m_wTemp<span class="uscript-operator">.</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoAmount <span class="uscript-operator">=</span> m_wTemp<span class="uscript-operator">.</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>MaxAmmo<span class="uscript-operator">;</span>       <span class="uscript-comment">// in UT2004, instead use:  m_wTemp.MaxOutAmmo();</span>
+
+    m_wTemp <span class="uscript-operator">=</span> Weapon<span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'MiniGun'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    m_wTemp<span class="uscript-operator">.</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoAmount <span class="uscript-operator">=</span> m_wTemp<span class="uscript-operator">.</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>MaxAmmo<span class="uscript-operator">;</span>       <span class="uscript-comment">// in UT2004, instead use:  m_wTemp.MaxOutAmmo();</span>
+
+    m_wTemp <span class="uscript-operator">=</span> Weapon<span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'RocketLauncher'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    m_wTemp<span class="uscript-operator">.</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoAmount <span class="uscript-operator">=</span> m_wTemp<span class="uscript-operator">.</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>MaxAmmo<span class="uscript-operator">;</span>       <span class="uscript-comment">// in UT2004, instead use:  m_wTemp.MaxOutAmmo();</span>
+
+    m_wTemp <span class="uscript-operator">=</span> Weapon<span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'ShockRifle'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    m_wTemp<span class="uscript-operator">.</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoAmount <span class="uscript-operator">=</span> m_wTemp<span class="uscript-operator">.</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>MaxAmmo<span class="uscript-operator">;</span>       <span class="uscript-comment">// in UT2004, instead use:  m_wTemp.MaxOutAmmo();</span>
+
+    m_wTemp <span class="uscript-operator">=</span> Weapon<span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'SniperRifle'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    m_wTemp<span class="uscript-operator">.</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoAmount <span class="uscript-operator">=</span> m_wTemp<span class="uscript-operator">.</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>MaxAmmo<span class="uscript-operator">;</span>       <span class="uscript-comment">// in UT2004, instead use:  m_wTemp.MaxOutAmmo();</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>ModifyPlayer<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>This next function is a little more complicated than the previous Timer() function. ModifyPlayer is called by GameInfo.RestartPlayer(), a function that executes each time a player enters the game or respawns. We start by creating a local xPawn variable to hold our player xPawn object. The local Weapon variable that is declared next will be used in a moment. First, after checking to see that our xPawn variable contains a valid object, we increase the MaxMultiJump from 2 to 15. We also increase the MultiJumpBoost to 50. This allows the players to jump higher and to link a greater number of jumps in succession. Next, using the Other object passed into the function we set the player's Health to 199.</p>
+<p>Once all of the player's abilities have been increased, it's time to equip all of the non-super weapons. Using the GiveWeapon function that is a part of the Pawn class, each weapon is added to the player's inventory by passing in the weapon name as a string. Now that every weapon has been equipped they need to be filled with ammo. Using the local weapon variable we created earlier we retrieve the weapons from the player's inventory using FindInventoryType, another function found in the Pawn class. However, this function returns an object of type Inventory when we need a Weapon. The type is changed by casting the returned value to a weapon by wrapping the function like so: Weapon( function );. Once the weapons has been retrieved and is stored in the Weapon variable (m_wTemp) we can change the AmmoAmount to the MaxAmmo. It is important to use the max ammo of each particular class because every weapon has a different maximum ammo value.</p>
+<p>On the final line of the function we call Super.ModifyPlayer(Other) to execute everything in the original ModifyPlayer class. This is an easier method to simulate copying the other lines right into our new function. </p>
+<pre class="uscript"><span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CheckReplacement<span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> <span class="uscript-type">byte</span> bSuperRelevant<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> PhysicsVolume PV<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> xPickupBase B<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Pickup P<span class="uscript-operator">;</span>
+
+    PV <span class="uscript-operator">=</span> PhysicsVolume<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PV <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+        PV<span class="uscript-operator">.</span>Gravity<span class="uscript-operator">.</span>Z <span class="uscript-operator">=</span> GravityZ<span class="uscript-operator">;</span>
+
+    B <span class="uscript-operator">=</span> xPickupBase<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> B <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+        B<span class="uscript-operator">.</span>bHidden <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+    P <span class="uscript-operator">=</span> Pickup<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> P <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+        P<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>The CheckReplacement() function iterates through all of the actors in a game so that they may be modified. First we create three local varibles to hold our actors. Just like in the previous function, we use casting to set these actors to the appropriate types. The first actor modified is the PhysicsVolume. This is a bounding volume that affects actor physics. We change the Gravity.Z component in order to lower the vertical gravity. Next all of the xPickupBases (the pads that sit under weapons, health, etc) are set to hidden by flipping the bHidden flag. Finally all of the Pickups (anything on the map that affects the player or changes inventory when walked over) are destroyed using the Destroy() function.</p>
+<pre class="uscript"><span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+     GravityZ<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">150.000000</span>
+     RegenPerSecond<span class="uscript-operator">=</span><span class="uscript-number">1.000000</span>
+     FriendlyName<span class="uscript-operator">=</span><span class="uscript-string">"Super Arena"</span>
+     Description<span class="uscript-operator">=</span><span class="uscript-string">"Regeneration, high jumps and all weapons."</span>
+<span class="uscript-operator">}</span></pre><pre class="paraverbatim">                                              </pre><p>In the last part of our class we set the defaultproperties of our new class. GravityZ and RegenPerSecond are the two gloabal floating point values created at the beginning of the class. The FriendlyName is the name that will be listed in the mutators menu in UT2003 and the description is what will be seen when the mutator is selected.  </p>
+<p>The new class file is completed, but we need to create a new package folder before it can be used. In the <a href="base-directory.html">base directory</a> of the UT2003 folder (usually C:\UT2003, but may be different depending on where the program was installed) create the following folders:</p>
+<p>..\UT2003\SuperArena\<br>..\UT2003\SuperArena\Classes\<br>Put the new class file (named SuperArena.uc) into the new Classes folder you just created.</p>
+<p>There is one final step to complete before running the mutator. We need to tell the engine about our new class. This is done using a .int file and modifying UT2003.ini. Create a file called SuperArena.int in your ..\UT2003\System directory and place the following code into it:</p>
+<pre class="uscript"><span class="uscript-operator">[</span>Public<span class="uscript-operator">]</span>
+Object<span class="uscript-operator">=</span><span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-operator">,</span>MetaClass<span class="uscript-operator">=</span>Engine<span class="uscript-operator">.</span>Mutator<span class="uscript-operator">,</span><span class="uscript-type">Name</span><span class="uscript-operator">=</span>SuperArena<span class="uscript-operator">.</span>SuperArenaMut<span class="uscript-operator">,</span>Description<span class="uscript-operator">=</span><span class="uscript-string">"SuperArena"</span><span class="uscript-operator">)</span></pre><p>Then add the new package to your UT2003.ini file (located in the same folder) by adding the following line:<br></p>
+<pre class="uscript">EditPackages<span class="uscript-operator">=</span>SuperArena</pre><p>The new class is now ready to compile and run. Open a command prompt (Start&rarr; Run&rarr; "cmd") and navigate to your system directory. Type "ucc make" without the quotes and the packages should compile. Assuming there are no errors, fire up the game and the new mutator should be availiable.</p>
+<p><em class="em2">Firestorm</em>:   HI This is MY FIRST POST.</p>
+<p>HI Iv'e just completed the MOD Super Arena Mutator, compiled fine but it dose not showup in the Mutator list in game.</p>
+<p>Im running PATCH 2199 and compiled with UDE with lattest Patch,HELP PLEASE..</p>
+<p><em class="em2">LuckyStrike</em>: Experiencing some issues compiling this for UT2004 - "Error, Can't access protected variable 'Ammo' in 'Weapon'" for the attempts to max out ammo in ModifyPlayer. Replacing each "m_wTemp.Ammo[0].AmmoAmount = m_wTemp.Ammo[0].MaxAmmo;" with "m_wTemp.AddAmmo(m_wTemp.MaxAmmo(0) , 0);" appears to fix the problem.</p>
+<p><em class="em2">poorsod</em>:     I looked in xLastManStandingGame.uc and found</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> AddGameSpecificInventory<span class="uscript-operator">(</span>Pawn p<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Inventory Inv<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>AddGameSpecificInventory<span class="uscript-operator">(</span>p<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    p<span class="uscript-operator">.</span>CreateInventory<span class="uscript-operator">(</span><span class="uscript-string">"XWeapons.BioRifle"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    p<span class="uscript-operator">.</span>CreateInventory<span class="uscript-operator">(</span><span class="uscript-string">"XWeapons.FlakCannon"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    p<span class="uscript-operator">.</span>CreateInventory<span class="uscript-operator">(</span><span class="uscript-string">"XWeapons.LinkGun"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    p<span class="uscript-operator">.</span>CreateInventory<span class="uscript-operator">(</span><span class="uscript-string">"XWeapons.Minigun"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    p<span class="uscript-operator">.</span>CreateInventory<span class="uscript-operator">(</span><span class="uscript-string">"XWeapons.RocketLauncher"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    p<span class="uscript-operator">.</span>CreateInventory<span class="uscript-operator">(</span><span class="uscript-string">"XWeapons.ShockRifle"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    p<span class="uscript-operator">.</span>CreateInventory<span class="uscript-operator">(</span><span class="uscript-string">"XWeapons.SniperRifle"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bFullAmmo <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">For</span> <span class="uscript-operator">(</span> Inv<span class="uscript-operator">=</span>P<span class="uscript-operator">.</span>Inventory<span class="uscript-operator">;</span> Inv<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">;</span> Inv<span class="uscript-operator">=</span>Inv<span class="uscript-operator">.</span>Inventory <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Weapon<span class="uscript-operator">(</span>Inv<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+                Weapon<span class="uscript-operator">(</span>Inv<span class="uscript-operator">)</span><span class="uscript-operator">.</span>MaxOutAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>So I copied it across and it works fine for me <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Geist:</em>  Yep, or you could also just use <em class="em1">MaxOutAmmo()</em> (for full ammo) or <em class="em1">SuperMaxOutAmmo()</em> (for 999 ammo) Weapon functions, instead of <em class="em1">AddAmmo()</em>. <em class="em2">(UT2004)</em></p>
+<p><em class="em2">AngryPanda</em>:  With the code as written, the log file (i.e., "UT2004.log") is spammed with warning messages (e.g., "Warning: SuperArenaMut DM-Antalus.SuperArenaMut (Function: SuperArenaMut.CheckReplacement:004B) Accessed None 'B'".) Adding the lines "if (B != None)" and "if (P != None)" before "B.bHidden = true;" and "P.Destroy();" respectively fixes this (similar to what was done with PV).  I should note that this probably isn't that big a deal, since it would only happen once, at the loading of each level.</p>
+<p><em class="em2">Geist:</em>  Good point, AngryPanda.  I've adjusted the script (above) to fix this.  I also added (UT2004-specific) comments to the max-ammo script lines as well.</p>
+<p>Oh, and I also changed the timer interval from 2 to 1 sec in PreBeginPlay().  If we want to restore RegenPerSecond health points per second, then Timer() needs to execute each second (or compensate by doubling the health increase if you keep the timer to every 2 seconds).  I figured setting the timer back to 1 second was the easiest solution, esp. for readibility in a tutorial. <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">DaWrecka:</em> There's also another way that would let us keep the same average rate regardless of the timer rate; and it involves using just that, TimerRate. It's declared in Actor and, as you might expect, defines the timer's repeat rate in seconds. A simple (RegenPerSecond * TimerRate) in the Timer() function's Min() would allow us to vary the timer rate to whatever we liked. We could even add another variable for the server admin to define their own rate if we like. Slightly more elegant would be a RegenPeriod and RegenAmount; with RegenPeriod being the timer rate and RegenAmount just being how much it restores every 'RegenPeriod' seconds.</p>
+<p>Also, in UT2004 the Pawn class has a function GiveHealth. It's defined as:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> GiveHealth<span class="uscript-operator">(</span><span class="uscript-type">int</span> HealAmount<span class="uscript-operator">,</span> <span class="uscript-type">int</span> HealMax<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Health <span class="uscript-operator">&lt;</span> HealMax<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Health <span class="uscript-operator">=</span> Min<span class="uscript-operator">(</span>HealMax<span class="uscript-operator">,</span> Health <span class="uscript-operator">+</span> HealAmount<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>which would simplify matters a little. Using that, we could define Timer() as</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Controller C<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>C <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>ControllerList<span class="uscript-operator">;</span> C <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span> C <span class="uscript-operator">=</span> C<span class="uscript-operator">.</span>NextController<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>C<span class="uscript-operator">.</span>Pawn <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            C<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>GiveHealth<span class="uscript-operator">(</span>RegenPerSecond<span class="uscript-operator">,</span> C<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>HealthMax<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>That said, the code as it is should work fine, and I should probably be bearing the old "If it ain't broke don't fix it" adage in mind. Suffice it to say I have a habit of picking nits.</p>
+</div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Super_Arena_Mutator">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Super_Arena_Mutator">View other revisions</a><br>Last edited April 4, 2007 0:55 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Super_Arena_Mutator">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Super_Arena_Mutator">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>My program doesn't have bugs. It just develops random features.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

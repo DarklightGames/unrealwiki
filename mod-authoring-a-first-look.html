@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Mod Authoring/A First Look At GameInfo</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Mod_Authoring/A_First_Look_At_GameInfo; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="mod-authoring.html">Mod Authoring</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Mod+Authoring/A+First+Look+At+GameInfo">A First Look At GameInfo</a></h1>
+	<div class="wiki"><p>Open the Engine package file <code>GameInfo.uc</code>. This is the definition of the basic game logic. At the top of the file you'll see a long list of variable declarations. Many of these variables have comments that describe their purpose. Below the variable declarations come the functions (or methods) that do the work.</p>
+<dl><dt>Timer</dt><dd>The first thing to look at is the Timer function. In <a href="gameinfo-ut.html">GameInfo (UT)</a> its pretty short, but in <a href="deathmatchplus.html">DeathMatchPlus</a> its very long. Timer is a special UnrealScript event. If you call the function <code>SetTimer(int Time, bool bLoop)</code> you can set up a repeating timer on your <a href="actor.html">actor</a>. The Time parameter describes when the Timer function should be called. The bLoop parameter describes whether or not Timer should be called in a loop after the first call. <em class="em2">All TournamentGameInfo classes use a Timer loop of one second.</em> This means that the Timer function is called every second. You can use Timer for events that have to happen at certain times. By declaring watch variables that count up seconds, you can perform events at any time up to a second's resolution. DeathMatchPlus uses this to check and see if the TimeLimit has been hit in a game.</dd><dt>Tick</dt><dd>Another important time function to get to know is Tick. Tick isn't used in GameInfo, but any Actor can use it. The declaration for Tick is: <code>Tick(float DeltaTime)</code>. Tick is called on <em class="em2">every</em> Actor in the game each frame. DeltaTime contains the amount of time that has passed since the last Tick. Using Tick, you can perform behavior that has to be done at less-than-a-second resolution. You must be careful not to perform CPU heavy behavior in Tick, because it is called so often.</dd><dt>Login</dt><dd>Scroll down in GameInfo until you find the Login function. This function is called by the engine whenever a player logs in to the game. GameInfo's version of login does important setup stuff like assigning the player a name, a skin, a mesh and so forth. It also spawns the intial teleport effect and finds a spawn point to stick the player at. A little ways below Login is Logout. It is called whenever a player leaves the game. You can use logout to clean up after a player exits.</dd><dt>AddDefaultInventory</dt><dd>Another interesting function in GameInfo is AddDefaultInventory. This function assigns a player his initial weapon and equipment. In UnrealTournment's DeathMatchPlus, the player is given an <a href="impacthammer.html">ImpactHammer</a> and an <a href="enforcer.html">Enforcer</a>. LastManStanding<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=LMS&referrerid=Mod_Authoring/A_First_Look_At_GameInfo">?</a> has a great example of doing cool things with AddDefaultInventory. It gives the player every weapon in the game (except for the Redeemer) as well as some armor and a lot of ammo. You can use AddDefaultInventory to add custom inventory to players that join your mod (for example, you might want to give them a grenade and some money).</dd><dt>FindPlayerStart</dt><dd>The FindPlayerStart method searches the actors in a level for <a href="navigationpoint.html">NavigationPoint</a>s suitable for spawning. The <a href="playerstart.html">PlayerStart</a> actor that a map designer adds to their map is one such location. In <a href="teamgameplus.html">TeamGamePlus</a>, FindPlayerStart spawns players and bots depending on their Team. It checks the Team of each playerstart and the Team of the pawn to be spawned. You can use FindPlayerStart to write custom spawn code (for example, you might want to spawn Terrorists in one location and Snipers in another).</dd><dt>RestartPlayer</dt><dd>The RestartPlayer method is called whenever a player respawns. The basic GameInfo version calls FindPlayerStart to find a starting spot, moves the player to that spot and spawns a teleport effect. It also restores the players health, sets the player's collision, and gives the player his default inventory.</dd><dt>Killed</dt><dd>The Killed method is very useful. It is called whenever a player kills another player. It looks at the cirumstances of the death (whether a player suicided or killed successfully) and the type of damage and prints a message. It also logs the event to the ngStats log. Finally, it calls ScoreKill.</dd><dt>ScoreKill</dt><dd>ScoreKill awards points for a kill. DeathMatchPlus assigns a frag for a successful kill and subtracts one for a suicide. TeamGamePlus also adds a point to the TeamInfo of the Killer's team, or subtracts one in the case of a suicide.</dd><dt>DiscardInventory</dt><dd>DiscardInventory is called whenever a player dies or is removed from the game. DiscardInventory goes through a pawn's inventory, tossing out weapons and destroying others as appropriate. You might override this function if you wanted to toss out a backpack or a trap.</dd><dt>EndGame</dt><dd>Finally, the EndGame function is called with a reason whenever the game ends. You might want to perform special logging or clean up here.</dd></dl>
+<p>So thats a quick look at the more important GameInfo functions. The advanced GameInfo classes like DeathMatchPlus add important new behavior for controlling bots and single player games, as well as refining the GameInfo methods into specific rules.</p>
+<hr class="thin"><p>Prev Page: <a href="mod-authoring-introduction.html">/Introduction To GameTypes</a> &ndash; <em class="em2">Section 10 of 12</em> &ndash; Next Page: <a href="mod-authoring-adding-a-hud.html">/Adding A HUD</a></p>
+</div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="mod-authoring.html">Mod Authoring</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Mod_Authoring/A_First_Look_At_GameInfo">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Mod_Authoring/A_First_Look_At_GameInfo">View other revisions</a><br>Last edited August 7, 2003 20:26 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Mod_Authoring/A_First_Look_At_GameInfo">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Mod_Authoring/A_First_Look_At_GameInfo">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Worst-case scenario: the UEd Goblin wipes the map and burns down your house.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

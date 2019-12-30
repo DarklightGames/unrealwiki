@@ -1,0 +1,154 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Mod Ideas/Real Terrain</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Mod_Ideas/Real_Terrain; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="mod-ideas.html">Mod Ideas</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Mod+Ideas/Real+Terrain">Real Terrain</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Deforming Terrain in Real-Time</h2>
+<p>UT2003 has a nifty feature built into the <a href="terraininfo.html">TerrainInfo</a> class, that interestingly is not used by the game itself. It allows you to modify the heightmap of the terrain during play. Note that this feature is unique to UT2003, and is not part of the stock Unreal Engine.</p>
+<p>The ability to modify terrain in real-time makes it possible for you to have your weapons create craters and all sorts of other mayhem. It is similar to the GeoMod technology used in Red Faction, but does not work quite the same. This form of terrain modification works simply by altering the height of different points on the terrain, which means a couple of things:</p>
+<ol><li>You can't bore a tunnel through terrain using this. It is more like blasting a hole, and then having that hole fill up with sand/dirt/whatever from above.</li>
+<li>It looks a bit strange if you use it on extremely steep cliffs, but only the steepest of cliffs (basically 90 degree cliffs) are affected by this.</li>
+<li>The holes that are created have pointy bottoms. If you fall into a deep crater you will be able to see "outside the world" because the bottom of the hole is just wide enough for your player to fit in, but not the camera.</li>
+</ol>
+<p>Also note that because players are generally going to want to walk over the ground, and cannot do so reasonably when it's filled with craters and chasms. It is therefore important not to go overboard with terrain deformation. Also be aware of any gameplay issues that may arise, such as the only entrances to a flagbase being blocked off by chasms of deformed terrain.</p>
+<p>There is also a limit to how deeply you can burrow, which I believe is the minimum height of the heightmap. This means that eventually, if you crater it enough, it will start to plateu at a much lower level.</p>
+<h3><a name="0.1.1"></a>How you Deform the Terrain</h3>
+<p>The heart of the terrain deformation lies in a function called <em class="em2">PokeTerrain.</em> it's definition can be found in the <a href="terraininfo.html">TerrainInfo</a> class, and looks like this:</p>
+<pre class="uscript"><span class="uscript-keyword">native</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> PokeTerrain<span class="uscript-operator">(</span> vector WorldLocation<span class="uscript-operator">,</span> <span class="uscript-type">int</span> Radius<span class="uscript-operator">,</span> <span class="uscript-type">int</span> MaxDepth <span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p><em class="em2">WorldLocation</em> is the location that you want to make the crater. The height above the terrain does not seem to make any difference, but I don't believe it will work if the location specified is below the terrain. <em class="em2">Radius</em> specifies the radius  of the crater you want to make. <em class="em2">MaxDepth</em> specifies the depth of crater you would like to make. Interestingly enough, although in theory it should have been easy to implement, you cannot make a lump in the terrain by using a negative maxdepth. You can only use poketerrain to decrease the height of the terrain.</p>
+<p><em class="em2">Solid Snake:</em>Well, maybe they fixed this a while ago, but with the latest patch you may use a negative value to increase the height of the terrain.</p>
+<p>Unfortunately, that function is a little buggy so some care is needed when using it. Generally you would call it from within your HitWall function of your projectile. (hitting terrain always calls HitWall instead of Landed) However, sometimes it will not work if you simply use your Location as the WorldLocation. Sometimes it will, and sometimes it won't - this seems to depend on the physical size of the projectile. (it's collision height and radius) If your projectile does not seem to be denting the terrain - this may be why. Fortunately, however, this can be easily worked around by setting bBounce to true. bBounce is native and basically forces the physics engine to keep this object from penetrating into the ground when it hits. That should ensure that the projectile's location is always above the terrain level and thus that the poketerrain always works.</p>
+<p><em class="em2">Solid Snake:</em> Another way to fix this problem is to alter the location of the PokeTerrain, by using something like this: HitLocation + 16 * Vector(HitNormal), that way the PokeTerrain should always be above where the projectile hit.</p>
+<p>To complete the effect, you should put a decal inside the new crater to give it it's own texture. If you do not, it will have the same texture as the terrain had before, which can look a bit silly if your redeemer leaves a craterful of snow behind.</p>
+<h3><a name="0.1.2"></a>Everything in Moderation</h3>
+<p>This was stated above, but it's worth repeating: it may seem cool to have all your weapons deform terrain and make huge craters, but trust me - it's not as cool as it seems. The crater created by the weapon should be significantly smaller than the "blast effect," for three reasons:</p>
+<ol><li>There is no tweening on the deformation, and if it is not completely covered by your other visual effects, it will look like crap as a chunk of the world vanishes before your very eyes. Ideally your projectile should also spawn some rocks and junk to come out so it looks like the chunk you removed actually went somewhere.</li>
+<li>It's mentioned above, but very important - although cratering the crap out of everything will not particularly impact the framerate, it can inhibit gameplay. Craters can "pile up" and leave a deep chasm or hole that people can fall into. Usually, they won't fall far enough to die, but they'll still be stuck, and the camera will be outside the world, which is ugly. Though it may also seem neat to "open up new gameplay options" through the ability to deform terrain, a literally impassable moat doesn't do much for gameplay. Also, things that were formerly placed nicely can end up just hovering in space: static mesh lamp posts mounted on the terrain will not "fall" into your new crater, for instance. Terrain Decoration Layers usually conform to the new shape, but not always.</li>
+<li>It's just plain unrealistic. A redeemer would probrably make a hole about the size of a luxury car. Fragmentation rockets would do little more than scorch the surface of the ground. Heck, a hydrogen bomb only takes a bite out of a small island. The amount of actual material displaced by an explosion is generally quite small compared to the area peppered by shrapnel and singed by the flames.</li>
+</ol>
+<h3><a name="0.1.3"></a>Suggested Usage</h3>
+<p>- Scorched Earth clone <a href="http://www.scorched3d.co.uk/">[http://www.scorched3d.co.uk/]</a></p>
+<h2><a name="0.2"></a>Discussion</h2>
+<p><em class="em2">Foxpaw:</em> Refactored the discussion and whatnot into a description of how to do it, now that we've got it all figured out. It probrably wouldn't hurt to rename this page to "Deformable Terrain" or "Creating Deformable Terrain" or something along those lines.</p>
+<p><em class="em2">EntropicLqd:</em> Good job well done.  Have some bonus points or something <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">AlphaOne:</em> I added that for one main reason: because I think pokeTerrain sucks for anything else.</p>
+<p><em class="em2">Foxpaw:</em> It can actually have a nice effect, but you have to use it very judiciouslly. I use it on my mod - a 105mm howitzer causes a small depression about the size of a GT40.</p>
+<p><em class="em2">Solid Snake:</em> I just tried it, and maybe they fixed it in a patch a while ago, but you can actually increase the terrain height by using a negative value.</p>
+<p><em class="em2">Foxpaw:</em> I didn't have any success with that, but if you got it to work, then the above text could be updated with that information.</p>
+<p><em class="em2">RegularX:</em> Has anyone tried to use this to make random terrain?  Or is that wack tinfoil stuff?</p>
+<p><em class="em2">Foxpaw:</em> That sounds like it should be easily doable, but I don't think anyone has tried.</p>
+<p><em class="em2">Solid Snake:</em> I've tried it already... some pretty crap results though. Certainly not ones to brag about.</p>
+<p><em class="em2">Foxpaw:</em> Crap results in what sense? As in, is there a finite granularity to PokeTerrain that forces poor results, or is it simply difficult to generate the appropriate values to pass to PokeTerrain?</p>
+<p><em class="em2">Solid Snake:</em> While you can generate the terrain dynamically and randomly the texturing of the terrain is the next issue. As it isn't possible to really dynamically alter the terrain (I have already tried to the Unrealscripted Texture route, it results in a very blurry texture) because the textures don't match the resultant terrain just doesn't look very good or very real.</p>
+<p><em class="em2">RegularX:</em> Hrm, thanks for the info.  I'll give it a go anyway, since this project isn't FPS I think some luxuries can be taken on the terrain looking good.  The replayability of random terrain should trump it.</p>
+<p><em class="em2">FrozenCow</em> I've made a picture of the result of PokeTerrain with MaxDepth=-512:</p>
+<div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[PokeTerrainExample]" src="images/poketerrainexample.jpeg"><p>PokeTerrain Example with MaxDepth=-512</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<p><a href="category-custom-class.html">Category Custom Class</a><br><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Deforming Terrain in Real-Time", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>How you Deform the Terrain", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Everything in Moderation", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Suggested Usage", "#0.1.3");
+menuItemAdd("Discussion", "#0.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="mod-ideas.html">Mod Ideas</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Mod_Ideas/Real_Terrain">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Mod_Ideas/Real_Terrain">View other revisions</a><br>Last edited March 20, 2005 8:51 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Mod_Ideas/Real_Terrain">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Mod_Ideas/Real_Terrain">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>There is no spoon
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

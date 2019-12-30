@@ -1,0 +1,390 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: KShip</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=KShip; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=KShip">KShip</a></h1>
+	<div class="wiki"><p>Well this is basically my code for a space ship, thanks a lot to Daid for lending me his replication code (which turned out to come from KCar but i thank him non the less, great guy he is <img alt=":D" src="emoticons/biggrin.gif" align="middle">)</p>
+<p>I currently use a different, more client oriented replication system, but this one here is a lot better, i havent incorporated my ship to it yet because i have some other problems that come with it that i have to solve, but since the "core" ship here is simple, ill use the better replication for you guys <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p>(Btw i deal with all the entering/leaving of the vehicle in a parent class, this is really irrelevant to physics and is easy to do, so i left it out just so there will be less and easier to read code)</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> <span class="uscript-type">float</span>           Roll<span class="uscript-operator">,</span> CThrust<span class="uscript-operator">,</span> TempThrust<span class="uscript-operator">,</span> OldThrust<span class="uscript-operator">;</span> 
+<span class="uscript-comment">// Throttle and Steering are already declared in KVehicle, so all we need is roll, CThrust, TempThrust, OldThrust will be explained soon</span>
+<span class="uscript-comment">// BTW note that i use Throttle for Pitch alteration because it is already bound by other vehicles to the forward/backward key</span>
+<span class="uscript-comment">// ok i have also incorporated a system that allows for various thrust managments, </span>
+<span class="uscript-comment">//if you simply want to move forward full speed only while you press the the thrust button, you would use TempThrust. </span>
+<span class="uscript-comment">//when you release the thrust button you though you should always set TempThrust to -1</span>
+<span class="uscript-comment">// if you want to have a constant speed, assign it to CThrust, so every time you release the thrust button (the one that changes TempThrust) </span>
+<span class="uscript-comment">// you would automatically start going at that speed (good for stuff like dogifghting and matching speeds)</span>
+<span class="uscript-comment">// and lastly i added an afterburner effect, ill include it here for you guys to see although it isnt hard to do.</span>
+<span class="uscript-comment">// also what i did with it was that when you afterburn and you run out of energy, while you still hold the afterburn key</span>
+<span class="uscript-comment">// you would keep going at your max possible speed, and once you release it you would start going at your constant wanted speed (CThrust)</span>
+<span class="uscript-comment">// Thats why i have 2 vars, bAfterburn is for after burning (holding key and having enough E), bBurn is for only holding the afterburn key with no regard to its depletion</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span>            bAfterburn<span class="uscript-operator">,</span> bBurn<span class="uscript-operator">;</span> <span class="uscript-comment">// note that you should set both of those to true when you want to afterburn</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span>         ForwardTrust<span class="uscript-operator">,</span> TurnRate<span class="uscript-operator">,</span> AfterBurnThrust<span class="uscript-operator">;</span> <span class="uscript-comment">// This is basically how fast our ship turns/moves</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span>           CurRoll<span class="uscript-operator">,</span> CurSteering<span class="uscript-operator">,</span> CurThrottle<span class="uscript-operator">,</span> UnitAccRate<span class="uscript-operator">;</span> <span class="uscript-comment">// This is used for acceleration</span>
+<span class="uscript-comment">// CThrust is used for ships that can assign a specific throttle value, like 75% of max speed or whatever...</span>
+<span class="uscript-comment">// UnitAccRate is how much each value increases per second</span>
+<span class="uscript-keyword">var</span> vector          ExtraForce<span class="uscript-operator">,</span> ExtraTorque<span class="uscript-operator">;</span> <span class="uscript-comment">// Used for Karama forces pileup</span>
+
+<span class="uscript-comment">// Ship replication vars and functions, thanks daid!</span>
+<span class="uscript-keyword">struct</span> StructShipState
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">var</span> KRBVec              ChassisPosition<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">var</span> Quat                ChassisQuaternion<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">var</span> KRBVec              ChassisLinVel<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">var</span> KRBVec              ChassisAngVel<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">var</span> <span class="uscript-type">float</span>               ServerSteering<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">var</span> <span class="uscript-type">float</span>               ServerThrottle<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">var</span> <span class="uscript-type">float</span>               ServerRoll<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">var</span> <span class="uscript-type">bool</span>                ServerbAfterburn<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">var</span> <span class="uscript-type">bool</span>                ServerbBurn<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">var</span> <span class="uscript-type">bool</span>                bNewState<span class="uscript-operator">;</span> <span class="uscript-comment">// Set to true whenever a new state is received and should be processed</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> KRigidBodyState     ChassisState<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> StructShipState     ShipState<span class="uscript-operator">;</span> <span class="uscript-comment">// This is replicated to the ship, and processed to update all the parts.</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span>            bNewShipState<span class="uscript-operator">;</span> <span class="uscript-comment">// Indicated there is new data processed, and chassis RBState should be updated.</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span>           NextNetUpdateTime<span class="uscript-operator">;</span>  <span class="uscript-comment">// Next time we should force an update of vehicles state.</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span>         MaxNetUpdateInterval<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> AVar<span class="uscript-operator">;</span><span class="uscript-comment">//Just for replication, else the ShipState doesn't get replicated</span>
+
+<span class="uscript-keyword">Replication</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">unreliable</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span>
+        ShipState<span class="uscript-operator">,</span> AVar<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> VehicleStateReceived<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>ShipState<span class="uscript-operator">.</span>bNewState<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Get root chassis info</span>
+    ChassisState<span class="uscript-operator">.</span>Position <span class="uscript-operator">=</span> ShipState<span class="uscript-operator">.</span>ChassisPosition<span class="uscript-operator">;</span>
+    ChassisState<span class="uscript-operator">.</span>Quaternion <span class="uscript-operator">=</span> ShipState<span class="uscript-operator">.</span>ChassisQuaternion<span class="uscript-operator">;</span>
+    ChassisState<span class="uscript-operator">.</span>LinVel <span class="uscript-operator">=</span> ShipState<span class="uscript-operator">.</span>ChassisLinVel<span class="uscript-operator">;</span>
+    ChassisState<span class="uscript-operator">.</span>AngVel <span class="uscript-operator">=</span> ShipState<span class="uscript-operator">.</span>ChassisAngVel<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Update control inputs</span>
+    Steering <span class="uscript-operator">=</span> ShipState<span class="uscript-operator">.</span>ServerSteering<span class="uscript-operator">;</span>
+    Throttle <span class="uscript-operator">=</span> ShipState<span class="uscript-operator">.</span>ServerThrottle<span class="uscript-operator">;</span>
+    Roll <span class="uscript-operator">=</span> ShipState<span class="uscript-operator">.</span>ServerRoll<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Afterburner</span>
+    bAfterburn <span class="uscript-operator">=</span> ShipState<span class="uscript-operator">.</span>ServerbAfterburn<span class="uscript-operator">;</span>
+    bBurn <span class="uscript-operator">=</span> ShipState<span class="uscript-operator">.</span>ServerbBurn<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Update flags</span>
+    ShipState<span class="uscript-operator">.</span>bNewState <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    bNewShipState <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> <span class="uscript-type">bool</span> KUpdateState<span class="uscript-operator">(</span><span class="uscript-keyword">out</span> KRigidBodyState newState<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// This should never get called on the server - but just in case!</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority <span class="uscript-operator">||</span> <span class="uscript-operator">!</span>bNewShipState<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Apply received data as new position of ship chassis.</span>
+    newState <span class="uscript-operator">=</span> ChassisState<span class="uscript-operator">;</span>
+    bNewShipState <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> PackState<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> vector chassisPos<span class="uscript-operator">,</span> chassisLinVel<span class="uscript-operator">,</span> chassisAngVel<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> vector oldPos<span class="uscript-operator">,</span> oldLinVel<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> KRigidBodyState ChassisState<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Get chassis state.</span>
+    KGetRigidBodyState<span class="uscript-operator">(</span>ChassisState<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    chassisPos <span class="uscript-operator">=</span> KRBVecToVector<span class="uscript-operator">(</span>ChassisState<span class="uscript-operator">.</span>Position<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    chassisLinVel <span class="uscript-operator">=</span> KRBVecToVector<span class="uscript-operator">(</span>ChassisState<span class="uscript-operator">.</span>LinVel<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    chassisAngVel <span class="uscript-operator">=</span> KRBVecToVector<span class="uscript-operator">(</span>ChassisState<span class="uscript-operator">.</span>AngVel<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Last position we sent</span>
+    oldPos <span class="uscript-operator">=</span> KRBVectoVector<span class="uscript-operator">(</span>ShipState<span class="uscript-operator">.</span>ChassisPosition<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    oldLinVel <span class="uscript-operator">=</span> KRBVectoVector<span class="uscript-operator">(</span>ShipState<span class="uscript-operator">.</span>ChassisLinVel<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// See if state has changed enough, or enough time has passed, that we </span>
+    <span class="uscript-comment">// should send out another update by updating the state struct.</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-operator">!</span>KIsAwake<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Never send updates if physics is at rest</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> VSize<span class="uscript-operator">(</span>oldPos <span class="uscript-operator">-</span> chassisPos<span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">5</span> <span class="uscript-operator">||</span>
+        VSize<span class="uscript-operator">(</span>oldLinVel <span class="uscript-operator">-</span> chassisLinVel<span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">1</span> <span class="uscript-operator">||</span>
+        Abs<span class="uscript-operator">(</span>ShipState<span class="uscript-operator">.</span>ServerThrottle <span class="uscript-operator">-</span> Throttle<span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">0.1</span> <span class="uscript-operator">||</span>
+        Abs<span class="uscript-operator">(</span>ShipState<span class="uscript-operator">.</span>ServerSteering <span class="uscript-operator">-</span> Steering<span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">0.1</span> <span class="uscript-operator">||</span>
+        Abs<span class="uscript-operator">(</span>ShipState<span class="uscript-operator">.</span>ServerRoll <span class="uscript-operator">-</span> Roll<span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">0.1</span> <span class="uscript-operator">||</span>
+        bAfterburn <span class="uscript-operator">!=</span> ShipState<span class="uscript-operator">.</span>ServerbAfterburn <span class="uscript-operator">||</span>
+        bBurn <span class="uscript-operator">!=</span> ShipState<span class="uscript-operator">.</span>ServerbBurn <span class="uscript-operator">||</span>
+        Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">&gt;</span> NextNetUpdateTime <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        NextNetUpdateTime <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">+</span> MaxNetUpdateInterval<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    ShipState<span class="uscript-operator">.</span>ChassisPosition <span class="uscript-operator">=</span> ChassisState<span class="uscript-operator">.</span>Position<span class="uscript-operator">;</span>
+    ShipState<span class="uscript-operator">.</span>ChassisQuaternion <span class="uscript-operator">=</span> ChassisState<span class="uscript-operator">.</span>Quaternion<span class="uscript-operator">;</span>
+    ShipState<span class="uscript-operator">.</span>ChassisLinVel <span class="uscript-operator">=</span> ChassisState<span class="uscript-operator">.</span>LinVel<span class="uscript-operator">;</span>
+    ShipState<span class="uscript-operator">.</span>ChassisAngVel <span class="uscript-operator">=</span> ChassisState<span class="uscript-operator">.</span>AngVel<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Player Input</span>
+    ShipState<span class="uscript-operator">.</span>ServerSteering <span class="uscript-operator">=</span> Steering<span class="uscript-operator">;</span>
+    ShipState<span class="uscript-operator">.</span>ServerThrottle <span class="uscript-operator">=</span> Throttle<span class="uscript-operator">;</span>
+    ShipState<span class="uscript-operator">.</span>ServerRoll <span class="uscript-operator">=</span> Roll<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// AfterBurner</span>
+    ShipState<span class="uscript-operator">.</span>ServerbAfterburn <span class="uscript-operator">=</span> bAfterburn<span class="uscript-operator">;</span>
+    ShipState<span class="uscript-operator">.</span>ServerbBurn <span class="uscript-operator">=</span> bBurn<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// This flag lets the client know this data is new.</span>
+    ShipState<span class="uscript-operator">.</span>bNewState <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//Make sure ShipState gets replicated</span>
+    AVar<span class="uscript-operator">++</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>AVar <span class="uscript-operator">&gt;</span> <span class="uscript-number">10</span><span class="uscript-operator">)</span>
+        AVar<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Tick<span class="uscript-operator">(</span>DeltaTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>KIsAwake<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> Controller<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        KWake<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority <span class="uscript-operator">&amp;&amp;</span> Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">!=</span> NM_StandAlone<span class="uscript-operator">)</span>
+        PackState<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    UpdateAcceleration<span class="uscript-operator">(</span>DeltaTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    UpdateExtraForce<span class="uscript-operator">(</span>DeltaTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> UpdateAcceleration<span class="uscript-operator">(</span><span class="uscript-type">float</span> Delta<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    CurSteering <span class="uscript-operator">=</span> CurSteering <span class="uscript-operator">+</span> Steering <span class="uscript-operator">*</span> UnitAccRate <span class="uscript-operator">*</span> Delta<span class="uscript-operator">;</span>
+    CurThrottle <span class="uscript-operator">=</span> CurThrottle <span class="uscript-operator">+</span> Throttle <span class="uscript-operator">*</span> UnitAccRate <span class="uscript-operator">*</span> Delta<span class="uscript-operator">;</span>
+    CurRoll     <span class="uscript-operator">=</span> CurRoll     <span class="uscript-operator">+</span> Roll     <span class="uscript-operator">*</span> UnitAccRate <span class="uscript-operator">*</span> Delta<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Steering<span class="uscript-operator">==</span><span class="uscript-number">0</span><span class="uscript-operator">)</span>
+        CurSteering<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Throttle<span class="uscript-operator">==</span><span class="uscript-number">0</span><span class="uscript-operator">)</span>
+        CurThrottle<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Roll<span class="uscript-operator">==</span><span class="uscript-number">0</span><span class="uscript-operator">)</span>
+        CurRoll<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Abs<span class="uscript-operator">(</span>CurSteering<span class="uscript-operator">)</span><span class="uscript-operator">&gt;</span>Abs<span class="uscript-operator">(</span>Steering<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        CurSteering<span class="uscript-operator">=</span>Steering<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Abs<span class="uscript-operator">(</span>CurThrottle<span class="uscript-operator">)</span><span class="uscript-operator">&gt;</span>Abs<span class="uscript-operator">(</span>Throttle<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        CurThrottle<span class="uscript-operator">=</span>Throttle<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Abs<span class="uscript-operator">(</span>CurRoll<span class="uscript-operator">)</span><span class="uscript-operator">&gt;</span>Abs<span class="uscript-operator">(</span>Roll<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        CurRoll<span class="uscript-operator">=</span>Roll<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bAfterBurn<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        ReduceAfterBurnEnergy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// just made this up, put it here incase you have something like this</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>GetAfterburnEnergy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">&lt;=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-comment">// Another fictional function...</span>
+        <span class="uscript-operator">{</span>
+            bAfterBurn<span class="uscript-operator">=</span><span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span>
+        <span class="uscript-operator">{</span>
+            CThrust<span class="uscript-operator">=</span>AfterBurnThrust<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bBurn <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>bAfterBurn <span class="uscript-operator">&amp;&amp;</span> CThrust<span class="uscript-operator">!=</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        CThrust<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>bBurn <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>bAfterBurn <span class="uscript-operator">&amp;&amp;</span> CThrust<span class="uscript-operator">!=</span>OldThrust<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        CThrust<span class="uscript-operator">=</span>OldThrust<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>TempThrust<span class="uscript-operator">!=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>bAfterBurn<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Abs<span class="uscript-operator">(</span>CurThrust<span class="uscript-operator">-</span>TempThrust<span class="uscript-operator">)</span><span class="uscript-operator">&lt;</span><span class="uscript-number">0.01</span><span class="uscript-operator">)</span>
+            CurThrust<span class="uscript-operator">=</span>TempThrust<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>CurThrust<span class="uscript-operator">&gt;</span>TempThrust<span class="uscript-operator">)</span>
+            CurThrust <span class="uscript-operator">=</span> CurThrust <span class="uscript-operator">-</span> UnitAccRate <span class="uscript-operator">*</span> Delta <span class="uscript-operator">/</span> <span class="uscript-number">4</span><span class="uscript-operator">;</span> 
+            <span class="uscript-comment">// I made linear acceleration 4 times slower than rotation, you can do whatever you want though</span>
+        <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>CurThrust<span class="uscript-operator">&lt;</span>TempThrust<span class="uscript-operator">)</span>
+            CurThrust <span class="uscript-operator">=</span> CurThrust <span class="uscript-operator">+</span> UnitAccRate <span class="uscript-operator">*</span> Delta <span class="uscript-operator">/</span> <span class="uscript-number">4</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>CurThrust<span class="uscript-operator">!=</span>CThrust <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>bAfterBurn<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Abs<span class="uscript-operator">(</span>CurThrust<span class="uscript-operator">-</span>CThrust<span class="uscript-operator">)</span><span class="uscript-operator">&lt;</span><span class="uscript-number">0.01</span><span class="uscript-operator">)</span>
+            CurThrust<span class="uscript-operator">=</span>CThrust<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>CurThrust<span class="uscript-operator">&gt;</span>CThrust<span class="uscript-operator">)</span>
+            CurThrust <span class="uscript-operator">=</span> CurThrust <span class="uscript-operator">-</span> UnitAccRate <span class="uscript-operator">*</span> Delta <span class="uscript-operator">/</span> <span class="uscript-number">4</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>CurThrust<span class="uscript-operator">&lt;</span>CThrust<span class="uscript-operator">)</span>
+            CurThrust <span class="uscript-operator">=</span> CurThrust <span class="uscript-operator">+</span> UnitAccRate <span class="uscript-operator">*</span> Delta <span class="uscript-operator">/</span> <span class="uscript-number">4</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>CurThrust<span class="uscript-operator">!=</span>CThrust <span class="uscript-operator">&amp;&amp;</span> bAfterBurn<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Abs<span class="uscript-operator">(</span>CurThrust<span class="uscript-operator">-</span>CThrust<span class="uscript-operator">)</span><span class="uscript-operator">&lt;</span><span class="uscript-number">0.01</span><span class="uscript-operator">)</span>
+            CurThrust<span class="uscript-operator">=</span>CThrust<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>CurThrust<span class="uscript-operator">&gt;</span>CThrust<span class="uscript-operator">)</span>
+            CurThrust <span class="uscript-operator">=</span> CurThrust <span class="uscript-operator">-</span> UnitAccRate <span class="uscript-operator">*</span> Delta <span class="uscript-operator">/</span> <span class="uscript-number">2.2</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Acceleration with afterburner a lot faster</span>
+        <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>CurThrust<span class="uscript-operator">&lt;</span>CThrust<span class="uscript-operator">)</span>
+            CurThrust <span class="uscript-operator">=</span> CurThrust <span class="uscript-operator">+</span> UnitAccRate <span class="uscript-operator">*</span> Delta <span class="uscript-operator">/</span> <span class="uscript-number">2.2</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> UpdateExtraForce<span class="uscript-operator">(</span><span class="uscript-type">float</span> Delta<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> vector worldForward<span class="uscript-operator">,</span> worldDown<span class="uscript-operator">,</span> worldLeft<span class="uscript-operator">;</span>
+
+    worldForward <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">&gt;&gt;</span> Rotation<span class="uscript-operator">;</span>
+    worldDown <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">&gt;&gt;</span> Rotation<span class="uscript-operator">;</span>
+    worldLeft <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">&gt;&gt;</span> Rotation<span class="uscript-operator">;</span>
+
+    ExtraForce <span class="uscript-operator">=</span> ExtraForce <span class="uscript-operator">+</span> worldForward <span class="uscript-operator">*</span> ForwardThrust <span class="uscript-operator">*</span> Delta <span class="uscript-operator">*</span> CurThrust<span class="uscript-operator">;</span> <span class="uscript-comment">// Speed</span>
+    ExtraTorque <span class="uscript-operator">=</span> ExtraTorque <span class="uscript-operator">+</span> worldDown <span class="uscript-operator">*</span> TurnRate <span class="uscript-operator">*</span> Delta <span class="uscript-operator">*</span> CurSteering<span class="uscript-operator">;</span> <span class="uscript-comment">// Yaw</span>
+    ExtraTorque <span class="uscript-operator">=</span> ExtraTorque <span class="uscript-operator">+</span> worldLeft <span class="uscript-operator">*</span> TurnRate <span class="uscript-operator">*</span> Delta <span class="uscript-operator">*</span> CurThrottle<span class="uscript-operator">;</span> <span class="uscript-comment">// Pitch</span>
+    ExtraTorque <span class="uscript-operator">=</span> ExtraTorque <span class="uscript-operator">+</span> worldForward <span class="uscript-operator">*</span> TurnRate <span class="uscript-operator">*</span> Delta <span class="uscript-operator">*</span> <span class="uscript-operator">-</span>CurRoll<span class="uscript-operator">;</span> <span class="uscript-comment">// Roll</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> KApplyForce<span class="uscript-operator">(</span><span class="uscript-keyword">out</span> vector Force<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> vector Torque<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// This actually does the applying of the piled up force</span>
+    Force <span class="uscript-operator">=</span> ExtraForce<span class="uscript-operator">;</span>
+    Torque <span class="uscript-operator">=</span> ExtraTorque<span class="uscript-operator">;</span>
+    ExtraForce <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    ExtraTorque <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+     <span class="uscript-comment">// Create Karma collision Params for ourselves, you can change whatever you want here</span>
+     Begin Object <span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>KarmaParamsRBFull <span class="uscript-type">Name</span><span class="uscript-operator">=</span>KParams0
+         KLinearDamping<span class="uscript-operator">=</span><span class="uscript-number">2.000</span><span class="uscript-operator">;</span>
+         KAngularDamping<span class="uscript-operator">=</span><span class="uscript-number">2.000</span><span class="uscript-operator">;</span>
+         KStartEnabled<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+         bHighDetailOnly<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+         bClientOnly<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+         bKDoubleTickRate<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+         KFriction<span class="uscript-operator">=</span><span class="uscript-number">1.600000</span>
+         KActorGravScale <span class="uscript-operator">=</span> <span class="uscript-number">0.0</span><span class="uscript-operator">;</span>
+     KMass<span class="uscript-operator">=</span><span class="uscript-number">2</span><span class="uscript-operator">;</span>
+         <span class="uscript-type">Name</span><span class="uscript-operator">=</span><span class="uscript-string">"KParams0"</span>
+     End Object
+     KParams<span class="uscript-operator">=</span>KarmaParamsRBFull<span class="uscript-name">'&lt;MyPackage&gt;.&lt;MyShipClass&gt;.KParams0'</span>
+
+     <span class="uscript-comment">// And just some other variables:</span>
+     TurnRate<span class="uscript-operator">=</span><span class="uscript-number">8</span>
+     ForwardThrust<span class="uscript-operator">=</span><span class="uscript-number">5000</span>
+     UnitAccRate<span class="uscript-operator">=</span><span class="uscript-number">2.0</span>
+     AfterBurnThrust<span class="uscript-operator">=</span><span class="uscript-number">1.20</span> <span class="uscript-comment">// basically means that afterburner goes at 120% of regular maximum speed</span>
+<span class="uscript-operator">}</span></pre><p>and that should be it, i hope i didnt miss anything...</p>
+<p><em class="em2">Spark: </em> KParams=KarmaParamsRBFull'&lt;MyPackage&gt;.&lt;MyShipClass&gt;.KParams0' &lt;&ndash; Is this supposed to be a trap? <img alt=";)" src="emoticons/wink.gif" align="middle"> Took me a while to figure out that my ship didn't fly because this wasn't set to KParams0 and thus wasn't enabled at all. <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Sir_Brizz: </em> Zep, did you end up getting your Quaternion working for the indicator? I have a few ideas that work if you want to know what they are.</p>
+<p><em class="em2">ProjectX:</em> I'm a n00b to coding, but is it possible to take this code, and change it to create a "hovering vehicles" class, that basicly, wont go a certan height above ground, but, from high jumps, etc., go lower to the ground? I also saw that there was 3 types of thrust, is it possible to bind a key that will cycle through the flying types (for more precise flying, eg. for dog matches and realism)?</p>
+<p><em class="em2">NickR:</em> Does anyone have a working example of a flying vehicle?</p>
+<p><em class="em2">Foxpaw:</em> I do, but my mod is still quite a ways from release. The code above allegedly is working code for a flying vehicle, though I've never tested it.</p>
+</div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=KShip">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=KShip">View other revisions</a><br>Last edited December 4, 2003 22:51 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=KShip">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/KShip">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Worst-case scenario: the UEd Goblin wipes the map and burns down your house.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

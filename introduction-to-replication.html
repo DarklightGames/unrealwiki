@@ -1,0 +1,256 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Introduction To Replication</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Introduction_To_Replication; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Introduction To Replication">Introduction To Replication</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>What is replication?</h2>
+<p>Put simply, replication is a way of making best use of limited bandwidth in a network game. The <a href="replication.html">replication</a> page has a more in-depth exposition of the concept &ndash; but if you're completely new to it, it's likely you'll make a few false assumptions...</p>
+<h2><a name="0.2"></a>The Myths of replication</h2>
+<p>If you've read a few documents on replication and looked at the nuts and bolts of it &ndash; the <a href="unrealscript.html">UnrealScript</a> keywords and variables that are involved &ndash; then there is a very good chance you've fallen into some commmon traps. </p>
+<ol><li>Having read basic replication docs, you might have imagined that clients did their own thing, more or less running a duplicate of the game and occasionally exchanging data to keep things tied together.  <em class="em2">The truth is: Clients do mostly nothing.</em></li>
+<li>You might think that a function marked as "simulated" is made to run on clients when it runs on the server. Not so &ndash; the "simulated" keyword doesn't mean that when something happens on the server, it also makes it happen on the client. <em class="em2">The truth is: The server doesn't cause clients to simulate simulated functions.</em></li>
+<li>The "reliable if" statement doesn't state "this variable is reliable", it's an <em class="em1">instruction</em> to try to replicate the variable... reliably. </li>
+</ol>
+<p>We'll be looking into these in more detail throughout the tutorials.</p>
+<h2><a name="0.3"></a>Why you need it</h2>
+<p>Why would you need replication anyway? The dedicated server has all information of all the clients (that's why the server is so called "authority") regarding gameflow and making decisions (eg does the player has the correct key to open a door, if yes, issue the open-door-command on the door object) the server can decide everything by itself only. </p>
+<p>So when is replication (or simulation) really needed and is something you should take care of?</p>
+<dl><dt>When it's not already taking care of by the Epic code.</dt><dd><em class="em2">Example:</em> I change the actor location by a server running code only, and the new actor position is automatically replicated by the Epic code (so this is more a negative example &ndash; you dont need to handle replication in this case since Epic does it already for you).</dd><dt>When it's something <em class="em3">visible</em> the client has to display/render. Imagine the player's computer just as a visual frontend, not more!</dt><dd><em class="em2">Example:</em> I want to have some "Weapon overheat function", so the temperature is somehow calulated and the rounds shot are taking into account. This is purely server side &ndash; no calculation needed on the client. When overheated, I want the weapon to glow red. "Red glow info" is visible to the player and has to be replicated to the client (since Epic is not already doing it for me).</dd><dt>When you want to minimize communication between the server and the client.</dt><dd><em class="em2">Example:</em> A simple projectile moves in a straight line with a fixed velocity until it hits level geometry.  That's predictable movement, and there's no point in having the server send constant location updates to the clients; so I just set the starting location, direction and velocity of the projectile and let the client simulate the movement by itself from there on.  (Actually, virtually all of the game's projectiles are done that way, even those with more complicated movement trajectories such as the Flak secondary fire.)</dd></dl>
+<p>So you have only to consider replication in the second and third case &ndash; the second in order to display something on the clientside which is not already covered by the epic code (something new!), and the third to cleverly reduce network load. Generally &ndash; if five percent of you code will handle with replication I would consider it much. </p>
+<h2><a name="0.4"></a>Multiple copies</h2>
+<p>In a network game of UT, there are several machines involved. Simplifying a little, these are servers and clients. Each machine has it's own actors, and each actor exists on a particular machine.</p>
+<p>This means that an actor such as a player is actually multiple actors, one on each machine. These multiple copies know that they correspond to one another. How they exchange information to make sure they keep in sync is the basic idea of replication.</p>
+<p>However, client versions generally don't do much (First Myth). Furthermore, you the programmer don't really have access to the heart of replication. You can't say in UnrealScript: "send this piece of information across the network now". </p>
+<p>Replication is rather like having a number of islands and some bottles to send messages between them. You tell the engine it should try to keep certain things in sync, and it will work the bottles and do its best &ndash; but there are no guarantees. You don't know how many bottles there are or when they are sent out, or when they are received.</p>
+<h2><a name="0.5"></a>The methods of replication</h2>
+<p>So now you know that clients do nothing (First Myth), the question is: how do you actually make them do <em class="em1">something</em>?</p>
+<dl><dt>Replicate variable values.</dt><dd><p>When a variable value changes and has a replication statement such as <code>reliable if (Role == ROLE_Authority)</code>, the engine checks &ndash; at its own discretion, and subject to certain networking-related <a href="actor.html">Actor</a> variables &ndash; its replication condition (here: <code>Role == ROLE_Authority</code>).  If a variable changes often, those checks happen frequently.</p>
+<p>If the replication condition is fulfilled, the engine sends an update of that variable's value over the network to the other side (in our case: from the server to the client).  If the variable has a special meaning such as <code>Location</code> or <code>Rotation</code>, the client copy will change its appearance as soon as it receives the update.</p>
+</dd><dt>Mark event functions as "simulated."</dt><dd><p>As mentioned above, the client copy normally won't execute any of its code on clients.</p>
+<p>If you mark an event function as "simulated," however, that tells the engine to call that event function client-side too (whenever the event happens, client-side).  Then the UnrealScript code which is executed client-side can affect the client copy of the actor directly (or call other non-event functions client-side if they have been marked as "simulated" too).</p>
+</dd><dt>Replicate function calls.</dt><dd><p>It's also possible to call a function on the server and have it execute on the one client who "owns" that actor (i.e. the client whose player is &ndash; directly or indirectly &ndash; the <code>Owner</code> of that actor).</p>
+<p>That happens asynchronously, meaning that "calling the function on the server" just makes the engine send a notification over the network to the affected client and return immediately without any feedback of whether and when the function was actually executed client-side; because of that, it's not possible to get return values from replicated functions.</p>
+</dd></dl>
+<h2><a name="0.6"></a>Next Step</h2>
+<p>The next tutorial is the <a href="projectiledestroyervolume.html">ProjectileDestroyerVolume</a> actor.</p>
+<h2><a name="0.7"></a>Related Topics</h2>
+<ul><li><a href="replication.html">Replication</a></li>
+<li><a href="replication-block.html">Replication Block</a></li>
+<li><a href="role.html">Role</a> and RemoteRole, and <a href="netmode.html">NetMode</a>.</li>
+<li><a href="netcode-idioms.html">Netcode Idioms</a></li>
+</ul>
+<h2><a name="0.8"></a>Planning</h2>
+<ul><li>We should have examples of the following:<ul><li>actors that exist on the server only</li>
+<li>actors that exist on the server and clients</li>
+<li>actors that are spawned clientside only</li>
+<li>actors that are spawned on owning clients only</li>
+</ul>
+</li>
+<li>We should also give examples of how to:<ul><li>call a function on the server from a client via function replication</li>
+<li>call a function on an owning client via function replication</li>
+<li>trigger function calls on clients with PostNetReceive()</li>
+</ul>
+</li>
+</ul>
+<h2><a name="0.9"></a>Discussion</h2>
+<p><em class="em2">Tarquin:</em> I would really like a basic tutorial on replication: maybe something like a Trigger actor that does something to all players when touched.</p>
+<p><em class="em2">NickR:</em> I wouldn't mind some small replication examples just showing one type replication related code. Like when the simulated key word should be used or if static functions can be called from either the client or server and run on either.</p>
+<p><em class="em2">VitalOverdose</em> I think the ONSMineProjectile is a very good example for replication.</p>
+<p><em class="em2">Foxpaw:</em> I'm not sure about tutorials, but those are (fairly) easily explained. Simulated functions run on actors with ROLE_SimulatedProxy or better. However, only if they are called from another simulated function. Entry points like Tick can be declared as simulated when you override them to facilitate this. A short example:</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span> <span class="uscript-type">float</span> Delta <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Tick<span class="uscript-operator">(</span> Delta <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  DoStuffOnServerOnly<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  DoStuffOnBoth<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// Called from a simulated function, but not simulated itself,</span>
+<span class="uscript-comment">// the engine skips over this function on clients. (or rather,</span>
+<span class="uscript-comment">// the non-authority version, which is usually the client)</span>
+<span class="uscript-keyword">function</span> DoStuffOnServerOnly<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  DoStuffOnClient<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// A simulated function getting called from another simulated</span>
+<span class="uscript-comment">// function. This gets called on both machines.</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> DoStuffOnBoth<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// Oops! This is a simulated function, but gets called from a</span>
+<span class="uscript-comment">// non-simulated function, so although it COULD run on a client</span>
+<span class="uscript-comment">// (because it's simulated) the code that calls it doesn't run</span>
+<span class="uscript-comment">// on the client and so this won't ever get called.</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> DoStuffOnClient<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span></pre><p>Static functions on the other hand, have no relation to replication and are functions that exist outside the context of an object. Static functions can't get replicated, obviously, because they aren't associated with any particular instance of an object. They can access only default variables and stuff. See <a href="static-function.html">Static Function</a> and <a href="simulated-function.html">Simulated Function</a>.</p>
+<p>Also, feel free to refactor this somewhere or expand it into a full tutorial.. it's more a demonstration at the moment.</p>
+<p><em class="em2">Tarquin:</em> Thanks... but see, you've alreayd lost RepliN00bs with this: <em class="em1"> run on actors with ROLE_SimulatedProxy or better</em>.... how does Replication actually WORK? Should we imagine multiple facets of the same actor on different machines, or many actors on different machines that somehow correspond to each other?</p>
+<p><em class="em2">Foxpaw:</em> Well, they're different actors, but they have a unique identifier so they "correspond" to each other. An actors Role variable determines it's replication behaviour. ROLE_Authority is usually the one on the server, and it runs all functions, simulated or not. ROLE_SimulatedProxy is usually on the client, and runs only simulated functions. ROLE_DumbProxy runs no functions, but still replicates variables. ROLE_None replicates nothing.</p>
+<p><em class="em2">Tarquin:</em> I simply don't understand how to visualize what is going on with replication. I'm used to thinking of an actor as a script that is running. How do I think of a replicated actor? Two scripts in tandem? How? Take something like this:</p>
+<pre class="uscript"><span class="uscript-keyword">replication</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span>
+    Foo<span class="uscript-operator">,</span> Bar<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>What is this an instruction to? When is this parsed? What does it cause to happen?</p>
+<p><em class="em2">Mychaeel:</em> The engine executes the condition in this statement at its own discretion.  It's not clearly specified <em class="em1">when</em> that happens; the documentation only says <em class="em1">that</em> it happens, and that it happens frequently.</p>
+<p>Each machine in a network game for which an actor is "relevant" has a copy of that actor.  For simplicity, let's assume a single client here &ndash; the server spawns the actor, and the server engine tells the client that there's a new actor around.  So we have two copies of the same actor:  One on the server, and one on the client.  The engines of both machines know that those two copies correspond to each other, but by itself that doesn't mean a lot &ndash; specifically, it doesn't mean that the client copy is automatically kept in sync with the server copy.</p>
+<p>Apart from that, nothing special happens.  The server copy runs its events and other code, and the client copy just sits there, doing nothing.  There are, however, several ways to <em class="em1">make</em> the client copy do something:</p>
+<dl><dt>Replicate variable values.</dt><dd><p>When a variable value changes and has a replication statement such as <code>Foo</code> and <code>Bar</code> above, the engine checks &ndash; at its own discretion, and subject to certain networking-related <a href="actor.html">Actor</a> variables &ndash; its replication condition (here: <code>Role == ROLE_Authority</code>).  If a variable changes often, those checks happen frequently.</p>
+<p>If the replication condition is fulfilled, the engine sends an update of that variable's value over the network to the other side (in our case: from the server to the client).  If the variable has a special meaning such as <code>Location</code> or <code>Rotation</code>, the client copy will change its appearance as soon as it receives the update.</p>
+</dd><dt>Mark event functions as "simulated."</dt><dd><p>As mentioned above, the client copy normally won't execute any of its code on clients.</p>
+<p>If you mark an event function as "simulated," however, that tells the engine to call that event function client-side too (whenever the event happens, client-side).  Then the UnrealScript code which is executed client-side can affect the client copy of the actor directly (or call other non-event functions client-side if they have been marked as "simulated" too).</p>
+</dd><dt>Replicate function calls.</dt><dd><p>It's also possible to call a function on the server and have it execute on the one client who "owns" that actor (i.e. the client whose player is &ndash; directly or indirectly &ndash; the <code>Owner</code> of that actor).</p>
+<p>That happens asynchronously, meaning that "calling the function on the server" just makes the engine send a notification over the network to the affected client and return immediately without any feedback of whether and when the function was actually executed client-side; because of that, it's not possible to get return values from replicated functions.</p>
+</dd></dl>
+<p>So, the server and client copies of the same actor are basically independent entities &ndash; but you can use the techniques explained above to keep them in sync on both machines.</p>
+<p><em class="em2">Tarquin:</em> This is starting to make sense! When you say "does nothing" &ndash; even if affected by other actors? If I have a player and a trigger, when the player touches the trigger, nothing happens on the client actors, only on the server?</p>
+<p>2nd question: is there a way for the server actor to make something happen on the client actor?</p>
+<p><em class="em2">Mychaeel:</em> "Nothing" means "nothing."  A server-side trigger will only trigger server-side; plus, only code within a simulated function or simulated state <em class="em1">can</em> (or from the engine's point of view: <em class="em1">may</em>) be executed client-side at all (but it's a common misconception that making a function "simulated" will magically execute it client-side &ndash; there's no such magic, unless that function happens to be an engine event <em class="em1">and</em> that event is caused client-side).</p>
+<p>Virtually all interaction between actors happens purely server-side, with the client copy being hardly ever any more than just a visual representation of the server copy.</p>
+<p>And actually most of what I wrote above is about how the server actor can make something happen on the client actor &ndash; starting from "There are, however"...</p>
+<p><em class="em2">Tarquin:</em> Based on what I now know, I can identify two major newbie mistakes in understanding replication:</p>
+<ol><li>the "reliable if" statement doesn't state "this variable is reliable", it's an <em class="em1">instruction</em> to try to replicate the variable... reliably. Not sure if that makes sense, but I found out I've been completely misreading the meaning of that.</li>
+<li>clients do mostly nothing. Having read basic replication docs, I imagined that clients did their own thing, more or less running a duplicate of the game and occasionally echanging data to keep things tied together.</li>
+</ol>
+<p>I made a simple map with a <a href="trigger.html">Trigger</a> to test something for Jailbreak, and I ran it as a netgame. The Trigger actor, that's I'd set bHidden=False on, wasn't visible when I played. Am I right in thinking that the Trigger <em class="em1">wasn't even there</em> on the client?</p>
+<p>Given this, could someone with knowlegde of replication conceive of a simple situation where an actor such as a Trigger or Keypoint class might require some replication, and I'll see if I can write a tutorial on it?</p>
+<p><em class="em2">Mychaeel:</em> Yes, you're right &ndash; the Trigger wasn't even there on the clients.  (You have to set bNoDelete=True to prevent the engine from discarding it on clients after it was loaded with the map file; or bAlwaysRelevant=True to have the server replicate it to all clients again after the map was loaded.  But since a Trigger is only acting server-side anyway, neither of those options makes sense in this context.)</p>
+<p><em class="em2">Tarquin:</em> Do we have a reference page of events that can be used as simulated? Are they the ones markes as [event] on <a href="actor-methods.html">Actor/Methods</a>?</p>
+<p><em class="em2">Mychaeel:</em> The important difference between "event function" and "normal function" here is only that an event is automatically called by the engine.  Just think about it &ndash; any function that's called directly by engine code qualifies, starting from PreBeginPlay over Tick and Timer to Destroyed... and any other, self-defined function doesn't (like MyOwnFunction or CanBeJailed).</p>
+<p><em class="em2">Tarquin:</em> How do you spawn an actor only on a client, or only on a particular client? Is this possible? I think the 3rd newbie mistake is supposing that the ways in which you can pass information from server to client are not as restricted as they are.</p>
+<p><em class="em2">Mychaeel:</em> To spawn an actor only on a (particular) client... just do so.  <img alt=":-)" src="emoticons/smile.gif" align="middle">  You can't directly initiate that from a server (as in "server, tell client XY to spawn this actor"); but you can spawn it directly from client-side code on that particular client.</p>
+<p><em class="em2">Tarquin:</em> For the first tutorial, I think I'll do a Volume that destroys incoming projectiles. It's fairly simple, but exposes some important concepts (I think... if I've got it right...). Work in progress: <a href="projectiledestroyervolume.html">ProjectileDestroyerVolume</a>. And I'll be cleaning up this page too ....</p>
+<p><em class="em2">Lilguy:</em> Hey, I just added a bit, hope it's alright. since the "myths" section listed a bunch of facts, not myths, I changed it to "some facts of replication." I also made a little list of examples we should make that would be helpful. Most of them could probably be copied and pasted from Epic's code, but we could make some simple examples of each one too.</p>
+<p><em class="em2">Tarquin:</em> Hmm... well, I like the title so I've put it back, but you are quite right, I wrote them as facts, which could be very confusing. I have rephrased the first two &ndash; is that better?  I'm working on the first tutorial in the series. I think the 2nd one should involve the replication block with a replicated variable, somehow &ndash; but I don't know what sort of example would be good. After that, I have no idea... <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Lilguy:</em>Heh, sorry 'bout that, I had actually kinda liked the title too. That'll do fine...<br>Perhaps for the second example, there could be some sort of street light or something, with 2 alternate textures that randomly switch back and forth at random intervals. They would only do this if the light was in "damaged mode" which would be signaled by bDamaged, a reliably replicated variable. I guess maybe I should stop talking and start coding, lol.</p>
+<p><em class="em2">Foxpaw:</em> I have to disagree with the assertion that clients do mostly nothing. Clients handle physics just like the server. In UT2003, some actors are handled almost entirely client-side. (general projectiles, for instance, are handled almost entirely client side, with the exception being the actual application of damage.) An efficient replication system should have nearly everything handled client side, with only critical values replicated.</p>
+<p><em class="em2">Lilguy:</em> Yeah, I kind of agree there. SimulatedProxy actors are given an initial physical state, then they're only updated periodically to make sure everything matches up. And there are a lot of clientside only actors, such as almost all emitter effects, the hud, interactions, etc. Perhaps it could be ammended to say that clients are in charge of almost nothing, since the server is usually the ultimate authority on the state of actors that exist on the client and actors. It's really best to always think about this when you're coding, and keep in mind what code should be running on the server, and what should be running on the client, and to program it likewise.</p>
+<p><em class="em2">Tarquin:</em> I think the point is that clients will do nothing unless told to. Using "SimulatedProxy" is telling it. A "client-side effect" has to be MADE to be client-side.</p>
+<p><em class="em2">Andreas:</em> Catching up with replication - I would like to add some more basic ideas to replication? </p>
+<p><em class="em2">Tarquin:</em> inserted at the top <img alt=":)" src="emoticons/smile.gif" align="middle"> BTW, please review <a href="wiki-markup.html">Wiki markup</a> <img alt=":)" src="emoticons/smile.gif" align="middle"> </p>
+<p><em class="em2">Andreas:</em> thanks for layouting - reading it the example 1 was not that clear - tried to clarify it a bit. Maybe the link</p>
+<p><a href="http://unreal.epicgames.com/Network.htm">http://unreal.epicgames.com/Network.htm</a> could be included - it helped me quite a bit.</p>
+<p><em class="em2">Legal:</em> Threadmode anyone? This page needs some cleaning up, perhaps a Refractor Me tag would be in order? Also, to add to the discussion, coders need to make sure as much as possible is done client side and with as little code as possible. Some mods which could have impressed requires so much bandwidth that few people get ping over 200.</p>
+<p><em class="em2">Andreas:</em> Im not a wikiexpert (due to limited sparetime I have) - but if it improves - sure - I agree. I disagree on doing everything clientside - the goal of writing a program using replication is to minimise networktraffic. So the server would be my first place (assuming it has enough cpu power) since 1. it has a complete view of the game-status and 2. epic did already implement "clever" methods to reduce the network load (by not updating clients with data they dont need anyways, since they cannot see the actor and so on) I would not want to reinvent. As a coder I would ask me what tasks have to be done (see weapon overheat example), and where I can split server/client in order to minimize communciation. There is no way around updating the client as far it considers visual informations - the client <em class="em2">is</em> the visual frontend - but upon everything else the coder is free to decide where to perform the tasks. </p>
+<p><em class="em2">Andreas:</em> To add, replication (especially simulated functions running on the client) might be usefull when someone wants to give clients different views or play different sounds locally.</p>
+<p><em class="em2">FatalOverdose:</em> In the first few paragraphs you say 'The truth is: Clients do mostly nothing.' and then a little further down you have 'However, client versions generally don't do much (First Myth).'</p>
+<p>. its a bit confusing </p>
+<p><em class="em2">Solid Snake:</em> This was asked by Mychaeel a long time ago, so I've converted my post into a wiki page, found here [A Study Of Replication]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Solid_Snake/A_Study_Of_Replication&referrerid=Introduction_To_Replication">?</a></p>
+<p><em class="em2">Tarquin:</em> I think a simple tutorial would be fixing the example on <a href="using-localmessages.html">Using LocalMessages</a> to broadcast the message so clients can see it. Can anyone help me by suggesting how it might be done?</p>
+<p><em class="em2">Ransico:</em> Something that has bothered me for a long time, is there is no info on how to get something to run properly on -only- the client... for example, I was stuck on how to get a custom LOD actor working. The issue I had, was that the tick and timer events would never get called on the client.</p>
+<p>The fix turned out to be that the client was deleting the object soon after its creation on the client, no matter what combo of defaultproperty switches I used.</p>
+<p>There may be a better way to do it, but I set bNoDelete=true and it solved my problem. The entire source can be found here - someone else may find it useful, it also tells you how to make something run on the client: <a href="ransico-lodmesh.html">Ransico/LODMesh</a></p>
+<p><em class="em2">Vitaloverdose:</em> The page is called 'introduction to replication' so it was the first document i read on the subject but it begins with "If you've read a few documents on replication". Maybe the 'myths of replication' bit might be better off further into the page or as part of a summery as its not introducing the subject so much as reviewing it.Im sure the page is very helpfull for the reader with prior knowledge of the subject but could be very confusing/unhelpful to anyone looking into the issue for the first time as it is referrencing aspects of replication that havent been explained at this point. </p>
+<hr class="thin"><p><a href="category-tutorial.html">Category Tutorial</a></p>
+<p><a href="category-to-do.html">Category To Do</a> &ndash; Work to organize according to <a href="replication-discussing.html">Replication/Discussing</a>.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("What is replication?", "#0.1");
+menuItemAdd("The Myths of replication", "#0.2");
+menuItemAdd("Why you need it", "#0.3");
+menuItemAdd("Multiple copies", "#0.4");
+menuItemAdd("The methods of replication", "#0.5");
+menuItemAdd("Next Step", "#0.6");
+menuItemAdd("Related Topics", "#0.7");
+menuItemAdd("Planning", "#0.8");
+menuItemAdd("Discussion", "#0.9");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Introduction_To_Replication">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Introduction_To_Replication">View other revisions</a><br>Last edited August 30, 2006 23:15 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Introduction_To_Replication">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Introduction_To_Replication">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Once I get that upgrade to 36-hour days, I will tackle that. (Mychaeel)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

@@ -1,0 +1,852 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: WeaponSystemFramework</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=WeaponSystemFramework; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=WeaponSystemFramework">WeaponSystemFramework</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>The Vehicle Weapon System Framework</h2>
+<p>I've written up this class to make implementation of weapons for vehicles both easily and quickly. A configurable zoom option and automated projectile firing/timing is already implemented and toggleable with use of the defaultproperties section.</p>
+<p>A note about the zoom, in order to ensure the behavior intended, both the zoom and await variables needs to be set to true. It should still *work* but i don't suggest it.</p>
+<h3><a name="0.1.1"></a>Key Concepts</h3>
+<p>The server will exclusively call the TimerUpdateWithoutDriver and TimerUpdateWithDriver. The First every tick ( Be careful ), and the other every tick while a player is in the vehicle.</p>
+<p>All of the Server* functions will be executed exclusively on the server.</p>
+<p>All of the Client* functions will be executed exclusively on network-clients.</p>
+<p>All of the base functions of this same family ( I.E. ServerPriFireInactive, ClientPriFireInactive, *PriFireInactive* ) are executed on the local machine of the person in the turret.</p>
+<p>All client effects/rendering should be done in the base functions (PriFireInactive). This is the first function called, and is called locally on the client before any replication takes place, this will both be the fastest/most frequent to execute code.</p>
+<p>Client* functions may not actually have a practical use but if you come up with something that should really be done in there let me know.</p>
+<p>To make your primary fire spawn a projectile. </p>
+<pre class="uscript"><span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+bPriFireSpawnProject<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+bRepeatedPriFire<span class="uscript-operator">=</span><span class="uscript-keyword">true</span> <span class="uscript-comment">//optional</span>
+PrimaryProjectileClass<span class="uscript-operator">=</span>MyPackage<span class="uscript-operator">.</span>MyClass
+FireInterval<span class="uscript-operator">=</span><span class="uscript-number">1.0</span>
+<span class="uscript-operator">}</span></pre><p>To make your alternate fire zoom. </p>
+<pre class="uscript"><span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+  bDoAltZoom<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+  bShouldAwaitAltRelease<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+  ZoomMinFov<span class="uscript-operator">=</span><span class="uscript-number">25.000</span>
+  ZoomMaxFov<span class="uscript-operator">=</span><span class="uscript-number">120.0</span>
+  ZoomIncrement<span class="uscript-operator">=</span><span class="uscript-number">0.5</span>
+<span class="uscript-operator">}</span></pre><p>Note that setting zoomIncrement to a negative value makes a zoom out. A positive ZoomIncrement zooms in. (FOV-ZoomIncrement)</p>
+<p>Here are all of the new default properties, with what i have thought to be fairly intuitive names.</p>
+<pre class="uscript"><span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+     TimerUpdateFrequency<span class="uscript-operator">=</span><span class="uscript-number">0.01</span><span class="uscript-operator">;</span>
+     bDoPriZoom<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+     bDoAltZoom<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+     bPriFireSpawnProjectile<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+     bAltFireSpawnProjectile<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+     bShouldAwaitPriRelease<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+     bShouldAwaitAltRelease<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+     bRepeatedPriFire<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+     bRepeatedAltFire<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+     ZoomMinFov<span class="uscript-operator">=</span><span class="uscript-number">25.000</span>
+     ZoomMaxFov<span class="uscript-operator">=</span><span class="uscript-number">120.0</span>
+     ZoomIncrement<span class="uscript-operator">=</span><span class="uscript-number">0.5</span>
+     FireInterval<span class="uscript-operator">=</span><span class="uscript-number">1.0</span>
+     AltFireInterval<span class="uscript-operator">=</span><span class="uscript-number">0.0</span>
+     PrimaryProjectileClass<span class="uscript-operator">=</span><span class="uscript-keyword">none</span>
+     SecondaryProjectileClass<span class="uscript-operator">=</span><span class="uscript-keyword">none</span>
+<span class="uscript-operator">}</span></pre><pre class="uscript"><span class="uscript-keyword">class</span> MTPBaseStationaryWeapon <span class="uscript-keyword">extends</span> ONSWeapon<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// Real-Time Key Press Variables</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bIsAltFiring<span class="uscript-operator">,</span> bWasAltFiring<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bIsPriFiring<span class="uscript-operator">,</span> bWasPriFiring<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bAwaitingAltRelease<span class="uscript-operator">,</span> bAwaitingPriRelease<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// Realtime Zoom Variables</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> ZoomLevel<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bZooming<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// Real-Time Weapon Variables</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> LastPriFireTime<span class="uscript-operator">,</span> LastAltFireTime<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// Configuration Weapon Variables</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> TimerUpdateFrequency<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Projectile<span class="uscript-operator">&gt;</span> PrimaryProjectileClass<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Projectile<span class="uscript-operator">&gt;</span> SecondaryProjectileClass<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bPriFireSpawnProjectile<span class="uscript-operator">,</span> bAltFireSpawnProjectile<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bRepeatedPriFire<span class="uscript-operator">,</span> bRepeatedAltFire<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// Configuration Key Press Variables</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bShouldAwaitAltRelease<span class="uscript-operator">,</span> bShouldAwaitPriRelease<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// Config/Default Oriented Zoom Variables</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> ZoomMinFov<span class="uscript-operator">,</span> ZoomMaxFov<span class="uscript-operator">,</span> ZoomIncrement<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bDoPriZoom<span class="uscript-operator">,</span> bDoAltZoom<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">replication</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Role <span class="uscript-operator">==</span> Role_Authority <span class="uscript-operator">)</span>
+        LastPriFireTime<span class="uscript-operator">,</span> LastAltFireTime<span class="uscript-operator">,</span> bAwaitingAltRelease<span class="uscript-operator">,</span> bAwaitingPriRelease<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Role <span class="uscript-operator">&lt;</span> Role_Authority <span class="uscript-operator">)</span>
+        ServerPriFirePressed<span class="uscript-operator">,</span> ServerPriFireReleased<span class="uscript-operator">,</span> ServerPriFireInactive<span class="uscript-operator">,</span> ServerPriFireActive<span class="uscript-operator">,</span>
+        ServerAltFirePressed<span class="uscript-operator">,</span> ServerAltFireReleased<span class="uscript-operator">,</span> ServerAltFireInactive<span class="uscript-operator">,</span> ServerAltFireActive<span class="uscript-operator">,</span>
+        ServerTimerUpdateWithDriver<span class="uscript-operator">,</span> ServerTimerUpdateWithoutDriver<span class="uscript-operator">,</span>
+        ServerCantPriFire<span class="uscript-operator">,</span> ServerCantAltFire<span class="uscript-operator">,</span> ServerAwaitRelease<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Role <span class="uscript-operator">==</span> Role_Authority <span class="uscript-operator">)</span>
+        ClientPriFirePressed<span class="uscript-operator">,</span> ClientPriFireReleased<span class="uscript-operator">,</span> ClientPriFireInactive<span class="uscript-operator">,</span> ClientPriFireActive<span class="uscript-operator">,</span>
+        ClientAltFirePressed<span class="uscript-operator">,</span> ClientAltFireReleased<span class="uscript-operator">,</span> ClientAltFireInactive<span class="uscript-operator">,</span> ClientAltFireActive<span class="uscript-operator">,</span>
+        ClientTimerUpdateWithDriver<span class="uscript-operator">,</span> ClientTimerUpdateWithoutDriver<span class="uscript-operator">,</span>
+        ClientCantPriFire<span class="uscript-operator">,</span> ClientCantAltFire<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> CalcWeaponFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>CalcWeaponFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+
+    DualFireOffset<span class="uscript-operator">*=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">event</span> <span class="uscript-type">bool</span> AttemptFire<span class="uscript-operator">(</span>Controller C<span class="uscript-operator">,</span> <span class="uscript-type">bool</span> bAltFire<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> bCanFire<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Role <span class="uscript-operator">!=</span> ROLE_Authority <span class="uscript-operator">||</span> bForceCenterAim<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bAltFire <span class="uscript-operator">&amp;&amp;</span> CanPriFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        bCanFire <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bAltFire <span class="uscript-operator">&amp;&amp;</span> CanAltFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        bCanFire <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bCanFire <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bCorrectAim<span class="uscript-operator">)</span>
+            WeaponFireRotation <span class="uscript-operator">=</span> AdjustAim<span class="uscript-operator">(</span>bAltFire<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Spread <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+            WeaponFireRotation <span class="uscript-operator">=</span> rotator<span class="uscript-operator">(</span>vector<span class="uscript-operator">(</span>WeaponFireRotation<span class="uscript-operator">)</span> <span class="uscript-operator">+</span> VRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>Spread<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        Instigator<span class="uscript-operator">.</span>MakeNoise<span class="uscript-operator">(</span><span class="uscript-number">1.0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bAltFire<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            AltFire<span class="uscript-operator">(</span>C<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span>
+        <span class="uscript-operator">{</span>
+            Fire<span class="uscript-operator">(</span>C<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+        AimLockReleaseTime <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">+</span> FireCountdown <span class="uscript-operator">*</span> FireIntervalAimLock<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">return</span> bCanFire<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Projectile<span class="uscript-operator">&gt;</span> GetProjectileClass<span class="uscript-operator">(</span><span class="uscript-type">bool</span> bAltFire<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bAltFire <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> GetSecondaryProjectileClass<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        <span class="uscript-keyword">return</span> GetPrimaryProjectileClass<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Projectile<span class="uscript-operator">&gt;</span> GetPrimaryProjectileClass<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> PrimaryProjectileClass<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Projectile<span class="uscript-operator">&gt;</span> GetSecondaryProjectileClass<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> SecondaryProjectileClass<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> SpawnProjectileNone<span class="uscript-operator">(</span><span class="uscript-type">bool</span> bAltFire<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bAltFire <span class="uscript-operator">)</span>
+        SpawnProjectileNoneAltFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        SpawnProjectileNonePriFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> SpawnProjectileNoneAltFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> SpawnProjectileNonePriFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Projectile SpawnProjectileInit<span class="uscript-operator">(</span>Projectile P<span class="uscript-operator">,</span> <span class="uscript-type">bool</span> bAltFire<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> P<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// You'll Probably Never Want To Super.Call() this when overriding</span>
+<span class="uscript-keyword">function</span> PlayFiringAnimations<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>Level<span class="uscript-operator">.</span>bDropDetail <span class="uscript-operator">&amp;&amp;</span> Level<span class="uscript-operator">.</span>DetailMode <span class="uscript-operator">!=</span> DM_Low<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DualFireOffset <span class="uscript-operator">&lt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+            PlayAnim<span class="uscript-operator">(</span><span class="uscript-name">'RightFire'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+            PlayAnim<span class="uscript-operator">(</span><span class="uscript-name">'LeftFire'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Projectile SpawnProjectile<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Projectile<span class="uscript-operator">&gt;</span> ProjClass<span class="uscript-operator">,</span> <span class="uscript-type">bool</span> bAltFire<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Projectile P<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Projectile<span class="uscript-operator">&gt;</span> ProClass<span class="uscript-operator">;</span>
+
+    PlayFiringAnimations<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    ProClass <span class="uscript-operator">=</span> GetProjectileClass<span class="uscript-operator">(</span>bAltFire<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Get Current Client Weapon Rotation</span>
+    CalcWeaponFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> ProClass <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+        P <span class="uscript-operator">=</span> <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>SpawnProjectile<span class="uscript-operator">(</span>ProClass<span class="uscript-operator">,</span> bAltFire<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> P <span class="uscript-operator">==</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        SpawnProjectileNone<span class="uscript-operator">(</span>bAltFire<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">none</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    P<span class="uscript-operator">.</span>SetOwner<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> SpawnProjectileInit<span class="uscript-operator">(</span>P<span class="uscript-operator">,</span> bAltFire<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> WeaponInit<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    LastPriFireTime<span class="uscript-operator">=</span>Level<span class="uscript-operator">.</span>TimeSeconds<span class="uscript-operator">;</span>
+    LastAltFireTime<span class="uscript-operator">=</span>Level<span class="uscript-operator">.</span>TimeSeconds<span class="uscript-operator">;</span>
+    bAwaitingPriRelease<span class="uscript-operator">=</span><span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    bAwaitingAltRelease<span class="uscript-operator">=</span><span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> PriFireWaitingRelease<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> bAwaitingPriRelease <span class="uscript-operator">&amp;&amp;</span> bShouldAwaitPriRelease<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> AltFireWaitingRelease<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> bAwaitingAltRelease <span class="uscript-operator">&amp;&amp;</span> bShouldAwaitAltRelease<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/////////////////////////////////////////////////////////</span>
+<span class="uscript-comment">// Entry Point Timer Functions, Called On Client OR Server</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PriFirePressed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> ShouldPriZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        StartZoom<span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    ServerPriFirePressed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PriFireReleased<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bDoPriZoom <span class="uscript-operator">)</span>
+        EndZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    ServerPriFireReleased<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PriFireInactive<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    ServerPriFireInactive<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PriFireActive<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> ShouldPriZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        DoZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    ServerPriFireActive<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> AltFirePressed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> ShouldAltZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        StartZoom<span class="uscript-operator">(</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    ServerAltFirePressed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> AltFireReleased<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bDoAltZoom <span class="uscript-operator">)</span>
+        EndZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    ServerAltFireReleased<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> AltFireInactive<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    ServerAltFireInactive<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> AltFireActive<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> ShouldAltZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        DoZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    ServerAltFireActive<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> TimerUpdateWithDriver<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    ServerTimerUpdateWithDriver<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> TimerUpdateWithoutDriver<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    ServerTimerUpdateWithoutDriver<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+<span class="uscript-comment">// End Entry Point Timer Functions</span>
+<span class="uscript-comment">////////////////////////////////////////</span>
+
+<span class="uscript-keyword">function</span> ServerAwaitRelease<span class="uscript-operator">(</span> <span class="uscript-type">bool</span> bAltFire <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bAltFire <span class="uscript-operator">)</span>
+        bAwaitingAltRelease<span class="uscript-operator">=</span><span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        bAwaitingPriRelease<span class="uscript-operator">=</span><span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/////////////////////////////////////////////////</span>
+<span class="uscript-comment">// Zooming Functions</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">// Only One Zoom Feature Per Weapon</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> StartZoom<span class="uscript-operator">(</span><span class="uscript-type">bool</span> bAltFire<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> ZoomLevel <span class="uscript-operator">!=</span> <span class="uscript-number">0.0</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        RevertZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        ServerAwaitRelease<span class="uscript-operator">(</span> bAltFire <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+    <span class="uscript-operator">{</span>
+        ZoomInit<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        DoZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ZoomInit<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+        bZooming<span class="uscript-operator">=</span><span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> RevertZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+      EndZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      ZoomLevel <span class="uscript-operator">=</span> <span class="uscript-number">0.0</span><span class="uscript-operator">;</span>
+
+      <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Instigator <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">&amp;&amp;</span> Instigator<span class="uscript-operator">.</span>Controller <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">&amp;&amp;</span> PlayerController<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+           PlayerController<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">.</span>DesiredFOV <span class="uscript-operator">=</span> PlayerController<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">.</span>DefaultFOV<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> EndZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+      bZooming<span class="uscript-operator">=</span><span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> IsZooming<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> bZooming<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> DoZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-operator">!</span>IsZooming<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    PreZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    ZoomLevel <span class="uscript-operator">+=</span> ZoomIncrement<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-number">90.0</span> <span class="uscript-operator">-</span> ZoomLevel <span class="uscript-operator">&lt;</span> ZoomMinFov <span class="uscript-operator">)</span>
+        ZoomLevel <span class="uscript-operator">=</span> <span class="uscript-number">90</span> <span class="uscript-operator">-</span> ZoomMinFov<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-number">90.0</span> <span class="uscript-operator">-</span> ZoomLevel <span class="uscript-operator">&gt;</span> ZoomMaxFov <span class="uscript-operator">)</span>
+        ZoomLevel <span class="uscript-operator">=</span> <span class="uscript-number">90</span> <span class="uscript-operator">-</span> ZoomMaxFov<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Instigator <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">&amp;&amp;</span> Instigator<span class="uscript-operator">.</span>Controller <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">&amp;&amp;</span> PlayerController<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+      PlayerController<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">.</span>DesiredFOV <span class="uscript-operator">=</span> FClamp<span class="uscript-operator">(</span><span class="uscript-number">90.0</span> <span class="uscript-operator">-</span> ZoomLevel<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">170</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    PostZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PreZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> ShouldAltZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> bDoAltZoom <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>AltFireWaitingRelease<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> ShouldPriZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> bDoPriZoom <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>PriFireWaitingRelease<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/////////////////////////////////////////</span>
+<span class="uscript-comment">// Begin Server Side Timer Functions</span>
+<span class="uscript-comment">// These Must Be Super.Called()</span>
+<span class="uscript-comment">// Or The Client Functions Won't Be Replicated</span>
+<span class="uscript-keyword">function</span> ServerPriFirePressed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    ServerTryPriFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    ClientPriFirePressed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> ServerTryPriFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> CanPriFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        ServerPriFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+       ServerCantPriFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// This Is Not The Place For (House Keeping), use Inactive,</span>
+<span class="uscript-comment">// This is for specific thigns happening when the mouse is released</span>
+<span class="uscript-comment">// I.E. Fire On Release.</span>
+<span class="uscript-keyword">function</span> ServerPriFireReleased<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    ClientPriFireReleased<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    ServerPriFireInactive<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> ServerPriFireInactive<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> PriFireWaitingRelease<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        bAwaitingPriRelease<span class="uscript-operator">=</span><span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    ClientPriFireInactive<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> ServerPriFireActive<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bRepeatedPriFire <span class="uscript-operator">)</span>
+        ServerTryPriFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    ClientPriFireActive<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/////////////////////////</span>
+<span class="uscript-comment">// Server Alt Fire Routines</span>
+<span class="uscript-keyword">function</span> ServerAltFirePressed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    ServerTryAltFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    ClientAltFirePressed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> ServerTryAltFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> CanAltFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        ServerAltFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        ServerCantAltFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> ServerAltFireReleased<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    ClientAltFireReleased<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    ServerAltFireInactive<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> ServerAltFireInactive<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> AltFireWaitingRelease<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        bAwaitingAltRelease<span class="uscript-operator">=</span><span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    ClientAltFireInactive<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> ServerAltFireActive<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bRepeatedAltFire <span class="uscript-operator">)</span>
+        ServerTryAltFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    ClientAltFireActive<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> ServerTimerUpdateWithDriver<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    ClientTimerUpdateWithDriver<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> ServerTimerUpdateWithoutDriver<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    ClientTimerUpdateWithoutDriver<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+<span class="uscript-comment">// End Server Side Timer Functions</span>
+<span class="uscript-comment">//////////////////////////////////////////</span>
+
+<span class="uscript-comment">/////////////////////////////////////////////</span>
+<span class="uscript-comment">// Pri Fire Guts</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CanPriFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-operator">(</span>LastPriFireTime <span class="uscript-operator">+</span> FireInterval<span class="uscript-operator">)</span> <span class="uscript-operator">&lt;=</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>PriFireWaitingRelease<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// Overriding Should Call Super After All Other Functions</span>
+<span class="uscript-comment">// Use ServerPostPriFire To Do Modifications After Projectile Exists</span>
+<span class="uscript-keyword">function</span> ServerPriFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    LastPriFireTime<span class="uscript-operator">=</span>Level<span class="uscript-operator">.</span>TimeSeconds<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bPriFireSpawnProjectile <span class="uscript-operator">)</span>
+        SpawnProjectile<span class="uscript-operator">(</span><span class="uscript-keyword">none</span><span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    ServerPostPriFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> ServerCantPriFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    ClientCantPriFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ClientCantPriFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> ServerPostPriFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">////////////////////////////////////////</span>
+<span class="uscript-comment">//Alt Fire Guts</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CanAltFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-operator">(</span>LastAltFireTime <span class="uscript-operator">+</span> AltFireInterval<span class="uscript-operator">)</span> <span class="uscript-operator">&lt;=</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>AltFireWaitingRelease<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// Overriding Should Call super After All Other Commands</span>
+<span class="uscript-comment">// Use ServerPostAltFire To Do Modifications After Projectile Exists</span>
+<span class="uscript-keyword">function</span> ServerAltFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    LastAltFireTime<span class="uscript-operator">=</span>Level<span class="uscript-operator">.</span>TimeSeconds<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bAltFireSpawnProjectile <span class="uscript-operator">)</span>
+        SpawnProjectile<span class="uscript-operator">(</span><span class="uscript-keyword">none</span><span class="uscript-operator">,</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    ServerPostAltFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> ServerPostAltFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> ServerCantAltFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    ClientCantAltFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ClientCantAltFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//////////////////////////////////////////</span>
+<span class="uscript-comment">// Begin Client Side Timer Functions</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ClientPriFirePressed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ClientPriFireReleased<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ClientPriFireInactive<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ClientPriFireActive<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ClientAltFirePressed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ClientAltFireReleased<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ClientAltFireInactive<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ClientAltFireActive<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ClientTimerUpdateWithDriver<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ClientTimerUpdateWithoutDriver<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+<span class="uscript-comment">// End Client Side Timer Functions</span>
+<span class="uscript-comment">//////////////////////////////////////</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">state</span> ProjectileFireMode
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> BeginState<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>BeginState<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        SetTimer<span class="uscript-operator">(</span>TimerUpdateFrequency<span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-comment">//Input Var Initializations</span>
+        bIsAltFiring <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+        bIsPriFiring <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-comment">// Zoom Init</span>
+        RevertZoom<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        WeaponInit<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> EndState<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        SetTimer<span class="uscript-operator">(</span><span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>EndState<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">// For Bot Support</span>
+    <span class="uscript-keyword">function</span> Fire<span class="uscript-operator">(</span>Controller C<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        PriFirePressed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> AltFire<span class="uscript-operator">(</span>Controller C<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        AltFirePressed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> ROLE <span class="uscript-operator">==</span> ROLE_Authority <span class="uscript-operator">)</span>
+            TimerUpdateWithoutDriver<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-comment">// Re-Init If  We Are An Un-Powered Turret On The Server</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Role <span class="uscript-operator">==</span> ROLE_Authority <span class="uscript-operator">&amp;&amp;</span> ONSStationaryWeaponPawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">&amp;&amp;</span>
+                <span class="uscript-operator">!</span>ONSStationaryWeaponPawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>bPowered <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            WeaponInit<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Instigator <span class="uscript-operator">==</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">||</span> Instigator<span class="uscript-operator">.</span>Controller <span class="uscript-operator">==</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+            <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> ROLE <span class="uscript-operator">==</span> ROLE_Authority <span class="uscript-operator">)</span>
+            TimerUpdateWithDriver<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-operator">!</span>Instigator<span class="uscript-operator">.</span>IsLocallyControlled<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-comment">///////////////////////////////////////////</span>
+        <span class="uscript-comment">// Key Input Data Initilization</span>
+
+        bWasAltFiring <span class="uscript-operator">=</span> bIsAltFiring<span class="uscript-operator">;</span>
+        bIsAltFiring <span class="uscript-operator">=</span> <span class="uscript-operator">!</span><span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">.</span>bAltFire <span class="uscript-operator">==</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        bWasPriFiring <span class="uscript-operator">=</span> bIsPriFiring<span class="uscript-operator">;</span>
+        bIsPriFiring <span class="uscript-operator">=</span> <span class="uscript-operator">!</span><span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>Controller<span class="uscript-operator">.</span>bFire <span class="uscript-operator">==</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-comment">//////////////////////////////////////////</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bIsPriFiring <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>bWasPriFiring <span class="uscript-operator">)</span> <span class="uscript-comment">// Primary Fire Was Just Pressed</span>
+        <span class="uscript-operator">{</span>
+        <span class="uscript-comment">//      log("["$Level.TimeSeconds@"] MTPBaseStationaryWeapon: Pri Fire Pressed");</span>
+              PriFirePressed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bIsPriFiring <span class="uscript-operator">&amp;&amp;</span> bWasPriFiring <span class="uscript-operator">)</span> <span class="uscript-comment">// Primary Fire Was Just Released</span>
+        <span class="uscript-operator">{</span>
+         <span class="uscript-comment">//   log("["$Level.TimeSeconds@"] MTPBaseStationaryWeapon: Pri Fire Released");</span>
+            PriFireReleased<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bIsPriFiring <span class="uscript-operator">)</span>  <span class="uscript-comment">// Code Executed When Primary Fire is Not Pressed</span>
+        <span class="uscript-operator">{</span>
+         <span class="uscript-comment">//   log("["$Level.TimeSeconds@"] MTPBaseStationaryWeapon: Pri Fire Inactive");</span>
+
+            PriFireInactive<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span> <span class="uscript-comment">// Primary Fire Is Pressed</span>
+        <span class="uscript-operator">{</span>
+         <span class="uscript-comment">//   log("["$Level.TimeSeconds@"] MTPBaseStationaryWeapon: Pri Fire Active");</span>
+
+            PriFireActive<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bIsAltFiring <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>bWasAltFiring <span class="uscript-operator">)</span>  <span class="uscript-comment">// Alt Fire Was Just Pressed</span>
+        <span class="uscript-operator">{</span>
+         <span class="uscript-comment">//   log("["$Level.TimeSeconds@"] MTPBaseStationaryWeapon: Alt Fire Pressed");</span>
+            AltFirePressed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bIsAltFiring <span class="uscript-operator">&amp;&amp;</span> bWasAltFiring <span class="uscript-operator">)</span>  <span class="uscript-comment">// Alt Fire Was Just Released</span>
+        <span class="uscript-operator">{</span>
+         <span class="uscript-comment">//    log("["$Level.TimeSeconds@"] MTPBaseStationaryWeapon: Alt Fire Released");</span>
+             AltFireReleased<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bIsAltFiring <span class="uscript-operator">)</span> <span class="uscript-comment">// Code Executed When Alt Fire is Not Pressed</span>
+        <span class="uscript-operator">{</span>
+        <span class="uscript-comment">//    log("["$Level.TimeSeconds@"] MTPBaseStationaryWeapon: Alt Fire Inactive");</span>
+             AltFireInactive<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span>  <span class="uscript-comment">// Alt Fire Is Pressed</span>
+        <span class="uscript-operator">{</span>
+        <span class="uscript-comment">//    log("["$Level.TimeSeconds@"] MTPBaseStationaryWeapon: Alt Fire Active");</span>
+
+             AltFireActive<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+     YawBone<span class="uscript-operator">=</span><span class="uscript-string">"TurretBase"</span>
+     PitchBone<span class="uscript-operator">=</span><span class="uscript-string">"Dummy01"</span>
+     PitchUpLimit<span class="uscript-operator">=</span><span class="uscript-number">15000</span>
+     PitchDownLimit<span class="uscript-operator">=</span><span class="uscript-number">52500</span>
+     WeaponFireAttachmentBone<span class="uscript-operator">=</span><span class="uscript-string">"TurretCockpit"</span>
+     GunnerAttachmentBone<span class="uscript-operator">=</span><span class="uscript-string">"TurretCockpit"</span>
+     WeaponFireOffset<span class="uscript-operator">=</span><span class="uscript-number">25.000000</span>
+     DualFireOffset<span class="uscript-operator">=</span><span class="uscript-number">75.000000</span>
+     bInstantRotation<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     bInstantFire<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+     bDualIndependantTargeting<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     AIInfo<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>bInstantHit<span class="uscript-operator">=</span><span class="uscript-keyword">False</span><span class="uscript-operator">,</span>aimerror<span class="uscript-operator">=</span><span class="uscript-number">750.000000</span><span class="uscript-operator">)</span>
+     Mesh<span class="uscript-operator">=</span>SkeletalMesh<span class="uscript-name">'ONSWeapons-A.NewManualGun'</span>
+     CollisionRadius<span class="uscript-operator">=</span><span class="uscript-number">50.000000</span>
+     CollisionHeight<span class="uscript-operator">=</span><span class="uscript-number">70.000000</span>
+     TimerUpdateFrequency<span class="uscript-operator">=</span><span class="uscript-number">0.01</span><span class="uscript-operator">;</span>
+     bDoPriZoom<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+     bDoAltZoom<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+     bPriFireSpawnProjectile<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+     bAltFireSpawnProjectile<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+     bShouldAwaitPriRelease<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+     bShouldAwaitAltRelease<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+     bRepeatedPriFire<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+     bRepeatedAltFire<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+     ZoomMinFov<span class="uscript-operator">=</span><span class="uscript-number">25.000</span>
+     ZoomMaxFov<span class="uscript-operator">=</span><span class="uscript-number">120.0</span>
+     ZoomIncrement<span class="uscript-operator">=</span><span class="uscript-number">0.5</span>
+     FireInterval<span class="uscript-operator">=</span><span class="uscript-number">1.0</span>
+     AltFireInterval<span class="uscript-operator">=</span><span class="uscript-number">0.0</span>
+     PrimaryProjectileClass<span class="uscript-operator">=</span><span class="uscript-keyword">none</span>
+     SecondaryProjectileClass<span class="uscript-operator">=</span><span class="uscript-keyword">none</span>
+<span class="uscript-operator">}</span></pre><script type="text/javascript"><!--
+ menuItemAdd("The Vehicle Weapon System Framework", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Key Concepts", "#0.1.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=WeaponSystemFramework">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=WeaponSystemFramework">View other revisions</a><br>Last edited July 27, 2004 15:25 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=WeaponSystemFramework">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/WeaponSystemFramework">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>The three virtues of a programmer: Laziness, Impatience, and Hubris. (Larry Wall)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

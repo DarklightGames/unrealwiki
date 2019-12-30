@@ -1,0 +1,804 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: VitalOverdose/The DropShip Controller</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=VitalOverdose/The_DropShip_Controller; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="vitaloverdose.html">VitalOverdose</a>/<a href="http://wiki.beyondunreal.com/wiki?back=VitalOverdose/The+DropShip+Controller">The DropShip Controller</a></h1>
+	<div class="wiki"><h1><a name="1"></a>Vehicle Dropship</h1>
+<h2><a name="1.1"></a>By Darknet &amp; vitaloverdose</h2>
+<h3><a name="1.1.1"></a>Works online</h3>
+<p>this is my solution to a long standing problem with creating a dropship that can carry vehicles. I spent quite a long time on this script.The ship was built and made flyable by darknet and i then subclassed the ship and added the dropship system. Theres no reason this cant be a single class its just splitting it up this way allows 2 people  to work on the same project at the same time. This system if in the alpha test stage, it had been tested online by a few people as well as myself and so far all the reports have been good. We did have a moving hatch for the back door but because you cant animate collision on meshes online the idea had to be scraped.Though i think ive worked out a way around it .</p>
+<h3><a name="1.1.2"></a>Darknets Dropship.</h3>
+<p><img alt="[Shot00002]" src="images/shot00002.jpeg" class="image-inline"></p>
+<p>(Darknet)</p>
+<pre class="uscript"><span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-keyword">class</span> DarkDropShip <span class="uscript-keyword">extends</span> ONSattackCraft
+    <span class="uscript-keyword">placeable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-exec">#exec OBJ LOAD FILE=..\animations\darkdropship_an.ukx</span>
+
+<span class="uscript-keyword">var</span>     <span class="uscript-type">int</span>                             CurrentIndex<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span>     <span class="uscript-type">bool</span>                            bDoorIsOpen<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// AI hint</span>
+<span class="uscript-keyword">Function</span> <span class="uscript-type">Bool</span> FastVehicle<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Function</span> <span class="uscript-type">Bool</span> Dodge<span class="uscript-operator">(</span>eDoubleClickDir DoubleClickMove<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">&lt;</span> <span class="uscript-number">0.7</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        VehicleMovingTime <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">+</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+        Rise <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">Function</span> SpecialCalcBehindView<span class="uscript-operator">(</span>PlayerController PC<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> actor ViewActor<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> Vector CameraLocation<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> Rotator CameraRotation <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Local</span> Vector CamLookAt<span class="uscript-operator">,</span> HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> OffseTarget_Vector<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Local</span> Actor HitActor<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Local</span> Vector x<span class="uscript-operator">,</span> y<span class="uscript-operator">,</span> z<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DesiredTPCamDistance <span class="uscript-operator">&lt;</span> TPCamDistance<span class="uscript-operator">)</span>
+        TPCamDistance <span class="uscript-operator">=</span> FMax<span class="uscript-operator">(</span>DesiredTPCamDistance<span class="uscript-operator">,</span> TPCamDistance <span class="uscript-operator">-</span> CameraSpeed <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">-</span> LastCameraCalcTime<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DesiredTPCamDistance <span class="uscript-operator">&gt;</span> TPCamDistance<span class="uscript-operator">)</span>
+        TPCamDistance <span class="uscript-operator">=</span> FMin<span class="uscript-operator">(</span>DesiredTPCamDistance<span class="uscript-operator">,</span> TPCamDistance <span class="uscript-operator">+</span> CameraSpeed <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">-</span> LastCameraCalcTime<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    GetAxes<span class="uscript-operator">(</span>PC<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">,</span> x<span class="uscript-operator">,</span> y<span class="uscript-operator">,</span> z<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    ViewActor <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+    CamLookAt <span class="uscript-operator">=</span> GetCameraLocationStart<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>TPCamLookat <span class="uscript-operator">&gt;&gt;</span> Rotation<span class="uscript-operator">)</span> <span class="uscript-operator">+</span> TPCamWorldOffset<span class="uscript-operator">;</span>
+
+    OffseTarget_Vector <span class="uscript-operator">=</span> <span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    OffseTarget_Vector<span class="uscript-operator">.</span>X <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">1.0</span> <span class="uscript-operator">*</span> TPCamDistance<span class="uscript-operator">;</span>
+
+    CameraLocation <span class="uscript-operator">=</span> CamLookAt <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>OffseTarget_Vector <span class="uscript-operator">&gt;&gt;</span> PC<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    HitActor <span class="uscript-operator">=</span> Trace<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> CameraLocation<span class="uscript-operator">,</span> Location<span class="uscript-operator">,</span> <span class="uscript-keyword">true</span><span class="uscript-operator">,</span> <span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">40</span><span class="uscript-operator">,</span> <span class="uscript-number">40</span><span class="uscript-operator">,</span> <span class="uscript-number">40</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> HitActor <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span>
+         <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>HitActor<span class="uscript-operator">.</span>bWorldGeometry <span class="uscript-operator">||</span> HitActor <span class="uscript-operator">==</span> GetVehicleBase<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> Trace<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> CameraLocation<span class="uscript-operator">,</span> Location<span class="uscript-operator">,</span> <span class="uscript-keyword">False</span><span class="uscript-operator">,</span> <span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">40</span><span class="uscript-operator">,</span> <span class="uscript-number">40</span><span class="uscript-operator">,</span> <span class="uscript-number">40</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            CameraLocation <span class="uscript-operator">=</span> HitLocation<span class="uscript-operator">;</span>
+
+    CameraRotation <span class="uscript-operator">=</span> Normalize<span class="uscript-operator">(</span>PC<span class="uscript-operator">.</span>Rotation <span class="uscript-operator">+</span> PC<span class="uscript-operator">.</span>ShakeRot<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    CameraLocation <span class="uscript-operator">=</span> CameraLocation <span class="uscript-operator">+</span> PC<span class="uscript-operator">.</span>ShakeOffset<span class="uscript-operator">.</span>X <span class="uscript-operator">*</span> x <span class="uscript-operator">+</span> PC<span class="uscript-operator">.</span>ShakeOffset<span class="uscript-operator">.</span>Y <span class="uscript-operator">*</span> y <span class="uscript-operator">+</span> PC<span class="uscript-operator">.</span>ShakeOffset<span class="uscript-operator">.</span>Z <span class="uscript-operator">*</span> z<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Function</span> Died<span class="uscript-operator">(</span>Controller Killer<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>DamageType<span class="uscript-operator">&gt;</span> damageType<span class="uscript-operator">,</span> Vector HitLocation<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Local</span> <span class="uscript-type">Int</span> I<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">!=</span> NM_DedicatedServer<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>TrailEffects<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>I<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+            TrailEffects<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        TrailEffects<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span>StreamerEffect<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> I<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+            StreamerEffect<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        StreamerEffect<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Died<span class="uscript-operator">(</span>Killer<span class="uscript-operator">,</span> damageType<span class="uscript-operator">,</span> HitLocation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">Function</span> Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Local</span> <span class="uscript-type">Int</span> I<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">!=</span> NM_DedicatedServer<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>TrailEffects<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>I<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+            TrailEffects<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        TrailEffects<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span>StreamerEffect<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> I<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+            StreamerEffect<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        StreamerEffect<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> DrivingStatusChanged<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Local</span> Vector RotX<span class="uscript-operator">,</span> RotY<span class="uscript-operator">,</span> RotZ<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">Local</span> <span class="uscript-type">Int</span> I<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>DrivingStatusChanged<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bDriving <span class="uscript-operator">&amp;&amp;</span> Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">!=</span> NM_DedicatedServer <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>bDropDetail<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        GetAxes<span class="uscript-operator">(</span>Rotation<span class="uscript-operator">,</span>RotX<span class="uscript-operator">,</span>RotY<span class="uscript-operator">,</span>RotZ<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>TrailEffects<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">==</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            TrailEffects<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">=</span> TrailEffectPositions<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>
+
+            <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>TrailEffects<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>I<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>TrailEffects<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+                <span class="uscript-operator">{</span>
+                    TrailEffects<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span>TrailEffectClass<span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span> Location <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>TrailEffectPositions<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">&gt;&gt;</span> Rotation<span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                    TrailEffects<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetBase<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                    TrailEffects<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetRelativeRotation<span class="uscript-operator">(</span> <span class="uscript-keyword">rot</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">32768</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>StreamerEffect<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">==</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            StreamerEffect<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">=</span> StreamerEffectOffset<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>
+
+            <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span>StreamerEffect<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> I<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>StreamerEffect<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+                <span class="uscript-operator">{</span>
+                    StreamerEffect<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span>StreamerEffectClass<span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span> Location <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>StreamerEffectOffset<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">&gt;&gt;</span> Rotation<span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                    StreamerEffect<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetBase<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">!=</span> NM_DedicatedServer<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>TrailEffects<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>I<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+               TrailEffects<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+            TrailEffects<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+
+            <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span>StreamerEffect<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> I<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+                StreamerEffect<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+            StreamerEffect<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">Function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Local</span> <span class="uscript-type">float</span> EnginePitch<span class="uscript-operator">,</span> DesiredOpacity<span class="uscript-operator">,</span> DeltaOpacity<span class="uscript-operator">,</span> MaxOpacityChange<span class="uscript-operator">,</span> ThrustAmount<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Local</span> TrailEmitter T<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Local</span> <span class="uscript-type">int</span> I<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Local</span> Vector RelVel<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Local</span> <span class="uscript-type">Bool</span> NewStreamerActive<span class="uscript-operator">,</span> bIsBehindView<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Local</span> PlayerController PC<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">!=</span> NM_DedicatedServer<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        EnginePitch <span class="uscript-operator">=</span> <span class="uscript-number">64.0</span> <span class="uscript-operator">+</span> VSize<span class="uscript-operator">(</span>Velocity<span class="uscript-operator">)</span><span class="uscript-operator">/</span>MaxPitchSpeed <span class="uscript-operator">*</span> <span class="uscript-number">32.0</span><span class="uscript-operator">;</span>
+        SoundPitch <span class="uscript-operator">=</span> FClamp<span class="uscript-operator">(</span>EnginePitch<span class="uscript-operator">,</span> <span class="uscript-number">64</span><span class="uscript-operator">,</span> <span class="uscript-number">96</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        RelVel <span class="uscript-operator">=</span> Velocity <span class="uscript-operator">&lt;&lt;</span> Rotation<span class="uscript-operator">;</span>
+
+        PC <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>GetLocalPlayerController<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>PC <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> PC<span class="uscript-operator">.</span>ViewTarget <span class="uscript-operator">==</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span>
+            bIsBehindView <span class="uscript-operator">=</span> PC<span class="uscript-operator">.</span>bBehindView<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+            bIsBehindView <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-comment">// Adjust Engine FX depending on being drive/velocity</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>bIsBehindView<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span>TrailEffects<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> I<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+                TrailEffects<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetThrustEnabled<span class="uscript-operator">(</span><span class="uscript-keyword">False</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span>
+        <span class="uscript-operator">{</span>
+            ThrustAmount <span class="uscript-operator">=</span> FClamp<span class="uscript-operator">(</span>OutputThrust<span class="uscript-operator">,</span> <span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-number">1.0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+            <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span>TrailEffects<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> I<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                TrailEffects<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetThrustEnabled<span class="uscript-operator">(</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                TrailEffects<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetThrust<span class="uscript-operator">(</span>ThrustAmount<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+
+        <span class="uscript-comment">// Update streamer opacity (limit max change speed)</span>
+        DesiredOpacity <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>RelVel<span class="uscript-operator">.</span>X <span class="uscript-operator">-</span> StreamerOpacityRamp<span class="uscript-operator">.</span>Min<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-operator">(</span>StreamerOpacityRamp<span class="uscript-operator">.</span>Max <span class="uscript-operator">-</span> StreamerOpacityRamp<span class="uscript-operator">.</span>Min<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        DesiredOpacity <span class="uscript-operator">=</span> FClamp<span class="uscript-operator">(</span>DesiredOpacity<span class="uscript-operator">,</span> <span class="uscript-number">0.0</span><span class="uscript-operator">,</span> StreamerOpacityMax<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        MaxOpacityChange <span class="uscript-operator">=</span> DeltaTime <span class="uscript-operator">*</span> StreamerOpacityChangeRate<span class="uscript-operator">;</span>
+
+        DeltaOpacity <span class="uscript-operator">=</span> DesiredOpacity <span class="uscript-operator">-</span> StreamerCurrentOpacity<span class="uscript-operator">;</span>
+        DeltaOpacity <span class="uscript-operator">=</span> FClamp<span class="uscript-operator">(</span>DeltaOpacity<span class="uscript-operator">,</span> <span class="uscript-operator">-</span>MaxOpacityChange<span class="uscript-operator">,</span> MaxOpacityChange<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>bIsBehindView<span class="uscript-operator">)</span>
+            StreamerCurrentOpacity <span class="uscript-operator">=</span> <span class="uscript-number">0.0</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+            StreamerCurrentOpacity <span class="uscript-operator">+=</span> DeltaOpacity<span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>StreamerCurrentOpacity <span class="uscript-operator">&lt;</span> <span class="uscript-number">0.01</span><span class="uscript-operator">)</span>
+            NewStreamerActive <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+            NewStreamerActive <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span>StreamerEffect<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> I<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>NewStreamerActive<span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>StreamerActive<span class="uscript-operator">)</span>
+                <span class="uscript-operator">{</span>
+                    T <span class="uscript-operator">=</span> TrailEmitter<span class="uscript-operator">(</span>StreamerEffect<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                    T<span class="uscript-operator">.</span>ResetTrail<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-operator">}</span>
+                StreamerEffect<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Disabled <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+                StreamerEffect<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Opacity <span class="uscript-operator">=</span> StreamerCurrentOpacity<span class="uscript-operator">;</span>
+                <span class="uscript-operator">}</span>
+
+            <span class="uscript-keyword">else</span>
+               <span class="uscript-operator">{</span>
+                StreamerEffect<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Disabled <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+                StreamerEffect<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Opacity <span class="uscript-operator">=</span> <span class="uscript-number">0.0</span><span class="uscript-operator">;</span>
+               <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+
+        StreamerActive <span class="uscript-operator">=</span> NewStreamerActive<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Tick<span class="uscript-operator">(</span>DeltaTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Function</span> <span class="uscript-type">float</span> ImpactDamageModifier<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Local</span> <span class="uscript-type">float</span> Multiplier<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Local</span> Vector X<span class="uscript-operator">,</span> Y<span class="uscript-operator">,</span> Z<span class="uscript-operator">;</span>
+
+    GetAxes<span class="uscript-operator">(</span>Rotation<span class="uscript-operator">,</span> X<span class="uscript-operator">,</span> Y<span class="uscript-operator">,</span> Z<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ImpactInfo<span class="uscript-operator">.</span>ImpactNorm <span class="uscript-operator">Dot</span> Z <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+        Multiplier <span class="uscript-operator">=</span> <span class="uscript-number">0.75</span><span class="uscript-operator">-</span><span class="uscript-operator">(</span>ImpactInfo<span class="uscript-operator">.</span>ImpactNorm <span class="uscript-operator">dot</span> Z<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        Multiplier <span class="uscript-operator">=</span> <span class="uscript-number">1.0</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>ImpactDamageModifier<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">*</span> Multiplier<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Function</span> <span class="uscript-type">Bool</span> RecommendLongRangedAttack<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span> <span class="uscript-keyword">Return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span> <span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">Function</span> <span class="uscript-type">Bool</span> PlaceExitingDriver<span class="uscript-operator">(</span><span class="uscript-operator">)</span>                       <span class="uscript-comment">// &lt;&lt;&lt;&lt;&lt;&lt; FIXME Fix to not be specific to this class after demo</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">Local</span> <span class="uscript-type">Int</span> I<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Local</span> Vector tryPlace<span class="uscript-operator">,</span> Extent<span class="uscript-operator">,</span> HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> ZOffset<span class="uscript-operator">;</span>
+
+    Extent <span class="uscript-operator">=</span> Driver<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>CollisionRadius <span class="uscript-operator">*</span> <span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Extent <span class="uscript-operator">*=</span> <span class="uscript-number">2</span><span class="uscript-operator">;</span>
+    Extent<span class="uscript-operator">.</span>Z <span class="uscript-operator">=</span> Driver<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>CollisionHeight<span class="uscript-operator">;</span>
+    ZOffset <span class="uscript-operator">=</span> Driver<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>CollisionHeight <span class="uscript-operator">*</span> <span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Trace<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> Location <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>ZOffset <span class="uscript-operator">*</span> <span class="uscript-number">6</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span> Location<span class="uscript-operator">,</span> <span class="uscript-keyword">False</span><span class="uscript-operator">,</span> Extent<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">//avoid running Driver over by placing in direction perpendicular to velocity</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> VSize<span class="uscript-operator">(</span>Velocity<span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">100</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        tryPlace <span class="uscript-operator">=</span> Normal<span class="uscript-operator">(</span>Velocity <span class="uscript-operator">cross</span> <span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>CollisionRadius <span class="uscript-operator">+</span> Driver<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>CollisionRadius <span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-number">1.25</span> <span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">&lt;</span> <span class="uscript-number">0.5</span> <span class="uscript-operator">)</span>
+            tryPlace <span class="uscript-operator">*=</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span> <span class="uscript-comment">//randomly prefer other side</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Trace<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> Location <span class="uscript-operator">+</span> tryPlace <span class="uscript-operator">+</span> ZOffset<span class="uscript-operator">,</span> Location <span class="uscript-operator">+</span> ZOffset<span class="uscript-operator">,</span> <span class="uscript-keyword">False</span><span class="uscript-operator">,</span> Extent<span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> Driver<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>Location <span class="uscript-operator">+</span> tryPlace <span class="uscript-operator">+</span> ZOffset<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+             <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>Trace<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> Location <span class="uscript-operator">-</span> tryPlace <span class="uscript-operator">+</span> ZOffset<span class="uscript-operator">,</span> Location <span class="uscript-operator">+</span> ZOffset<span class="uscript-operator">,</span> <span class="uscript-keyword">False</span><span class="uscript-operator">,</span> Extent<span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> Driver<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>Location <span class="uscript-operator">-</span> tryPlace <span class="uscript-operator">+</span> ZOffset<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">for</span><span class="uscript-operator">(</span> i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span>ExitPositions<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> I<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> ExitPositions<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Z <span class="uscript-operator">!=</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+            ZOffset <span class="uscript-operator">=</span> <span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">*</span> ExitPositions<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Z<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+            ZOffset <span class="uscript-operator">=</span> Driver<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>CollisionHeight <span class="uscript-operator">*</span> <span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bRelativeExitPos <span class="uscript-operator">)</span>
+            tryPlace <span class="uscript-operator">=</span> Location <span class="uscript-operator">+</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>ExitPositions<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">-</span>ZOffset<span class="uscript-operator">)</span> <span class="uscript-operator">&gt;&gt;</span> Rotation<span class="uscript-operator">)</span> <span class="uscript-operator">+</span> ZOffset<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+            tryPlace <span class="uscript-operator">=</span> ExitPositions<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-comment">// First, do a line check (stops us passing through things on exit).</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bRelativeExitPos <span class="uscript-operator">&amp;&amp;</span> Trace<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> tryPlace<span class="uscript-operator">,</span> Location <span class="uscript-operator">+</span> ZOffset<span class="uscript-operator">,</span> <span class="uscript-keyword">False</span><span class="uscript-operator">,</span> Extent<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+            <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-comment">// Then see if we can place the player there.</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>Driver<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>tryPlace<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-comment">//==================Mod off From ONSPR=====================================</span>
+
+<span class="uscript-keyword">Function</span> AltFire<span class="uscript-operator">(</span><span class="uscript-keyword">optional</span> <span class="uscript-type">float</span> F<span class="uscript-operator">)</span>            <span class="uscript-comment">//avoid sending altfire to weapon</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">Super</span><span class="uscript-operator">(</span>Vehicle<span class="uscript-operator">)</span><span class="uscript-operator">.</span>AltFire<span class="uscript-operator">(</span>F<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">function</span> StaticPrecache<span class="uscript-operator">(</span>LevelInfo L<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>StaticPrecache<span class="uscript-operator">(</span>L<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    L<span class="uscript-operator">.</span>AddPrecacheStaticMesh<span class="uscript-operator">(</span>StaticMesh<span class="uscript-name">'ONSDeadVehicles-SM.RAPTORexploded.RaptorWing'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    L<span class="uscript-operator">.</span>AddPrecacheStaticMesh<span class="uscript-operator">(</span>StaticMesh<span class="uscript-name">'ONSDeadVehicles-SM.RAPTORexploded.RaptorTailWing'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    L<span class="uscript-operator">.</span>AddPrecacheStaticMesh<span class="uscript-operator">(</span>StaticMesh<span class="uscript-name">'ONSDeadVehicles-SM.RAPTORexploded.RaptorGun'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    L<span class="uscript-operator">.</span>AddPrecacheStaticMesh<span class="uscript-operator">(</span>StaticMesh<span class="uscript-name">'AW-2004Particles.Debris.Veh_Debris2'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    L<span class="uscript-operator">.</span>AddPrecacheStaticMesh<span class="uscript-operator">(</span>StaticMesh<span class="uscript-name">'AW-2004Particles.Debris.Veh_Debris1'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    L<span class="uscript-operator">.</span>AddPrecacheStaticMesh<span class="uscript-operator">(</span>StaticMesh<span class="uscript-name">'WeaponStaticMesh.RocketProj'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    L<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'AW-2004Particles.Energy.SparkHead'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    L<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'ExplosionTex.Framed.exp2_frames'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    L<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'ExplosionTex.Framed.exp1_frames'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    L<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'ExplosionTex.Framed.we1_frames'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    L<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'AW-2004Particles.Weapons.SmokePanels2'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    L<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'AW-2004Particles.Fire.NapalmSpot'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    L<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'EpicParticles.Fire.SprayFire1'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    L<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'VMVehicles-TX.AttackCraftGroup.RaptorColorRed'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    L<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'VMVehicles-TX.AttackCraftGroup.RaptorColorBlue'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    L<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'VMVehicles-TX.AttackCraftGroup.AttackCraftNoColor'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    L<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'AW-2004Particles.Weapons.TrailBlura'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    L<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'Engine.GRADIENT_Fade'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    L<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'VMVehicles-TX.AttackCraftGroup.raptorCOLORtest'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    L<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'AW-2004Particles.Fire.SmokeFragment'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">Function</span> UpdatePrecacheStaticMeshes<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheStaticMesh<span class="uscript-operator">(</span>StaticMesh<span class="uscript-name">'ONSDeadVehicles-SM.RAPTORexploded.RaptorWing'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheStaticMesh<span class="uscript-operator">(</span>StaticMesh<span class="uscript-name">'ONSDeadVehicles-SM.RAPTORexploded.RaptorTailWing'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheStaticMesh<span class="uscript-operator">(</span>StaticMesh<span class="uscript-name">'ONSDeadVehicles-SM.RAPTORexploded.RaptorGun'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheStaticMesh<span class="uscript-operator">(</span>StaticMesh<span class="uscript-name">'AW-2004Particles.Debris.Veh_Debris2'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheStaticMesh<span class="uscript-operator">(</span>StaticMesh<span class="uscript-name">'AW-2004Particles.Debris.Veh_Debris1'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheStaticMesh<span class="uscript-operator">(</span>StaticMesh<span class="uscript-name">'WeaponStaticMesh.RocketProj'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>UpdatePrecacheStaticMeshes<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">Function</span> UpdatePrecacheMaterials<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'AW-2004Particles.Energy.SparkHead'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'ExplosionTex.Framed.exp2_frames'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'ExplosionTex.Framed.exp1_frames'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'ExplosionTex.Framed.we1_frames'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'AW-2004Particles.Weapons.SmokePanels2'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'AW-2004Particles.Fire.NapalmSpot'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'EpicParticles.Fire.SprayFire1'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'VMVehicles-TX.AttackCraftGroup.RaptorColorRed'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'VMVehicles-TX.AttackCraftGroup.RaptorColorBlue'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'VMVehicles-TX.AttackCraftGroup.AttackCraftNoColor'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'AW-2004Particles.Weapons.TrailBlura'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'Engine.GRADIENT_Fade'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'VMVehicles-TX.AttackCraftGroup.raptorCOLORtest'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'AW-2004Particles.Fire.SmokeFragment'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>UpdatePrecacheMaterials<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+     MaxPitchSpeed<span class="uscript-operator">=</span><span class="uscript-number">600.000000</span>
+     TrailEffectPositions<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">672.000000</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">480.000000</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">20.000000</span><span class="uscript-operator">)</span>
+     TrailEffectPositions<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">672.000000</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">480.000000</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">20.000000</span><span class="uscript-operator">)</span>
+     MaxThrustForce<span class="uscript-operator">=</span><span class="uscript-number">256.000000</span>
+     TurnDamping<span class="uscript-operator">=</span><span class="uscript-number">500.000000</span>
+     PitchTorqueMax<span class="uscript-operator">=</span><span class="uscript-number">15.000000</span>
+     PitchDamping<span class="uscript-operator">=</span><span class="uscript-number">50.000000</span>
+     RollDamping<span class="uscript-operator">=</span><span class="uscript-number">60.000000</span>
+     RedSkin<span class="uscript-operator">=</span>Texture<span class="uscript-name">'darkhoverskin.hoverskin.vehicletranportskin'</span>
+     BlueSkin<span class="uscript-operator">=</span>Texture<span class="uscript-name">'darkhoverskin.hoverskin.vehicletranportskin'</span>
+     VehicleMass<span class="uscript-operator">=</span><span class="uscript-number">10.000000</span>
+     VehiclePositionString<span class="uscript-operator">=</span><span class="uscript-string">"in a Dark DropShip"</span>
+     VehicleNameString<span class="uscript-operator">=</span><span class="uscript-string">"Dark DropShip"</span>
+     bCanBeBaseForPawns<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     GroundSpeed<span class="uscript-operator">=</span><span class="uscript-number">1500.000000</span>
+     HealthMax<span class="uscript-operator">=</span><span class="uscript-number">800.000000</span>
+     Health<span class="uscript-operator">=</span><span class="uscript-number">800</span>
+     Mesh<span class="uscript-operator">=</span>SkeletalMesh<span class="uscript-name">'darkdropship_an.DropshipV5_3'</span>
+<span class="uscript-operator">}</span></pre><h2><a name="1.2"></a>Vitals DropShipSystem</h2>
+<p>Ive left the logs i used for testing in the code.</p>
+<p>The ship has 7 weapons on it , mainly to give the bots something to do while the craft is in flight although im not 100% sure this function is working correctly but it wont effect the way the ship works in anyway if it dosent. </p>
+<ul><li>The ship has to land on reletivly flat ground before it will release the vecs.</li>
+<li>The ship can carry as meny vehicles as you can fit on or in it but each vehicle adds weight to the dropship making it harder to fly.</li>
+<li>The system uses 3 simulated states to get the job done gravitysucks,VehicleParked VehicleFlying.</li>
+<li>The system can tell altitude of the craft as well as tilt.</li>
+<li>You have to land on relativly flat ground. </li>
+</ul>
+<p><img alt="[DropShip]" src="images/dropship.jpeg" class="image-inline"></p>
+<pre class="uscript"><span class="uscript-keyword">Class</span> DropShipSystem <span class="uscript-keyword">extends</span> DarkDropShip<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">Bool</span>                               bEject_If_Inverted<span class="uscript-operator">;</span>                 <span class="uscript-comment">// (could be fun..)</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span>                              fMaxDistanceDownToCheck<span class="uscript-operator">;</span>           <span class="uscript-comment">// set at level stalz</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span>                              MinGroundClearance<span class="uscript-operator">;</span> <span class="uscript-comment">// a numb slightly &gt; than the distance of</span>
+                                                              <span class="uscript-comment">// center point of the vec to the ground           </span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span>                              scanrange<span class="uscript-operator">;</span>          <span class="uscript-comment">// the size of the cargobay</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">Array</span> <span class="uscript-operator">&lt;</span> vector <span class="uscript-operator">&gt;</span>               TraceOffsets<span class="uscript-operator">;</span>       <span class="uscript-comment">// the craft fires trace lines to the </span>
+                                                              <span class="uscript-comment">// ground to measure altitude and Tilt </span>
+                                                              <span class="uscript-comment">// during the gravitySucks state</span>
+<span class="uscript-keyword">var</span>    <span class="uscript-keyword">array</span> <span class="uscript-operator">&lt;</span> onsvehicle <span class="uscript-operator">&gt;</span>               cargorec<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span>                               bSeekFlyingEscorts<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">Bool</span>                               bSeekEscorts<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span>                               bontheground<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> sound                              LandedSound<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> sound                              Takeoffsound<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> ephysics                           BackUpphysics<span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">replication</span> <span class="uscript-operator">{</span>
+             <span class="uscript-keyword">reliable</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bNetDirty  <span class="uscript-operator">&amp;&amp;</span>  role <span class="uscript-operator">==</span> role_authority<span class="uscript-operator">)</span>
+                 bontheground<span class="uscript-operator">;</span>
+             <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> rotator bonerot<span class="uscript-operator">;</span>
+
+  log<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">$</span><span class="uscript-string">"postbeginplay has been called"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  Ksetactorgravscale<span class="uscript-operator">(</span><span class="uscript-number">0.1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  bonerot<span class="uscript-operator">=</span>getbonerotation<span class="uscript-operator">(</span> <span class="uscript-name">'middle_middle_weapon'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-comment">//bonerot.yaw += rotation.yaw+32768;</span>
+  SetBoneRotation<span class="uscript-operator">(</span> <span class="uscript-name">'middle_middle_weapon'</span><span class="uscript-operator">,</span> bonerot <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  SetBoneRotation<span class="uscript-operator">(</span> <span class="uscript-name">'Left_Front_weapon'</span><span class="uscript-operator">,</span> bonerot <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  SetBoneRotation<span class="uscript-operator">(</span> <span class="uscript-name">'Right_Front_weapon'</span><span class="uscript-operator">,</span> bonerot <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  SetBoneRotation<span class="uscript-operator">(</span> <span class="uscript-name">'left_middle_weapon'</span><span class="uscript-operator">,</span> bonerot <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  SetBoneRotation<span class="uscript-operator">(</span> <span class="uscript-name">'right_middle_weapon'</span><span class="uscript-operator">,</span> bonerot <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  SetBoneRotation<span class="uscript-operator">(</span> <span class="uscript-name">'Right_rear_weapon'</span><span class="uscript-operator">,</span> bonerot <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  SetBoneRotation<span class="uscript-operator">(</span> <span class="uscript-name">'Left_rear_weapon'</span><span class="uscript-operator">,</span> bonerot <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> capturevecs <span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> onsvehicle foundvec<span class="uscript-operator">;</span>
+                                                                              <span class="uscript-comment">// log(self$"capturevecs was called");</span>
+  cargorec<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">foreach</span> visiblecollidingactors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'OnsVehicle'</span><span class="uscript-operator">,</span>foundvec<span class="uscript-operator">,</span>Scanrange<span class="uscript-operator">)</span>
+         <span class="uscript-operator">{</span>
+                                                                              <span class="uscript-comment">// log("capturevecs:found a vec"$foundvec$". so thats "$cargorec.length$"found so far");</span>
+          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span> foundvec <span class="uscript-operator">!=</span> <span class="uscript-keyword">self</span> <span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>foundvec<span class="uscript-operator">.</span>bVehicleOnGround<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span> vsize<span class="uscript-operator">(</span> foundvec<span class="uscript-operator">.</span>velocity <span class="uscript-operator">)</span> <span class="uscript-operator">&lt;</span> <span class="uscript-number">20</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+             <span class="uscript-operator">{</span>
+                                                                              <span class="uscript-comment">// log(foundvec$"will be made cargo");</span>
+              Addweight<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+              cargorec<span class="uscript-operator">.</span><span class="uscript-keyword">insert</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+              cargorec<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span>                           <span class="uscript-operator">=</span> foundvec<span class="uscript-operator">;</span>
+              BackUpphysics                         <span class="uscript-operator">=</span> foundvec<span class="uscript-operator">.</span>physics<span class="uscript-operator">;</span>
+              cargorec<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>bhardattach               <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+              cargorec<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetPhysics<span class="uscript-operator">(</span>PHYS_None <span class="uscript-operator">)</span><span class="uscript-operator">;</span>                             <span class="uscript-comment">// Remove the Physics from the Target Vehicle</span>
+              cargorec<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Setbase<span class="uscript-operator">(</span><span class="uscript-keyword">self</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+              cargorec<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>bAllowViewChange          <span class="uscript-operator">=</span> bEject_If_Inverted<span class="uscript-operator">;</span>     <span class="uscript-comment">// Sets inverted optiOns on the Vec</span>
+              cargorec<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>bDriverCannotLeaveVehicle <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>                   <span class="uscript-comment">// Locks the vehicles until the flight is over</span>
+              cargorec<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>setcollision<span class="uscript-operator">(</span> <span class="uscript-keyword">False</span> <span class="uscript-operator">,</span> <span class="uscript-keyword">False</span> <span class="uscript-operator">,</span> <span class="uscript-keyword">true</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>               <span class="uscript-comment">// Switch off the collision on the Vehicle</span>
+             <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+  <span class="uscript-operator">}</span>
+
+  <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> EnlistEscorts<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> pawn foundpawn<span class="uscript-operator">;</span>
+                                                                              <span class="uscript-comment">// log("EnlistEscorts() has started");</span>
+  <span class="uscript-keyword">foreach</span> visiblecollidingactors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'pawn'</span><span class="uscript-operator">,</span>foundpawn<span class="uscript-operator">,</span>Scanrange<span class="uscript-operator">*</span><span class="uscript-number">2</span><span class="uscript-operator">)</span>
+         <span class="uscript-operator">{</span>
+                                                                              <span class="uscript-comment">// log("EnlistEscorts(): found a pawn = "$foundpawn);</span>
+          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>foundpawn<span class="uscript-operator">.</span>isa<span class="uscript-operator">(</span><span class="uscript-name">'xbot'</span><span class="uscript-operator">)</span><span class="uscript-operator">&amp;&amp;</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>foundpawn<span class="uscript-operator">.</span>IsHumanControlled<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span>
+             <span class="uscript-operator">(</span>driver<span class="uscript-operator">.</span>controller<span class="uscript-operator">.</span>SameTeamAs<span class="uscript-operator">(</span>foundpawn<span class="uscript-operator">.</span>controller<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+             <span class="uscript-operator">{</span>
+                                                                              <span class="uscript-comment">// log("EnlistEscorts(): found It was an xbot +not human controlled = ");</span>
+             <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>bSeekFlyingEscorts<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> foundpawn<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'onsraptor'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span>
+                <span class="uscript-operator">(</span><span class="uscript-operator">(</span>bSeekEscorts <span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>foundpawn<span class="uscript-operator">.</span>isa<span class="uscript-operator">(</span><span class="uscript-name">'onsattackcraft'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+                <span class="uscript-operator">{</span>
+                                                                              <span class="uscript-comment">// log("EnlistEscorts(): it wa a bot controlled vec = ");</span>
+                  bot<span class="uscript-operator">(</span>foundpawn<span class="uscript-operator">.</span>controller<span class="uscript-operator">)</span><span class="uscript-operator">.</span>SetOrders<span class="uscript-operator">(</span><span class="uscript-name">'follow'</span><span class="uscript-operator">,</span>Driver<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-operator">}</span>
+             <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+ <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> releasevecs<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> I<span class="uscript-operator">;</span>
+                                                                              <span class="uscript-comment">//    log("Time to release the cargo"$cargorec.length);</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>cargorec<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+     <span class="uscript-operator">{</span>
+                                                                              <span class="uscript-comment">//   log("releasevecs():releasing"$cargorec[i]);</span>
+      <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> i<span class="uscript-operator">=</span><span class="uscript-number">0</span> <span class="uscript-operator">;</span> I<span class="uscript-operator">&lt;</span> cargorec<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">;</span> I<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>
+          <span class="uscript-operator">{</span>
+           cargorec<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>bHardattach              <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+           cargorec<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetBase<span class="uscript-operator">(</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                         <span class="uscript-comment">// Releasing Target Vec</span>
+           cargorec<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetPhysics<span class="uscript-operator">(</span>BackUpphysics<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                             <span class="uscript-comment">// Returns old physics</span>
+           cargorec<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>setcollision<span class="uscript-operator">(</span><span class="uscript-keyword">true</span> <span class="uscript-operator">,</span> <span class="uscript-keyword">True</span> <span class="uscript-operator">,</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                      <span class="uscript-comment">// Switches the collision back on.</span>
+           cargorec<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>bDriverCannotLeaveVehicle <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>                     <span class="uscript-comment">// Unlocks the Vehicle</span>
+          <span class="uscript-operator">}</span>
+      cargorec<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+     <span class="uscript-operator">}</span>
+  <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> TakeDamage<span class="uscript-operator">(</span><span class="uscript-type">int</span> Damage<span class="uscript-operator">,</span> Pawn instigatedBy<span class="uscript-operator">,</span> Vector Hitlocation<span class="uscript-operator">,</span> Vector Momentum<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>DamageType<span class="uscript-operator">&gt;</span> DamageType<span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>
+  momentum <span class="uscript-operator">=</span> momentum<span class="uscript-operator">*</span><span class="uscript-number">0.01</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>damage<span class="uscript-operator">&gt;</span>Health<span class="uscript-operator">)</span>
+      Releasevecs<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>takedamage<span class="uscript-operator">(</span> Damage<span class="uscript-operator">,</span>  instigatedBy<span class="uscript-operator">,</span>  Hitlocation<span class="uscript-operator">,</span>  Momentum<span class="uscript-operator">,</span>  DamageType<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> subweight<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> Thegrav<span class="uscript-operator">;</span>                                                        <span class="uscript-comment">// log("subweight()");</span>
+  thegrav<span class="uscript-operator">=</span>kgetactorgravscale<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">-</span> <span class="uscript-operator">(</span><span class="uscript-number">0.02</span><span class="uscript-operator">*</span>cargorec<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  ksetactorgravscale<span class="uscript-operator">(</span>thegrav<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                <span class="uscript-comment">// log("subweight:new weight is "$thegrav);</span>
+ <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Addweight<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>                                                                            <span class="uscript-comment">//log("Addweight()");</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> Thegrav<span class="uscript-operator">;</span>
+  thegrav<span class="uscript-operator">=</span>kgetactorgravscale<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">+</span> <span class="uscript-number">0.02</span><span class="uscript-operator">;</span>
+  ksetactorgravscale<span class="uscript-operator">(</span>thegrav<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> loudnoise<span class="uscript-operator">(</span>sound sfx<span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>
+                                                                              <span class="uscript-comment">// log("loudnoise()");</span>
+  makenoise<span class="uscript-operator">(</span><span class="uscript-number">1.0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  playsound<span class="uscript-operator">(</span>sfx<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-operator">}</span>
+
+
+ <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>
+                                                                              <span class="uscript-comment">// log("Destroyed()");</span>
+  ReleaseVecs<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                              <span class="uscript-comment">// log("Destroyed:ReleaseVecs()");</span>
+  DarkhoverSpawner<span class="uscript-operator">(</span>owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                        <span class="uscript-comment">// log("informed "$owner$" im about to die");</span>
+  <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">simulated</span>  <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CheckbOnTheGround<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> Vector TraceStart<span class="uscript-operator">,</span> TraceEnd<span class="uscript-operator">,</span>    HitLocation<span class="uscript-operator">,</span>HitNormal<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">Local</span> <span class="uscript-type">float</span>  Dist<span class="uscript-operator">,</span>       MarkerDist<span class="uscript-operator">,</span>  Total_DistanceDiff<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">Local</span> <span class="uscript-type">int</span>    I<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> actor  HitActor<span class="uscript-operator">;</span>
+                                                                              <span class="uscript-comment">// log("CheckbOnTheGround()");</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>traceoffsets<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+      TraceOffsets  <span class="uscript-operator">.</span><span class="uscript-keyword">insert</span> <span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                            <span class="uscript-comment">// making blank space for first 'marker' trace</span>
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> I <span class="uscript-operator">=</span> <span class="uscript-number">0</span> <span class="uscript-operator">;</span> I <span class="uscript-operator">&lt;</span> TraceOffsets<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">;</span> I<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+      <span class="uscript-operator">{</span>
+      TraceStart <span class="uscript-operator">=</span> Location <span class="uscript-operator">+</span> TraceOffsets<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+      TraceEnd   <span class="uscript-operator">=</span> TraceStart <span class="uscript-operator">-</span> <span class="uscript-operator">(</span> fMaxDistanceDownToCheck <span class="uscript-operator">*</span> <span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      HitActor   <span class="uscript-operator">=</span> Trace<span class="uscript-operator">(</span>HitLocation <span class="uscript-operator">,</span> HitNormal <span class="uscript-operator">,</span> TraceEnd <span class="uscript-operator">,</span> TraceStart <span class="uscript-operator">,</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      Dist       <span class="uscript-operator">=</span> VSize<span class="uscript-operator">(</span>TraceStart<span class="uscript-operator">-</span>HitLocation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> I <span class="uscript-operator">==</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+           MarkerDist <span class="uscript-operator">=</span> dist<span class="uscript-operator">;</span>
+      <span class="uscript-keyword">else</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> HitActor <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+           Total_DistanceDiff <span class="uscript-operator">=</span> MarkerDist <span class="uscript-operator">-</span> Dist<span class="uscript-operator">;</span>
+      <span class="uscript-operator">}</span>
+
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> MarkerDist <span class="uscript-operator">&lt;=</span> MinGroundClearance<span class="uscript-operator">)</span>
+     <span class="uscript-operator">{</span>
+                                                                              <span class="uscript-comment">// log('CheckbOnTheGround:Ground clearence is good');</span>
+     <span class="uscript-keyword">if</span>  <span class="uscript-operator">(</span>Total_DistanceDiff <span class="uscript-operator">&lt;</span> <span class="uscript-number">100</span><span class="uscript-operator">)</span>
+         <span class="uscript-operator">{</span>
+                                                                              <span class="uscript-comment">// log(Self$"CheckbOnTheGround:Total diff on ground clearence was less than 100 - returning true");</span>
+          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> vsize<span class="uscript-operator">(</span>velocity<span class="uscript-operator">)</span> <span class="uscript-operator">&lt;</span> <span class="uscript-number">10</span> <span class="uscript-operator">)</span>
+             <span class="uscript-operator">{</span>
+                                                                              <span class="uscript-comment">// log ("CheckbOnTheGround():velocity is now correct to im  - returning true");</span>
+              <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+             <span class="uscript-operator">}</span>
+         <span class="uscript-operator">}</span>
+     <span class="uscript-operator">}</span>
+ <span class="uscript-keyword">else</span>                                                                         <span class="uscript-comment">// log ("CheckbOnTheGround:returning false");</span>
+ <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+ <span class="uscript-operator">}</span>
+
+<span class="uscript-comment">///////////////////////////////////////////////////////////////////////////////////////////////</span>
+<span class="uscript-comment">///////////////////////////////////////////////////////////auto simulated state GravitySucks</span>
+<span class="uscript-keyword">auto</span> <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">state</span> GravitySucks
+<span class="uscript-operator">{</span>
+
+ <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>                                                   <span class="uscript-comment">// perform a scan</span>
+  <span class="uscript-operator">{</span>                                                                           <span class="uscript-comment">// log("=========state () GravitySucks:Timer() started");</span>
+   bOnTheGround<span class="uscript-operator">=</span>CheckbOnTheGround<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+   <span class="uscript-keyword">if</span>  <span class="uscript-operator">(</span> bOnTheGround <span class="uscript-operator">==</span> <span class="uscript-keyword">true</span> <span class="uscript-operator">)</span>
+       <span class="uscript-operator">{</span>
+                                                                              <span class="uscript-comment">// log("GravitySucks:Timer:I am on the ground as bOnTheGround ="$bOnTheGround);</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>landedsound<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+            Loudnoise<span class="uscript-operator">(</span>landedsound<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        GotoState<span class="uscript-operator">(</span><span class="uscript-name">'VehicleParked'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                           <span class="uscript-comment">// log("GravitySucks:Timer():GotoState('VehicleParked') was just called'");</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+       <span class="uscript-operator">}</span>                                                                      <span class="uscript-comment">// log("GravitySucks:Timer():Im NOT on the ground this time'");</span>
+ SetTimer<span class="uscript-operator">(</span><span class="uscript-number">0.1</span> <span class="uscript-operator">,</span> <span class="uscript-keyword">False</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-operator">}</span>
+
+Begin:
+                                                                              <span class="uscript-comment">// log("==========state GravitySucks:state code has been called");</span>
+SetTimer<span class="uscript-operator">(</span><span class="uscript-number">0.1</span>  <span class="uscript-operator">,</span> <span class="uscript-keyword">False</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">////////////////////////////////////////////////////////////////////////////////////////////////</span>
+<span class="uscript-comment">//////////////////////////////////////////// simulated state VehicleParked /</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">state</span> VehicleParked
+<span class="uscript-operator">{</span>
+
+ <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> TryToDrive<span class="uscript-operator">(</span>Pawn P<span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>
+                                                                              <span class="uscript-comment">// log(" TryToDrive():an attempt to drive was made by"$p);</span>
+  <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>TryToDrive<span class="uscript-operator">(</span>P<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ClientKDriverEnter<span class="uscript-operator">(</span>PlayerController PC<span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>
+                                                                              <span class="uscript-comment">// log("VehicleParked:ClientKDriverenter START");</span>
+  Capturevecs <span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                             <span class="uscript-comment">// log("VehicleParked:ClientKDriverenter enlistescorts() - has been called and returned");</span>
+  enlistescorts<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                            <span class="uscript-comment">// log("VehicleParked:ClientKDriverenter enlistescorts() - has been called and returned");</span>
+  GotoState <span class="uscript-operator">(</span> <span class="uscript-name">'VehicleFlying'</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                              <span class="uscript-comment">// log("VehicleParked:ClientKDriverenter gotostate 'VehicleFlying' has been called");</span>
+  <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>ClientKDriverEnter<span class="uscript-operator">(</span> PC <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-operator">}</span>
+
+  <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> KDriverEnter<span class="uscript-operator">(</span>pawn p<span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>
+                                                                              <span class="uscript-comment">// log("VehicleParked:KDriverenter                              START");</span>
+  Capturevecs <span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                             <span class="uscript-comment">// log("VehicleParked:KDriverenter Capturevecs ()               has been called and returned");</span>
+  enlistescorts<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                            <span class="uscript-comment">// log("VehicleParked:KDriverenter enlistescorts ()             has been called and returned");</span>
+  GotoState <span class="uscript-operator">(</span> <span class="uscript-name">'VehicleFlying'</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                              <span class="uscript-comment">// log("VehicleParked:KDriverenterGotoState ( 'VehicleFlying' ) has been called and returned");</span>
+  <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>KDriverEnter<span class="uscript-operator">(</span> P <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-operator">}</span>
+
+Begin:
+                                                                              <span class="uscript-comment">// log("now in state () VehicleParked start of state code");</span>
+<span class="uscript-operator">}</span>
+<span class="uscript-comment">////////////////////////////////////////////////////////////////////////////////////////////////////</span>
+<span class="uscript-comment">////////////////////////////////////////////////////////////////////////////////////////////////////</span>
+<span class="uscript-comment">//////////////////////////////////////////////////////////////// state VehicleFlying</span>
+
+<span class="uscript-keyword">state</span> VehicleFlying
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ClientKDriverLeave<span class="uscript-operator">(</span>PlayerController PC<span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>                                                                            <span class="uscript-comment">// log("VehicleFlying:ClientKDriverLeave releasevecs() has been called and returned ");</span>
+                                                                              <span class="uscript-comment">// log("VehicleFlying:ClientKDriverLeave releasevecs() has been called and returned");</span>
+  releasevecs<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                              <span class="uscript-comment">// log("VehicleFlying:ClientKDriverLeave subweight()   has been called and returned");</span>
+  subweight<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                                <span class="uscript-comment">// log("VehicleFlying:ClientKDriverLeave goto state GravitySucks has been called ");</span>
+  GotoState<span class="uscript-operator">(</span><span class="uscript-name">'GravitySucks'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>clientkDriverleave<span class="uscript-operator">(</span>PC<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> <span class="uscript-type">bool</span> KDriverLeave<span class="uscript-operator">(</span> <span class="uscript-type">bool</span> bForceLeave <span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>
+                                                                              <span class="uscript-comment">// log("VehicleFlying:KDriverLeave              * Started *");</span>
+  releasevecs<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                              <span class="uscript-comment">// log("VehicleFlying:KDriverLeave:releasevecs()              has been called and returned");</span>
+  subweight<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                                <span class="uscript-comment">// log("VehicleFlying:KDriverLeave:subweight()                has been called and returned");</span>
+  GotoState<span class="uscript-operator">(</span><span class="uscript-name">'GravitySucks'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                  <span class="uscript-comment">// log("VehicleFlying:KDriverLeave :GotoState('GravitySucks') has been called and returned");</span>
+  <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>kDriverleave<span class="uscript-operator">(</span>bForceLeave<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-operator">}</span>
+
+begin:
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>takeoffsound<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    loudnoise<span class="uscript-operator">(</span>takeoffsound<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                                                                              <span class="uscript-comment">// log("now in state VehicleFlying");</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+     fMaxDistanceDownToCheck<span class="uscript-operator">=</span><span class="uscript-number">5000.000000</span>
+     MinGroundClearance<span class="uscript-operator">=</span><span class="uscript-number">260.000000</span>
+     scanrange<span class="uscript-operator">=</span><span class="uscript-number">1024.000000</span>
+     TraceOffsets<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">100.000000</span><span class="uscript-operator">)</span>
+     TraceOffsets<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">100.000000</span><span class="uscript-operator">)</span>
+     TraceOffsets<span class="uscript-operator">(</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>Y<span class="uscript-operator">=</span><span class="uscript-number">100.000000</span><span class="uscript-operator">)</span>
+     TraceOffsets<span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>Y<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">100.000000</span><span class="uscript-operator">)</span>
+     bSeekFlyingEscorts<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     bSeekEscorts<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     DriverWeapons<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>WeaponClass<span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-name">'darkhover.Mortician_Head'</span><span class="uscript-operator">,</span>WeaponBone<span class="uscript-operator">=</span><span class="uscript-string">"middle_front_weapon"</span><span class="uscript-operator">)</span>
+     PassengerWeapons<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>WeaponPawnClass<span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-name">'OnslaughtFull.ONSMASSideGunPawn'</span><span class="uscript-operator">,</span>WeaponBone<span class="uscript-operator">=</span><span class="uscript-string">"right_front_weapon"</span><span class="uscript-operator">)</span>
+     PassengerWeapons<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>WeaponPawnClass<span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-name">'OnslaughtFull.ONSMASSideGunPawn'</span><span class="uscript-operator">,</span>WeaponBone<span class="uscript-operator">=</span><span class="uscript-string">"left_front_weapon"</span><span class="uscript-operator">)</span>
+     PassengerWeapons<span class="uscript-operator">(</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>WeaponPawnClass<span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-name">'OnslaughtFull.ONSMASSideGunPawn'</span><span class="uscript-operator">,</span>WeaponBone<span class="uscript-operator">=</span><span class="uscript-string">"right_middle_weapon"</span><span class="uscript-operator">)</span>
+     PassengerWeapons<span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>WeaponPawnClass<span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-name">'OnslaughtFull.ONSMASSideGunPawn'</span><span class="uscript-operator">,</span>WeaponBone<span class="uscript-operator">=</span><span class="uscript-string">"left_middle_weapon"</span><span class="uscript-operator">)</span>
+     PassengerWeapons<span class="uscript-operator">(</span><span class="uscript-number">4</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>WeaponPawnClass<span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-name">'OnslaughtFull.ONSMASSideGunPawn'</span><span class="uscript-operator">,</span>WeaponBone<span class="uscript-operator">=</span><span class="uscript-string">"left_rear_weapon"</span><span class="uscript-operator">)</span>
+     PassengerWeapons<span class="uscript-operator">(</span><span class="uscript-number">6</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>WeaponPawnClass<span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-name">'OnslaughtFull.ONSMASSideGunPawn'</span><span class="uscript-operator">,</span>WeaponBone<span class="uscript-operator">=</span><span class="uscript-string">"right_rear_weapon"</span><span class="uscript-operator">)</span>
+     VehicleMass<span class="uscript-operator">=</span><span class="uscript-number">12.000000</span>
+     TPCamDistance<span class="uscript-operator">=</span><span class="uscript-number">1400.000000</span>
+     bPathColliding<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-operator">}</span></pre><h2><a name="1.3"></a>Discussion</h2>
+<hr class="thin"><p><a href="category-custom-class.html">Category Custom Class</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Vehicle Dropship", "#1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>By Darknet &amp; vitaloverdose", "#1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Works online", "#1.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Darknets Dropship.", "#1.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Vitals DropShipSystem", "#1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Discussion", "#1.3");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="vitaloverdose.html">VitalOverdose</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=VitalOverdose/The_DropShip_Controller">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=VitalOverdose/The_DropShip_Controller">View other revisions</a><br>Last edited June 6, 2006 18:01 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=VitalOverdose/The_DropShip_Controller">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/VitalOverdose/The_DropShip_Controller">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>My program doesn't have bugs. It just develops random features.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

@@ -1,0 +1,546 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Tamearia Elevator System</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Tamearia_Elevator_System; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Tamearia Elevator System">Tamearia Elevator System</a></h1>
+	<div class="wiki"><p>This is the code I wrote for Tamearia's elevator system.  Due to the complexity of it and the fact that it intertwines with the PlayerController and GameType classes, this can't be used for normal UT2004 maps as is.  It would have to be rewritten to, among other things, take replication into account.</p>
+<p>This elevator system includes working inner and outer doors, call buttons, and floor indicators inside and outside the elevator.  Any number of elevators can be linked to one set of call buttons (one per floor).</p>
+<p>This is the main elevator class:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> Elevator <span class="uscript-keyword">extends</span> Mover<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> DestinationFloor<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Tamearia<span class="uscript-operator">)</span> <span class="uscript-keyword">edfindable</span> ElevatorDoor InnerDoor<span class="uscript-operator">;</span>  <span class="uscript-comment">// Set by the mapper.</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>ElevatorIndicator<span class="uscript-operator">&gt;</span> MyIndicators<span class="uscript-operator">;</span>  <span class="uscript-comment">// Holds the array of floor indicators.</span>
+<span class="uscript-keyword">var</span> ElevatorCallButton MyCallButton<span class="uscript-operator">;</span>  <span class="uscript-comment">// Holds the call button that the player used (so the elevator can 'turn off' the light on the call button).</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Tamearia<span class="uscript-operator">)</span> <span class="uscript-type">int</span> NumberOfFloors<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">struct</span> OuterDoors
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">edfindable</span> ElevatorDoor OuterDoor<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Tamearia<span class="uscript-operator">)</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>OuterDoors<span class="uscript-operator">&gt;</span> TheDoors<span class="uscript-operator">;</span>  <span class="uscript-comment">// Used as a struct so edfindable works.  Holds the array of outer doors (in order of floor number).</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bIsMoving<span class="uscript-operator">,</span> bOuterDoorReady<span class="uscript-operator">,</span> bInnerDoorReady<span class="uscript-operator">,</span> bIsBeingCalled<span class="uscript-operator">,</span> bIsAtDestination<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> Shader Highlight<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> ConstantColor Nolight<span class="uscript-operator">;</span>  <span class="uscript-comment">// Used to change the internal floor indicator.</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">,</span> j<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>InnerDoor <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        InnerDoor<span class="uscript-operator">.</span>MyElevator <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>InnerDoor<span class="uscript-operator">.</span>CompanionDoor <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+            InnerDoor<span class="uscript-operator">.</span>CompanionDoor<span class="uscript-operator">.</span>MyElevator <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>TheDoors<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+        TheDoors<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>OuterDoor<span class="uscript-operator">.</span>MyElevator <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>j<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>j<span class="uscript-operator">&lt;</span>MyIndicators<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">;</span>j<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+        MyIndicators<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetIndicator<span class="uscript-operator">(</span>KeyNum<span class="uscript-operator">*</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    SetIndicator<span class="uscript-operator">(</span>KeyNum<span class="uscript-operator">*</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> UsedBy<span class="uscript-operator">(</span>Pawn User<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bIsMoving<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">// An easy way for the menu to return the floor number pressed back to the elevator.</span>
+    TameariaController<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>GetLocalPlayerController<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>CurrentlyUsedElevator <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>NumberOfFloors <span class="uscript-operator">==</span> <span class="uscript-number">3</span><span class="uscript-operator">)</span>
+        TameariaController<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>GetLocalPlayerController<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>ClientOpenMenu<span class="uscript-operator">(</span><span class="uscript-string">"TameariaInterface.ElevatorMenuThree"</span><span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">// Add more if there are other elevator banks that have more or less floor numbers.</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> SetDestinationFloor<span class="uscript-operator">(</span><span class="uscript-type">int</span> FloorNumber<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    DestinationFloor <span class="uscript-operator">=</span> FloorNumber<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>bInnerDoorReady <span class="uscript-operator">||</span> <span class="uscript-operator">!</span>bOuterDoorReady<span class="uscript-operator">)</span>  <span class="uscript-comment">// If inner and outer doors aren't ready, close them before moving.</span>
+        MoveDoors<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        IncrementFloor<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> CheckDoorsClosed<span class="uscript-operator">(</span><span class="uscript-type">bool</span> bInnerDoor<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bInnerDoor<span class="uscript-operator">)</span>
+        bInnerDoorReady <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        bOuterDoorReady <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bInnerDoorReady <span class="uscript-operator">&amp;&amp;</span> bOuterDoorReady<span class="uscript-operator">)</span>  <span class="uscript-comment">// Once both inner and outer doors are closed, then move.</span>
+        SetDestinationFloor<span class="uscript-operator">(</span>DestinationFloor<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> IncrementFloor<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>PrevKeyNum <span class="uscript-operator">==</span> DestinationFloor <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>bIsAtDestination <span class="uscript-operator">||</span> bIsBeingCalled<span class="uscript-operator">)</span><span class="uscript-operator">)</span>  <span class="uscript-comment">// If I'm already at the floor, open the doors.</span>
+    <span class="uscript-operator">{</span>
+        MoveDoors<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>InnerDoor <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+            InnerDoor<span class="uscript-operator">.</span>StopFollowing<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Release the Inner Door from being attached to the elevator.</span>
+        bIsMoving <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+        bIsAtDestination <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        bIsBeingCalled <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>KeyNum <span class="uscript-operator">&lt;</span> DestinationFloor<span class="uscript-operator">)</span>  <span class="uscript-comment">// Move up.</span>
+    <span class="uscript-operator">{</span>
+        bIsMoving <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>InnerDoor <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+            InnerDoor<span class="uscript-operator">.</span>FollowMe<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Attach inner door to elevator.</span>
+        <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>MyIndicators<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+            MyIndicators<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetIndicator<span class="uscript-operator">(</span>KeyNum<span class="uscript-operator">*</span><span class="uscript-number">2</span><span class="uscript-number">+1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Sets the indicator to the dash between this floor and the next one.</span>
+        SetIndicator<span class="uscript-operator">(</span>KeyNum<span class="uscript-operator">*</span><span class="uscript-number">2</span><span class="uscript-number">+1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Sets internal indicator.</span>
+        SetTimer<span class="uscript-operator">(</span>MoveTime<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// If the indicator was set when it reached the floor,</span>
+                                     <span class="uscript-comment">//it would only be on for a fraction of a second.</span>
+                                     <span class="uscript-comment">//This switches it before it reaches the next floor.</span>
+        InterpolateTo<span class="uscript-operator">(</span>KeyNum<span class="uscript-number">+1</span><span class="uscript-operator">,</span>MoveTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        bIsAtDestination <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>KeyNum <span class="uscript-operator">&gt;</span> DestinationFloor<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        bIsMoving <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>InnerDoor <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+            InnerDoor<span class="uscript-operator">.</span>FollowMe<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>MyIndicators<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+            MyIndicators<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetIndicator<span class="uscript-operator">(</span>KeyNum<span class="uscript-operator">*</span><span class="uscript-number">2</span><span class="uscript-number">-1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        SetIndicator<span class="uscript-operator">(</span>KeyNum<span class="uscript-operator">*</span><span class="uscript-number">2</span><span class="uscript-number">-1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        SetTimer<span class="uscript-operator">(</span>MoveTime<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        InterpolateTo<span class="uscript-operator">(</span>KeyNum<span class="uscript-number">-1</span><span class="uscript-operator">,</span>MoveTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        bIsAtDestination <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>MyIndicators<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+        MyIndicators<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetIndicator<span class="uscript-operator">(</span>KeyNum<span class="uscript-operator">*</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Sets the floor indicator to the next floor a little bit before it gets there.</span>
+    SetIndicator<span class="uscript-operator">(</span>KeyNum<span class="uscript-operator">*</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> MoveDoors<span class="uscript-operator">(</span><span class="uscript-type">int</span> KeyFrame<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>KeyFrame <span class="uscript-operator">==</span> <span class="uscript-number">1</span> <span class="uscript-operator">&amp;&amp;</span> MyCallButton <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+        MyCallButton<span class="uscript-operator">.</span>LightOff<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// 'Turns off' the call button that the player used.</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>InnerDoor <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        InnerDoor<span class="uscript-operator">.</span>MoveDoor<span class="uscript-operator">(</span>KeyFrame<span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Opens or closes the inner door.</span>
+        bInnerDoorReady <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>TheDoors<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">!=</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        TheDoors<span class="uscript-operator">[</span>KeyNum<span class="uscript-operator">]</span><span class="uscript-operator">.</span>OuterDoor<span class="uscript-operator">.</span>MoveDoor<span class="uscript-operator">(</span>KeyFrame<span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Opens or closes the outer doors.</span>
+        bOuterDoorReady <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> KeyFrameReached<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">byte</span> OldKeyNum<span class="uscript-operator">;</span>
+
+    OldKeyNum  <span class="uscript-operator">=</span> PrevKeyNum<span class="uscript-operator">;</span>
+    PrevKeyNum <span class="uscript-operator">=</span> KeyNum<span class="uscript-operator">;</span>
+    PhysAlpha  <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    AmbientSound <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+
+    IncrementFloor<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Check to see if we're at the right floor, if not, keep going.</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> SetIndicator<span class="uscript-operator">(</span><span class="uscript-type">int</span> FloorNumber<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span><span class="uscript-number">5</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+        Skins<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Nolight<span class="uscript-operator">;</span>
+    Skins<span class="uscript-operator">[</span>FloorNumber<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Highlight<span class="uscript-operator">;</span>  <span class="uscript-comment">// Changes the texture on the indicator section to an unlit version.</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+    bOuterDoorReady<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bInnerDoorReady<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    Highlight<span class="uscript-operator">=</span>Shader<span class="uscript-name">'TameariaTextures.RedUnlit'</span>
+    Nolight<span class="uscript-operator">=</span>ConstantColor<span class="uscript-name">'TameariaTextures.DarkRed'</span>
+<span class="uscript-operator">}</span></pre><p>The elevator was made in Max so that materials 0-4 were the floor indicator sections, to make the code easier.</p>
+<p>Next is the elevator doors.  Only one class was needed for the inner and outer doors, a bool can be set by the mapper to indicate which one it is.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> ElevatorDoor <span class="uscript-keyword">extends</span> Mover<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Tamearia<span class="uscript-operator">)</span> <span class="uscript-keyword">edfindable</span> ElevatorDoor CompanionDoor<span class="uscript-operator">;</span>  <span class="uscript-comment">// Optional companion door (for two door elevators).</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Tamearia<span class="uscript-operator">)</span> <span class="uscript-type">bool</span> bInnerDoor<span class="uscript-operator">;</span>  <span class="uscript-comment">// Set by the mapper to indicate that this is the inner door.</span>
+<span class="uscript-keyword">var</span> Elevator MyElevator<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> vector InitialOffset<span class="uscript-operator">;</span>  <span class="uscript-comment">// Store the initial distance from the elevator for when we are attached to it.</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bInitialized<span class="uscript-operator">,</span> bIsMoving<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bInnerDoor <span class="uscript-operator">&amp;&amp;</span> MyElevator <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        InitialOffset <span class="uscript-operator">=</span> Location <span class="uscript-operator">-</span> MyElevator<span class="uscript-operator">.</span>Location<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>CompanionDoor <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+            CompanionDoor<span class="uscript-operator">.</span>InitialOffset <span class="uscript-operator">=</span> CompanionDoor<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> MyElevator<span class="uscript-operator">.</span>Location<span class="uscript-operator">;</span>  <span class="uscript-comment">// This door controls the companion door.</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> FollowMe<span class="uscript-operator">(</span><span class="uscript-operator">)</span>  <span class="uscript-comment">// Called from the elevator to attach the door to it while moving.</span>
+<span class="uscript-operator">{</span>
+    Enable<span class="uscript-operator">(</span><span class="uscript-name">'Tick'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bIsMoving <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    SetTimer<span class="uscript-operator">(</span><span class="uscript-number">0.1</span><span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>CompanionDoor <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        CompanionDoor<span class="uscript-operator">.</span>Enable<span class="uscript-operator">(</span><span class="uscript-name">'Tick'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        CompanionDoor<span class="uscript-operator">.</span>bIsMoving <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        CompanionDoor<span class="uscript-operator">.</span>SetTimer<span class="uscript-operator">(</span><span class="uscript-number">0.1</span><span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> StopFollowing<span class="uscript-operator">(</span><span class="uscript-operator">)</span>  <span class="uscript-comment">// Called from the elevator to detach the door so it can open.</span>
+<span class="uscript-operator">{</span>
+    Disable<span class="uscript-operator">(</span><span class="uscript-name">'Tick'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bIsMoving <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>CompanionDoor <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        CompanionDoor<span class="uscript-operator">.</span>Disable<span class="uscript-operator">(</span><span class="uscript-name">'Tick'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        CompanionDoor<span class="uscript-operator">.</span>bIsMoving <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> MoveDoor<span class="uscript-operator">(</span><span class="uscript-type">int</span> MoveToKeyNum<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    StopFollowing<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Make sure we're detached.</span>
+    InterpolateTo<span class="uscript-operator">(</span>MoveToKeyNum<span class="uscript-operator">,</span>MoveTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Open or close.</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>CompanionDoor <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+        CompanionDoor<span class="uscript-operator">.</span>MoveDoor<span class="uscript-operator">(</span>MoveToKeyNum<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>bInitialized<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        StopFollowing<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        bInitialized <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    SetLocation<span class="uscript-operator">(</span>MyElevator<span class="uscript-operator">.</span>Location <span class="uscript-operator">+</span> InitialOffset<span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Follow the elevator.</span>
+    BasePos <span class="uscript-operator">=</span> Location<span class="uscript-operator">;</span>  <span class="uscript-comment">// Adjust the base position so the doors don't return to the ground floor while opening.</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> KeyFrameReached<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>KeyFrameReached<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>KeyNum <span class="uscript-operator">==</span> <span class="uscript-number">0</span> <span class="uscript-operator">&amp;&amp;</span> bInnerDoor <span class="uscript-operator">&amp;&amp;</span> MyElevator <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+        MyElevator<span class="uscript-operator">.</span>CheckDoorsClosed<span class="uscript-operator">(</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Tell the door I'm ready.</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>KeyNum <span class="uscript-operator">==</span> <span class="uscript-number">0</span> <span class="uscript-operator">&amp;&amp;</span> MyElevator <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+        MyElevator<span class="uscript-operator">.</span>CheckDoorsClosed<span class="uscript-operator">(</span><span class="uscript-keyword">False</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>KeyNum <span class="uscript-operator">==</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span>
+        SetTimer<span class="uscript-operator">(</span>StayOpenTime<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// If I'm opening, set a timer so I close automatically (don't stay open forever).</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bIsMoving<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    MoveDoor<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> EncroachingOn<span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// Tried to make the doors detect when they hit the player, but one of them always pushes the player.</span>
+    <span class="uscript-comment">// Can't seem to figure out the best way to do this.  This function is still a WIP.</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Leader <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    Leader <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+
+    Leader<span class="uscript-operator">.</span>MakeGroupReturn<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>CompanionDoor <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+        CompanionDoor<span class="uscript-operator">.</span>EncroachingOn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Pawn'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        Pawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>PlayMoverHitSound<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span></pre><p>Next up, the call button.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> ElevatorCallButton <span class="uscript-keyword">extends</span> TameariaObject
+    <span class="uscript-keyword">placeable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">struct</span> Elevators
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">edfindable</span> Elevator MyElevator<span class="uscript-operator">;</span>  <span class="uscript-comment">// Bank of elevators set by mapper.</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Tamearia<span class="uscript-operator">)</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>Elevators<span class="uscript-operator">&gt;</span> MyElevators<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Tamearia<span class="uscript-operator">)</span> <span class="uscript-type">int</span> FloorNumber<span class="uscript-operator">;</span>  <span class="uscript-comment">// Floor number this call button is at.</span>
+<span class="uscript-keyword">var</span> Shader Highlight<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> ConstantColor Nolight<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> UsedBy<span class="uscript-operator">(</span>Pawn User<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">,</span> x<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Elevator ClosestElevator<span class="uscript-operator">;</span>
+
+    x <span class="uscript-operator">=</span> <span class="uscript-number">99</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>MyElevators<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>  <span class="uscript-comment">// Find the closest elevator.</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>MyElevators<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>MyElevator <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">&amp;&amp;</span> abs<span class="uscript-operator">(</span>FloorNumber <span class="uscript-operator">-</span> MyElevators<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>MyElevator<span class="uscript-operator">.</span>KeyNum<span class="uscript-operator">)</span> <span class="uscript-operator">&lt;</span> x<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            ClosestElevator <span class="uscript-operator">=</span> MyElevators<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>MyElevator<span class="uscript-operator">;</span>
+            x <span class="uscript-operator">=</span> abs<span class="uscript-operator">(</span>FloorNumber <span class="uscript-operator">-</span> MyElevators<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>MyElevator<span class="uscript-operator">.</span>KeyNum<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>x <span class="uscript-operator">&lt;</span> <span class="uscript-number">99</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        ClosestElevator<span class="uscript-operator">.</span>MyCallButton <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Tell the elevator to turn me off when it gets here.</span>
+        Skins<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Highlight<span class="uscript-operator">;</span>
+        ClosestElevator<span class="uscript-operator">.</span>bIsBeingCalled <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>x <span class="uscript-operator">==</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+            ClosestElevator<span class="uscript-operator">.</span>MoveDoors<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// If there's an elevator at this floor, open it.</span>
+        <span class="uscript-keyword">else</span>
+            ClosestElevator<span class="uscript-operator">.</span>SetDestinationFloor<span class="uscript-operator">(</span>FloorNumber<span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Otherwise, move the closest one here.</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> LightOff<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    Skins<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Nolight<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+    DrawType<span class="uscript-operator">=</span>DT_StaticMesh
+    StaticMesh<span class="uscript-operator">=</span>StaticMesh<span class="uscript-name">'TameariaMeshes.ElevatorCallButtonMesh'</span>
+    bEdShouldSnap<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+    Highlight<span class="uscript-operator">=</span>Shader<span class="uscript-name">'TameariaTextures.PaleYellowUnlit'</span>
+    Nolight<span class="uscript-operator">=</span>ConstantColor<span class="uscript-name">'TameariaTextures.PaleYellow'</span>
+<span class="uscript-operator">}</span></pre><p>Simple script for the floor indicator outside the elevator:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> ElevatorIndicator <span class="uscript-keyword">extends</span> TameariaObject
+    <span class="uscript-keyword">placeable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-exec">#exec obj load file=TameariaTextures.utx</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Tamearia<span class="uscript-operator">)</span> <span class="uscript-keyword">edfindable</span> Elevator MyElevator<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> Shader Highlight<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> ConstantColor Nolight<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PreBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>PreBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    MyElevator<span class="uscript-operator">.</span>MyIndicators<span class="uscript-operator">[</span>MyElevator<span class="uscript-operator">.</span>MyIndicators<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> SetIndicator<span class="uscript-operator">(</span><span class="uscript-type">int</span> FloorNumber<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span><span class="uscript-number">5</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+        Skins<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Nolight<span class="uscript-operator">;</span>
+    Skins<span class="uscript-operator">[</span>FloorNumber<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Highlight<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+    DrawType<span class="uscript-operator">=</span>DT_StaticMesh
+    StaticMesh<span class="uscript-operator">=</span>StaticMesh<span class="uscript-name">'TameariaMeshes.ElevatorIndicatorMesh'</span>
+    bEdShouldSnap<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+    Highlight<span class="uscript-operator">=</span>Shader<span class="uscript-name">'TameariaTextures.RedUnlit'</span>
+    Nolight<span class="uscript-operator">=</span>ConstantColor<span class="uscript-name">'TameariaTextures.DarkRed'</span>
+<span class="uscript-operator">}</span></pre><p>Now the menu that opens up when the player hits Use inside the elevator:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> ElevatorMenuThree <span class="uscript-keyword">extends</span> TameariaGUIPage<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">automated</span> GUIGFxButton b0<span class="uscript-operator">,</span> b1<span class="uscript-operator">,</span> b2<span class="uscript-operator">,</span> b_OpenDoors<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">automated</span> BackgroundImage Bkgd<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> InternalOnClick<span class="uscript-operator">(</span>GUIComponent Sender<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> TameariaController TC<span class="uscript-operator">;</span>
+
+    TC <span class="uscript-operator">=</span> TameariaController<span class="uscript-operator">(</span>PlayerOwner<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Sender <span class="uscript-operator">==</span> b0<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        TC<span class="uscript-operator">.</span>CurrentlyUsedElevator<span class="uscript-operator">.</span>SetDestinationFloor<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Move the elevator to floor 0 (ground floor).</span>
+        Controller<span class="uscript-operator">.</span>CloseMenu<span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Sender <span class="uscript-operator">==</span> b1<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        TC<span class="uscript-operator">.</span>CurrentlyUsedElevator<span class="uscript-operator">.</span>SetDestinationFloor<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Controller<span class="uscript-operator">.</span>CloseMenu<span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Sender <span class="uscript-operator">==</span> b2<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        TC<span class="uscript-operator">.</span>CurrentlyUsedElevator<span class="uscript-operator">.</span>SetDestinationFloor<span class="uscript-operator">(</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Controller<span class="uscript-operator">.</span>CloseMenu<span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Sender <span class="uscript-operator">==</span> b_OpenDoors<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        TC<span class="uscript-operator">.</span>CurrentlyUsedElevator<span class="uscript-operator">.</span>MoveDoors<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Open the elevator doors (open door button standard on elevators).</span>
+        Controller<span class="uscript-operator">.</span>CloseMenu<span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// Standard GUI button stuff, not important.</span>
+<span class="uscript-operator">}</span></pre><p>Now the interconnecting pieces.  Part of the code is in the GameInfo:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> TameariaGame <span class="uscript-keyword">extends</span> GameInfo
+    HideDropDown
+    CacheExempt
+    <span class="uscript-keyword">config</span><span class="uscript-operator">(</span>Tamearia<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span>
+
+<span class="uscript-comment">// Things to keep track of that player can use.</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>ElevatorCallButton<span class="uscript-operator">&gt;</span> ElevatorCallButtons<span class="uscript-operator">;</span>
+
+
+<span class="uscript-keyword">function</span> PreBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> ElevatorCallButton ECB<span class="uscript-operator">;</span>
+
+<span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span>
+    <span class="uscript-comment">// Use button is pretty flaky, so hold an array of all the items I can use so that I can access them easier.</span>
+    <span class="uscript-keyword">foreach</span> DynamicActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'ElevatorCallButton'</span><span class="uscript-operator">,</span>ECB<span class="uscript-operator">)</span>
+        ElevatorCallButtons<span class="uscript-operator">[</span>ElevatorCallButtons<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> ECB<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>And finally, the PlayerController class:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> TameariaController <span class="uscript-keyword">extends</span> xPlayer
+    <span class="uscript-keyword">config</span><span class="uscript-operator">(</span>TameariaUser<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span>
+
+<span class="uscript-keyword">var</span> TameariaGame TAMGame<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> Elevator CurrentlyUsedElevator<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> ObjectUseDistance<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> Use<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Pawn<span class="uscript-operator">.</span>Base <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        Pawn<span class="uscript-operator">.</span>Base<span class="uscript-operator">.</span>UsedBy<span class="uscript-operator">(</span>Pawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Order these in importance (will want to check for elevator buttons before NPC's etc)</span>
+    <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>TAMGame<span class="uscript-operator">.</span>ElevatorCallButtons<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>VSize<span class="uscript-operator">(</span>TAMGame<span class="uscript-operator">.</span>ElevatorCallButtons<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> Pawn<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span> <span class="uscript-operator">&lt;</span> ObjectUseDistance<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            TAMGame<span class="uscript-operator">.</span>ElevatorCallButtons<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>UsedBy<span class="uscript-operator">(</span>Pawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+
+        <span class="uscript-comment">// If I wanted to check for other usable objects, I would put for() statements here.</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    ObjectUseDistance<span class="uscript-operator">=</span><span class="uscript-number">128</span>
+<span class="uscript-operator">}</span></pre><p><img alt="[AngelMapperElevator]" src="images/angelmapperelevator.jpeg" class="image-inline"></p>
+</div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Tamearia_Elevator_System">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Tamearia_Elevator_System">View other revisions</a><br>Last edited May 20, 2006 21:18 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Tamearia_Elevator_System">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Tamearia_Elevator_System">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Gah - a solution with more questions. (EntropicLqd)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

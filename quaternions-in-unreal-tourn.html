@@ -1,0 +1,232 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Quaternions In Unreal Tournament</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Quaternions_In_Unreal_Tournament; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Quaternions In Unreal Tournament">Quaternions In Unreal Tournament</a></h1>
+	<div class="wiki"><p>Below is some code that will allow you to use <a href="quaternion.html">Quaternion</a>s in Unreal Tournament. These are taken from a brushbuilder made by <a href="tarquin.html">Tarquin</a>. All credit for the code goes to him. Other implementations have also been made to allow the use of Quaternions, but they should all be functionally similar. This quaternion definition has a minor bug which occurs when a full 180° rotation is applied, however, so be forewarned.</p>
+<h3><a name="0.0.1"></a>Quaternion definition</h3>
+<pre class="uscript"><span class="uscript-keyword">struct</span> Quat <span class="uscript-operator">{</span>
+ <span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> W<span class="uscript-operator">,</span>X<span class="uscript-operator">,</span>Y<span class="uscript-operator">,</span>Z<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span></pre><h3><a name="0.0.2"></a>Vector expression</h3>
+<pre class="uscript"><span class="uscript-comment">// Sets the components of a vector. Vect cannot be used as it will not accept an expression.</span>
+<span class="uscript-keyword">function</span> vector eVect<span class="uscript-operator">(</span> <span class="uscript-type">float</span> x <span class="uscript-operator">,</span> <span class="uscript-type">float</span> y <span class="uscript-operator">,</span> <span class="uscript-type">float</span> z <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-comment">// for some reason vect() wont work when setting an array element</span>
+ <span class="uscript-keyword">local</span> vector v <span class="uscript-operator">;</span>
+ v<span class="uscript-operator">.</span>x <span class="uscript-operator">=</span> x <span class="uscript-operator">;</span>
+ v<span class="uscript-operator">.</span>y <span class="uscript-operator">=</span> y <span class="uscript-operator">;</span>
+ v<span class="uscript-operator">.</span>z <span class="uscript-operator">=</span> z <span class="uscript-operator">;</span>
+ <span class="uscript-keyword">return</span> v <span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.3"></a>Converting Axial Rotation to a Quaternion</h3>
+<pre class="uscript"><span class="uscript-comment">// Takes a vector representing an axis and an angle in radians.</span>
+<span class="uscript-comment">// Returns the quaternion representing a rotation of Theta about the axis.</span>
+<span class="uscript-keyword">function</span> quat RotationToQuat<span class="uscript-operator">(</span> vector Axis <span class="uscript-operator">,</span> <span class="uscript-type">float</span> Theta <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-comment">// Theta must be given in radians</span>
+ <span class="uscript-comment">// Axis need not be normalised</span>
+ <span class="uscript-keyword">local</span> quat Q <span class="uscript-operator">;</span>
+ <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> L <span class="uscript-operator">;</span>
+ Axis <span class="uscript-operator">=</span> Normal<span class="uscript-operator">(</span> Axis <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ Q<span class="uscript-operator">.</span>W <span class="uscript-operator">=</span> cos<span class="uscript-operator">(</span> Theta <span class="uscript-operator">/</span> <span class="uscript-number">2</span> <span class="uscript-operator">)</span> <span class="uscript-operator">;</span>
+ Q<span class="uscript-operator">.</span>X <span class="uscript-operator">=</span> Axis<span class="uscript-operator">.</span>X <span class="uscript-operator">*</span> sin<span class="uscript-operator">(</span> Theta <span class="uscript-operator">/</span> <span class="uscript-number">2</span> <span class="uscript-operator">)</span> <span class="uscript-operator">;</span>
+ Q<span class="uscript-operator">.</span>Y <span class="uscript-operator">=</span> Axis<span class="uscript-operator">.</span>Y <span class="uscript-operator">*</span> sin<span class="uscript-operator">(</span> Theta <span class="uscript-operator">/</span> <span class="uscript-number">2</span> <span class="uscript-operator">)</span> <span class="uscript-operator">;</span>
+ Q<span class="uscript-operator">.</span>Z <span class="uscript-operator">=</span> Axis<span class="uscript-operator">.</span>Z <span class="uscript-operator">*</span> sin<span class="uscript-operator">(</span> Theta <span class="uscript-operator">/</span> <span class="uscript-number">2</span> <span class="uscript-operator">)</span> <span class="uscript-operator">;</span>
+ <span class="uscript-comment">// NORMALISE</span>
+ L <span class="uscript-operator">=</span> Sqrt<span class="uscript-operator">(</span> Q<span class="uscript-operator">.</span>W<span class="uscript-operator">*</span><span class="uscript-operator">*</span><span class="uscript-number">2</span> <span class="uscript-operator">+</span> Q<span class="uscript-operator">.</span>X <span class="uscript-operator">*</span><span class="uscript-operator">*</span> <span class="uscript-number">2</span> <span class="uscript-operator">+</span> Q<span class="uscript-operator">.</span>Y <span class="uscript-operator">*</span><span class="uscript-operator">*</span> <span class="uscript-number">2</span> <span class="uscript-operator">+</span> Q<span class="uscript-operator">.</span>Z<span class="uscript-operator">*</span><span class="uscript-operator">*</span><span class="uscript-number">2</span> <span class="uscript-operator">)</span> <span class="uscript-operator">;</span>
+ Q<span class="uscript-operator">.</span>W <span class="uscript-operator">/=</span> L <span class="uscript-operator">;</span>
+ Q<span class="uscript-operator">.</span>X <span class="uscript-operator">/=</span> L <span class="uscript-operator">;</span>
+ Q<span class="uscript-operator">.</span>Y <span class="uscript-operator">/=</span> L <span class="uscript-operator">;</span>
+ Q<span class="uscript-operator">.</span>Z <span class="uscript-operator">/=</span> L <span class="uscript-operator">;</span>
+ <span class="uscript-keyword">return</span> Q <span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">Daid303:</em> Is this the same as the new "QuatFromAxisAndAngle" function?</p>
+<p><em class="em2">Tarquin:</em> in theory, yes, but there may be differences in which way the angle and axis are used.</p>
+<p><em class="em2">Daid303:</em> Ah, ok, thx <img alt=":)" src="emoticons/smile.gif" align="middle"> It worked fine. I'm using some of this stuff in a C program i'm working on. Still looking for a way to do Vector(Quat) as you can do Vector(Rotator), but without doing this: Vector(Rotator(Quat))...</p>
+<p><em class="em2">FrozenCow:</em> Uhm... "a minor bug which occurs when a full 180° rotation is applied" Is there a way to fix this?</p>
+<p><em class="em2">Tarquin:</em> almost certainly. but it might involve your brain leaking out of your ears! thinking in 4 dimensions is hard. <img alt=":(" src="emoticons/sad.gif" align="middle"></p>
+<h3><a name="0.0.4"></a>Multipliplication in quaternions</h3>
+<p>Overload<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Overload&referrerid=Quaternions_In_Unreal_Tournament">?</a>s the * operator to multiply quaternions.</p>
+<pre class="uscript"><span class="uscript-keyword">final</span> <span class="uscript-keyword">operator</span><span class="uscript-operator">(</span><span class="uscript-number">16</span><span class="uscript-operator">)</span> quat <span class="uscript-operator">*</span> <span class="uscript-operator">(</span> quat Q1 <span class="uscript-operator">,</span> quat Q2 <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> vector V1 <span class="uscript-operator">,</span> V2 <span class="uscript-operator">,</span> Vp <span class="uscript-operator">;</span>
+ <span class="uscript-keyword">local</span> quat Qp <span class="uscript-operator">;</span>
+ V1 <span class="uscript-operator">=</span> eVect<span class="uscript-operator">(</span> Q1<span class="uscript-operator">.</span>X <span class="uscript-operator">,</span> Q1<span class="uscript-operator">.</span>Y <span class="uscript-operator">,</span> Q1<span class="uscript-operator">.</span>Z <span class="uscript-operator">)</span> <span class="uscript-operator">;</span>
+ V2 <span class="uscript-operator">=</span> eVect<span class="uscript-operator">(</span> Q2<span class="uscript-operator">.</span>X <span class="uscript-operator">,</span> Q2<span class="uscript-operator">.</span>Y <span class="uscript-operator">,</span> Q2<span class="uscript-operator">.</span>Z <span class="uscript-operator">)</span> <span class="uscript-operator">;</span>
+ Qp<span class="uscript-operator">.</span>W <span class="uscript-operator">=</span> Q1<span class="uscript-operator">.</span>W <span class="uscript-operator">*</span> Q2<span class="uscript-operator">.</span>W <span class="uscript-operator">-</span> <span class="uscript-operator">(</span> V1 <span class="uscript-operator">dot</span> V2 <span class="uscript-operator">)</span> <span class="uscript-operator">;</span>
+ Vp <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> Q1<span class="uscript-operator">.</span>W <span class="uscript-operator">*</span> V2 <span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-operator">(</span> Q2<span class="uscript-operator">.</span>W <span class="uscript-operator">*</span> V1 <span class="uscript-operator">)</span> <span class="uscript-operator">-</span> <span class="uscript-operator">(</span> V1 <span class="uscript-operator">cross</span> V2 <span class="uscript-operator">)</span> <span class="uscript-operator">;</span>
+ Qp<span class="uscript-operator">.</span>X <span class="uscript-operator">=</span> Vp<span class="uscript-operator">.</span>X <span class="uscript-operator">;</span>
+ Qp<span class="uscript-operator">.</span>Y <span class="uscript-operator">=</span> Vp<span class="uscript-operator">.</span>Y <span class="uscript-operator">;</span>
+ Qp<span class="uscript-operator">.</span>Z <span class="uscript-operator">=</span> Vp<span class="uscript-operator">.</span>Z <span class="uscript-operator">;</span>
+ <span class="uscript-keyword">return</span> Qp <span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.5"></a>Converting Quaternions to a Transformation Matrix</h3>
+<pre class="uscript"><span class="uscript-keyword">function</span> matrix3x3 QuatToMatrix <span class="uscript-operator">(</span> quat Q <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> matrix3x3 M <span class="uscript-operator">;</span>
+ <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> w<span class="uscript-operator">,</span>x<span class="uscript-operator">,</span>y<span class="uscript-operator">,</span>z <span class="uscript-operator">;</span>
+ w <span class="uscript-operator">=</span> Q<span class="uscript-operator">.</span>W <span class="uscript-operator">;</span> x <span class="uscript-operator">=</span> Q<span class="uscript-operator">.</span>X <span class="uscript-operator">;</span> y <span class="uscript-operator">=</span> Q<span class="uscript-operator">.</span>Y <span class="uscript-operator">;</span> z <span class="uscript-operator">=</span> Q<span class="uscript-operator">.</span>Z <span class="uscript-operator">;</span>
+ M<span class="uscript-operator">.</span>a11 <span class="uscript-operator">=</span> <span class="uscript-number">1</span> <span class="uscript-operator">-</span> <span class="uscript-operator">(</span> <span class="uscript-number">2</span> <span class="uscript-operator">*</span> y<span class="uscript-operator">*</span><span class="uscript-operator">*</span> <span class="uscript-number">2</span> <span class="uscript-operator">)</span> <span class="uscript-operator">-</span>  <span class="uscript-operator">(</span> <span class="uscript-number">2</span> <span class="uscript-operator">*</span> z<span class="uscript-operator">*</span><span class="uscript-operator">*</span> <span class="uscript-number">2</span> <span class="uscript-operator">)</span> <span class="uscript-operator">;</span>
+ M<span class="uscript-operator">.</span>a12 <span class="uscript-operator">=</span> <span class="uscript-number">2</span><span class="uscript-operator">*</span>x<span class="uscript-operator">*</span>y <span class="uscript-operator">-</span> <span class="uscript-number">2</span><span class="uscript-operator">*</span>z<span class="uscript-operator">*</span>w <span class="uscript-operator">;</span>
+ M<span class="uscript-operator">.</span>a13 <span class="uscript-operator">=</span> <span class="uscript-number">2</span><span class="uscript-operator">*</span>x<span class="uscript-operator">*</span>z <span class="uscript-operator">+</span> <span class="uscript-number">2</span><span class="uscript-operator">*</span>y<span class="uscript-operator">*</span>w <span class="uscript-operator">;</span>
+
+ M<span class="uscript-operator">.</span>a21 <span class="uscript-operator">=</span> <span class="uscript-number">2</span><span class="uscript-operator">*</span>x<span class="uscript-operator">*</span>y <span class="uscript-operator">+</span> <span class="uscript-number">2</span><span class="uscript-operator">*</span>z<span class="uscript-operator">*</span>w <span class="uscript-operator">;</span>
+ M<span class="uscript-operator">.</span>a22 <span class="uscript-operator">=</span> <span class="uscript-number">1</span> <span class="uscript-operator">-</span> <span class="uscript-number">2</span><span class="uscript-operator">*</span>x<span class="uscript-operator">*</span><span class="uscript-operator">*</span><span class="uscript-number">2</span> <span class="uscript-operator">-</span><span class="uscript-number">2</span><span class="uscript-operator">*</span>z<span class="uscript-operator">*</span><span class="uscript-operator">*</span><span class="uscript-number">2</span> <span class="uscript-operator">;</span>
+ M<span class="uscript-operator">.</span>a23 <span class="uscript-operator">=</span> <span class="uscript-number">2</span><span class="uscript-operator">*</span>y<span class="uscript-operator">*</span>z <span class="uscript-operator">-</span> <span class="uscript-number">2</span><span class="uscript-operator">*</span>x<span class="uscript-operator">*</span>w <span class="uscript-operator">;</span>
+
+ M<span class="uscript-operator">.</span>a31 <span class="uscript-operator">=</span> <span class="uscript-number">2</span><span class="uscript-operator">*</span>x<span class="uscript-operator">*</span>z <span class="uscript-operator">-</span> <span class="uscript-number">2</span><span class="uscript-operator">*</span>y<span class="uscript-operator">*</span>w <span class="uscript-operator">;</span>
+ M<span class="uscript-operator">.</span>a32 <span class="uscript-operator">=</span> <span class="uscript-number">2</span><span class="uscript-operator">*</span>y<span class="uscript-operator">*</span>z <span class="uscript-operator">+</span> <span class="uscript-number">2</span><span class="uscript-operator">*</span>x<span class="uscript-operator">*</span>w <span class="uscript-operator">;</span>
+ M<span class="uscript-operator">.</span>a33 <span class="uscript-operator">=</span> <span class="uscript-number">1</span> <span class="uscript-operator">-</span> <span class="uscript-number">2</span><span class="uscript-operator">*</span>x<span class="uscript-operator">*</span><span class="uscript-operator">*</span><span class="uscript-number">2</span> <span class="uscript-operator">-</span> <span class="uscript-number">2</span><span class="uscript-operator">*</span>y<span class="uscript-operator">*</span><span class="uscript-operator">*</span><span class="uscript-number">2</span> <span class="uscript-operator">;</span>
+ <span class="uscript-comment">/*
+ 1 - 2Y  - 2Z    2XY - 2ZW      2XZ + 2YW 
+ 2XY + 2ZW       1 - 2X  - 2Z   2YZ - 2XW
+ 2XZ - 2YW       2YZ + 2XW      1 - 2X  - 2Y
+ */</span>
+ <span class="uscript-keyword">return</span> M <span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.6"></a>Matrix Functions</h3>
+<p>Functions to define a matrix and multiply a matrix and a vector, ie. apply the transformation the matrix represents to the vector.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> Matrix3x3 defMatrix9f<span class="uscript-operator">(</span> <span class="uscript-type">float</span> a11<span class="uscript-operator">,</span><span class="uscript-type">float</span> a12<span class="uscript-operator">,</span><span class="uscript-type">float</span> a13<span class="uscript-operator">,</span> <span class="uscript-type">float</span> a21<span class="uscript-operator">,</span><span class="uscript-type">float</span> a22<span class="uscript-operator">,</span><span class="uscript-type">float</span> a23<span class="uscript-operator">,</span><span class="uscript-type">float</span> a31<span class="uscript-operator">,</span><span class="uscript-type">float</span> a32<span class="uscript-operator">,</span><span class="uscript-type">float</span> a33 <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> Matrix3x3 theMatrix <span class="uscript-operator">;</span>
+ theMatrix<span class="uscript-operator">.</span>a11 <span class="uscript-operator">=</span> a11 <span class="uscript-operator">;</span>
+ theMatrix<span class="uscript-operator">.</span>a12 <span class="uscript-operator">=</span> a12 <span class="uscript-operator">;</span>
+ theMatrix<span class="uscript-operator">.</span>a13 <span class="uscript-operator">=</span> a13 <span class="uscript-operator">;</span>
+ theMatrix<span class="uscript-operator">.</span>a21 <span class="uscript-operator">=</span> a21 <span class="uscript-operator">;</span>
+ theMatrix<span class="uscript-operator">.</span>a22 <span class="uscript-operator">=</span> a22 <span class="uscript-operator">;</span>
+ theMatrix<span class="uscript-operator">.</span>a23 <span class="uscript-operator">=</span> a23 <span class="uscript-operator">;</span>
+ theMatrix<span class="uscript-operator">.</span>a31 <span class="uscript-operator">=</span> a31 <span class="uscript-operator">;</span>
+ theMatrix<span class="uscript-operator">.</span>a32 <span class="uscript-operator">=</span> a32 <span class="uscript-operator">;</span>
+ theMatrix<span class="uscript-operator">.</span>a33 <span class="uscript-operator">=</span> a33 <span class="uscript-operator">;</span>
+ <span class="uscript-keyword">return</span> theMatrix <span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">operator</span><span class="uscript-operator">(</span><span class="uscript-number">16</span><span class="uscript-operator">)</span> vector <span class="uscript-operator">*</span> <span class="uscript-operator">(</span> Matrix3x3 M <span class="uscript-operator">,</span> vector v <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> vector Mv <span class="uscript-operator">,</span> R1 <span class="uscript-operator">,</span> R2 <span class="uscript-operator">,</span> R3 <span class="uscript-operator">;</span>
+ R1<span class="uscript-operator">.</span>x <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>a11 <span class="uscript-operator">;</span> R1<span class="uscript-operator">.</span>y <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>a12 <span class="uscript-operator">;</span> R1<span class="uscript-operator">.</span>z <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>a13 <span class="uscript-operator">;</span>
+ R2<span class="uscript-operator">.</span>x <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>a21 <span class="uscript-operator">;</span> R2<span class="uscript-operator">.</span>y <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>a22 <span class="uscript-operator">;</span> R2<span class="uscript-operator">.</span>z <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>a23 <span class="uscript-operator">;</span>
+ R3<span class="uscript-operator">.</span>x <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>a31 <span class="uscript-operator">;</span> R3<span class="uscript-operator">.</span>y <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>a32 <span class="uscript-operator">;</span> R3<span class="uscript-operator">.</span>z <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>a33 <span class="uscript-operator">;</span>
+
+ Mv<span class="uscript-operator">.</span>x  <span class="uscript-operator">=</span> R1 <span class="uscript-operator">dot</span> v <span class="uscript-operator">;</span>
+ Mv<span class="uscript-operator">.</span>y  <span class="uscript-operator">=</span> R2 <span class="uscript-operator">dot</span> v <span class="uscript-operator">;</span>
+ Mv<span class="uscript-operator">.</span>z  <span class="uscript-operator">=</span> R3 <span class="uscript-operator">dot</span> v <span class="uscript-operator">;</span>
+ <span class="uscript-keyword">return</span> Mv <span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">Daid303:</em> Ok, kept me busy for a good 2 days, but I think i've got it. A bit. The * operator of the matrix and the vector is wrong I think. (I can't find any info about it anywhere on the net) but here is what I found out:</p>
+<p>R1 seems to point in the direction what Vect(1,0,0) would have after rotating. M * Vect(1,0,0) should return that, but it doesn't. I think it should be along the lines of:</p>
+<pre class="uscript"><span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">operator</span><span class="uscript-operator">(</span><span class="uscript-number">16</span><span class="uscript-operator">)</span> vector <span class="uscript-operator">*</span> <span class="uscript-operator">(</span> Matrix3x3 M <span class="uscript-operator">,</span> vector v <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> vector Mv <span class="uscript-operator">,</span> R1 <span class="uscript-operator">,</span> R2 <span class="uscript-operator">,</span> R3 <span class="uscript-operator">;</span>
+ R1<span class="uscript-operator">.</span>x <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>a11 <span class="uscript-operator">;</span> R1<span class="uscript-operator">.</span>y <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>a12 <span class="uscript-operator">;</span> R1<span class="uscript-operator">.</span>z <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>a13 <span class="uscript-operator">;</span>
+ R2<span class="uscript-operator">.</span>x <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>a21 <span class="uscript-operator">;</span> R2<span class="uscript-operator">.</span>y <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>a22 <span class="uscript-operator">;</span> R2<span class="uscript-operator">.</span>z <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>a23 <span class="uscript-operator">;</span>
+ R3<span class="uscript-operator">.</span>x <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>a31 <span class="uscript-operator">;</span> R3<span class="uscript-operator">.</span>y <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>a32 <span class="uscript-operator">;</span> R3<span class="uscript-operator">.</span>z <span class="uscript-operator">=</span> M<span class="uscript-operator">.</span>a33 <span class="uscript-operator">;</span>
+
+ Mv  <span class="uscript-operator">=</span> R1 <span class="uscript-operator">*</span> V<span class="uscript-operator">.</span>X <span class="uscript-operator">+</span> R2 <span class="uscript-operator">*</span> V<span class="uscript-operator">.</span>Y <span class="uscript-operator">+</span> R3 <span class="uscript-operator">*</span> V<span class="uscript-operator">.</span>Z<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">return</span> Mv <span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>But i'm not sure...</p>
+<h2><a name="0.1"></a>Related Topics</h2>
+<ul><li><a href="quaternion.html">Quaternion</a></li>
+<li><a href="quaternion-rotation.html">Quaternion Rotation</a></li>
+</ul>
+<script type="text/javascript"><!--
+ menuItemAdd("Quaternion definition", "#0.0.1");
+menuItemAdd("Vector expression", "#0.0.2");
+menuItemAdd("Converting Axial Rotation to a Quaternion", "#0.0.3");
+menuItemAdd("Multipliplication in quaternions", "#0.0.4");
+menuItemAdd("Converting Quaternions to a Transformation Matrix", "#0.0.5");
+menuItemAdd("Matrix Functions", "#0.0.6");
+menuItemAdd("Related Topics", "#0.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Quaternions_In_Unreal_Tournament">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Quaternions_In_Unreal_Tournament">View other revisions</a><br>Last edited October 8, 2004 5:08 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Quaternions_In_Unreal_Tournament">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Quaternions_In_Unreal_Tournament">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>The three virtues of a programmer: Laziness, Impatience, and Hubris. (Larry Wall)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

@@ -1,0 +1,332 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: An AI Concept</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=An_AI_Concept; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=An AI Concept">An AI Concept</a></h1>
+	<div class="wiki"><p><em class="em3">Disclaimer:</em> This page represents an idea for a proposed way of coding some particular functionality / behavior in UnrealScript.  It does not represent the way that <a href="unreal-tournament.html">UT</a> / <a href="unreal-tournament-2003.html">UT2003</a> / <a href="unreal-tournament-2004.html">UT2004</a> actually do things in the normal game engine.</p>
+<h2><a name="0.1"></a>Introduction</h2>
+<p>I'm going to generalize for a minute briefly and explain that in a game "world," any and every object has a behaviour.  Even if it's as simple as a cup or as complex as monster.  Each behaviour can be more eaisily comprehended if split up into two categories:</p>
+<ol><li>General  Behaviour</li>
+<li>Specific Behaviour</li>
+</ol>
+<p>General Behaviours are behaviours that all objects of a certain type know.  With Unreal, most monsters general behaviour is located in their parent class.  For example the Skaarj:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> Skaarj <span class="uscript-keyword">extends</span> ScriptedPawn<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//some behavioural code</span></pre><p>ScriptedPawn is the Skaarj's parent class, and defines general behaviour for all instances of itself. And down the heirarchy:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> SkaarjWarrior <span class="uscript-keyword">extends</span> Skaarj<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//some behavioural code</span></pre><p>Where Skaarj is the parent class and contains general behaviour code for all instances of itself. SkaarjWarrior now has the behaviour defined in Skaarj, general, and it's own behaviour for doing more "specific to it" things, specific.  This concept is old and for new coders, is called inheritance.  (If your one of those newer coders, I'd suggest reading a tutorial on Object Oriented Programming before you continue).</p>
+<h2><a name="0.2"></a>The New Pattern </h2>
+<p>Before I actually show how to implement the new patten, I'd like to explain what it does, and if you should use it.</p>
+<h3><a name="0.2.1"></a>What does it do? </h3>
+<p>I can best show you what it does by using an example.  Most of it is pseudo code, but it gets the point across <img alt=";)" src="emoticons/wink.gif" align="middle">.</p>
+<p>Basically, the pattern creates a class structure for creating GENERAL TYPES of monsters with specific behaviours. It allows you to make one class for every general type of monster, one behaviour for every general type of behaviour, and allow both to be used in eachother.This requires two new classes, class Behaviour, and class Creature: </p>
+<pre class="uscript"><span class="uscript-keyword">class</span> Behaviour <span class="uscript-keyword">extends</span> ScriptedPawn<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//an instance of every sub-class of behaviour will need to be here(eventually)</span></pre><pre class="uscript"><span class="uscript-keyword">class</span> Creature <span class="uscript-keyword">extends</span> ScriptedPawn<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//Every variable that a subclass of Creature needs will go here(eventually)</span></pre><p>Note that I say 'general' several times in that paragraph.  The classes NEED to be general. Example: Say I wanted to create a new brute that can crouch and hide behind boxes, shoot missles and machine guns, and talk to the player.  To do this, I could create a general 'Creature' class called newBrute and a general 'Behaviour' classes called Hiding:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> newBrute <span class="uscript-keyword">extends</span> Creature<span class="uscript-operator">;</span></pre><pre class="uscript"><span class="uscript-keyword">class</span> Hiding <span class="uscript-keyword">extends</span> Behaviour<span class="uscript-operator">;</span></pre><p>Notice that it isin't 'HidngBehindBoxes', or 'BruteWarrior' extending Brute.  They are both general names and both general classes.  newBrute will define more specific functions for instances of itself and Hiding will define functions for hiding.  All sub-classes of Behaviour are abstract, or only contain functions that make up an interface. Let us map out what needs to be in each class:</p>
+<ul><li>newBrute<ul><li>UseMachineGun()</li>
+<li>UseMissileLauncher()</li>
+<li>CheckWeaponStates()</li>
+<li>CheckHealthState()</li>
+<li>SeePlayer()</li>
+</ul>
+</li>
+<li>Hiding<ul><li>CheckForBox()</li>
+<li>CheckForShadows()</li>
+<li>HideBehindNearestBox()</li>
+<li>HideBehindNearestShadow()</li>
+</ul>
+</li>
+</ul>
+<p>(By no means are these complete, they are just for the sake of the example)</p>
+<p>A redefinition of Creature:</p>
+<pre class="uscript"><span class="uscript-comment">// same class as before just added on to</span>
+
+<span class="uscript-keyword">class</span> Creature <span class="uscript-keyword">extends</span> ScriptedPawn<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> Behaviour _behaviour<span class="uscript-operator">;</span></pre><p>Now that we have mapped out what will be needed for the newBrute and Hiding, we will continue to define states:</p>
+<ul><li>newBrute<ul><li>TalkingToPlayer</li>
+<li>Firing</li>
+<li>Idling</li>
+<li>Hiding</li>
+</ul>
+</li>
+</ul>
+<dl><dt>TalkingToPlayer</dt><dd>A state for calling functions that send logs to players.</dd><dt>Firing</dt><dd>A state that calls firing functions and plays animations.</dd><dt>Idling</dt><dd>A state that checks ammo and checks which weapons can be used.</dd><dt>HidingBehindBox</dt><dd>A state for using the _behaviour instance for calling the 'Hiding' interface.</dd></dl>
+<p>No states will be needed for Hiding, for it is abstract.</p>
+<pre class="uscript"><span class="uscript-comment">//The same class as above, just added on to</span>
+
+<span class="uscript-keyword">class</span> newBrute <span class="uscript-keyword">extends</span> Creature<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//---------------------------------------------------</span>
+<span class="uscript-comment">// Functions</span>
+<span class="uscript-comment">//---------------------------------------------------</span>
+
+<span class="uscript-keyword">function</span> UseMachineGun<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-comment">//code</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> UseMissileLauncher<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-comment">//code</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> CheckWeaponStates<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-comment">//code</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> CheckHealthState<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-comment">//code</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> SeePlayer<span class="uscript-operator">(</span>actor SeenPlayer<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-comment">//code</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//-------------------------------------------------------------</span>
+<span class="uscript-comment">// States</span>
+<span class="uscript-comment">//-------------------------------------------------------------</span>
+
+<span class="uscript-keyword">state</span> TalkingToPlayer <span class="uscript-operator">{</span>
+Begin:
+<span class="uscript-comment">//code</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">state</span> Firing <span class="uscript-operator">{</span>
+Begin:
+<span class="uscript-comment">//code</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">state</span> Idling <span class="uscript-operator">{</span>
+Begin:
+<span class="uscript-comment">//code</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">state</span> Hiding <span class="uscript-operator">{</span>
+Begin:
+<span class="uscript-comment">//code</span>
+<span class="uscript-operator">}</span></pre><pre class="uscript"><span class="uscript-comment">// same class as above, just added on to</span>
+
+<span class="uscript-keyword">class</span> Hiding <span class="uscript-keyword">extends</span> Behaviour<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//------------------------------------</span>
+<span class="uscript-comment">// Functions</span>
+<span class="uscript-comment">//------------------------------------</span>
+
+<span class="uscript-keyword">function</span> CheckForBoxes<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-comment">//code</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> CheckForShadows<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-comment">//code</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> HideBehindNearestBox<span class="uscript-operator">(</span>Creature _creature<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-comment">//code</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> HideBehindNearestShadow<span class="uscript-operator">(</span>Creature _creature<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-comment">//code</span>
+<span class="uscript-operator">}</span></pre><p>Now the Behaviour class can be modified:</p>
+<pre class="uscript"><span class="uscript-comment">//same class as above, just added on to</span>
+
+<span class="uscript-keyword">class</span> Behaviour <span class="uscript-keyword">extends</span> ScriptedPawn<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> Hiding  _hiding<span class="uscript-operator">;</span>  <span class="uscript-comment">// an instance of the Hiding class</span></pre><p>Now the _behaviour instance can be used in newBrute to access 'Hiding' interface.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> newBrute <span class="uscript-keyword">extends</span> Creature<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> actor player<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//---------------------------------------------------</span>
+<span class="uscript-comment">// Functions</span>
+<span class="uscript-comment">//---------------------------------------------------</span>
+
+<span class="uscript-keyword">function</span> UseMachineGun<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-comment">//code</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> UseMissileLauncher<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-comment">//code</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> CheckWeaponStates<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-comment">//code</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> CheckHealthState<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">.</span>health <span class="uscript-operator">&lt;=</span> <span class="uscript-number">50</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span> GotoState<span class="uscript-operator">(</span><span class="uscript-name">'Hiding'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> SeePlayer<span class="uscript-operator">(</span>actor Seenplayer<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+SeenPlayer <span class="uscript-operator">=</span> player<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//-------------------------------------------------------------</span>
+<span class="uscript-comment">// States</span>
+<span class="uscript-comment">//-------------------------------------------------------------</span>
+
+<span class="uscript-keyword">state</span> TalkingToPlayer <span class="uscript-operator">{</span>
+Begin:
+<span class="uscript-comment">//code</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">state</span> Firing <span class="uscript-operator">{</span>
+Begin:
+<span class="uscript-comment">//code</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">state</span> Idling <span class="uscript-operator">{</span>
+Begin:
+<span class="uscript-comment">//code</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">state</span> Hiding <span class="uscript-operator">{</span>
+Begin:
+behaviour<span class="uscript-operator">.</span>_hiding<span class="uscript-operator">.</span>HideBehindBox<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+CheckHealthState<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h4><a name="0.2.1.1"></a>Is It For Me</h4>
+<p>Well, thats not really an easy question to awnser.  But here are somethings to check over.  If you can awnser yes to these questions I would try the concept, just to see what can be gotten out of it, explore it.</p>
+<ol><li>Am I making a mod where I want to include my own models and meshes?</li>
+<li>Is my mod large enough to be doing all this work for just a few monsters?</li>
+<li>Am I going to be adding a lot of new features with AI?</li>
+<li>Will I be making new weapons and items in my mod? </li>
+<li>If my mod is multiplayer, is this system appropriate?</li>
+</ol>
+<h2><a name="0.3"></a>The Concept Extended (More Advanced) </h2>
+<h3><a name="0.3.1"></a>Semi-Abstract Classes</h3>
+<p>I like to call Creature and Behaviour 'semi-abstract classes' because they aren't really abstract, they contain variables and functions just like any other class.  They become semi-abstract because they are basically interfaces for accessing multiple interfaces. </p>
+<h3><a name="0.3.2"></a>Sub-whatta?</h3>
+<p>I like to define these terms in this way:</p>
+<dl><dt>Sub-Behavioural classes</dt><dd>Any class that inherits 'Behaviour' a sub-behavioural class.  </dd><dt>Sub-Creature classes</dt><dd>Any class that inherits 'Creature' a sub-creature class.</dd></dl>
+<h3><a name="0.3.3"></a>Polymorphism</h3>
+<p>Many elements of the pattern will be polymorphic.  Hence the terms semisub-polymorphic, sub-polymorphic, and semi-abstract polymorphic. A behavioural trigger which can be called by the creature could use polymorphism by having the creature call the trigger placed somewhere in some map, and having it call some interface to change that creatures behaviour, all at runtime.  More on this will be added later.</p>
+<h2><a name="0.4"></a>Conclusion</h2>
+<p>The pattern can be used on anything, not just AI, just with a little change insystem.  Weapons, items, etc. all have behaviours... One could write general  classes for every type of item or weapon or whatever and provide interfaces through behaviour and '_Item' instead of Creature, or _Weapon.  Remember, it's just a concept, a theory,  don't live by it... Much is untested.  Take it and expand it... find ways to make it better.  </p>
+<p><a href="c0ry.html">C0ry</a></p>
+<p>Cory Vogel 2002</p>
+<p><a href="mailto:fusion815@cox.net">fusion815@cox.net</a></p>
+<p>Questions?</p>
+<p>email me <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<h2><a name="0.5"></a>Related Topics</h2>
+<ul><li><a href="artificial-intelligence.html">Artificial Intelligence</a> &ndash; Super Topic for all AI (custom or stock)<ul><li><a href="introduction-to-game-ai.html">Introduction to Game AI</a></li>
+<li><a href="first-person-shooter-ai-arc.html">First Person Shooter AI Architecture</a></li>
+</ul>
+</li>
+</ul>
+<h2><a name="0.6"></a>Discussion</h2>
+<p><em class="em2">Foogod:</em> I added the disclaimer at the top, because the way these pages are linked from <a href="artificial-intelligence.html">Artificial Intelligence</a> could confuse some people into thinking this is an explanation of the way that the UT-based games actually do things.</p>
+<p><em class="em2">Ghost3021:</em>fixed a typo, "just a some monsters? is now "for just a few monsters?". <img alt=";)" src="emoticons/wink.gif" align="middle"> </p>
+<p><em class="em2">SuperApe:</em> I hope Cory doesn't mind; I took out a lot of unecessary spacing in the code and text of this page.</p>
+<hr class="thin"><p><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Introduction", "#0.1");
+menuItemAdd("The New Pattern ", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>What does it do? ", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Is It For Me", "#0.2.1.1");
+menuItemAdd("The Concept Extended (More Advanced) ", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Semi-Abstract Classes", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Sub-whatta?", "#0.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Polymorphism", "#0.3.3");
+menuItemAdd("Conclusion", "#0.4");
+menuItemAdd("Related Topics", "#0.5");
+menuItemAdd("Discussion", "#0.6");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=An_AI_Concept">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=An_AI_Concept">View other revisions</a><br>Last edited June 2, 2007 16:05 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=An_AI_Concept">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/An_AI_Concept">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I don't need to test my programs. I have an error-correcting modem.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

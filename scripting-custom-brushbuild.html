@@ -1,0 +1,387 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Scripting Custom Brushbuilders</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Scripting_Custom_Brushbuilders; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Scripting Custom Brushbuilders">Scripting Custom Brushbuilders</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Preliminaries</h2>
+<h3><a name="0.1.1"></a>Prerequisites</h3>
+<ul><li>vague knowledge of <a href="unrealscript.html">UnrealScript</a>.</li>
+<li>In particular a passing familiarity with functions, variables and flow control statements and a basic knowledge of the Unreal class structure.</li>
+<li>A little bit of mathematics: geometry, vectors and trigonometry. For more advanced stuff, matrix transformations.</li>
+<li><a href="compiling-with-ucc.html">Compiling With UCC</a>, or <a href="umake.html">UMake</a> </li>
+<li>read up on <a href="brushbuilder.html">BrushBuilder</a>, the parent class</li>
+</ul>
+<p>(I knew only JavaScript when I started and fumbled my way with the help of tutorials: I recommend <a href="http://www.unrealscript.com/">[Chimeric]</a>'s excellent site.)</p>
+<h3><a name="0.1.2"></a>Code style</h3>
+<p>Bear in mind that streamlined code isn't necessary here. The user won't mind a few extra clock cycles &ndash; she's not having rockets fired at her! Aim for code legibility rather than efficiency.</p>
+<h3><a name="0.1.3"></a>Terms used</h3>
+<ul><li><em class="em1">builder brush</em> means the <a href="red-builder-brush.html">red builder brush</a>, the red dotted-line brush seen in the editor.</li>
+<li>[UT] refers to your base UnrealTournament directory.</li>
+<li>Names such as MyPackage, MyBuilder, etc are used as examples. If you follow this tutorial feel free to use more sensible names.</li>
+</ul>
+<h3><a name="0.1.4"></a>Caveat</h3>
+<p>I don't claim to know or understand the inner workings of UnrealEd. Some of what is presented here is based on observation of UnrealEd's behaviour and experimentation.</p>
+<h2><a name="0.2"></a>The maths bit</h2>
+<p>A simple brush in UEd is basically a polyhedron of some sort, which need not necessarily be convex. Other types of brush are sheet brushes and compound brushes (by that I mean made from intersecting the builder with several simple brushes).<br></p>
+<p>Whatever the brush looks like, UEd stores it in two parts (see also <a href="t3d-file.html">T3D file</a>):</p>
+<ul><li>A list of vertices: these are simply points in 3D space, stored as co-ordinates or vectors, it's the same thing.</li>
+<li>A list of faces: these are the polygons that make the sides of the brush. A poly is described by a list of the vertices that make up its corners.</li>
+</ul>
+<p>What this means is that brushes are made by defining some dots, and then joining them up to make shapes. (The dots part is geometry, or vector algebra depending on how you look at it. The shapes part is topology.)</p>
+<ul><li><em class="em1">Order of the vertex list:</em> They must be in sequence, or the poly will show diagonals, and essentially will be 'folded up' &mdash; think of making the poly's outline out of a piece of wire, following the order of the vertices. The engine draws the poly inside that wire like a soap bubble.<br></li>
+<li><em class="em1">Direction:</em> The direction in which the list travels round the poly determines which way the poly will face. More on how this works below.</li>
+<li><em class="em1">Starting vertex</em>: I believe that UEd treats the side formed by the first two vertices in the list as that poly's vertical &ndash; this sets the orientation of the poly's texture.</li>
+</ul>
+<p>While the brushes may be concave, the individual polys must be convex. The Unreal engine currently has a maximum of 16 vertices per poly, and if you try to make one with more than this UEd will automatically split it.<br>The Unreal engine uses a <em class="em2">left-handed co-ordinate system</em>. This just means that the y-axis goes the opposite way to how it did at school!</p>
+<h4><a name="0.2.0.1"></a>Getting started</h4>
+<p>There are two ways to go about writing a new buidler: you can write a new class, or you can modify an existing one. The demonstration portion of this tutorial will work with either approach.</p>
+<h3><a name="0.2.1"></a>Making a new class</h3>
+<p>UnrealEd is designed to be modular. When it loads, it looks for subclasses of object.brushbuilder, and whatever it finds, it displays in the interface. You can see the native builders (and mine, if you've installed the Tarquin Brush Builder pack) in the actor browser if you un-check the 'actor classes only' box.<br>What this means is that all you need to do is write the class, compile it, and add the package to the list in UnrealTournament.ini &mdash; UEd will handle displaying the icon and making the property dialog box.<br>Make a new directory tree [UT]\MyPackage\Classes. The package name can be anything you like. Create a new text file named MyBuilder.uc in the Classes directory, and paste into it the code below:</p>
+<pre class="uscript"><span class="uscript-comment">// A blank builder</span>
+<span class="uscript-keyword">class</span> MyBuilder
+    <span class="uscript-keyword">extends</span> BrushBuilder<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> Sides<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span> AlignToSide<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">name</span> GroupName<span class="uscript-operator">;</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> Build<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Sides <span class="uscript-operator">&lt;</span> <span class="uscript-number">3</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> BadParameters<span class="uscript-operator">(</span><span class="uscript-string">"Bad input."</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    BeginBrush<span class="uscript-operator">(</span> <span class="uscript-keyword">false</span><span class="uscript-operator">,</span> GroupName <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span> EndBrush<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+Radius<span class="uscript-operator">=</span><span class="uscript-number">0.000000</span>
+Sides<span class="uscript-operator">=</span><span class="uscript-number">4</span>
+AlignToSide<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+GroupName<span class="uscript-operator">=</span>AName
+BitmapFilename<span class="uscript-operator">=</span><span class="uscript-string">"AFilename"</span>
+ToolTip<span class="uscript-operator">=</span><span class="uscript-string">"A blank builder."</span>
+<span class="uscript-operator">}</span></pre><p>Add or change variables as you see fit, duplicating changes in the declaration and the <code>defaultproperties</code> section. The name declared by the <code>class</code> statement must match the filename so change that too if you've renamed the file.<br></p>
+<p>The value of GroupName makes very little difference as far as I can tell, but you may as well put something that describes the builder.<br>UEd looks in [UT]\system\editorres for a file named <code>AFilename.BMP</code>. If UEd can't find a file of this name, or if the value is blank or the line deleted, UEd simply displays a grey button for the builder in the toolbox. Change this value to the name of a bitmap file in that directory to see an icon in the interface. If you want to make an icon yourself, they are 30 by 30, with a background of 50% grey.<br>Lastly, change the tooltip to whatever you like.</p>
+<p>Compile your package with ucc, and add the following line unrealtournament.ini at the end of the [Editor.EditorEngine] section, after the other 'EditPackages' lines:</p>
+<pre class="paraverbatim"> EditPackages=MyPackage</pre><p>Run UEd, and the button for new builder should be in the toolbox. Open the actor browser, uncheck the 'actor classes only' box and look for your builder under object.brushbuilder. Rather than work in a text editor and have to compile to see changes, it's easier to make changes in UEd and see how they work straight away. It's now an existing class, so move on to the next section!</p>
+<h3><a name="0.2.2"></a>Modifying an existing class</h3>
+<p>You can modify the script of an existing brush builder, recompile in UEd, use the builder and save your map, and as long as you don't save the package the next time you run UEd the builder you changed will be back to its old self. However, changing, adding or removing input variables to the builder code will upset UEd to the point of crashing!<br>This approach can be useful if you want to try an idea quickly, or you want to script a complex brush for a specific purpose.</p>
+<p>If you've built your own class and are now modifying it within UEd, you should have added all the input variables the builder will need. Keep a text editor running, and paste your updated script into a different file (say MyBuilder.txt) for backup. When you are happy with the changes, quit UEd, open MyBuilder.uc and copy the script across from MyBuilder.txt. Remember that the version pasted from UEd won't have a <code>defaultproperties</code> section, so keep the one from MyBuilder.uc.</p>
+<p>It's at this stage you can add or change input variables' names, type and default value.<br>Rebuild MyPackage.u with ucc (remember you have to delete the original, ucc won't overwrite files), and run UEd to see the new version.<br>I found the easiest way to script a builder was to edit its script in UEd, recompile from UEd and see the results straight away.</p>
+<h4><a name="0.2.2.1"></a>Anatomy of a builder</h4>
+<dl><dt>Class declaration</dt><dd>Defines the class name. The class must be a subclass of brushbuilder. See <a href="class-syntax.html">Class Syntax</a>.</dd><dt>Input parameters</dt><dd>Variables that the user will set in the parameter dialog box, such as Height, Sides, AlignToSide, IWantFriesWithThis. These are declared as class variables thus:</dd></dl>
+<pre class="uscript"><span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> Height<span class="uscript-operator">,</span> OuterRadius<span class="uscript-operator">,</span> InnerRadius<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> Sides<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span> AlignToSide<span class="uscript-operator">;</span></pre><p>You can define and use enumeration type variables (out of this tutorial's scope). Variables defined here should be matched in the <code>defaultproperties</code> section, or they will hold peculiar values when first seen in the parameter dialog. See <a href="variable-syntax.html">Variable Syntax</a> and <a href="displaying-variables-in-unr.html">Displaying Variables in UnrealEd</a> for details about how different <a href="variable-type.html">variable type</a>s show up in the editor.</p>
+<dl><dt>Procedural functions</dt><dd>Any actions your builder may need to do repeatedly can be called in a function from the build function. For example, the cylinder builder's build function calls a function to build a cylinder, may call it again to build an inner cylinder if the overal brush should be hollow, and then builds polys for the two ends.</dd><dt>Build function</dt><dd>This function is called by UEd when you left-click the builder icon, or press 'Build' in the parameter dialog box. Essentially, it's the main body of the builder script.</dd></dl>
+<pre class="uscript"><span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> Build<span class="uscript-operator">(</span><span class="uscript-operator">)</span></pre><p><br></p>
+<p>Some of the Epic builders use the following, which is identical to UnrealScript:<br></p>
+<pre class="uscript"><span class="uscript-keyword">event</span> <span class="uscript-type">bool</span> Build<span class="uscript-operator">(</span><span class="uscript-operator">)</span></pre><p><br></p>
+<dl><dt>Default properties</dt><dd>This section goes at the end of the builder script, and contains default values for the input parameters, the tooltip text, and the filename for the icon bitmap.</dd></dl>
+<pre class="uscript"><span class="uscript-keyword">defaultproperties</span>
+          <span class="uscript-operator">{</span>
+          <span class="uscript-operator">[</span>parametername<span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">[</span>parametervalue<span class="uscript-operator">]</span>
+          BitmapFilename<span class="uscript-operator">=</span><span class="uscript-string">"[filename]"</span>
+          ToolTip<span class="uscript-operator">=</span><span class="uscript-string">"[tooltiptext]"</span>
+          <span class="uscript-operator">}</span></pre><p>UEd looks in {BaseDirectory<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=BaseDirectory&referrerid=Scripting_Custom_Brushbuilders">?</a>}\System\Editorres for a file named [filename].BMP. If the value is blank, or UEd can't find the file, the button will be grey with no picture.</p>
+<h4><a name="0.2.2.2"></a>Functions</h4>
+<p>The functions are used to build the brush are native functions  of the <a href="brushbuilder.html">BrushBuilder</a> class that the current builder has inherited.</p>
+<h2><a name="0.3"></a>A little example (ued2)</h2>
+<h3><a name="0.3.1"></a>'Half cube' brush builder</h3>
+<p><img alt="[Halfcubediagram]" src="images/halfcubediagram.png" class="image-inline"></p>
+<pre class="uscript"><span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-comment">//Half cube</span>
+<span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-keyword">class</span> Halfcube <span class="uscript-keyword">extends</span> BrushBuilder<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">name</span> GroupName<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> Size<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">event</span> <span class="uscript-type">bool</span> build<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+BeginBrush<span class="uscript-operator">(</span> <span class="uscript-keyword">false</span><span class="uscript-operator">,</span> GroupName <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//So each time we call the vertex3f function, the created vertex is given a number,</span>
+<span class="uscript-comment">//it's the number we use in the poly functions..</span>
+<span class="uscript-comment">//First vertex is number 0, and so on</span>
+
+vertex3f<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//0</span>
+vertex3f<span class="uscript-operator">(</span>Size<span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//1</span>
+vertex3f<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Size<span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//2</span>
+poly3i<span class="uscript-operator">(</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// the base poly - the first parameter indicates the "front" of the face</span>
+vertex3f<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Size<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//3</span>
+vertex3f<span class="uscript-operator">(</span>Size<span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Size<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//4</span>
+vertex3f<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Size<span class="uscript-operator">,</span>Size<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//5</span>
+poly3i<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">3</span><span class="uscript-operator">,</span><span class="uscript-number">4</span><span class="uscript-operator">,</span><span class="uscript-number">5</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// the top poly</span>
+<span class="uscript-comment">//</span>
+poly4i<span class="uscript-operator">(</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">3</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">2</span><span class="uscript-operator">,</span><span class="uscript-number">5</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// the three sides.</span>
+poly4i<span class="uscript-operator">(</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">3</span><span class="uscript-operator">,</span><span class="uscript-number">4</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//</span>
+poly4i<span class="uscript-operator">(</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">2</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">4</span><span class="uscript-operator">,</span><span class="uscript-number">5</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//</span>
+
+<span class="uscript-keyword">return</span> endbrush<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+Size<span class="uscript-operator">=</span><span class="uscript-number">128</span>
+GroupName<span class="uscript-operator">=</span>Halfcube
+BitmapFilename<span class="uscript-operator">=</span><span class="uscript-string">"BBHalfCube"</span>
+ToolTip<span class="uscript-operator">=</span><span class="uscript-string">"half a cube"</span>
+<span class="uscript-operator">}</span></pre><pre class="paraverbatim">	</pre><h2><a name="0.4"></a>Tips And Tricks</h2>
+<h3><a name="0.4.1"></a>Naming polys</h3>
+<p><a href="mychaeel.html">Mychaeel</a> came up with a way to use an expression to set the ItemName parameter in the poly building functions. First declare a <em class="em1">name</em> variable in your BrushBuilder subclass; then use <em class="em1">SetPropertyText</em> to set it using an arbitarily constructed <em class="em1">string</em> value; then take the <em class="em1">name</em> value from the variable you declared. </p>
+<pre class="uscript"><span class="uscript-comment">// declare a name variable:</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">name</span> DynItemName<span class="uscript-operator">;</span>  
+
+<span class="uscript-comment">// set it as needed:</span>
+SetPropertyText<span class="uscript-operator">(</span> <span class="uscript-string">"DynItemName"</span> <span class="uscript-operator">,</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>i<span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// use the DynItemName variable in the poly call:</span>
+Poly4i<span class="uscript-operator">(</span> sgn <span class="uscript-operator">,</span> Va2 <span class="uscript-operator">,</span> Vb2 <span class="uscript-operator">,</span> Vb1 <span class="uscript-operator">,</span> Va1 <span class="uscript-operator">,</span> DynItemName <span class="uscript-operator">,</span> PolyFlags <span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><h2><a name="0.5"></a>Running Unrealscript in the Editor</h2>
+<p>A brushbuilder is an Object, and is one of the few (very few) classes in which you can run UnrealScript within the editor. The editor calls the Build() function of a brushbuilder to cause it to create a brush. You are not required to use this function to make a brush, however, and can do virtually anything you like with it! Remember that UnrealEd and the actual game run using mostly the same engine - as a result you can essentially treat your brushbuilder as any Object. Basically, anything you can do in the game, you can do with the brushbuilder.</p>
+<h3><a name="0.5.1"></a>Obtaining actor reference</h3>
+<p>Generally the first thing you will want to do in the Build script is to find an actor to do your dirty work. Objects can't use Spawn or a myriad of other things. It is quite simple to do so:</p>
+<pre class="uscript"><span class="uscript-comment">// A base class you can extend to call code within the editor.</span>
+<span class="uscript-keyword">class</span> EditorScript <span class="uscript-keyword">extends</span> BrushBuilder<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> actor LocateActor<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> actor I<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">foreach</span> AllObjects<span class="uscript-operator">(</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> I <span class="uscript-operator">)</span> <span class="uscript-keyword">return</span> I<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">event</span> <span class="uscript-type">bool</span> Build<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  ExecuteScript<span class="uscript-operator">(</span> LocateActor<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> ExecuteScript<span class="uscript-operator">(</span> actor A <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-comment">// Do whatever you want here, or ideally subclass this to make your own custom functionality.</span>
+<span class="uscript-operator">}</span></pre><p>Instead of AllObjects iterator, you can use the FindObject(). Use SetPropertyText() and a temp variable if you know name of the actor you're looking for. Don't forget to clear the temp variable after calling SetPropertyText(), leaving actor references in objects most likely <a href="creating-actors-and-objects.html">will cause crashes</a> on save or exit.</p>
+<pre class="uscript"><span class="uscript-keyword">struct</span> SEditorActor
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">var</span> <span class="uscript-type">string</span> Actor<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">var</span> <span class="uscript-type">int</span> MaxId<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>SEditorActor<span class="uscript-operator">&gt;</span> EditorActors<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> Actor TempEditorActor<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">event</span> <span class="uscript-type">bool</span> Build<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Actor A<span class="uscript-operator">;</span>
+    
+    <span class="uscript-comment">// Find actor reference</span>
+    A <span class="uscript-operator">=</span> FindAnyActor<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> A <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">//...</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Actor FindAnyActor<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> SEditorActor E<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Actor A<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">,</span>j<span class="uscript-operator">;</span>
+        
+    <span class="uscript-keyword">for</span><span class="uscript-operator">(</span> i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i<span class="uscript-operator">!=</span>EditorActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> <span class="uscript-operator">++</span>i <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        E <span class="uscript-operator">=</span> EditorActors<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">for</span><span class="uscript-operator">(</span> j<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> j<span class="uscript-operator">!=</span>E<span class="uscript-operator">.</span>MaxId<span class="uscript-operator">;</span> <span class="uscript-operator">++</span>j <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            SetPropertyText<span class="uscript-operator">(</span><span class="uscript-string">"TempEditorActor"</span><span class="uscript-operator">,</span>E<span class="uscript-operator">.</span>Actor<span class="uscript-operator">$</span>j<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> TempEditorActor <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                A <span class="uscript-operator">=</span> TempEditorActor<span class="uscript-operator">;</span>
+                TempEditorActor <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+                Log<span class="uscript-operator">(</span> <span class="uscript-string">"Actor Ref:"</span> <span class="uscript-operator">@</span> A<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-operator">.</span><span class="uscript-type">name</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-keyword">return</span> A<span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>   
+    BadParameters<span class="uscript-operator">(</span> <span class="uscript-string">"Could not find any actors in the level."</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// MyLevel.LevelInfo0 should exist in every level, empty or not.</span>
+    EditorActors<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>Actor<span class="uscript-operator">=</span><span class="uscript-string">"MyLevel.LevelInfo"</span><span class="uscript-operator">,</span>MaxId<span class="uscript-operator">=</span><span class="uscript-number">8</span><span class="uscript-operator">)</span>
+    EditorActors<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>Actor<span class="uscript-operator">=</span><span class="uscript-string">"MyLevel.Camera"</span><span class="uscript-operator">,</span>MaxId<span class="uscript-operator">=</span><span class="uscript-number">64</span><span class="uscript-operator">)</span>
+    EditorActors<span class="uscript-operator">(</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>Actor<span class="uscript-operator">=</span><span class="uscript-string">"MyLevel.Brush"</span><span class="uscript-operator">,</span>MaxId<span class="uscript-operator">=</span><span class="uscript-number">128</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">}</span></pre><p>Now that you have an actor, you can call functions from it to do whatever you like. If you have need of more complex functionality, you can create your own actor class, then use the actor class you found using LocateActor() to spawn your own actor, which can then be instructed to do whatever you like. <em class="em2">Note that actors spawned in this manner will not have some functions such as tick executed on them in the editor.</em></p>
+<h3><a name="0.5.2"></a>User Input</h3>
+<p>You can accept parameters simply by defining variables like you would in any other Unrealscript. However, you cannot specify a group name.</p>
+<pre class="uscript"><span class="uscript-comment">// These will not show up as parameters, but can still be used within the script.</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> Counter<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Stuff<span class="uscript-operator">)</span> <span class="uscript-type">string</span> Names<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// These variables will show up as parameters</span>
+<span class="uscript-comment">// UnrealEd will intelligently create the appropriate form of text box/whatever as appropriate for the type of variable.</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> Count<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>vector<span class="uscript-operator">&gt;</span> Offsets<span class="uscript-operator">;</span></pre><p>The default BrushBuilder parameters window is very small and not resizable. Keep the parameters names short so there can be more space for parameter values.</p>
+<h3><a name="0.5.3"></a>Actor modification notes</h3>
+<p><em class="em2">Note that changes made by your function or by the indirect consequences of your functions will actually affect actors in the level! If you save the level, those changes will be <em class="em3">permanent</em>, and Undo will <em class="em3">not</em> work reliably against these changes. Sometimes it will, sometimes it won't, depending on your code. You can still recover things by loading from your last save, however. Save really often, and be extremely careful with calling the destroy function on things.</em></p>
+<p>As a side-note, calling destroy on things also tends to cause General Protection Faults, but it will not always do this. Sometimes it will also refuse to save your level after you have destroyed something through script. I believe that this is due to the lack of the Tick function. As you may know, Destroy() is a special type of latent function and the actor is not actually destroyed until the end of the tick, though it is flagged as bDeleteMe and as a result many operations refuse to touch it, knowing that it has already been declared 'dead.'</p>
+<h3><a name="0.5.4"></a>Obtaining viewport camera reference</h3>
+<p>Find viewport reference and camera will be in its Actor variable. To find all viewport names use console command <em class="em2">obj list class=viewport</em></p>
+<pre class="uscript"><span class="uscript-keyword">var</span> Viewport TempViewport<span class="uscript-operator">;</span>
+<span class="uscript-keyword">function</span> Camera GetCamera<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Camera C<span class="uscript-operator">;</span>
+    SetPropertyText<span class="uscript-operator">(</span><span class="uscript-string">"TempViewport"</span><span class="uscript-operator">,</span><span class="uscript-string">"U2Viewport0"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    C <span class="uscript-operator">=</span> Camera<span class="uscript-operator">(</span>TempViewport<span class="uscript-operator">.</span>Actor<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    TempViewport <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span> C<span class="uscript-operator">;</span>   
+<span class="uscript-operator">}</span></pre><p>UnrealEd 3.0 viewports:</p>
+<pre class="uscript">    TerrainHeightmap
+    TerrainLayers
+    TerrainDecoLayers
+    MatineeScenes
+    MatineeActions
+    MatineeSubActions
+    U2Viewport0
+    U2Viewport1
+    U2Viewport2
+    U2Viewport3
+    MeshViewer
+    AnimationViewer
+    PrefabBrowser
+    LIPSinc
+    StaticMeshBrowser
+    TextureBrowser
+    TextureBrowserUsed
+    TextureBrowserMRU</pre><h3><a name="0.5.5"></a>BrushBuilder object persistence</h3>
+<p>BrushBuilders are destroyed and created when new level is loaded. When UnrealEd starts up there may be more that one copy of each BrushBuilder.</p>
+<h2><a name="0.6"></a>Comments </h2>
+<p><em class="em2">Foxpaw:</em> I refactored the bit about brushbuilders being used for custom editor functions, and I added what I've learned about them, but I think this topic deserves it's own page. It is technically a custom brushbuilder, but I don't think that people will find it here. I already had the idea and decided to read up about the brushbuilder stuff to see if anyone else had tried it, but otherwise I doubt a person looking to run unrealscript in the editor would look here for the answer.</p>
+<p><em class="em2">Switch:</em> Keeping this in one place is so far ok. The page is linked on <a href="unrealscript.html">UnrealScript</a>.</p>
+<p><em class="em2">Dushnok:</em> I'm very newbish at uscript but I added the little example (halfcube) . Just for newbies like me <img alt=":)" src="emoticons/smile.gif" align="middle"> Do you think it's ok ?</p>
+<p><em class="em2">EntropicLqd:</em> Nice example.  I'd be inclined to define all the points first and then the polygons afterwards.  Question though - The first parameter indicates the "front" of the face by specifying the direction the vertices should be traversed.  Presumably the sign is reversed if the vertices are specified in reverse order. e.g. The following are equivalent:</p>
+<pre class="uscript">poly3i<span class="uscript-operator">(</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+poly3i<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">2</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>Is there a "best way" to specify the order of the vertices?</p>
+<p><em class="em2">Tarquin:</em> the vector made by the first two vertices appears to give the orientation of the texture, but I've not managed to pin this down exactly.</p>
+<p><em class="em2">OlympusMons:</em> Changed category to refactor me.</p>
+<hr class="thin"><p><a href="refactor-me.html">Refactor Me</a> &ndash; Badly needs a more "user-friendly" format, with some pictures.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Preliminaries", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Prerequisites", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Code style", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Terms used", "#0.1.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Caveat", "#0.1.4");
+menuItemAdd("The maths bit", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Getting started", "#0.2.0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Making a new class", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Modifying an existing class", "#0.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Anatomy of a builder", "#0.2.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Functions", "#0.2.2.2");
+menuItemAdd("A little example (ued2)", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>'Half cube' brush builder", "#0.3.1");
+menuItemAdd("Tips And Tricks", "#0.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Naming polys", "#0.4.1");
+menuItemAdd("Running Unrealscript in the Editor", "#0.5");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Obtaining actor reference", "#0.5.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>User Input", "#0.5.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Actor modification notes", "#0.5.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Obtaining viewport camera reference", "#0.5.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>BrushBuilder object persistence", "#0.5.5");
+menuItemAdd("Comments ", "#0.6");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Scripting_Custom_Brushbuilders">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Scripting_Custom_Brushbuilders">View other revisions</a><br>Last edited January 22, 2006 21:22 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Scripting_Custom_Brushbuilders">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Scripting_Custom_Brushbuilders">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>There is no spoon
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

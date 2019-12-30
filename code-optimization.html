@@ -1,0 +1,433 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Code Optimization</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Code_Optimization; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Code Optimization">Code Optimization</a></h1>
+	<div class="wiki"><p>If your code runs slow or causes hitches on some computers, here are several <em class="em2">optimization techniques</em> you can apply to your code to make it run better.</p>
+<h2><a name="0.1"></a>You might be looking for...</h2>
+<ul><li><a href="map-optimization.html">Map Optimization</a></li>
+</ul>
+<h2><a name="0.2"></a>Keep the log clean</h2>
+<p>Every line that is written to the log file takes time.  Writing lots of them to the log may slow down your mod to a crawl and can inflate the game's log to several megabytes after a short time already.</p>
+<dl><dt>Fix <i>Accessed None</i> and other log warnings</dt><dd>Fix all <em class="em1">Accessed None</em> and other <a href="log-warnings.html">log warnings</a> you find in the log after executing your mod.  (You can safely assume that your code is responsible for any script warning you find in the log after executing it, even those that point to somewhere in Epic's code.  Compare with the log when not playing your mod if in doubt.)</dd><dt>Remove debug logging</dt><dd>Make sure to remove any debugging log statements in release versions of your mods.  If you think you may need the log statements in future again, just comment them out.</dd></dl>
+<h2><a name="0.3"></a>Avoid iterators</h2>
+<p>Avoid using any <a href="iterator.html">iterator</a>s in frequently executed functions like <code>Tick</code> or <code>PostRender</code> because they are, for the most part, extremely slow.</p>
+<p>Instead try using <a href="linked-list.html">linked list</a>s or <a href="dynamic-array.html">dynamic array</a>s for the actors you work with. You could either fill these at the start of the match, e.g. with a single iterator loop, or maintain the list when spawning and destroying actors like the <a href="spawnnotify.html">SpawnNotify</a> in UT or the <a href="interaction.html">Interaction</a> lists maintained by the <a href="interactionmaster.html">InteractionMaster</a> in UT2003.</p>
+<h2><a name="0.4"></a>Optimize iterator use</h2>
+<p>If you can't avoid using them, at least try to optimize them.</p>
+<p>VisibleActors and VisibleCollidingActors are good examples of this. Every actor that is within the radius has a FastTrace called on it. Traces use a lot of CPU resources and if the radius is large you will be calling a lot of traces. You can spare yourself some traces by checking anything else than needs to be checked on top of the trace first.</p>
+<p>For example, if you are looking for all visible pawns within 2000 units that have over 50 health, we can check the health before we check the trace &ndash; that way we don't bother doing the expensive visibility check if it was going to fail the health check anyway. For example:</p>
+<pre class="uscript"><span class="uscript-comment">// this way is slow</span>
+
+<span class="uscript-keyword">foreach</span> VisibleActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Pawn'</span><span class="uscript-operator">,</span> P<span class="uscript-operator">,</span> Radius<span class="uscript-operator">,</span> Location<span class="uscript-operator">,</span> <span class="uscript-keyword">True</span><span class="uscript-operator">)</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>P<span class="uscript-operator">.</span>Health <span class="uscript-operator">&gt;</span> <span class="uscript-number">50</span><span class="uscript-operator">)</span>
+    <span class="uscript-comment">// do something</span>
+
+<span class="uscript-comment">// this way is faster</span>
+<span class="uscript-keyword">foreach</span> RadiusActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Pawn'</span><span class="uscript-operator">,</span> P<span class="uscript-operator">,</span> Radius<span class="uscript-operator">,</span> Location<span class="uscript-operator">,</span> <span class="uscript-keyword">True</span><span class="uscript-operator">)</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>P<span class="uscript-operator">.</span>Health <span class="uscript-operator">&gt;</span> <span class="uscript-number">50</span> <span class="uscript-operator">&amp;&amp;</span> FastTrace<span class="uscript-operator">(</span>P<span class="uscript-operator">.</span>Location<span class="uscript-operator">,</span> Location<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+    <span class="uscript-comment">// do something</span></pre><p>Another example of an even slower implementation that needs to check all actors, not just Pawns:</p>
+<pre class="uscript"><span class="uscript-keyword">foreach</span> VisibleCollidingActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> thisActor<span class="uscript-operator">,</span> Radius<span class="uscript-operator">,</span> Location<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>thisActor<span class="uscript-operator">.</span>bStatic <span class="uscript-operator">||</span> thisActor<span class="uscript-operator">.</span>Physics <span class="uscript-operator">==</span> PHYS_None<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// skip this actor</span>
+    <span class="uscript-comment">// do the actual stuff</span>
+<span class="uscript-operator">}</span></pre><p>Within a radius of e.g. 1500 you could easily find over 300 actors. The loop will execute a FastTrace (see <a href="actor-methods.html">Actor/Methods</a>) for every single actor in the collision hash within the specified area. However, a lot of those actors are most probably static and/or have <code>Physics == None</code>. FastTrace requires much more time than the checks used within the loop, but those checks would catch almost as many actors. A simple optimization would be executing the FastTrace <em class="em1">after</em> the other two checks. This can be done by using the CollidingActors (still faster than RadiusActors with up to 2000 UU radius) iterator instead:</p>
+<pre class="uscript"><span class="uscript-keyword">ForEach</span> CollidingActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> thisActor<span class="uscript-operator">,</span> Radius<span class="uscript-operator">,</span> Location<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> thisActor<span class="uscript-operator">.</span>bStatic <span class="uscript-operator">||</span> thisActor<span class="uscript-operator">.</span>Physics <span class="uscript-operator">==</span> PHYS_None <span class="uscript-operator">||</span> <span class="uscript-operator">!</span>FastTrace<span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>Location<span class="uscript-operator">,</span> Location<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span> <span class="uscript-comment">// skip this actor</span>
+
+    <span class="uscript-comment">// do the actual stuff</span>
+<span class="uscript-operator">}</span></pre><p>This will execute much faster, but why?</p>
+<p>Imagine those 300 actors, let's say 200-250 of them are StaticMeshes placed in the map. Those are all static actors which will be caught by the first part of the <tt>if</tt> statement. Some other actors might be e.g. gibs lying on the floor. Those actors have <code>Physics == PHYS_None</code> and will be caught by the second part of the <tt>if</tt> statement. Typically over 90% of the actors will <em class="em1">fail</em> to pass those first two tests, leaving only about 30 actors for the FastTrace check in this example. This means we only have to do 30 FastTraces instead of 300. Now imagine you want to run this loop every Tick. A high number of FastTraces can slow down the game by 50% or even more, while about 10-30 of those Traces can only be noticed by checking the frame rate.</p>
+<h2><a name="0.5"></a>Disable engine events when you don't need them</h2>
+<p>Use the Disable function to deactivate certain engine events when you don't need them.  (That only applies for events you provide an UnrealScript implementation for; if you haven't overwritten an engine event in your class, disabling it makes no difference.)</p>
+<pre class="uscript"><span class="uscript-keyword">event</span> PostBeginPlay
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// all events are enabled by default, so disable Tick event to start with</span>
+    Disable<span class="uscript-operator">(</span><span class="uscript-name">'Tick'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">event</span> Trigger<span class="uscript-operator">(</span>Actor Sender<span class="uscript-operator">,</span> Pawn Instigator<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// tell engine to call Tick event from now on</span>
+    Enable<span class="uscript-operator">(</span><span class="uscript-name">'Tick'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">event</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// do something -- executed only after the actor has been triggered</span>
+<span class="uscript-operator">}</span></pre><p>Using Disable and Enable is more efficient than using a bool variable and doing an UnrealScript-level check in the Tick function.  (And it's more elegant as well.)</p>
+<h2><a name="0.6"></a>Re-use objects</h2>
+<p><a href="creating-actors-and-objects.html">Creating actors and objects</a> is a relatively expensive operation.  If you can, design your code so that you spawn an actor or object you need only once, save a reference to it and use it later again.</p>
+<p>The <a href="object-pool.html">object pool</a> makes re-using non-Actor objects convenient and straightforward:  <em class="em1">Allocating</em> an object of a given class either takes an existing one from the pool or automatically creates a new one if none exists yet; <em class="em1">freeing</em> an object doesn't destroy it but puts it into the pool.</p>
+<h2><a name="0.7"></a>Precache materials and static meshes</h2>
+<p>Precache any new materials or static meshes you use to avoid hitches when they're displayed the first time.  Overwrite the UpdatePrecacheMaterials and UpdatePrecacheStaticMeshes functions (defined in <a href="actor.html">Actor</a>) to do that:</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> UpdatePrecacheMaterials<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>UpdatePrecacheMaterials<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Texture<span class="uscript-name">'MyUserInterfaceTexture'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// hard-coded texture reference</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>MapperSpecifiedMaterial<span class="uscript-operator">)</span><span class="uscript-operator">;</span>          <span class="uscript-comment">// specified by mapper in UnrealEd</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> UpdatePrecacheStaticMeshes<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>UpdatePrecacheStaticMeshes<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheStaticMesh<span class="uscript-operator">(</span>StaticMesh<span class="uscript-name">'MyStaticMesh'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.8"></a>Optimize expressions</h2>
+<p>Place operators in an optimized order &ndash; this seems trivial but can be important for things that get called a lot, especially for replication statements.</p>
+<p>Expressions in UnrealScript will terminate prematurely if applicable, so you can take advantage of this. Similar to the optimizations for iterators, if using "or" expressions, evaluate the most likely or least expensive things first. That way, if it is true, it doesn't have to waste time on things that usually will be false anyway. If it is an "and" expression, evaluate the least likely thing first &ndash; that way you won't pass one check only to get stopped by the second as often.</p>
+<p>The only real exception to this is if it is necessary to avoid <em class="em1">Accessed None</em>s &ndash; obviously it's more likely that a <a href="controller.html">Controller</a>'s <a href="pawn.html">Pawn</a> will have over 10 health than that a controller will not have a pawn at all, but for obvious reasons you need to confirm that the controller has a pawn before attempting to read a variable from it.</p>
+<h2><a name="0.9"></a>Avoid Nesting functions</h2>
+<p>Although it seems like it would use less memory to nest function calls, I've timed different variations on nested and non-nested calls, and a non-nested call consistently ran at <em class="em3">twice</em> the speed as a nested one:</p>
+<pre class="uscript"><span class="uscript-comment">// Runs relatively slow.</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">int</span> NestedFunction<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">return</span> DoSomething<span class="uscript-operator">(</span> DoSomethingElse<span class="uscript-operator">(</span> DoEvenMore<span class="uscript-operator">(</span> <span class="uscript-number">5</span> <span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// Runs WAY faster.</span>
+<span class="uscript-keyword">function</span> AFunction<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> Value<span class="uscript-operator">;</span>
+
+  Value <span class="uscript-operator">=</span> DoEvenMore<span class="uscript-operator">(</span> <span class="uscript-number">5</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  Value <span class="uscript-operator">=</span> DoSomethingElse<span class="uscript-operator">(</span> Value <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">return</span> DoSomething<span class="uscript-operator">(</span> Value <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span></pre><p>I suspect this is an indication that the interpreter's "stack" is not used very efficiently.</p>
+<p><em class="em2">Switch:</em> With relatively simple functions I noticed something opposite - NestedFunction() was faster by about 10%. With relatively large functions I couldn't measure the difference. I was testing with stopwatch() in build 3355 commandlet.<br>Can someone post an example where the nested function calls are noticeably slower? </p>
+<h2><a name="0.10"></a>Use native functionality instead of UnrealScript code</h2>
+<p>Use native functions instead of scripted ones whenever possible.</p>
+<p>UnrealScript runs a lot slower than the native functions do &ndash; it's usually better to use a native function instead of writing your own, even if the native function does a bunch of stuff you don't need. The wasted functionality is nothing compared to the added speed of native functions.</p>
+<h2><a name="0.11"></a>Execute code only as often as needed</h2>
+<p>Timeslicing less important calls in Tick or Timer can increase speed.</p>
+<p>You could, for instance, use a boolean variable and store the previous deltatime so that a less critical function can be called only half the time, with the cumulative deltatime. You can also use an incrementing integer and a cumulative Deltatime float to call functions even less often. This makes the program look more complicated, unfortunately, but can decrease the strain on the CPU.</p>
+<p><em class="em2">EntropicLqd:</em> Under those circumstances couldn't you use the SetTimer(..) function to reduce the number of times the Timer() function is called?</p>
+<p><em class="em2">Foxpaw:</em> Yes, but you only have one Timer. If a superclass uses it you won't be able to use it unless your timing needs are the exact same as those of the superclass. Furthermore, you can only use it for one thing then. Say, for instance, you wanted to make your own physics system. You wanted to update location every tick, velocity every 3 ticks, and rotation every 5 ticks. Furthermore, you want to check collision only every 13 ticks. This would be a bit difficult to do in Timer.</p>
+<h2><a name="0.12"></a>Find bottlenecks by measuring execution time</h2>
+<p>You can use the Clock and UnClock functions (defined in <a href="actor.html">Actor</a>, moved to <a href="object.html">Object</a> for DeusEx) to measure the time a part of your code spends executing, in milliseconds.  Use this to find the sections of your code that require performance optimzation most urgently, and to compare different ways of doing something performance-wise.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> MyFunction<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> ExecutionTime<span class="uscript-operator">;</span>
+
+    Clock<span class="uscript-operator">(</span>ExecutionTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">// do something</span>
+    UnClock<span class="uscript-operator">(</span>ExecutionTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+
+    Log<span class="uscript-operator">(</span><span class="uscript-string">"Time spent executing something:"</span> <span class="uscript-operator">@</span> ExecutionTime <span class="uscript-operator">@</span> <span class="uscript-string">"ms"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Clock is a very useful function when you know exactly what you want to measure. It is also handy because it returns the elapsed time to you, so you can use it to take averages, etc. You could also even use it for some kind of gameplay timer, though it sometimes "rolls over" which might not make it the best for that.</p>
+<p>Clock uses CPU cycles rather than actual time. In most engines the script equivalent of clock\unclock automatically converts the value to seconds rather than CPU cycles. However you should never use clock\unclock for actual timing perposes, only use it for local performance testing (e.g. in case you change an algorithm and want to test if it's better or worse). CPU cycles roll over very often, thus it's useless for longer periods (a second is too much). Because of the over rolling the result after <code>UnClock</code> might be incorrect, so when you use it perform the test multiple times to get a proper value.</p>
+<p>If you want to test a lot of code, adding a lot of clock, unclock, and log statements can be tedious. Enter Stopwatch. Stopwatch is a much more powerful function than Clock, but works very differently. The stopwatch is global, and it's either "on" or "off."</p>
+<p>StopWatch( false ); starts the stopwatch. StopWatch( true ); disables and resets the timer. When you stop the timer, a line will be printed in the log stating something like: Time=41.768ms. This is the time that the stopwatch was at when it was stopped. This makes it appear to be very much like clock.. but the log statement that shows the stop time is not what you can really do with StopWatch.</p>
+<p>The magic of stopwatch is that when it is running it timestamps log entries. Each is stamped with the time elapsed since the timer was started. It is great for finding out the time taken throughout a function, without writing a veritable pile of clock and unclock statements, as well as adding temporary variables for them, and the works! But I digress. Here's an example:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> SuperFantasticFunction<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+
+  StopWatch<span class="uscript-operator">(</span> <span class="uscript-keyword">false</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  log<span class="uscript-operator">(</span> <span class="uscript-string">"Beginning Execution"</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-comment">// ... some code goes here ...</span>
+  log<span class="uscript-operator">(</span> <span class="uscript-string">"Initialization Complete"</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-comment">// ... more code ...</span>
+  log<span class="uscript-operator">(</span> <span class="uscript-string">"Precomputation Complete"</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-comment">// ... yet more code ...</span>
+  log<span class="uscript-operator">(</span> <span class="uscript-string">"Entering Loop"</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span><span class="uscript-number">5</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    <span class="uscript-comment">// .. something done in a loop</span>
+    log<span class="uscript-operator">(</span> <span class="uscript-string">"Iteration "</span><span class="uscript-operator">$</span><span class="uscript-operator">(</span>i<span class="uscript-number">+1</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+
+  log<span class="uscript-operator">(</span> <span class="uscript-string">"Loop Completed"</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-comment">// ... some finishing code ...</span>
+  log<span class="uscript-operator">(</span> <span class="uscript-string">"Function Completed"</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  StopWatch<span class="uscript-operator">(</span> <span class="uscript-keyword">true</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Produces something like the following in the log: (except stopwatch actually has a few more digits of precision.)</p>
+<pre class="uscript">  ScriptLog: <span class="uscript-number">0.00</span> ms: Beginning Execution 
+  ScriptLog: <span class="uscript-number">0.12</span> ms: Initialization Complete
+  ScriptLog: <span class="uscript-number">0.45</span> ms: Precomputation Complete
+  ScriptLog: <span class="uscript-number">0.76</span> ms: Entering Loop
+  ScriptLog: <span class="uscript-number">1.02</span> ms: Iteration <span class="uscript-number">1</span> 
+  ScriptLog: <span class="uscript-number">1.35</span> ms: Iteration <span class="uscript-number">2</span>
+  ScriptLog: <span class="uscript-number">1.68</span> ms: Iteration <span class="uscript-number">3</span>
+  ScriptLog: <span class="uscript-number">1.92</span> ms: Iteration <span class="uscript-number">4</span>
+  ScriptLog: <span class="uscript-number">2.24</span> ms: Iteration <span class="uscript-number">5</span>
+  ScriptLog: <span class="uscript-number">2.24</span> ms: Loop Completed
+  ScriptLog: <span class="uscript-number">3.16</span> ms: <span class="uscript-keyword">Function</span> Completed
+  Time<span class="uscript-operator">=</span><span class="uscript-number">3.16</span> ms</pre><h2><a name="0.13"></a>Unroll your loops</h2>
+<p>Setting up a loop can take extra time (especially if Mychaeel is correct and loop iterations are counted).  In some cases, the number of iterations are known, and a loop doesn't need to be used at all:</p>
+<pre class="uscript"><span class="uscript-keyword">for</span> <span class="uscript-operator">(</span><span class="uscript-type">int</span> i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> <span class="uscript-number">5</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">//Some Code.</span>
+<span class="uscript-operator">}</span></pre><p>can be changed to</p>
+<pre class="uscript"><span class="uscript-comment">//Some Code.</span>
+<span class="uscript-comment">//Some Code.</span>
+<span class="uscript-comment">//Some Code.</span>
+<span class="uscript-comment">//Some Code.</span>
+<span class="uscript-comment">//Some Code.</span></pre><p><em class="em2">Dante:</em> What if the engine doesn't count loop iterations but counts every instruction ? Then you might save 3 called instructions with the unrolled loop. Sometimes it looks very ugly, leaving the for(i=0...5) solution the better one.</p>
+<p><em class="em2">Sordith:</em> We could second guess how the scripting engine works until we fill up the server's hard drive and not really get anywhere.  I <em class="em1">think</em> I tested this one (along with all of the techniques I posted), but I can't remember the results.  I'll test again later and post some sample numbers.  You are correct that sometimes (read most of the time) it looks very ugly, and the time saved during execution may not be worth the time lost when working with the ugly code.  I didn't mention that because the questions of what and when to optimize could easily take it's own page.</p>
+<h2><a name="0.14"></a>Speed comparison of loops</h2>
+<p>Different loops have different overhead times. Lets say we have following situation:</p>
+<pre class="uscript">    <span class="uscript-comment">// data, length = 100</span>
+    <span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>vector<span class="uscript-operator">&gt;</span> stuff<span class="uscript-operator">;</span>                                
+    
+    <span class="uscript-comment">// code to loop                 </span>
+    stuff<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> </pre><p>An obvious choice is for loop. Lets say that it takes 1 time unit to execute such function. For comparison function with unrolled loop takes 0.66 time units.</p>
+<pre class="uscript">    <span class="uscript-keyword">function</span> Test<span class="uscript-operator">(</span> <span class="uscript-type">int</span> n <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i<span class="uscript-operator">!=</span>n<span class="uscript-operator">;</span> <span class="uscript-operator">++</span>i<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            stuff<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span></pre><p>While loop takes 0.93 time units. That's probably because the i variable is accessed not three but two times in each loop iteration.</p>
+<pre class="uscript">    <span class="uscript-keyword">while</span><span class="uscript-operator">(</span> i<span class="uscript-operator">!=</span>n <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        stuff<span class="uscript-operator">[</span>i<span class="uscript-operator">++</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span></pre><p>Until loop takes 0.90 time units. Equality operator or internal implementation may be faster.</p>
+<pre class="uscript">    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> n<span class="uscript-operator">!=</span><span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">do</span>
+        <span class="uscript-operator">{</span>
+            stuff<span class="uscript-operator">[</span>i<span class="uscript-operator">++</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span><span class="uscript-keyword">until</span><span class="uscript-operator">(</span> i<span class="uscript-operator">==</span>n <span class="uscript-operator">)</span>
+    <span class="uscript-operator">}</span></pre><p>What about a goto loop? 0.93 time units, same as while loop.</p>
+<pre class="uscript">    loop:
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> i<span class="uscript-operator">!=</span>n <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            stuff<span class="uscript-operator">[</span>i<span class="uscript-operator">++</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">goto</span> <span class="uscript-name">'loop'</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span></pre><p>The fastest loop I tested was partially unrolled one - 0.76 time units. Choose how many times you want to duplicate the code (4-8 will do), loop couple times so the number of iterations is a multiply of chosen number and run the duplicated code in another loop. </p>
+<pre class="uscript">    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> iterations<span class="uscript-operator">,</span> modulus<span class="uscript-operator">;</span>
+    
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> n <span class="uscript-operator">!=</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        modulus <span class="uscript-operator">=</span> n <span class="uscript-operator">%</span> <span class="uscript-number">8</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> modulus <span class="uscript-operator">!=</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span> 
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">do</span>
+            <span class="uscript-operator">{</span>
+                stuff<span class="uscript-operator">[</span>i<span class="uscript-operator">++</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+            <span class="uscript-keyword">until</span><span class="uscript-operator">(</span> <span class="uscript-operator">--</span>modulus <span class="uscript-operator">==</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">}</span>
+        
+        iterations <span class="uscript-operator">=</span> n <span class="uscript-operator">/</span> <span class="uscript-number">8</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> iterations <span class="uscript-operator">!=</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">do</span>
+            <span class="uscript-operator">{</span>
+                stuff<span class="uscript-operator">[</span>i<span class="uscript-operator">++</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                stuff<span class="uscript-operator">[</span>i<span class="uscript-operator">++</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                stuff<span class="uscript-operator">[</span>i<span class="uscript-operator">++</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                stuff<span class="uscript-operator">[</span>i<span class="uscript-operator">++</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                stuff<span class="uscript-operator">[</span>i<span class="uscript-operator">++</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                stuff<span class="uscript-operator">[</span>i<span class="uscript-operator">++</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                stuff<span class="uscript-operator">[</span>i<span class="uscript-operator">++</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                stuff<span class="uscript-operator">[</span>i<span class="uscript-operator">++</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+            <span class="uscript-keyword">until</span><span class="uscript-operator">(</span> <span class="uscript-operator">--</span>iterations <span class="uscript-operator">==</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span></pre><h2><a name="0.15"></a>Refine your algorithms</h2>
+<p>Different operations take different amounts of time.  Generally speaking, addition, subtraction, assignment, and shifting take small amounts time.  Multiplication takes a slightly longer time, while division takes the most time.  Using floating point numbers also increases execution time.  Integer multiplication and division by powers of 2 can be converted into shifts.  Division by a floating point number can be converted into multiplication by a floating point number (x/0.5 == x * (1/0.5)).</p>
+<p><em class="em2">Sordith:</em> Don't like the way this one reads, but can't seem to spit it out more clearly.</p>
+<p><em class="em2">Mychaeel:</em> I don't believe UnrealScript's compiler optimizes constant subexpressions, so "1/0.5" does probably involve a division at run time.  Also, while you're technically right of course, I don't believe that this technique has <em class="em1">noticable</em> impact on the execution speed of UnrealScript code &ndash; you have to assume that UnrealScript byte code is executed at least one order of magnitude slower than native code, and on top of that every operation in an expression translates to a function call with all of its overhead anyway (instead of being resolved to an inline operation).</p>
+<p><em class="em2">Sordith:</em> This is true.  Optimising outside of a loop will rarely have noticable results.  These techniques should be used where working with a large number of objects, or when doing calculations every frame, and probably not even then unless you need the extra time.</p>
+<p>I was thinking more along the lines of:</p>
+<pre class="uscript"><span class="uscript-keyword">local</span> <span class="uscript-type">float</span> mult <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">/</span><span class="uscript-number">0.5</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">for</span> <span class="uscript-operator">(</span><span class="uscript-type">int</span> i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> <span class="uscript-number">1000</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    a <span class="uscript-operator">*=</span> mult<span class="uscript-operator">;</span>
+    b <span class="uscript-operator">*=</span> mult<span class="uscript-operator">;</span>
+    c <span class="uscript-operator">*=</span> mult<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>also, if you want to divide by a constant number, you can change it to multiplication by a constant number without the overhead of the first division or the temp variable.</p>
+<h2><a name="0.16"></a>The member selection operator has its price</h2>
+<p>By member selection operator I mean the dot used to access objects in other objects. Don't forget it's also a function and one that may slow down your calculations quite a lot. If the objects are constant from the loop point of view, you may cache them as mentioned above. You may also try to optimize by using additional calculations instead of the member selection operator.</p>
+<p>In following example the member selection operator is used 900 times. Let's say that execution of this function took 1 time unit.</p>
+<pre class="uscript">    <span class="uscript-keyword">var</span> vector stuff<span class="uscript-operator">[</span><span class="uscript-number">100</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+    
+    <span class="uscript-keyword">function</span> Test<span class="uscript-operator">(</span> vector v <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span><span class="uscript-number">100</span><span class="uscript-operator">;</span> <span class="uscript-operator">++</span>i<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>   
+            stuff<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>x <span class="uscript-operator">=</span> v<span class="uscript-operator">.</span>x <span class="uscript-operator">+</span> v<span class="uscript-operator">.</span>x<span class="uscript-operator">*</span><span class="uscript-operator">(</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">0.5</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            stuff<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>y <span class="uscript-operator">=</span> v<span class="uscript-operator">.</span>y <span class="uscript-operator">+</span> v<span class="uscript-operator">.</span>y<span class="uscript-operator">*</span><span class="uscript-operator">(</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">0.6</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            stuff<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>z <span class="uscript-operator">=</span> v<span class="uscript-operator">.</span>x <span class="uscript-operator">+</span> v<span class="uscript-operator">.</span>z<span class="uscript-operator">*</span><span class="uscript-operator">(</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">0.7</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>   
+    <span class="uscript-operator">}</span></pre><p>Let's eliminate 600 uses of member selection operator (v members) by adding 3 local variables, 3 assignments, and 3 uses of member selection operator. At this point it takes 0.6 time units to execute the function.<br>The remaining 300 uses of member selection operator (stuff[i] members) can be eliminated by adding 300 multiplications by vector and 200 vector additions. After this optimization the execution time is 0.39 time units. That's over 2.5 times faster than the original example.</p>
+<pre class="uscript">    <span class="uscript-keyword">function</span> Test<span class="uscript-operator">(</span> vector v <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> vx<span class="uscript-operator">,</span>vy<span class="uscript-operator">,</span>vz<span class="uscript-operator">;</span>
+            
+        vx<span class="uscript-operator">=</span>v<span class="uscript-operator">.</span>x<span class="uscript-operator">;</span>
+        vy<span class="uscript-operator">=</span>v<span class="uscript-operator">.</span>y<span class="uscript-operator">;</span>
+        vz<span class="uscript-operator">=</span>v<span class="uscript-operator">.</span>z<span class="uscript-operator">;</span>
+        
+        <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span><span class="uscript-number">100</span><span class="uscript-operator">;</span> <span class="uscript-operator">++</span>i<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>   
+            stuff<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>vx <span class="uscript-operator">+</span> vx<span class="uscript-operator">*</span><span class="uscript-operator">(</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">0.5</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+                     <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>vy <span class="uscript-operator">+</span> vy<span class="uscript-operator">*</span><span class="uscript-operator">(</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">0.6</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+                     <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>vz <span class="uscript-operator">+</span> vz<span class="uscript-operator">*</span><span class="uscript-operator">(</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">0.7</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span></pre><h2><a name="0.17"></a>Be careful with temporary variables</h2>
+<p>First of all, you should remove all unused variables from your functions. (The UT200x compiler will warn you about unused local variables.) They slightly increase package size and whether they also affect execution speed is yet to be proven. They definately make your code harder to read if you have lots of them.</p>
+<p>Assignment is a pretty expensive operation in UnrealScript compared to reading variable values, especially with structs. If you are working with dynamic arrays and want to move an element to a new position with a higher array index you might come up with a solution similar to this if you are used to languages without dynamic arrays:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> MoveElementUp<span class="uscript-operator">(</span><span class="uscript-type">int</span> Source<span class="uscript-operator">,</span> <span class="uscript-type">int</span> Destination<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> tmp<span class="uscript-operator">;</span>
+  
+  tmp <span class="uscript-operator">=</span> MyArray<span class="uscript-operator">[</span>Source<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> Source<span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> Destination<span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+    MyArray<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> MyArray<span class="uscript-operator">[</span>i <span class="uscript-operator">+</span> <span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+  MyArray<span class="uscript-operator">[</span>Destination<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> tmp<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Of source, this is a really bad implementation since it completely neglects the features of dynamic arrays. (You might have to use it for static arrays, though.)</p>
+<p>A way better solution would be the following:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> MoveElement<span class="uscript-operator">(</span><span class="uscript-type">int</span> Source<span class="uscript-operator">,</span> <span class="uscript-type">int</span> Destination<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> tmp<span class="uscript-operator">;</span>
+  
+  tmp <span class="uscript-operator">=</span> MyArray<span class="uscript-operator">[</span>Source<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+  MyArray<span class="uscript-operator">.</span><span class="uscript-keyword">Remove</span><span class="uscript-operator">(</span>Source<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  MyArray<span class="uscript-operator">.</span><span class="uscript-keyword">Insert</span><span class="uscript-operator">(</span>Destination<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span>
+  MyArray<span class="uscript-operator">[</span>Destination<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> tmp<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>This implementation not only works for moving in both directions (up or down), but also completely drops the loop.</p>
+<p>There's still a temporary variable though, which requires an additional assignment operation. Let's get rid of that as well:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> MoveElement<span class="uscript-operator">(</span><span class="uscript-type">int</span> Source<span class="uscript-operator">,</span> <span class="uscript-type">int</span> Destination<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Source <span class="uscript-operator">&lt;</span> Destination <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>  <span class="uscript-comment">// move up</span>
+    MyArray<span class="uscript-operator">.</span><span class="uscript-keyword">Insert</span><span class="uscript-operator">(</span>Destination <span class="uscript-operator">+</span> <span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    MyArray<span class="uscript-operator">[</span>Destination <span class="uscript-operator">+</span> <span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> MyArray<span class="uscript-operator">[</span>Source<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+    MyArray<span class="uscript-operator">.</span><span class="uscript-keyword">Remove</span><span class="uscript-operator">(</span>Source<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Source <span class="uscript-operator">&gt;</span> Destination <span class="uscript-operator">)</span> <span class="uscript-operator">{</span> <span class="uscript-comment">// move down</span>
+    MyArray<span class="uscript-operator">.</span><span class="uscript-keyword">Insert</span><span class="uscript-operator">(</span>Destination<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    MyArray<span class="uscript-operator">[</span>Destination<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> MyArray<span class="uscript-operator">[</span>Source <span class="uscript-operator">+</span> <span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+    MyArray<span class="uscript-operator">.</span><span class="uscript-keyword">Remove</span><span class="uscript-operator">(</span>Source <span class="uscript-operator">+</span> <span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>If the destination has a higher index than the source, the new element needs to be inserted at an index 1 higher than the desired index, because when removing the source element afterwards, all following elements' indices are decreased by 1. In the case of moving the element down, inserting the destination element increases the source element's index by 1.</p>
+<h2><a name="0.18"></a>Related Topics</h2>
+<ul><li><a href="unrealscript.html">UnrealScript</a></li>
+</ul>
+<script type="text/javascript"><!--
+ menuItemAdd("You might be looking for...", "#0.1");
+menuItemAdd("Keep the log clean", "#0.2");
+menuItemAdd("Avoid iterators", "#0.3");
+menuItemAdd("Optimize iterator use", "#0.4");
+menuItemAdd("Disable engine events when you don't need them", "#0.5");
+menuItemAdd("Re-use objects", "#0.6");
+menuItemAdd("Precache materials and static meshes", "#0.7");
+menuItemAdd("Optimize expressions", "#0.8");
+menuItemAdd("Avoid Nesting functions", "#0.9");
+menuItemAdd("Use native functionality instead of UnrealScript code", "#0.10");
+menuItemAdd("Execute code only as often as needed", "#0.11");
+menuItemAdd("Find bottlenecks by measuring execution time", "#0.12");
+menuItemAdd("Unroll your loops", "#0.13");
+menuItemAdd("Speed comparison of loops", "#0.14");
+menuItemAdd("Refine your algorithms", "#0.15");
+menuItemAdd("The member selection operator has its price", "#0.16");
+menuItemAdd("Be careful with temporary variables", "#0.17");
+menuItemAdd("Related Topics", "#0.18");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Code_Optimization">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Code_Optimization">View other revisions</a><br>Last edited September 5, 2005 11:09 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Code_Optimization">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Code_Optimization">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Once I get that upgrade to 36-hour days, I will tackle that. (Mychaeel)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

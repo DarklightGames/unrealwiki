@@ -1,0 +1,312 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Communication Between Objects</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Communication_Between_Objects; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Communication Between Objects">Communication Between Objects</a></h1>
+	<div class="wiki"><p>Objects in <a href="unrealscript.html">UnrealScript</a> often need to be able to discover information about each other in order to actually interact with eachother in some way.  For example.</p>
+<ul><li>A weapon needs to know how many charges are left in a powerup.</li>
+<li>In a CTF the flag needs to know the team of the player that just touched it.</li>
+<li>A player needs to know who fired the projectile that just killed them.</li>
+<li>The guided redeemer shell needs to know the orientation of the player guiding it.</li>
+</ul>
+<p>This is achieved by object <em class="em1">references</em> and will be better understood if we look at a few examples from the game itself.</p>
+<h2><a name="0.1"></a>The CTF Flag</h2>
+<p>Let's first take a look at how the CTF Flag in UT2004 uses references to figure out just who exactly is holding it and how it interacts with that person.</p>
+<h3><a name="0.1.1"></a>The Reference Itself</h3>
+<p>The code that tells the Flag who is holding it is not actually in the <a href="ctfflag.html">CTFFlag</a> class at all.  It is actually in a SuperClass called GameObject.  In this class there are several important things that are essential for the CTF Flag to operate.</p>
+<pre class="uscript"><span class="uscript-comment">//The reference itself</span>
+<span class="uscript-keyword">var</span> UnrealPawn      Holder<span class="uscript-operator">;</span>  <span class="uscript-comment">//Holder has to be an UnrealPawn or any of it's subclasses</span>
+
+<span class="uscript-comment">//Another reference, although not required, it will help out</span>
+<span class="uscript-keyword">var</span> TeamPlayerReplicationInfo HolderPRI<span class="uscript-operator">;</span> <span class="uscript-comment">//HolderPRI is simply the TeamPlayerReplicationInfo for the flags holder</span></pre><p>These are the only variable-level references that are useful to this example so I won't bother going into detail with too many other aspects of the code.</p>
+<p><em class="em2">Side Note</em></p>
+<p>These references are also pretty useless unless we 'reference' an actual object that exists.  What I mean by that is best explained by this:</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> UnrealPawn MyPawn<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    MyPawn<span class="uscript-operator">.</span>Health <span class="uscript-operator">=</span> <span class="uscript-number">100</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Doing <em class="em2">just</em> this will actually create an Accessed None error in the log if it is executed by the engine.  The reason for this is because declaring a variable as a reference is only good if you point that reference to something.  Putting the following before trying to change the health of my Pawn in the previous pseudo-code does two things.</p>
+<p><em class="em2">One:</em> It will spawn an actor (in this case an UnrealPawn) and</p>
+<p><em class="em2">Two:</em> It will point MyPawn to the newly created actor.</p>
+<p>This means that everytime you use MyPawn in the script, you're actually talking about the UnrealPawn that you spawned.</p>
+<pre class="uscript">MyPawn <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'UnrealGame.UnrealPawn'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><h3><a name="0.1.2"></a>Setting The Reference</h3>
+<p>Setting or Pointing the reference is what we need to do next, and the GameObject uses a SetHolder() function to do that.</p>
+<p>When the SetHolder() function is called it will execute the following code:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> SetHolder<span class="uscript-operator">(</span>Controller C<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">//log(self$" setholder c="$c, 'GameObject');</span>
+    LogTaken<span class="uscript-operator">(</span>c<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Holder <span class="uscript-operator">=</span> UnrealPawn<span class="uscript-operator">(</span>C<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Holder<span class="uscript-operator">.</span>DeactivateSpawnProtection<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    HolderPRI <span class="uscript-operator">=</span> TeamPlayerReplicationInfo<span class="uscript-operator">(</span>Holder<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    C<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">.</span>HasFlag <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+    C<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">.</span>NetUpdateTime <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">-</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+
+    GotoState<span class="uscript-operator">(</span><span class="uscript-name">'Held'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// AI Related</span>
+    C<span class="uscript-operator">.</span>MoveTimer <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+    Holder<span class="uscript-operator">.</span>MakeNoise<span class="uscript-operator">(</span><span class="uscript-number">2.0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Track First Touch</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FirstTouch <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        FirstTouch <span class="uscript-operator">=</span> C<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Track Assists</span>
+
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>Assists<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Assists<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> C<span class="uscript-operator">)</span>
+          <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    Assists<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">=</span> Assists<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-number">+1</span><span class="uscript-operator">;</span>
+    Assists<span class="uscript-operator">[</span>Assists<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-number">-1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> C<span class="uscript-operator">;</span>
+
+<span class="uscript-operator">}</span></pre><p>We will only concern ourselves with the first few lines of the code however.  Firstly, the controller (the player) who took the flag will be logged.  Then the Holder reference will be set with the following code.</p>
+<pre class="uscript">Holder <span class="uscript-operator">=</span> UnrealPawn<span class="uscript-operator">(</span>C<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>Note that the Holder reference is being pointed to a Pawn that already exists, thus there is no need to spawn the pawn.  If for some reason the pawn died when this function was called however, it would produce an error as the pawn in question would no longer exist.</p>
+<p>If the Holder had spawn protection active, it would disable it when the flag is picked up allowing defenders to have a chance to kill the Holder of the flag.  This is done by called the DeactivateSpawnProtection() method through the Holder reference.</p>
+<p>Because Holder is pointed to UnrealPawn(C.Pawn), It actually calls that method within UnrealPawn(C.Pawn) so:</p>
+<pre class="uscript">Holder<span class="uscript-operator">.</span>DeactivateSpawnProtection<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>could very well be written as:</p>
+<pre class="uscript">UnrealPawn<span class="uscript-operator">(</span>C<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">)</span><span class="uscript-operator">.</span>DeactivateSpawnProtection<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>They will do the same thing, but using references is more efficient, less messy and can also help with describing how your code works.</p>
+<p>Next it will also assign HolderPRI to the PRI of the Holder in question.  This is purely for efficiency and anti-mess purposes I would imagine.</p>
+<p>If for whatever reason we wanted to add 100 health to the Holder of the flag when it is picked up, we could add something like the following before the end of the function.</p>
+<pre class="uscript">Holder<span class="uscript-operator">.</span>Health <span class="uscript-operator">=</span> Holder<span class="uscript-operator">.</span>Health <span class="uscript-operator">+</span> <span class="uscript-number">50</span><span class="uscript-operator">;</span> <span class="uscript-comment">//Add 50 health to the Holders current health</span></pre><h2><a name="0.2"></a>A silly example</h2>
+<p>Using the BugEyedMonster class from <a href="extending-states.html">Extending States</a> again, let's suppose that we have a BugEyedQueen, and that when BugEyedMonster is very scared it runs towards her. We might have some sort of function RunToQueen() in BugEyedMonster's script.</p>
+<p>The simplest thing might be to look for the Queen when we need to find her, with  a foreach <a href="iterator.html">iterator</a>: obtain a reference to the Queen, get her location and move towards it.</p>
+<p class="indent1">(example code here...)</p>
+<p>This might be fine if the BUM only needs to do this once. However, if the Queen is also moving we have ourselves a case of the "pursuit problem" in maths (the one I could never solve &ndash; Tarquin), and BUM needs to know about her location more than once, maybe even every tick. Running a foreach iterator this frequently is too heavy for the engine, and there's a more efficient way of doing it:</p>
+<p>Give the BUM a <em class="em1">variable</em> of type BugEyedQueen. This in fact means a variable that holds a reference to an object, and the class of the object must be BugEyedQueen, or a subclass. (Remember the <a href="peppers-and-pepper-grinders.html">Peppers And Pepper Grinders</a> analogy: this variable does not indicate a class, it indicates an object of a certain class.) We could make it so the mapper has to set its value to point to the Queen object in the map: </p>
+<p class="indent1">var() BugEyedQueen MyQueen;</p>
+<p>This requires the mapper to think, is bound to lead to confusion, recriminations and spilled milk. Docers often need to think for pammers <img alt=";-)" src="emoticons/wink.gif" align="middle"></p>
+<ul><li>set the variable uneditable by declaring it with just var, no ()</li>
+<li>in one of the begin play functions (PreBeginPlay, PostBeginPlay, I don't know which is appropriate (PostBeginPlay() gets my vote &ndash; <a href="entropiclqd.html">EntropicLqd</a>)), run the foreach code as above to find the Queen, and set MyQueen to point to it</li>
+<li>whenever we need to find something out about the Queen, simply access local variable MyQueen, for example Destination = MyQueen.Location</li>
+</ul>
+<p class="indent1">I've just realised on reading the bit below that I essentially (and stupidly) rewrote it with BugEyedMonster above. I'll try and merge them later. I'll stick to the reactor example, it's by far the more sensible of the two  &ndash; <em class="em1">Tarquin</em> </p>
+<p class="indent1">maybe a page on PreBeginPlay, PostBeginPlay would be useful, but I don't know what to call it.  ­- <em class="em1">Tarquin</em></p>
+<p>º: have a look at the <a href="creating-actors-and-objects.html">Creating Actors and Objects</a> page. ("What exactly happens when I spawn an actor?") Is this what you were looking for or should there be more details? &ndash; <a href="wormbo.html">Wormbo</a></p>
+<hr class="thin"><p>Tarquin: snip from one of my forum posts:</p>
+<p>The standard way round this is to only call ForEach once, like this: </p>
+<p>Each actor that will need to call Bomb.AddTime gets a: </p>
+<p>var bomb myBomb ; </p>
+<p>(check my syntax, it might be var class&lt;bomb&gt; etc...) </p>
+<p>Then one of the BeginPlay functions calls ForEach.AllActors and sets the local myBomb variable to point to the map's Bomb actor. </p>
+<p>Then when you need to access the Bomb actor's function, grab it from myBomb.AddTime. </p>
+<h4><a name="0.2.0.1"></a>Comments</h4>
+<p><em class="em1">Tarquin</em> Excellent idea, including this kind of information. Although, NOOBs will not have clue as to what you're referring to, and, how it would be implemented. I'll tell ya,...being a NOOB sucks. <a href="nuclear-fuzz-grunge.html">NFG</a></p>
+<p class="indent1">It's very vague for now, needs major work. <img alt=":-)" src="emoticons/smile.gif" align="middle">  &ndash; <em class="em1">Tarquin</em> </p>
+<h4><a name="0.2.0.2"></a>Zedsquared chips in with a more general view:</h4>
+<p>If you want to have a master actor on your map that exchanges information with other slave actors which can be dynamically created during gameplay then the only way for those slaves to get a reference the master actor is for the slaves to scan through all the actors on the level when created ( i.e. run a foreach.allactors iteration in prebeginplay ) and identify the master actor (hopefully it will be the only one of it's type on the level or we're in trouble).  </p>
+<p>So, to put things in more concrete terms, imagine you have a mod where a reactor goes critical and will blow once the opposing team has pulled enough control rods out (meanwhile the defending team can push them back in).</p>
+<p>Each player on has a small device (we'll call it an RCM or Reactor Core Monitor) which can display a reactor temperature which is going to be varying according to how many rods are in or out, this means that there's</p>
+<p>no simple timer here, the state of the reactor depends on the actions of the players and this info has to come from the reactor</p>
+<p>itself. </p>
+<p>One way of doing this would be for the reactor object to scan all actors on the level each tick and each time it finds an RCM it would call an UpdateStatus function, like this:</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> <span class="uscript-type">float</span> temperature<span class="uscript-operator">;</span>
+<span class="uscript-keyword">event</span> tick<span class="uscript-operator">(</span> <span class="uscript-type">float</span> deltatime<span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> RCM monitor<span class="uscript-operator">;</span>
+
+    modelheat<span class="uscript-operator">(</span>deltatime<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// do calcs to see how hot we are</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>temperature <span class="uscript-operator">&gt;</span> critical_temperature<span class="uscript-operator">)</span> boom<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-keyword">else</span>
+      <span class="uscript-keyword">foreach</span> allactors<span class="uscript-operator">(</span> <span class="uscript-keyword">class</span><span class="uscript-name">'RCM'</span><span class="uscript-operator">,</span> monitor<span class="uscript-operator">)</span>
+        monitor<span class="uscript-operator">.</span>UpdateStatus<span class="uscript-operator">(</span>temperature<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-operator">}</span>   </pre><p>Which is all well and good but somewhat inefficient as the foreach allactors iterator gets called every tick, this is slow and generally a Bad Thing. </p>
+<p>Another way to approach this is to have the RCM's find out where the reactor is when they're created and then use that information to query the reactor themselves, like this:</p>
+<pre class="uscript">  <span class="uscript-keyword">var</span> myreactor reactor<span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">function</span> prebeginplay <span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+   <span class="uscript-comment">// find the reactor and assign a pointer to it</span>
+   <span class="uscript-keyword">foreach</span> allactors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'myreactor'</span><span class="uscript-operator">,</span> reactor<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+
+  <span class="uscript-keyword">event</span> tick <span class="uscript-operator">(</span><span class="uscript-type">float</span> deltatime<span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+   <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>reactor <span class="uscript-operator">!=</span><span class="uscript-keyword">none</span><span class="uscript-operator">)</span> UpdateStatus<span class="uscript-operator">(</span>reactor<span class="uscript-operator">.</span>temperature<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span> </pre><p>The nasty slow iterator gets called only once per RCM actor (it'd probably be spawned as part of the players inventory on game login and that's when it scans to get a reference to the reactor) and all the reactor has to do is check how hot it's getting at regular intervals and set that value in it's temperature variable for the others to read... easy! </p>
+<p>(and that mod ideas sounds like it might be fun... feel free to pinch it <img alt=":-)" src="emoticons/smile.gif" align="middle">  )</p>
+<h4><a name="0.2.0.3"></a>Alternate + More Efficient Way</h4>
+<p>An alternative way that I have found that works is to have a reference in your 'slave' actors to the 'master' actor and when you spawn the slaves (the easiest way would be to spawn from the slave), set the 'master' reference in their properties to that of the 'master' actor on the map.</p>
+<p>An Example:</p>
+<pre class="uscript"><span class="uscript-comment">//In the slave class</span>
+<span class="uscript-keyword">Class</span> SlaveClass <span class="uscript-keyword">Extends</span> SomeOtherActor<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> MasterActor MyMaster<span class="uscript-operator">;</span> <span class="uscript-comment">//An empty reference when the slave is first created</span></pre><pre class="uscript"><span class="uscript-comment">//In the Master Class</span>
+<span class="uscript-keyword">Class</span> MasterClass <span class="uscript-keyword">Extends</span> SomeOtherActor<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> SpawnSlave<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+   <span class="uscript-keyword">local</span> SlaveClass MySlave<span class="uscript-operator">;</span>   
+   MySlave <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'YourPackage.SlaveClass) //plus whatever else you need to spawn &gt;_&lt;</span>
+   MySlave<span class="uscript-operator">.</span>MyMaster <span class="uscript-operator">=</span> <span class="uscript-keyword">Self</span> <span class="uscript-comment">//Set the empty reference MyMaster to reference the MasterClass    </span>
+<span class="uscript-operator">}</span></pre><p>I believe this to be far more efficient than going through the list of actors etc.</p>
+<pre class="paraverbatim"> </pre><h4><a name="0.2.0.4"></a>"Global" object references</h4>
+<pre class="uscript"><span class="uscript-keyword">class</span> Foo <span class="uscript-keyword">extends</span> Object<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> Object Bar<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">event</span> Whatever<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-keyword">default</span><span class="uscript-operator">.</span>Bar <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">default</span><span class="uscript-operator">.</span>Bar <span class="uscript-operator">=</span> SpawnFindAssignWhatever<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Bar <span class="uscript-operator">=</span> <span class="uscript-keyword">default</span><span class="uscript-operator">.</span>Bar<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-keyword">default</span><span class="uscript-operator">.</span>Bar <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">default</span><span class="uscript-operator">.</span>Bar<span class="uscript-operator">.</span>Hello<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><ul><li>SpawnFindAssignWhatever(); will be called only once per game in the best case</li>
+<li>All Foo's automatically gain access to Bar actor through default.Bar;</li>
+<li>Newly created objects have their Bar variable initialized to what's in default.Bar;</li>
+<li>Other objects can access Foo's bar through class'Foo'.default.Bar;</li>
+</ul>
+<p>another example:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> Foo <span class="uscript-keyword">extends</span> Object<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> Object Bar<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">event</span> Whatever<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-keyword">default</span><span class="uscript-operator">.</span>Bar <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">default</span><span class="uscript-operator">.</span>Bar<span class="uscript-operator">.</span>Hello<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><pre class="uscript"><span class="uscript-keyword">class</span> Bar <span class="uscript-keyword">extends</span> Object<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">event</span> Whatever<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Foo'</span><span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>Bar <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">class</span><span class="uscript-name">'Foo'</span><span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>Bar <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Hello<span class="uscript-operator">(</span> Object o <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">//...</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.3"></a>Related Topics</h2>
+<ul><li><a href="unrealscript.html">UnrealScript</a></li>
+<li><a href="iterator.html">Iterator</a>s</li>
+</ul>
+<h2><a name="0.4"></a>Comments</h2>
+<p><em class="em2">dataangel</em>: I don't think this is correct:</p>
+<p>"If you want to have a master actor on your map that exchanges information with other slave actors which can be dynamically created during gameplay then the only way for those slaves to get a reference the master actor is for the slaves to scan through all the actors on the level when created ( i.e. run a foreach.allactors iteration in prebeginplay ) and identify the master actor (hopefully it will be the only one of it's type on the level or we're in trouble)."</p>
+<p>Couldn't you simply assign the slave's master when you create it? The same way game rules objects usually have a reference to the mutator that spawns them.</p>
+<p><em class="em2">Fataloverdose</em> yes, if it was the master that spawned the slave.But all the slaves would have to be spawned after the gameplay has started to be able get a valid refference to the master.</p>
+<p><em class="em2">Ben</em></p>
+<p>Well, what is the problem in the fact that the master didn't spawn the slaves ? Why don't we do like that:</p>
+<p>The master has a list of all the slaves (empty at the begining) and a method "add_slave(slave newSlave)".</p>
+<p>When a slave appears, in its prebeginplay() method, it find the reactor and do "pointorToTheReactorFound.add_slave(this)"</p>
+<p>Like that the master update the slaves only when it changes.</p>
+<p><em class="em2">mE</em>: this is really confusing, and for some reason i think it's really important. Still it seems pretty simple, when i have my code working i may edit this down i think i know what i'm doing now.</p>
+<p><em class="em2">Kartoshka:</em> This page could use a good cleaning <a href="refactor-me.html">Refactor Me</a>. Also, one earlier question wasn't ever really answered. Which is a better place for the foreach iterator code &ndash; PreBeginPlay or PostBeginPlay?</p>
+<p><em class="em2">MythOpus:</em> I didn't really know there was a question like that... but here's my answer... I believe it's better it do any iterators in the PostBeginPlay as all the actors would have been created at that point so I believe it would be a better way of doing things.  I will also look at refactoring this up later in the week as I have final's but am off thursday and friday.  EDIT- I guess I'll also write up examples for the CTF Flag that the original author hasn't gotten around to yet heh.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("The CTF Flag", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>The Reference Itself", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Setting The Reference", "#0.1.2");
+menuItemAdd("A silly example", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Comments", "#0.2.0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Zedsquared chips in with a more general view:", "#0.2.0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Alternate + More Efficient Way", "#0.2.0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>\"Global\" object references", "#0.2.0.4");
+menuItemAdd("Related Topics", "#0.3");
+menuItemAdd("Comments", "#0.4");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Communication_Between_Objects">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Communication_Between_Objects">View other revisions</a><br>Last edited April 21, 2007 19:45 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Communication_Between_Objects">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Communication_Between_Objects">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I'm a doctor, not a mechanic
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

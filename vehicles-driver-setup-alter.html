@@ -1,0 +1,260 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Vehicles/Driver Setup Alternative</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Vehicles/Driver_Setup_Alternative; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="vehicles.html">Vehicles</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Vehicles/Driver+Setup+Alternative">Driver Setup Alternative</a></h1>
+	<div class="wiki"><h4><a name="0.0.0.1"></a>Alternative Vehicle Driver Setup</h4>
+<h4><a name="0.0.0.2"></a>By Agent Scully</h4>
+<p>This is an alternate method of how to modify the player bones so that they do not need replication for online play, just two functions. One called:</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> AttachDriver<span class="uscript-operator">(</span>Pawn P<span class="uscript-operator">)</span></pre><p>And a second one called:</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> DetachDriver<span class="uscript-operator">(</span>Pawn P<span class="uscript-operator">)</span></pre><p>These two simulated functions will obviously, do as it says. Attach the driver to the vehicle and set the bones in place when the player gets on the bike, and detach the driver and set the bones to normal rotation. Let's take a look at how they work:</p>
+<p>First of all you need var rotators at the top of your code. This tells your script that you'll be using rotators in AttachDriver for each bone.</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> rotator PelvisDrive<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> rotator NeckDrive<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> rotator SpineDrive<span class="uscript-operator">,</span>SpineDrive1<span class="uscript-operator">,</span>SpineDrive2<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> rotator ArmDriveL<span class="uscript-operator">,</span>ArmDriveR<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> rotator ForeArmDriveL<span class="uscript-operator">,</span>ForeArmDriveR<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> rotator LeftHandDriveL<span class="uscript-operator">,</span>RightHandDriveR<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> rotator LFingerDrive0<span class="uscript-operator">,</span>LFingerDrive01<span class="uscript-operator">,</span>LFingerDrive02<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> rotator RFingerDrive0<span class="uscript-operator">,</span>RFingerDrive01<span class="uscript-operator">,</span>RFingerDrive02<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> rotator ThighDriveL<span class="uscript-operator">,</span>ThighDriveR<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> rotator CalfDriveL<span class="uscript-operator">,</span>CalfDriveR<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> rotator FootDriveL<span class="uscript-operator">,</span>FootDriveR<span class="uscript-operator">;</span></pre><p>So then we move onto our AttachDriver and DetachDriver:</p>
+<pre class="uscript"><span class="uscript-comment">// added for driver position resetting</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> AttachDriver<span class="uscript-operator">(</span>Pawn P<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>AttachDriver<span class="uscript-operator">(</span>P<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+
+    <span class="uscript-comment">// Pelvis --------------------------------------------------</span>
+    PelvisDrive<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-number">8192</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 Pelvis'</span><span class="uscript-operator">,</span>PelvisDrive<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Head ----------------------------------------------------</span>
+    NeckDrive<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">10000</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 Head'</span><span class="uscript-operator">,</span>NeckDrive<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Spine ---------------------------------------------------</span>
+    SpineDrive<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-number">2048</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 Spine'</span><span class="uscript-operator">,</span>SpineDrive<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//Spine 1</span>
+    SpineDrive1<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-number">2048</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 Spine1'</span><span class="uscript-operator">,</span>SpineDrive1<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//Spine 2</span>
+    SpineDrive2<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-number">2048</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 Spine2'</span><span class="uscript-operator">,</span>SpineDrive2<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Arms ----------------------------------------------------</span>
+    <span class="uscript-comment">//LeftArm</span>
+    ArmDriveL<span class="uscript-operator">.</span>Pitch<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">4696</span><span class="uscript-operator">;</span>
+    ArmDriveL<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">10000</span><span class="uscript-operator">;</span>
+    ArmDriveL<span class="uscript-operator">.</span>Roll<span class="uscript-operator">=</span><span class="uscript-number">6000</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 L UpperArm'</span><span class="uscript-operator">,</span>ArmDriveL<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//RightArm</span>
+    ArmDriveR<span class="uscript-operator">.</span>Pitch<span class="uscript-operator">=</span><span class="uscript-number">4696</span><span class="uscript-operator">;</span>
+    ArmDriveR<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">11000</span><span class="uscript-operator">;</span>
+    ArmDriveR<span class="uscript-operator">.</span>Roll<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">6000</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 R UpperArm'</span><span class="uscript-operator">,</span>ArmDriveR<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//Left ForeArm</span>
+    ForeArmDriveL<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">8010</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 L ForeArm'</span><span class="uscript-operator">,</span>ForeArmDriveL<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//Right ForeArm</span>
+    ForeArmDriveR<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">6000</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 R ForeArm'</span><span class="uscript-operator">,</span>ForeArmDriveR<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//Left Hand</span>
+    LeftHandDriveL<span class="uscript-operator">.</span>Pitch<span class="uscript-operator">=</span><span class="uscript-number">6000</span><span class="uscript-operator">;</span>
+    LeftHandDriveL<span class="uscript-operator">.</span>Roll<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">16384</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 L Hand'</span><span class="uscript-operator">,</span>LeftHandDriveL<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//Right Hand</span>
+    RightHandDriveR<span class="uscript-operator">.</span>Pitch<span class="uscript-operator">=</span><span class="uscript-number">5000</span><span class="uscript-operator">;</span>
+    RightHandDriveR<span class="uscript-operator">.</span>Roll<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">16384</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 R Hand'</span><span class="uscript-operator">,</span>RightHandDriveR<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Fingers -------------------------------------------------</span>
+    <span class="uscript-comment">//LFinger0</span>
+    LFingerDrive0<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">10000</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 L Finger0'</span><span class="uscript-operator">,</span>LFingerDrive0<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//LFinger1</span>
+    LFingerDrive01<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">10000</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 L Finger01'</span><span class="uscript-operator">,</span>LFingerDrive01<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//LFinger2</span>
+    LFingerDrive02<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">10000</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 L Finger02'</span><span class="uscript-operator">,</span>LFingerDrive02<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//RFinger0</span>
+    LFingerDrive0<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">10000</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 R Finger0'</span><span class="uscript-operator">,</span>RFingerDrive0<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//RFinger1</span>
+    LFingerDrive01<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">10000</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 R Finger01'</span><span class="uscript-operator">,</span>RFingerDrive01<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//RFinger2</span>
+    LFingerDrive02<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">10000</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 R Finger02'</span><span class="uscript-operator">,</span>RFingerDrive02<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Legs ----------------------------------------------------</span>
+    <span class="uscript-comment">//Left Thigh</span>
+    ThighDriveL<span class="uscript-operator">.</span>Pitch<span class="uscript-operator">=</span><span class="uscript-number">5600</span><span class="uscript-operator">;</span>
+    ThighDriveL<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1000</span><span class="uscript-operator">;</span>
+    ThighDriveL<span class="uscript-operator">.</span>Roll<span class="uscript-operator">=</span><span class="uscript-number">3200</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 L Thigh'</span><span class="uscript-operator">,</span>ThighDriveL<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//Right Thigh</span>
+    ThighDriveR<span class="uscript-operator">.</span>Pitch<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">5600</span><span class="uscript-operator">;</span>
+    ThighDriveR<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1000</span><span class="uscript-operator">;</span>
+    ThighDriveR<span class="uscript-operator">.</span>Roll<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">3200</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 R Thigh'</span><span class="uscript-operator">,</span>ThighDriveR<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//Left Calf</span>
+    CalfDriveL<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">10000</span><span class="uscript-operator">;</span>
+    CalfDriveL<span class="uscript-operator">.</span>Roll<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">8000</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 L Calf'</span><span class="uscript-operator">,</span>CalfDriveL<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//RightCalf</span>
+    CalfDriveR<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">10000</span><span class="uscript-operator">;</span>
+    CalfDriveR<span class="uscript-operator">.</span>Roll<span class="uscript-operator">=</span><span class="uscript-number">8000</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 R Calf'</span><span class="uscript-operator">,</span>CalfDriveR<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//Left Foot</span>
+    FootDriveL<span class="uscript-operator">.</span>Pitch<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">9000</span><span class="uscript-operator">;</span>
+    FootDriveL<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-number">15000</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 L Foot'</span><span class="uscript-operator">,</span>FootDriveL<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//Right Foot</span>
+    FootDriveR<span class="uscript-operator">.</span>Pitch<span class="uscript-operator">=</span><span class="uscript-number">9000</span><span class="uscript-operator">;</span>
+    FootDriveR<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">=</span><span class="uscript-number">15000</span><span class="uscript-operator">;</span>
+    P<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 R Foot'</span><span class="uscript-operator">,</span>FootDriveR<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+
+<span class="uscript-operator">}</span></pre><p>The (PawnP) tells the engine to rotate a pawn, in this case the player. The result for this particular bone rotation is something like this:</p>
+<p><a href="image-needed.html">Image Needed</a>?</p>
+<p>Now we have the engine reset everything once the player leaves the bike, or else he'll be all twisted up:</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> DetachDriver<span class="uscript-operator">(</span>Pawn P<span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>
+    <span class="uscript-comment">// After the player leaves the vehicle, resets its additional bone rotations or else he'll be all twisted</span>
+    <span class="uscript-comment">// Simply resets everything</span>
+    <span class="uscript-comment">// Pelvis --------------------------------------------------</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 Pelvis'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">// Head ----------------------------------------------------</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 Head'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">// Spine ---------------------------------------------------</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 Spine'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 Spine1'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 Spine2'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">// Arms ----------------------------------------------------</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 L UpperArm'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 R UpperArm'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 L ForeArm'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 R ForeArm'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 L Hand'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 R Hand'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">// Fingers -------------------------------------------------</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 L Finger0'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 L Finger01'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 L Finger02'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 R Finger0'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 R Finger01'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 R Finger02'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">// Legs ------------------------------------roll--Pitch--Yaw------------</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 L Thigh'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 L Thigh'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 L Calf'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 R Calf'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 L Foot'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bip01 R Foot'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-operator">}</span></pre><p>This sets the driver back to the way he was before you got on the hoverbike. More simple than the other code, and no online replication or tick function needed. Enjoy <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Alternative Vehicle Driver Setup", "#0.0.0.1");
+menuItemAdd("By Agent Scully", "#0.0.0.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="vehicles.html">Vehicles</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Vehicles/Driver_Setup_Alternative">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Vehicles/Driver_Setup_Alternative">View other revisions</a><br>Last edited November 6, 2006 1:58 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Vehicles/Driver_Setup_Alternative">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Vehicles/Driver_Setup_Alternative">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Worst-case scenario: the UEd Goblin wipes the map and burns down your house.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

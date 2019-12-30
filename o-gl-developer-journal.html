@@ -1,0 +1,141 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: O-GL/Developer Journal</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=O-GL/Developer_Journal; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="o-gl.html">O-GL</a>/<a href="http://wiki.beyondunreal.com/wiki?back=O-GL/Developer+Journal">Developer Journal</a></h1>
+	<div class="wiki"><div class="classpath">17th November, 2003<br></div>
+<p>Today, I started implementing my network flow design more and came to a few conclusions and solidified my design more.  I'll write my thoughts about <em class="em2">instant shots</em> and clients <em class="em2">moving instantly</em> vs clients that have a <em class="em2">full ping movement delay</em>.</p>
+<p><em class="em2">Instant movement</em> problems: 1. That all clients see all the other client positions behind the server by server-to-client time.  2. The client that made the move is ahead of the server by client-to-server time.</p>
+<p><em class="em2">Delayed movement</em> has problem #1 but not #2.</p>
+<p>-</p>
+<p>Ok, if you want to apply <em class="em2">instant shot</em> to any of these ways of movement you have to apply certain tricks.</p>
+<p>Required with instant movement:  </p>
+<p>1.  Server needs to rewind world reality to the time the client was behind the server when the shot occured.  This will effectivily fast-forward the clients' shot so that it is running server time (really only makes sense if you think of 'slow' projectiles). So server is rewinding the time it took the reality to get to the client (server-to-client time) + the time it took to get the shot to the server (client-to-server time) = full ping time.</p>
+<p>2. Because the client is moving ahead of the server, and your view of the world is behind the server, you basically took the shot at total pings worth of movement above the server - not good!.  That aside, the server will not rewind the client that made the shot's position so that the shot is the same on the server as on the client.  So, here again, we see proof that the client will be 1 ping ahead of other clients, or half ahead of the server and half behind the server.  This is not good because it allows someone with a high ping to be in a position to get a potentially unfair shot.</p>
+<p>Required with delayed movement:  </p>
+<p>1. This is the same as above.</p>
+<p>2. Because the client is moving behind the server, as with your view of other clients, the server will also rewind your position.  So, here, we basically have both your movement and the other clients' movements behind the server by server-to-client time.  This is ok, but still not so good because your movement is delayed by full ping time.  </p>
+<p>The <em class="em2">best solution</em> IMO, is the <em class="em2">delayed movement and instant shot</em>.  This is because it, er, enables you to actually hit stuff.  Low Ping Bastard's are still disadvantaged because they have to wait their ping time to move.</p>
+<p>After I get that solution done, a potential solution I can do to fix full lag wait is to decrease it to half wait, and predict halfwait in front of what the server sends you (so you're basically running at same time as server).  However, the prediction would just be velocity based I dont know if the errors are worth the extra half ping until I actually implement it (later of course).</p>
+<p>-</p>
+<p>The final thing, which I found out a while ago, and I think have come to my conclusion on is: finding server-to-client time or client-to-server time is impossible! Believe me, I spent at least a few weeks on this <img alt=":(" src="emoticons/sad.gif" align="middle">.  I could only figure out a way to find out how much those values have <em class="em1">changed</em>, but not what their actual values were.</p>
+<div class="classpath">31st December, 2003<br></div>
+<p>OMG, last day of 2003!  I better write something to make that 2 updates for the year 2003 *wink wink*.  I seriously gotta start writing in here more often lol ....  Been doing alot of stuff since my last update like going to camps, lans, and other fun "learning" because after I implemented my network code I realised it sucked and got depressed for a bit figuring out what to do next.  I cant believe how unplayable even a 100ms is on delayed movement.  I also cant believe this problem was solved by JC in the Quakeworld days so long ago ... hats off to him for listening to the fans who said Quake was "unplayable" online (I read a quote saying QuakeWorld was a "BIG architectural change" and that he barely even thought about high ping playability during Quake).</p>
+<p>Only problem, is i cant do much with karma on the network.  I even figured out a way to do instant shots, as well as instant movement.  Instant shots are achieved by making the shot come from the position you were at one ping ago.  This makes replays possible because the game state is basically the same on all machines after they have rewound time.  It uses a special trick where the shot you made is coming from a previous position, but it is also hitting the same thing that you aimed at by finding the correct rotation.  You would send this rotation to the server all the time instead of your simulated rotation to maintain smoothness on the server.  I dont think zeroPing use this method.  Anyway, I'm sure that in the future, instant movement and instant shots will make it so that everyone plays without lag ... but those with high pings get discrepancies and will still be saying bad words to their modems ^^.</p>
+<p>Interesting thing about the repulsor implementation is how simple it is.  I mean, its a bit harsh to expect modellers to write code, but I think repulsors are a sorta technical thing rather than an arty thing so they should be left to the programmers.  That said, it works by the vehicle spawning (usually) two repulsors at a set position.  This is made even easier for you by doing the bulldog wheel placement trick where you just specify and offset.</p>
+<p>The Repulsors themselves are very simple also:</p>
+<p>var()	bool	bEnableRepulsion;</p>
+<p>var()	vector	CheckDir; // In owner ref frame</p>
+<p>var()	float	CheckDist;</p>
+<p>var()	float	Softness;</p>
+<p>var()	float	PenScale;</p>
+<p>// Used internally for Karma stuff - DO NOT CHANGE!</p>
+<p>var		transient const int		KContact;  </p>
+<p>I like it alot and it seems to work well but there is problems with the placement on the vehicles in the UT2R I think because some slopes can be rather buggy.  I'm still not sure how the repulsor works because it seems a bit hackish due to the softness variable and the speed at which it stabilises.  Could be wrong though.</p>
+<h3><a name="0.0.1"></a>Later that day</h3>
+<p>I modified the hoverbike to only have one repulsor.  One thing that is moderately disturbing is that SHover extends SVehicle and its PostBeginPlay function spawns two repulsors for you unconditionally.  Therefore, if you wanted to make another hover vehicle with different numbers of repulsors, youd have to call super(classabovesuper).PostBeginPlay().  ANYWAY, not that big of a deal.</p>
+<p>I found that repulsors are similar to other constraints.  For example, KConstraint Actor1 would be the vehicle and Actor2 is an actor in tries to maintain CheckDist along CheckDir.  Only problem is they extend Actor (instead of KConstraint) and they are a composite of KParams (instead of being spawned on their own).  Seems like bad design <img alt=":(" src="emoticons/sad.gif" align="middle">.</p>
+<p>I also went back to Tim's Networking doc to check on what he said about quakeworld.  It seems QW wasn't so good after all: "lock-step prediction protocol" and the "network code and the game code are separate modules".  Gee, Carmack made it sound so good <img alt=":(" src="emoticons/sad.gif" align="middle">.  I still admire him tho <img alt=":D" src="emoticons/biggrin.gif" align="middle">.</p>
+<div class="classpath">5th December, 2005<br></div>
+<p>Wow, long time, no see.  Going to try to update this more regularly.</p>
+<hr class="thin"><p><a href="category-journal.html">Category Journal</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Later that day", "#0.0.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="o-gl.html">O-GL</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=O-GL/Developer_Journal">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=O-GL/Developer_Journal">View other revisions</a><br>Last edited December 5, 2005 10:50 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=O-GL/Developer_Journal">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/O-GL/Developer_Journal">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Describe the new page here.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

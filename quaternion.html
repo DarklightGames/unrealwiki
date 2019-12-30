@@ -1,0 +1,294 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Quaternion</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Quaternion; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Quaternion">Quaternion</a></h1>
+	<div class="wiki"><p>Quaternions are a mathematical construct that represents a rotation in three dimensions. It is not as intuitive as the Euler angles that are used for most of the rotation within Unrealscript. A <a href="rotator.html">rotator</a>, is a rotation using Euler angles and is the "standard" type of rotation within Unrealscript. <a href="unreal-tournament-2003.html">UT2003</a> has native support for Quaternions, though through custom scripts you can use <a href="quaternions-in-unreal-tourn.html">quaternions in Unreal Tournament</a> too.</p>
+<h2><a name="0.1"></a>How they work</h2>
+<p>There are two ways to explain a quaternion: the technical way and the practical way. I much prefer the practical way for purposes of Unrealscript because the mathematical expression of a quaternion is for most purposes irrelevant within Unrealscript.</p>
+<h3><a name="0.1.1"></a>The Practical Way</h3>
+<p>This explanation assumes you have a working knowledge of <a href="rotator.html">rotator</a>s and <a href="vector.html">vector</a>s. As you know, you can cast a rotator to a vector or vice versa. Because a vector has a direction, it can be used store the facing of an object. However, a vector stores only the actual facing of the object, and not the complete rotation of the object. A vector-based "rotation" always has roll set to 0 for all intents and purposes. Technically, it does not have a roll component but it will gain a roll of 0 when cast back into a rotator. Vectors, however, have an advantage over rotators - they never suffer from "gimbal lock." To experience Gimbal Lock you can simply look straight up or down inside the game and note that your rotation is halted when you are looking directly up or directly down. Vector rotation does not suffer from this, but it lacks the roll component, which sometimes you want to retain. This is where a quaternion can be useful. A quaternion is basically a vector with a roll component tacked on. The rotation of an object defined by a quaternion is the facing as defined by the vector, rolled by the roll component of the quaternion. This is best demonstrated with a picture:</p>
+<div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[Quaternion]" src="images/quaternion.png"></div>
+</td>
+</tr>
+</table>
+</div>
+<h3><a name="0.1.2"></a>The Technical Way </h3>
+<p>Quaternions encode spatial rotations by four real numbers (or two complex numbers), whereas the linear representation of these transformations as 3x3 matrices requires nine. Interpolating the quaternionic representation of a sequence of rotations is more natural than doing so for the familiar Euler angles, such as yaw, pitch, and roll. The quaternions occupy a smooth, seamless, isotropic space which is a generalization of the surface of a sphere. Thus, there is no need for special care to avoid singularities, such as gimbal lock.</p>
+<p>A quaternion is like a <span class="interwiki"><img 
+      alt="Wikipedia logo"
+      title="Wikipedia"
+      src="shared//InterWiki-Wikipedia.png">&nbsp;<a href="http://www.wikipedia.com/wiki/complex number">complex number</a></span> ( x + iy ), but extended some more, to x + iy + jz + kw. Similarly to complex numbers, i<sup>2</sup> = j<sup>2</sup> = k<sup>2</sup> = -1. Note the xyzw might be in different places: some writers use w for the real part; some writers treat the ijk part as a vector and consider the quaternion to be essentially (scalar, vector).</p>
+<p>So what does this have to do with the 3D world? Well, a rotation has 4 numbers too: 3 give the axis of rotation as a vector, and the 4th gives how far you rotate, as an angle.</p>
+<p>It turns out that when you multiply two quaternions, the product represents the rotation obtained by combining the two original rotations the two original quaternions represented. </p>
+<h2><a name="0.2"></a>Built-In Quaternion Functions</h2>
+<dl><dt>Quat QuatProduct (Quat A, Quat B) [static]</dt><dd>Multiplies two Quaternions together. Interestingly enough, this will return a Quaternion representing the addition of the two rotations that the original Quaternions represented. So, for example you had one quaternion representing Yaw 0, Pitch 0, Roll 90 degrees, and a quaternion representing Yaw 90 degrees, Pitch 0, and Roll 0, you will end up with Yaw 90 degrees, Pitch 0, and Roll 90 degrees. Though this is a simple example that would not be hard to do without using quaternions, it could be more complicated if both angles were jutting out at arbitrary angles unknown at compile time. Note that multiplication of quaternions is not commutative. To apply a rotation A followed by a rotation B, use the result of QuatProduct(B, A).</dd><dt>Quat QuatInvert (Quat A) [static]</dt><dd>Inverts a Quaternion. The restlt will be facing the opposite direction and be rolled the opposite direction about it's axis.</dd><dt>vector QuatRotateVector (Quat A, vector B) [static]</dt><dd>Rotates the given vector around the axis specified by the Quaternion, by the amount specified by the quaternion.</dd><dt>Quat QuatFindBetween (Vector A, Vector B) [static]</dt><dd>If vector A and vector B both have lengths of 1, this will return a quaternion representing a rotation that can turn the first vector into the second. So, for instance, QuatRotateVector( QuatFindBetween( A, B ), A ) would return B.</dd><dt>Quat QuatFromAxisAndAngle (Vector Axis, Float Angle) [static]</dt><dd>Allows you to manually specify a quaternion by providing the axis (aka the facing of the quaternion) as a vector and the "roll" of that axis. (aka facing) Because Quaternions use radians for their "roll," I believe that the angle must be specified in radians.</dd></dl>
+<p><em class="em2">Shambler:</em> N.B. QuatFindBetween seems to have a bug with inverted input vectors, QuatFindBetween(vect(-1,0,0), vect(1,0,0)) will return a quaternion with absoloutly no rotational info.</p>
+<h2><a name="0.3"></a>Other Useful Functions</h2>
+<h3><a name="0.3.1"></a>Identity Quaternion</h3>
+<p>An identity quaternion is just like an identity matrix in that multiplication with it produces an ouput equal to the input.</p>
+<pre class="uscript"><span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> quat QuatIdentity<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> quat result<span class="uscript-operator">;</span>
+    result<span class="uscript-operator">.</span>x <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    result<span class="uscript-operator">.</span>y <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    result<span class="uscript-operator">.</span>z <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    result<span class="uscript-operator">.</span>w <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span> result<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">Foxpaw:</em> No offense, but what is the point of this function? Why would one need an identity quaternion?</p>
+<p><em class="em2">Mychaeel:</em> That's a bit like asking "What does one need the number 1 for?"  <img alt=":-)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Pingz:</em> It's like setting a float to 1 so that anything multiplyed with it returns itself insted of zero.  Just like an identity matrix.  Saying q = QuatIdentity(); was much nicer than putting all that junk inline.</p>
+<p><em class="em2">Foxpaw:</em> Yeah, but what is the point of multiplying something by 1? The 1 is err. something about "tacit rules of a number." Anyways.. if something is multiplied by 1, then the result will always be the same as the other operand, so why bother? Wouldn't it be better to save the cycles and just remove the expression entirely?</p>
+<p><em class="em2">Tarquin:</em> You might want to check if something is <em class="em1">equal</em> to the identity. </p>
+<p><em class="em2">Mychaeel:</em> Foxpaw, stop a minute to <em class="em1">think</em>.  Is multiplying a variable with the unity value <em class="em1">constant</em> really the only thing that comes into your mind?</p>
+<p><em class="em2">Dirk Fist:</em> It can be used as a place holder, in a chain for a missing componnent</p>
+<h3><a name="0.3.2"></a>Converting a Rotator to a Quaternion</h3>
+<p>This function converts the specified rotation into a quaternion representing that rotation.</p>
+<pre class="uscript"><span class="uscript-keyword">const</span> URotToRadian<span class="uscript-operator">=</span><span class="uscript-number">0.000095873799</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">postoperator</span> <span class="uscript-type">float</span> URotations<span class="uscript-operator">(</span> <span class="uscript-type">float</span> URots <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span> <span class="uscript-keyword">return</span> URots <span class="uscript-operator">*</span> URottoRadian<span class="uscript-operator">;</span> <span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">function</span> Quat RotToQuat<span class="uscript-operator">(</span> rotator <span class="uscript-keyword">Rot</span> <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> Quat X<span class="uscript-operator">,</span> Y<span class="uscript-operator">,</span> Z<span class="uscript-operator">;</span>
+  
+  X <span class="uscript-operator">=</span> QuatFromAxisAndAngle<span class="uscript-operator">(</span> <span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span> <span class="uscript-keyword">Rot</span><span class="uscript-operator">.</span>Roll URotations <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  Y <span class="uscript-operator">=</span> QuatFromAxisAndAngle<span class="uscript-operator">(</span> <span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span> <span class="uscript-keyword">Rot</span><span class="uscript-operator">.</span>Pitch URotations <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  Z <span class="uscript-operator">=</span> QuatFromAxisAndAngle<span class="uscript-operator">(</span> <span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span> <span class="uscript-keyword">Rot</span><span class="uscript-operator">.</span>Yaw URotations <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  X <span class="uscript-operator">=</span> QuatProduct<span class="uscript-operator">(</span> X<span class="uscript-operator">,</span> Y <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  X <span class="uscript-operator">=</span> QuatProduct<span class="uscript-operator">(</span> X<span class="uscript-operator">,</span> Z <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">return</span> X<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.3.3"></a>Converting Quaternion to a Rotator</h3>
+<p>Returns a normalized rotator from the input quaternion.</p>
+<pre class="uscript"><span class="uscript-comment">// 65535 / 2PI</span>
+<span class="uscript-keyword">const</span> RADIANS_TO_UU <span class="uscript-operator">=</span> <span class="uscript-number">10430</span><span class="uscript-operator">.</span>21919552736082f<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// 65535 / 4</span>
+<span class="uscript-keyword">const</span> UU_90_DEGREES <span class="uscript-operator">=</span> <span class="uscript-number">16383</span><span class="uscript-operator">.</span>75f<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> Rotator QuatToRotator<span class="uscript-operator">(</span> quat Q <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> x<span class="uscript-operator">,</span> y<span class="uscript-operator">,</span> z<span class="uscript-operator">,</span> w<span class="uscript-operator">,</span> s<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> rotator result<span class="uscript-operator">;</span>
+
+    x <span class="uscript-operator">=</span> Q<span class="uscript-operator">.</span>x<span class="uscript-operator">;</span>
+    y <span class="uscript-operator">=</span> Q<span class="uscript-operator">.</span>y<span class="uscript-operator">;</span>
+    z <span class="uscript-operator">=</span> Q<span class="uscript-operator">.</span>z<span class="uscript-operator">;</span>
+    w <span class="uscript-operator">=</span> Q<span class="uscript-operator">.</span>w<span class="uscript-operator">;</span>
+    s <span class="uscript-operator">=</span> <span class="uscript-number">2</span><span class="uscript-operator">.</span>0f <span class="uscript-operator">*</span> <span class="uscript-operator">(</span> w <span class="uscript-operator">*</span> y <span class="uscript-operator">-</span> x <span class="uscript-operator">*</span> z <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        
+    <span class="uscript-comment">// It is invalid to pass values outside</span>
+    <span class="uscript-comment">// of the range -1,1 to asin()... so don't.</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> s <span class="uscript-operator">&lt;</span> <span class="uscript-number">1</span><span class="uscript-operator">.</span>0f <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">.</span>0f <span class="uscript-operator">&lt;</span> s <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+
+            result<span class="uscript-operator">.</span>yaw      <span class="uscript-operator">=</span> atan<span class="uscript-operator">(</span> <span class="uscript-number">2</span><span class="uscript-operator">.</span>0f<span class="uscript-operator">*</span><span class="uscript-operator">(</span>x<span class="uscript-operator">*</span>y<span class="uscript-operator">+</span>w<span class="uscript-operator">*</span>z<span class="uscript-operator">)</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">.</span>0f<span class="uscript-number">-2</span><span class="uscript-operator">.</span>0f<span class="uscript-operator">*</span><span class="uscript-operator">(</span>y<span class="uscript-operator">*</span>y<span class="uscript-operator">+</span>z<span class="uscript-operator">*</span>z<span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">*</span> RADIANS_TO_UU<span class="uscript-operator">;</span>
+            result<span class="uscript-operator">.</span>pitch    <span class="uscript-operator">=</span> asin<span class="uscript-operator">(</span> s <span class="uscript-operator">)</span> <span class="uscript-operator">*</span> RADIANS_TO_UU<span class="uscript-operator">;</span>
+            result<span class="uscript-operator">.</span>roll     <span class="uscript-operator">=</span> atan<span class="uscript-operator">(</span> <span class="uscript-number">2</span><span class="uscript-operator">.</span>0f<span class="uscript-operator">*</span><span class="uscript-operator">(</span>y<span class="uscript-operator">*</span>z<span class="uscript-operator">+</span>w<span class="uscript-operator">*</span>x<span class="uscript-operator">)</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">.</span>0f<span class="uscript-number">-2</span><span class="uscript-operator">.</span>0f<span class="uscript-operator">*</span><span class="uscript-operator">(</span>x<span class="uscript-operator">*</span>x<span class="uscript-operator">+</span>y<span class="uscript-operator">*</span>y<span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">*</span> RADIANS_TO_UU<span class="uscript-operator">;</span>
+
+        <span class="uscript-operator">}</span> <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+
+            result<span class="uscript-operator">.</span>yaw      <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+            result<span class="uscript-operator">.</span>pitch    <span class="uscript-operator">=</span> <span class="uscript-operator">-</span>UU_90_DEGREES<span class="uscript-operator">;</span>
+            result<span class="uscript-operator">.</span>roll     <span class="uscript-operator">=</span> <span class="uscript-operator">-</span>atan<span class="uscript-operator">(</span> <span class="uscript-number">2</span><span class="uscript-operator">.</span>0f<span class="uscript-operator">*</span><span class="uscript-operator">(</span>x<span class="uscript-operator">*</span>y<span class="uscript-operator">-</span>w<span class="uscript-operator">*</span>z<span class="uscript-operator">)</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">.</span>0f<span class="uscript-number">-2</span><span class="uscript-operator">.</span>0f<span class="uscript-operator">*</span><span class="uscript-operator">(</span>x<span class="uscript-operator">*</span>x<span class="uscript-operator">+</span>z<span class="uscript-operator">*</span>z<span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">*</span> RADIANS_TO_UU<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+    <span class="uscript-operator">}</span> <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+
+        result<span class="uscript-operator">.</span>yaw      <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+        result<span class="uscript-operator">.</span>pitch    <span class="uscript-operator">=</span> UU_90_DEGREES<span class="uscript-operator">;</span>
+        result<span class="uscript-operator">.</span>roll     <span class="uscript-operator">=</span> atan<span class="uscript-operator">(</span> <span class="uscript-number">2</span><span class="uscript-operator">.</span>0f<span class="uscript-operator">*</span><span class="uscript-operator">(</span>x<span class="uscript-operator">*</span>y<span class="uscript-operator">-</span>w<span class="uscript-operator">*</span>z<span class="uscript-operator">)</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">.</span>0f<span class="uscript-number">-2</span><span class="uscript-operator">.</span>0f<span class="uscript-operator">*</span><span class="uscript-operator">(</span>x<span class="uscript-operator">*</span>x<span class="uscript-operator">+</span>z<span class="uscript-operator">*</span>z<span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">*</span> RADIANS_TO_UU<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">return</span> Normalize<span class="uscript-operator">(</span> result <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">DemonThing:</em> Wouldn't the first lines be</p>
+<pre class="uscript"><span class="uscript-comment">// 65536 / 2PI</span>
+<span class="uscript-keyword">const</span> RADIANS_TO_UU <span class="uscript-operator">=</span> <span class="uscript-number">10430</span><span class="uscript-operator">.</span>37835047045272f<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// 65536 / 4</span>
+<span class="uscript-keyword">const</span> UU_90_DEGREES <span class="uscript-operator">=</span> <span class="uscript-number">16384</span><span class="uscript-operator">.</span>0f<span class="uscript-operator">;</span></pre><p>? I thought a full circle is 65536 = 2<sup>16</sup> UU.</p>
+<h3><a name="0.3.4"></a>Normalizing a Quaternion</h3>
+<p>Returns a unit quaternion which is any quaternion with a magnitude of 1.</p>
+<pre class="uscript"><span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> quat QuatNormalize<span class="uscript-operator">(</span> quat q <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> mag<span class="uscript-operator">;</span>
+
+    mag <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> q<span class="uscript-operator">.</span>x<span class="uscript-operator">*</span>q<span class="uscript-operator">.</span>x <span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-operator">(</span> q<span class="uscript-operator">.</span>y<span class="uscript-operator">*</span>q<span class="uscript-operator">.</span>y <span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-operator">(</span> q<span class="uscript-operator">.</span>z<span class="uscript-operator">*</span>q<span class="uscript-operator">.</span>z <span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-operator">(</span> q<span class="uscript-operator">.</span>w<span class="uscript-operator">*</span>q<span class="uscript-operator">.</span>w <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    q<span class="uscript-operator">.</span>x <span class="uscript-operator">=</span> q<span class="uscript-operator">.</span>x <span class="uscript-operator">/</span> mag<span class="uscript-operator">;</span>
+    q<span class="uscript-operator">.</span>y <span class="uscript-operator">=</span> q<span class="uscript-operator">.</span>y <span class="uscript-operator">/</span> mag<span class="uscript-operator">;</span>
+    q<span class="uscript-operator">.</span>z <span class="uscript-operator">=</span> q<span class="uscript-operator">.</span>z <span class="uscript-operator">/</span> mag<span class="uscript-operator">;</span>
+    q<span class="uscript-operator">.</span>w <span class="uscript-operator">=</span> q<span class="uscript-operator">.</span>w <span class="uscript-operator">/</span> mag<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> q<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.3.5"></a>Slerp Between Quaternions</h3>
+<p>This function performs a spherical linear interpolation between quaternion U and V.  F is a value between 0 and 1 where 0 returns U, 1 returns V, and all other values return a smooth interpolation between them.</p>
+<pre class="uscript"><span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> quat QuatSlerp<span class="uscript-operator">(</span> quat u<span class="uscript-operator">,</span> quat v<span class="uscript-operator">,</span> <span class="uscript-type">float</span> f <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> alpha<span class="uscript-operator">,</span>beta<span class="uscript-operator">,</span>theta<span class="uscript-operator">,</span>sin_t<span class="uscript-operator">,</span>cos_t<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span>   flip<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> quat  result<span class="uscript-operator">;</span>
+
+    flip <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Force the input within range.</span>
+    f <span class="uscript-operator">=</span> fmin<span class="uscript-operator">(</span> f<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">.</span>0f <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    f <span class="uscript-operator">=</span> fmax<span class="uscript-operator">(</span> f<span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">.</span>0f <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    cos_t <span class="uscript-operator">=</span> u<span class="uscript-operator">.</span>x<span class="uscript-operator">*</span>v<span class="uscript-operator">.</span>x<span class="uscript-operator">+</span>u<span class="uscript-operator">.</span>y<span class="uscript-operator">*</span>v<span class="uscript-operator">.</span>y<span class="uscript-operator">+</span>u<span class="uscript-operator">.</span>z<span class="uscript-operator">*</span>v<span class="uscript-operator">.</span>z<span class="uscript-operator">+</span>u<span class="uscript-operator">.</span>w<span class="uscript-operator">*</span>v<span class="uscript-operator">.</span>w<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> cos_t <span class="uscript-operator">&lt;</span> <span class="uscript-number">0</span><span class="uscript-operator">.</span>0f <span class="uscript-operator">)</span> <span class="uscript-operator">{</span> cos_t <span class="uscript-operator">=</span> <span class="uscript-operator">-</span>cos_t<span class="uscript-operator">;</span> flip<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">;</span> <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span> <span class="uscript-number">1</span><span class="uscript-operator">.</span>0f <span class="uscript-operator">-</span> cos_t <span class="uscript-operator">)</span> <span class="uscript-operator">&lt;</span> <span class="uscript-number">0</span><span class="uscript-operator">.</span>000001f <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+
+        beta    <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">.</span>0f <span class="uscript-operator">-</span> f<span class="uscript-operator">;</span>
+        alpha   <span class="uscript-operator">=</span> f<span class="uscript-operator">;</span>
+
+    <span class="uscript-operator">}</span> <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+
+        theta   <span class="uscript-operator">=</span> acos<span class="uscript-operator">(</span> cos_t <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        sin_t   <span class="uscript-operator">=</span> sin<span class="uscript-operator">(</span> theta <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        beta    <span class="uscript-operator">=</span> sin<span class="uscript-operator">(</span> theta <span class="uscript-operator">-</span> f <span class="uscript-operator">*</span> theta <span class="uscript-operator">)</span> <span class="uscript-operator">/</span> sin_t<span class="uscript-operator">;</span>
+        alpha   <span class="uscript-operator">=</span> sin<span class="uscript-operator">(</span> f <span class="uscript-operator">*</span> theta <span class="uscript-operator">)</span> <span class="uscript-operator">/</span> sin_t<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> flip <span class="uscript-operator">!=</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span> alpha <span class="uscript-operator">=</span> <span class="uscript-operator">-</span>alpha<span class="uscript-operator">;</span>
+
+    result<span class="uscript-operator">.</span>x <span class="uscript-operator">=</span> beta <span class="uscript-operator">*</span> u<span class="uscript-operator">.</span>x <span class="uscript-operator">+</span> alpha <span class="uscript-operator">*</span> v<span class="uscript-operator">.</span>x<span class="uscript-operator">;</span>
+    result<span class="uscript-operator">.</span>y <span class="uscript-operator">=</span> beta <span class="uscript-operator">*</span> u<span class="uscript-operator">.</span>y <span class="uscript-operator">+</span> alpha <span class="uscript-operator">*</span> v<span class="uscript-operator">.</span>y<span class="uscript-operator">;</span>
+    result<span class="uscript-operator">.</span>z <span class="uscript-operator">=</span> beta <span class="uscript-operator">*</span> u<span class="uscript-operator">.</span>z <span class="uscript-operator">+</span> alpha <span class="uscript-operator">*</span> v<span class="uscript-operator">.</span>z<span class="uscript-operator">;</span>
+    result<span class="uscript-operator">.</span>w <span class="uscript-operator">=</span> beta <span class="uscript-operator">*</span> u<span class="uscript-operator">.</span>w <span class="uscript-operator">+</span> alpha <span class="uscript-operator">*</span> v<span class="uscript-operator">.</span>w<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> result<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.4"></a>Related Topics</h2>
+<ul><li><a href="built-in-struct.html">Built-In Struct</a></li>
+<li><a href="quaternion-rotation.html">Quaternion Rotation</a></li>
+<li><a href="quaternions-in-unreal-tourn.html">Quaternions In Unreal Tournament</a></li>
+</ul>
+<h2><a name="0.5"></a>Related Links</h2>
+<ul><li><span class="interwiki"><img 
+      alt="Wikipedia logo"
+      title="Wikipedia"
+      src="shared//InterWiki-Wikipedia.png">&nbsp;<a href="http://www.wikipedia.com/wiki/complex number">complex number</a></span></li>
+<li><span class="interwiki"><img 
+      alt="Wikipedia logo"
+      title="Wikipedia"
+      src="shared//InterWiki-Wikipedia.png">&nbsp;<a href="http://www.wikipedia.com/wiki/quaternion">quaternion</a></span></li>
+<li><a href="http://http.cs.berkeley.edu/~laura/cs184/quat/quaternion.html">[Using Quaternions to Represent Rotation]</a></li>
+<li><a href="http://graphics.cs.uiuc.edu/~jch/papers/vqr.pdf">[Visualizing Quaternion Rotations]</a></li>
+<li><a href="http://www.gamedev.net/reference/articles/article1095.asp">[GameDev.net - Quaternion Powers]</a></li>
+</ul>
+<script type="text/javascript"><!--
+ menuItemAdd("How they work", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>The Practical Way", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>The Technical Way ", "#0.1.2");
+menuItemAdd("Built-In Quaternion Functions", "#0.2");
+menuItemAdd("Other Useful Functions", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Identity Quaternion", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Converting a Rotator to a Quaternion", "#0.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Converting Quaternion to a Rotator", "#0.3.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Normalizing a Quaternion", "#0.3.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Slerp Between Quaternions", "#0.3.5");
+menuItemAdd("Related Topics", "#0.4");
+menuItemAdd("Related Links", "#0.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Quaternion">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Quaternion">View other revisions</a><br>Last edited August 2, 2006 14:22 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Quaternion">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Quaternion">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I don't need to test my programs. I have an error-correcting modem.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

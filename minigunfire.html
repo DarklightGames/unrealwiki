@@ -1,0 +1,411 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: MinigunFire</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=MinigunFire; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=MinigunFire">MinigunFire</a></h1>
+	<div class="wiki"><p><em class="em3">UT2003, Build 2225</em></p>
+<p>Once again another reference of code, but this time for the Primary Fire of the minigun.  Oh, and please correct me if I'm wrong.  I won't get too pissed off <img alt=";)" src="emoticons/wink.gif" align="middle"></p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MinigunFire <span class="uscript-keyword">extends</span> InstantFire<span class="uscript-operator">;</span> <span class="uscript-comment">//This is the class and the parent that it inherits some functionality from.</span>
+
+<span class="uscript-comment">// These are declarations of variables used in the code.</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> MaxRollSpeed<span class="uscript-operator">;</span> 
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> RollSpeed<span class="uscript-operator">;</span> 
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> BarrelRotationsPerSec<span class="uscript-operator">;</span> <span class="uscript-comment">//Amount of rotations of the barrel per sec</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span>   RoundsPerRotation<span class="uscript-operator">;</span>     <span class="uscript-comment">//Rounds fired per rotation</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> FireTime<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> Sound WindingSound<span class="uscript-operator">;</span>          <span class="uscript-comment">//The sound you hear when the minigun is getting ready to shoot.</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> Sound FiringSound<span class="uscript-operator">;</span>           <span class="uscript-comment">//The sound you hear when the minigun is actually shooting.</span>
+<span class="uscript-keyword">var</span> MiniGun Gun<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> WindUpTime<span class="uscript-operator">;</span>            <span class="uscript-comment">//Amount of time it takes to wind up</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">String</span> FiringForce<span class="uscript-operator">;</span>          <span class="uscript-comment">//Amount of recoil</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">String</span> WindingForce<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//What happens when you beserk (adrenaline combo) with this firing mode</span>
+<span class="uscript-keyword">function</span> StartBerserk<span class="uscript-operator">(</span><span class="uscript-operator">)</span> 
+<span class="uscript-operator">{</span>
+    DamageMin <span class="uscript-operator">=</span> <span class="uscript-keyword">default</span><span class="uscript-operator">.</span>DamageMin <span class="uscript-operator">*</span> <span class="uscript-number">1.33</span><span class="uscript-operator">;</span>
+    DamageMax <span class="uscript-operator">=</span> <span class="uscript-keyword">default</span><span class="uscript-operator">.</span>DamageMax <span class="uscript-operator">*</span> <span class="uscript-number">1.33</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//What happens when you stop beserking</span>
+<span class="uscript-keyword">function</span> StopBerserk<span class="uscript-operator">(</span><span class="uscript-operator">)</span> 
+<span class="uscript-operator">{</span>
+    DamageMin <span class="uscript-operator">=</span> <span class="uscript-keyword">default</span><span class="uscript-operator">.</span>DamageMin<span class="uscript-operator">;</span>
+    DamageMax <span class="uscript-operator">=</span> <span class="uscript-keyword">default</span><span class="uscript-operator">.</span>DamageMax<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//Initiate this code after game begins</span>
+<span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span> 
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">//Set the firing rate</span>
+    FireRate <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">.</span>f <span class="uscript-operator">/</span> <span class="uscript-operator">(</span>RoundsPerRotation <span class="uscript-operator">*</span> BarrelRotationsPerSec<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">//Set the maximum barrel rotation speed</span>
+    MaxRollSpeed <span class="uscript-operator">=</span> <span class="uscript-number">65536</span><span class="uscript-operator">.</span>f<span class="uscript-operator">*</span>BarrelRotationsPerSec<span class="uscript-operator">;</span> 
+    Gun <span class="uscript-operator">=</span> Minigun<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//DoTrace is a function common to all weapons that handles the movement of projectiles and the determination </span>
+<span class="uscript-comment">//of the point of impact for instant-hit weapons.</span>
+<span class="uscript-keyword">function</span> DoTrace<span class="uscript-operator">(</span>Vector Start<span class="uscript-operator">,</span> Rotator Dir<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">&lt;</span> DeathMatch<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">)</span><span class="uscript-operator">.</span>MinigunLockDownFactor <span class="uscript-operator">)</span>
+        Momentum <span class="uscript-operator">=</span> FMax<span class="uscript-operator">(</span><span class="uscript-number">1.0</span><span class="uscript-operator">,</span>DeathMatch<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">)</span><span class="uscript-operator">.</span>MinigunLockDownFactor<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>Momentum<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        Momentum <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>DoTrace<span class="uscript-operator">(</span>Start<span class="uscript-operator">,</span>Dir<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span> 
+
+<span class="uscript-comment">//Set muzzle flash to proper location on the gun</span>
+<span class="uscript-keyword">function</span> FlashMuzzleFlash<span class="uscript-operator">(</span><span class="uscript-operator">)</span> 
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> rotator r<span class="uscript-operator">;</span>
+    r<span class="uscript-operator">.</span>Roll <span class="uscript-operator">=</span> Rand<span class="uscript-operator">(</span><span class="uscript-number">65536</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Weapon<span class="uscript-operator">.</span>SetBoneRotation<span class="uscript-operator">(</span><span class="uscript-name">'Bone_Flash'</span><span class="uscript-operator">,</span> r<span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">.</span>f<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>FlashMuzzleFlash<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//Set effects of the gun</span>
+<span class="uscript-keyword">function</span> InitEffects<span class="uscript-operator">(</span><span class="uscript-operator">)</span> 
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>InitEffects<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> FlashEmitter <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        Weapon<span class="uscript-operator">.</span>AttachToBone<span class="uscript-operator">(</span>FlashEmitter<span class="uscript-operator">,</span> <span class="uscript-name">'flash'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//Set ambient sounds</span>
+<span class="uscript-keyword">function</span> PlayAmbientSound<span class="uscript-operator">(</span>Sound aSound<span class="uscript-operator">)</span> 
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Minigun<span class="uscript-operator">(</span>Weapon<span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>Instigator <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>aSound <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> ThisModeNum <span class="uscript-operator">!=</span> Gun<span class="uscript-operator">.</span>CurrentMode<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    Instigator<span class="uscript-operator">.</span>AmbientSound <span class="uscript-operator">=</span> aSound<span class="uscript-operator">;</span>
+    Gun<span class="uscript-operator">.</span>CurrentMode <span class="uscript-operator">=</span> ThisModeNum<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//Stop the barrel roll</span>
+<span class="uscript-comment">//When this function is called, it does an error check to make sure it's a valid call, then it simply sets</span>
+<span class="uscript-comment">//the rollspeed to 0.0 -- stopping the roll.</span>
+<span class="uscript-keyword">function</span> StopRolling<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Gun <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">||</span> ThisModeNum <span class="uscript-operator">!=</span> Gun<span class="uscript-operator">.</span>CurrentMode<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    RollSpeed <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">.</span>f<span class="uscript-operator">;</span>
+    Gun<span class="uscript-operator">.</span>RollSpeed <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">.</span>f<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span> 
+
+<span class="uscript-keyword">function</span> PlayPreFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span><span class="uscript-operator">}</span>
+<span class="uscript-keyword">function</span> PlayStartHold<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span><span class="uscript-operator">}</span>
+<span class="uscript-keyword">function</span> PlayFiring<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span><span class="uscript-operator">}</span>
+<span class="uscript-keyword">function</span> PlayFireEnd<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span><span class="uscript-operator">}</span>
+<span class="uscript-keyword">function</span> StartFiring<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">function</span> StopFiring<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> IsIdle<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">auto</span> <span class="uscript-keyword">state</span> Idle
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> IsIdle<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> BeginState<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        PlayAmbientSound<span class="uscript-operator">(</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        StopRolling<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> EndState<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        PlayAmbientSound<span class="uscript-operator">(</span>WindingSound<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> StartFiring<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-comment">//Says once you start to fire it winds up first</span>
+    <span class="uscript-operator">{</span>
+        RollSpeed <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    FireTime <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>RollSpeed<span class="uscript-operator">/</span>MaxRollSpeed<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> WindUpTime<span class="uscript-operator">;</span>
+        GotoState<span class="uscript-operator">(</span><span class="uscript-name">'WindUp'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">state</span> WindUp
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">function</span> BeginState<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-comment">//Starts the wind-up Procedure</span>
+    <span class="uscript-operator">{</span>
+        ClientPlayForceFeedback<span class="uscript-operator">(</span>WindingForce<span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// jdf</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> EndState<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-comment">//Says when wind-up ends the firing begins</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ThisModeNum <span class="uscript-operator">==</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Weapon <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">!</span>Weapon<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>bIsFiring <span class="uscript-operator">)</span>
+                StopForceFeedback<span class="uscript-operator">(</span>WindingForce<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Weapon <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">!</span>Weapon<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>bIsFiring <span class="uscript-operator">)</span>
+                StopForceFeedback<span class="uscript-operator">(</span>WindingForce<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>        
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> ModeTick<span class="uscript-operator">(</span><span class="uscript-type">float</span> dt<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        FireTime <span class="uscript-operator">+=</span> dt<span class="uscript-operator">;</span>
+        RollSpeed <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>FireTime<span class="uscript-operator">/</span>WindUpTime<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> MaxRollSpeed<span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bIsFiring <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+        GotoState<span class="uscript-operator">(</span><span class="uscript-name">'WindDown'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+        
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>RollSpeed <span class="uscript-operator">&gt;=</span> MaxRollSpeed<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            RollSpeed <span class="uscript-operator">=</span> MaxRollSpeed<span class="uscript-operator">;</span>
+            FireTime <span class="uscript-operator">=</span> WindUpTime<span class="uscript-operator">;</span>
+            Gun<span class="uscript-operator">.</span>UpdateRoll<span class="uscript-operator">(</span>dt<span class="uscript-operator">,</span> RollSpeed<span class="uscript-operator">,</span> ThisModeNum<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        GotoState<span class="uscript-operator">(</span><span class="uscript-name">'FireLoop'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+        Gun<span class="uscript-operator">.</span>UpdateRoll<span class="uscript-operator">(</span>dt<span class="uscript-operator">,</span> RollSpeed<span class="uscript-operator">,</span> ThisModeNum<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> StopFiring<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-comment">//Says if you stop firing it winds down</span>
+    <span class="uscript-operator">{</span>
+        GotoState<span class="uscript-operator">(</span><span class="uscript-name">'WindDown'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">state</span> FireLoop <span class="uscript-comment">//A loop that continues only if the boolean variable bIsFiring is true</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">function</span> BeginState<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        NextFireTime <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">-</span> <span class="uscript-number">0.1</span><span class="uscript-operator">;</span> <span class="uscript-comment">//fire now!</span>
+        PlayAmbientSound<span class="uscript-operator">(</span>FiringSound<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        ClientPlayForceFeedback<span class="uscript-operator">(</span>FiringForce<span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// jdf</span>
+        Gun<span class="uscript-operator">.</span>LoopAnim<span class="uscript-operator">(</span>FireLoopAnim<span class="uscript-operator">,</span> FireLoopAnimRate<span class="uscript-operator">,</span> TweenTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Gun<span class="uscript-operator">.</span>SpawnShells<span class="uscript-operator">(</span>RoundsPerRotation<span class="uscript-operator">*</span>BarrelRotationsPerSec<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> StopFiring<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        GotoState<span class="uscript-operator">(</span><span class="uscript-name">'WindDown'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> EndState<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-comment">//What happens after you stop firing</span>
+    <span class="uscript-operator">{</span>
+        PlayAmbientSound<span class="uscript-operator">(</span>WindingSound<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        StopForceFeedback<span class="uscript-operator">(</span>FiringForce<span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// jdf</span>
+        Gun<span class="uscript-operator">.</span>LoopAnim<span class="uscript-operator">(</span>Gun<span class="uscript-operator">.</span>IdleAnim<span class="uscript-operator">,</span> Gun<span class="uscript-operator">.</span>IdleAnimRate<span class="uscript-operator">,</span> TweenTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Gun<span class="uscript-operator">.</span>SpawnShells<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">.</span>f<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+     <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> ModeTick<span class="uscript-operator">(</span><span class="uscript-type">float</span> dt<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>ModeTick<span class="uscript-operator">(</span>dt<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Gun<span class="uscript-operator">.</span>UpdateRoll<span class="uscript-operator">(</span>dt<span class="uscript-operator">,</span> RollSpeed<span class="uscript-operator">,</span> ThisModeNum<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bIsFiring <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+        GotoState<span class="uscript-operator">(</span><span class="uscript-name">'WindDown'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">state</span> WindDown
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">function</span> BeginState<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-comment">//Begins the wind-down procedure</span>
+    <span class="uscript-operator">{</span>
+        ClientPlayForceFeedback<span class="uscript-operator">(</span>WindingForce<span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// jdf</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> EndState<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ThisModeNum <span class="uscript-operator">==</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Weapon <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">!</span>Weapon<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>bIsFiring <span class="uscript-operator">)</span>
+                StopForceFeedback<span class="uscript-operator">(</span>WindingForce<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Weapon <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">!</span>Weapon<span class="uscript-operator">.</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>bIsFiring <span class="uscript-operator">)</span>
+                StopForceFeedback<span class="uscript-operator">(</span>WindingForce<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span><span class="uscript-comment">//This checks to see what mode is firing, and stops the force feedback if any is occuring.</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> ModeTick<span class="uscript-operator">(</span><span class="uscript-type">float</span> dt<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        FireTime <span class="uscript-operator">-=</span> dt<span class="uscript-operator">;</span>
+        RollSpeed <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>FireTime<span class="uscript-operator">/</span>WindUpTime<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> MaxRollSpeed<span class="uscript-operator">;</span>
+         
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>RollSpeed <span class="uscript-operator">&lt;=</span> <span class="uscript-number">0</span><span class="uscript-operator">.</span>f<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            RollSpeed <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">.</span>f<span class="uscript-operator">;</span>
+            FireTime <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">.</span>f<span class="uscript-operator">;</span>
+            Gun<span class="uscript-operator">.</span>UpdateRoll<span class="uscript-operator">(</span>dt<span class="uscript-operator">,</span> RollSpeed<span class="uscript-operator">,</span> ThisModeNum<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            GotoState<span class="uscript-operator">(</span><span class="uscript-name">'Idle'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+        Gun<span class="uscript-operator">.</span>UpdateRoll<span class="uscript-operator">(</span>dt<span class="uscript-operator">,</span> RollSpeed<span class="uscript-operator">,</span> ThisModeNum<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> StartFiring<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-comment">//Says in order to fire the gun must wind-up</span>
+    <span class="uscript-operator">{</span>
+        GotoState<span class="uscript-operator">(</span><span class="uscript-name">'WindUp'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span> <span class="uscript-comment">//Default variable settings. Some were declared at the top of the file, others were declared in the parent class.</span>
+<span class="uscript-operator">{</span>
+     BarrelRotationsPerSec<span class="uscript-operator">=</span><span class="uscript-number">3.000000</span>                              <span class="uscript-comment">// How many times the barrel rotates every second.</span>
+     RoundsPerRotation<span class="uscript-operator">=</span><span class="uscript-number">5</span>                                         <span class="uscript-comment">// How many rounds (shots) it fires every rotation.</span>
+     WindingSound<span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.Minigun.miniempty'</span>          <span class="uscript-comment">// The sound it plays when the gun is winding up.</span>
+     FiringSound<span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.Minigun.minifireb'</span>           <span class="uscript-comment">// The sound it plays when the gun is firing.</span>
+     WindUpTime<span class="uscript-operator">=</span><span class="uscript-number">0.270000</span>                                         <span class="uscript-comment">// The default windup time.</span>
+     FiringForce<span class="uscript-operator">=</span><span class="uscript-string">"minifireb"</span>
+     WindingForce<span class="uscript-operator">=</span><span class="uscript-string">"miniempty"</span>
+     DamageType<span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-name">'XWeapons.DamTypeMinigunBullet'</span>
+     DamageMin<span class="uscript-operator">=</span><span class="uscript-number">6</span>                                                 <span class="uscript-comment">// The minimum amount of damage each bullet does.</span>
+     DamageMax<span class="uscript-operator">=</span><span class="uscript-number">7</span>                                                 <span class="uscript-comment">// The maximum amount of damage each bullet does.</span>
+     Momentum<span class="uscript-operator">=</span><span class="uscript-number">1200.000000</span>
+     FireLoopAnimRate<span class="uscript-operator">=</span><span class="uscript-number">9.000000</span>
+     PreFireTime<span class="uscript-operator">=</span><span class="uscript-number">0.270000</span>
+     AmmoClass<span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-name">'XWeapons.MinigunAmmo'</span>                       <span class="uscript-comment">// Which class of ammunition this weapon uses.</span>
+     AmmoPerFire<span class="uscript-operator">=</span><span class="uscript-number">1</span>                                               <span class="uscript-comment">// How much of that ammuntion is used per shot. This might</span>
+                                                                 <span class="uscript-comment">// seem pointless, but recall how the alt-fire on the Flak</span>
+                                                                 <span class="uscript-comment">// Cannon uses more than one piece of ammo.</span>
+     ShakeRotMag<span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">50.000000</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">50.000000</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">50.000000</span><span class="uscript-operator">)</span>
+     ShakeRotRate<span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">10000.000000</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">10000.000000</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">10000.000000</span><span class="uscript-operator">)</span>
+     ShakeRotTime<span class="uscript-operator">=</span><span class="uscript-number">2.000000</span>
+     ShakeOffsetMag<span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">1.000000</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">1.000000</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">1.000000</span><span class="uscript-operator">)</span>
+     ShakeOffsetRate<span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">1000.000000</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">1000.000000</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">1000.000000</span><span class="uscript-operator">)</span>
+     ShakeOffsetTime<span class="uscript-operator">=</span><span class="uscript-number">2.000000</span>
+     BotRefireRate<span class="uscript-operator">=</span><span class="uscript-number">0.990000</span>
+     bPawnRapidFireAnim<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     FlashEmitterClass<span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-name">'XEffects.MinigunMuzFlash1st'</span>       <span class="uscript-comment">// Which class the weapon will use for its muzzle flash emitter.</span>
+     SmokeEmitterClass<span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-name">'XEffects.MinigunMuzzleSmoke'</span>       <span class="uscript-comment">// Which class the weapon will use for its muzzle smoke emitter.</span>
+     aimerror<span class="uscript-operator">=</span><span class="uscript-number">900.000000</span>
+
+     Spread<span class="uscript-operator">=</span><span class="uscript-number">0.080000</span>        <span class="uscript-comment">// How much variation there is between shots. This keeps the bullets going in slightly different directions.           </span>
+     SpreadStyle<span class="uscript-operator">=</span>SS_Random  <span class="uscript-comment">// This makes sure that the Spread is truly random, so that the bullets going in slightly different directions looks pretty realistic.</span>
+<span class="uscript-operator">}</span></pre><p>Once again I would like anyone to correct or add to any of this.</p>
+<h2><a name="0.1"></a>Related Topics</h2>
+<p><a href="minigunammo.html">MinigunAmmo</a></p>
+<p><a href="minigunpickup.html">MinigunPickup</a></p>
+<p><a href="minigunammopickup.html">MinigunAmmoPickup</a></p>
+<p><a href="instantfire.html">InstantFire</a></p>
+<p><a href="minigunaltfire.html">MinigunAltFire</a></p>
+<p><a href="minigunattachment.html">MinigunAttachment</a></p>
+<p><a href="code-references.html">Code References</a></p>
+<p><a href="category-class-ut2003.html">Category Class (UT2003)</a></p>
+<h2><a name="0.2"></a>Comments</h2>
+<script type="text/javascript"><!--
+ menuItemAdd("Related Topics", "#0.1");
+menuItemAdd("Comments", "#0.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=MinigunFire">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=MinigunFire">View other revisions</a><br>Last edited October 13, 2003 18:13 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=MinigunFire">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/MinigunFire">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I love the smell of UnrealEd crashing in the morning. (tarquin)</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

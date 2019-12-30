@@ -1,0 +1,227 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Trystan/12 26 02a</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Trystan/12_26_02a; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="trystan.html">Trystan</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Trystan/12+26+02a">12 26 02a</a></h1>
+	<div class="wiki"><h3><a name="0.0.1"></a>HOWTO:  Create Reloadable Weapons</h3>
+<p>First linkage.</p>
+<p><a href="http://www.syndicatemod.com/forum/viewtopic.php?t=58">[Syndicate Mod]</a> coder Tanus has a tutorial up based on Solid Snake's code and modified by him and HEGI.  I've read this tutorial but decided against implementing it like he has it in certain ways.  And since I also want to know my code very, very well, I've decided to use what I learned in this tutorial but to implement the code myself.</p>
+<p><a href="http://forums.beyondunreal.com/forumdisplay.php?forumid=101">[BeyondUnreal]</a> has the original post by [SAS]Solid Snake, a coder who's proficient both at code and at explaining what he does.  A rarity.</p>
+<h4><a name="0.0.1.1"></a>What we need to do</h4>
+<ul><li>Reloading consists of the following actions:<ul><li>Checking for a magazine.</li>
+<li>Discarding the old magazine if empty, and retaining it if not.  (Retaining the old magazine is not necessary.)</li>
+<li>Reloading the weapon with the new magazine.</li>
+</ul>
+</li>
+<li>Things we need to track are:<ul><li>How many magazines we have left.</li>
+<li>How many bullets are in the current magazine.</li>
+<li>What type of ammunition are we firing?</li>
+</ul>
+</li>
+<li>Things we need to change are:<ul><li>Firing weapons, to have them check ammunition in the clip instead of total ammunition.</li>
+<li>HUD display to show number of clips left, and amount of ammunition in the clip currently loaded.</li>
+</ul>
+</li>
+<li>Things we need to create are:<ul><li>Reload animations.</li>
+<li>Empty click sound for when we have no ammunition.</li>
+<li>Ammunition clip pickup.</li>
+</ul>
+</li>
+</ul>
+<p>Not so hard when you phrase it like this. <img alt="=)" src="emoticons/smile.gif" align="middle">  The biggest problem is this will be our first foray into replication and replicated functions.  In order to reload your weapon your client must send a reload command to the server, which then decides whether or not you should be able to reload.</p>
+<h4><a name="0.0.1.2"></a>Thought Process</h4>
+<p>Bullets and magazines are closely related so most of the functions that modify ammunition should be where we begin our search.  There's currently a variable in place for ammunition that is properly checked in all locations for whether or not we can fire; we'll leave that variable in place for simplicity's sake.  What we will do is turn down the maximum ammunition of the weapons to something more realistic - perhaps 25 a magazine.  The reload command will simply replace the amount of ammunition if there's a magazine available.</p>
+<p>For now we will not attempt to keep clips that have remaining bullets.  This will allow us to simplify the reload code as we won't have to maintain information on how many bullets each magazine has in it - we can assume that each magazine will fill the weapon to maximum.</p>
+<p>The first thing we must do is extend Weapon so that we have our own base weapon class.  This is so that we don't have to manually include and rewrite all of the functions necessary to support reloading for each and every weapon.  Indeed if you're planning on extending the weapons in UT2K3 much at all it's a good idea to create your own base weapon class.  Tracing how a weapon fires.. ok, Wiki page found (thanks HunterKiller <img alt="=)" src="emoticons/smile.gif" align="middle">) at <a href="how-ut2003-weapons-work-fir.html">How UT2003 Weapons Work/Firing A Weapon</a>.  Transferring work temporarily there to there.</p>
+<p><em class="em2">...a week later...</em></p>
+<h4><a name="0.0.1.3"></a>The Reload Exec Function</h4>
+<p>We're back.  I managed to get distracted quite a bit by determining exactly how weapons fire.  Now we've got a nifty flowchart available and we can keep working on extending how a weapon works.</p>
+<p>We need to create an exec function to reload.  Exec functions are functions that can be bound to inside UT2K3.  They basically serve as the beginning point for any new functionality you wish to put into UT2K3.  I've got my own PlayerController class and that is where I place my new exec functions for the most part.  Some folks think it's best to not extend the PlayerController unless you have to, and to use your HUD or other class to place your exec functions.  This is a matter of style.</p>
+<pre class="uscript"><span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> Reload<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-operator">(</span> Pawn <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span> Pawn<span class="uscript-operator">.</span>Weapon <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> Pawn<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'WAWWeapon'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+            WAWWeapon<span class="uscript-operator">(</span> Pawn<span class="uscript-operator">.</span>Weapon <span class="uscript-operator">)</span><span class="uscript-operator">.</span>Reload<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-comment">// Play reload animation here.</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">Added:</em> Test against IsA('WAWWeapon') to ensure that the object could be cast properly.  If your new weapons are coexisting with UT2K3 stock weapons this is semi important. <img alt="=)" src="emoticons/smile.gif" align="middle"></p>
+<p>First we want to ensure we have proper variables in place for Pawn and Pawn.Weapon.  UnrealScript uses short circuit logic so if Pawn == None the test against Pawn.Weapon will never occur; this should keep any "Access Nones" from occurring.  The next part gets a bit difficult to explain, but you'll be doing it a lot in your custom code.  By default Pawn.Weapon is class Weapon.  In class Weapon there is no function of Reload.  In OOP you can travel up or down the hierachy assuming that the functions truly exist.  In our case we know all our weapons are derived from WAWWeapon, and so we cast Pawn.Weapon to WAWWeapon so that we have access to the Reload() function in the WAWWeapon class.</p>
+<h4><a name="0.0.1.4"></a>A Short Detour into Casting</h4>
+<p><em class="em2">NOTE:</em> I'm not a great teacher, nor am I very good at explaining things.  Casting is important to understand though so I'm going to spit out a few more paragraphs on it to hopefully help those with a weak grasp on the subject understand what's occurring.  (And so Mychaeel can correct me where I'm wrong.  heh.)  An object hierarchy is just that, a hierarchy.  For instance WAWWeapon is derived from Weapon which is derived from .. ah, this is why Wiki markup is here.</p>
+<div class="classpath"><a href="object.html">Object</a> &gt;&gt; <a href="actor.html">Actor</a> &gt;&gt; <a href="inventory.html">Inventory</a> &gt;&gt; <a href="weapon.html">Weapon</a> &gt;&gt; WAWWeapon<br></div>
+<p>You can cast up or down that chain.  For instance if you wanted to create a function that would work on a variety of objects based on what they were, but didn't want to write a function for each object type, you could cast a WAWWeapon to Object, similar to this:</p>
+<pre class="uscript"><span class="uscript-type">bool</span> <span class="uscript-keyword">function</span> TakeObject<span class="uscript-operator">(</span> Object a <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+     <span class="uscript-comment">// Do something here.</span>
+<span class="uscript-operator">}</span></pre><p>A WAWWeapon isn't directly an object, and can't be passed to the function TakeObject without the compiler being told explicitly what we want to cast WAWWeapon as.</p>
+<pre class="uscript">     <span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span>
+     TakeObject<span class="uscript-operator">(</span> Object<span class="uscript-operator">(</span> Pawn<span class="uscript-operator">.</span>Weapon <span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+     <span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span></pre><p class="indent1"><em class="em2">Mychaeel:</em> Note that this typecast is unnecessary &ndash; a Weapon <em class="em1">is</em> an Object and the compiler knows it, even without casting.  (In fact, the compiler won't even compile that but tell you "Cast from 'Weapon' to 'Object' is unnecessary.")</p>
+<p class="indent1"><em class="em2">Trystan:</em> Okay, going up in the hierarchy doesn't require casting.  Only going down.  I did not know that.</p>
+<p>This will take the Pawn.Weapon object, wrap it so it looks to be an Object class, and pass it to the function.  It's important to note that the actual Pawn.Weapon isn't modified.  The same data and functions are still available to it, and tests against IsA will still show it as a WAWWeapon class.  Indeed, inside the TakeObject function we can recast <em class="em2">a</em> to WAWWeapon similarly:</p>
+<pre class="uscript">     <span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span>
+     <span class="uscript-keyword">local</span> WAWWeapon weapon<span class="uscript-operator">;</span>
+     weapon <span class="uscript-operator">=</span> WAWWeapon<span class="uscript-operator">(</span> a <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+     <span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span></pre><p>You'd want to perform some tests to ensure that a was a valid object of the class you're casting too first, however.  This is a generic function and as such it's not guaranteed that the object passed in is a WAWWeapon object.</p>
+<p><em class="em2">TODO:  Examine the below paragraph to see if variable/reference are being used properly.  After coffee.</em></p>
+<p>If you look at the definition of Pawn you'll find that it contains a variable named Weapon.  We could change the variable that we store our weapon in, but that would break a good deal of existing code and probably not be worth the effort.  Instead we leave the Weapon variable inside of Pawn as it is, and when necessary we cast it to the actual weapon type.  This maintains compatibility with all the old code, and allows us to extend the class appropriately in our new code.</p>
+<h4><a name="0.0.1.5"></a>Reloading Continued</h4>
+<p>The point of all the prior discussion is to say that the Reload() function is defined in WAWWeapon, but before we can access it we must cast Pawn.Weapon to be an object of type WAWWeapon.</p>
+<p>Reload() in WAWWeapon could function in one of two ways.  For now we're simply going to have it set the weapon's current ammunition amount to the maximum ammunition amount it can support.  (Also keep in mind that there are two types of ammunition for some weapons.)</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> Reload<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+     <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+          Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoAmount <span class="uscript-operator">=</span> Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>MaxAmmo<span class="uscript-operator">;</span>
+     <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Ammo<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+          Ammo<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>AmmoAmount <span class="uscript-operator">=</span> Ammo<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>MaxAmmo<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Simple.  And written without testing.. let's see if it works. <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p>Okay we now have a simple reload command which resets ammunition to the maximum amount a gun can handle.  Now we actually want to set the amount of ammunition to what's in the clip.  So we need to create a clip object to track how many clips we have.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MyClip <span class="uscript-keyword">extends</span> Ammunition<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span>   <span class="uscript-type">int</span>     MaximumAmmunition<span class="uscript-operator">;</span>          <span class="uscript-comment">// Tracks the maximum number of bullets a magazine can hold.</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span>   <span class="uscript-type">int</span>     CurrentAmmunition<span class="uscript-operator">;</span>          <span class="uscript-comment">// Tracks the current number of bullets a magazine has.</span>
+
+<span class="uscript-keyword">replication</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// Only CurrentAmmunition changes.  MaximumAmmunition should be static.</span>
+    <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Role <span class="uscript-operator">==</span> ROLE_Authority <span class="uscript-operator">)</span>
+        CurrentAmmunition<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// Does this magazine have ammunition?</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> MagazineHasAmmo<span class="uscript-operator">(</span> <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> CurrentAmmunition <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> UseAmmo<span class="uscript-operator">(</span> <span class="uscript-type">int</span> AmountNeeded<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">bool</span> bAmountNeededIsMax <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// This basically says "give me everything you've got."</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bAmountNeededIsMax <span class="uscript-operator">&amp;&amp;</span> CurrentAmmunition <span class="uscript-operator">&lt;</span> AmountNeeded <span class="uscript-operator">)</span>
+        AmountNeeded <span class="uscript-operator">=</span> CurrentAmmunition<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> CurrentAmmunition <span class="uscript-operator">&lt;</span> AmountNeeded <span class="uscript-operator">)</span>          <span class="uscript-comment">// Can't fire.</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+    CurrentAmmunition <span class="uscript-operator">-=</span> AmountNeeded<span class="uscript-operator">;</span>              <span class="uscript-comment">// Remove bullets from clip.</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">==</span> NM_StandAlone <span class="uscript-operator">||</span> Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">==</span> NM_ListenServer <span class="uscript-operator">)</span>
+        CheckOutOfAmmo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+    MaximumAmmunition   <span class="uscript-operator">=</span>   <span class="uscript-number">25</span><span class="uscript-operator">;</span>
+    CurrentAmmunition   <span class="uscript-operator">=</span>   <span class="uscript-number">25</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Now we need to link this clip to our weapon.  And we need one of each object for each clip we have in our inventory.</p>
+<p>ummmm how?</p>
+<script type="text/javascript"><!--
+ menuItemAdd("HOWTO:  Create Reloadable Weapons", "#0.0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>What we need to do", "#0.0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Thought Process", "#0.0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>The Reload Exec Function", "#0.0.1.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>A Short Detour into Casting", "#0.0.1.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Reloading Continued", "#0.0.1.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="trystan.html">Trystan</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Trystan/12_26_02a">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Trystan/12_26_02a">View other revisions</a><br>Last edited August 8, 2003 1:42 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Trystan/12_26_02a">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Trystan/12_26_02a">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Describe the new page here.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

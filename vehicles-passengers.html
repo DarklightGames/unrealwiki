@@ -1,0 +1,571 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Vehicles/Passengers</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Vehicles/Passengers; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="vehicles.html">Vehicles</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Vehicles/Passengers">Passengers</a></h1>
+	<div class="wiki"><p>Much of this is experimental code and needs a custom Controller class. Tested in multiplayer, the camera of the Passengers has the message "<code>viewing from ...</code>" I’ll look into that later. If you have any problems with this code, you should contact me at <a href="mailto:sneakeye_@hotmail.com">sneakeye_@hotmail.com</a></p>
+<h3><a name="0.0.1"></a>MyVehicle</h3>
+<pre class="uscript"><span class="uscript-keyword">class</span> MyVehicle <span class="uscript-keyword">extends</span> KVehicle<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span>   <span class="uscript-type">int</span>     MaxPassengers<span class="uscript-operator">;</span>  <span class="uscript-comment">//Number of Passengers (without driver)</span>
+<span class="uscript-keyword">var</span> Pawn        Passengers<span class="uscript-operator">[</span><span class="uscript-number">10</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> Controller  PassengersControllers<span class="uscript-operator">[</span><span class="uscript-number">10</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span>   <span class="uscript-type">bool</span>        bAllowDriver<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> TakeDamage<span class="uscript-operator">(</span><span class="uscript-type">int</span> Damage<span class="uscript-operator">,</span> Pawn instigatedBy<span class="uscript-operator">,</span> Vector hitlocation<span class="uscript-operator">,</span> 
+                        Vector momentum<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>DamageType<span class="uscript-operator">&gt;</span> damageType<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+
+    Health <span class="uscript-operator">-=</span> Damage<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// The vehicle is dead!</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Health <span class="uscript-operator">&lt;=</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Controller <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Controller<span class="uscript-operator">.</span>bIsPlayer <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                ClientKDriverLeave<span class="uscript-operator">(</span>PlayerController<span class="uscript-operator">(</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Just to reset HUD etc.</span>
+                Controller<span class="uscript-operator">.</span>PawnDied<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// This should unpossess the controller and let the player respawn</span>
+            <span class="uscript-operator">}</span>
+            <span class="uscript-keyword">else</span>
+                Controller<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>MaxPassengers<span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PassengersControllers<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                KPassengerLeave<span class="uscript-operator">(</span><span class="uscript-keyword">True</span><span class="uscript-operator">,</span> MyPlayerController<span class="uscript-operator">(</span>PassengersControllers<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Just to reset HUD etc.</span>
+                PassengersControllers<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>PawnDied<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// This should unpossess the controller and let the player respawn</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+
+        Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Destroy the vehicle itself (see Destroyed below)</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">//KAddImpulse(momentum, hitlocation);</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+    <span class="uscript-comment">// If there where passengers in the vehicle, destroy them too</span>
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>MaxPassengers<span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Passengers<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+            Passengers<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> TryToDrive<span class="uscript-operator">(</span>Pawn p<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Controller C<span class="uscript-operator">;</span>
+    C <span class="uscript-operator">=</span> p<span class="uscript-operator">.</span>Controller<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Driver <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>C <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> C<span class="uscript-operator">.</span>bIsPlayer <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>C<span class="uscript-operator">.</span>IsInState<span class="uscript-operator">(</span><span class="uscript-name">'PlayerDriving'</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> p<span class="uscript-operator">.</span>IsHumanControlled<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> bAllowDriver<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        KDriverEnter<span class="uscript-operator">(</span>p<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span><span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>C <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> C<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'MyPlayerController'</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>C<span class="uscript-operator">.</span>IsInState<span class="uscript-operator">(</span><span class="uscript-name">'PlayerDriving'</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> p<span class="uscript-operator">.</span>IsHumanControlled<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        TryToPassenger<span class="uscript-operator">(</span>p<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> KDriverEnter<span class="uscript-operator">(</span>Pawn p<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>KDriverEnter<span class="uscript-operator">(</span>p<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    p<span class="uscript-operator">.</span>bHidden <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> KDriverLeave<span class="uscript-operator">(</span><span class="uscript-type">bool</span> bForceLeave<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Pawn OldDriver<span class="uscript-operator">;</span>
+
+    OldDriver <span class="uscript-operator">=</span> Driver<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// If we succesfully got out of the car, make driver visible again.</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>KDriverLeave<span class="uscript-operator">(</span>bForceLeave<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        OldDriver<span class="uscript-operator">.</span>bHidden <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> TryToPassenger<span class="uscript-operator">(</span>Pawn p<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>MaxPassengers<span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Passengers<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            KPassengerEnter<span class="uscript-operator">(</span>p<span class="uscript-operator">,</span> i<span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">//Enter passenger</span>
+            i <span class="uscript-operator">=</span> MaxPassengers<span class="uscript-operator">;</span>  <span class="uscript-comment">//Make sure not added as another passenger</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ClientKPassengerEnter<span class="uscript-operator">(</span>PlayerController pc<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    pc<span class="uscript-operator">.</span>myHUD<span class="uscript-operator">.</span>bCrosshairShow <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    pc<span class="uscript-operator">.</span>myHUD<span class="uscript-operator">.</span>bShowWeaponInfo <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//pc.myHUD.bShowPersonalInfo = false;</span>
+    pc<span class="uscript-operator">.</span>myHUD<span class="uscript-operator">.</span>bShowPoints <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+    pc<span class="uscript-operator">.</span>bBehindView <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    pc<span class="uscript-operator">.</span>bFixedCamera <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    pc<span class="uscript-operator">.</span>bFreeCamera <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+    pc<span class="uscript-operator">.</span>SetRotation<span class="uscript-operator">(</span>rotator<span class="uscript-operator">(</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">&gt;&gt;</span> Rotation <span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> KPassengerEnter<span class="uscript-operator">(</span>Pawn p<span class="uscript-operator">,</span> <span class="uscript-type">int</span> i<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> MyPlayerController pc<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">//log("KVehicle KDriverEnter");</span>
+
+    <span class="uscript-comment">// Set pawns current controller to control the vehicle pawn instead</span>
+    Passengers<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> p<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Move the driver into position, and attach to car.</span>
+    p<span class="uscript-operator">.</span>SetCollision<span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    p<span class="uscript-operator">.</span>bCollideWorld <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    p<span class="uscript-operator">.</span>bPhysicsAnimUpdate <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    p<span class="uscript-operator">.</span>Velocity <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    p<span class="uscript-operator">.</span>SetPhysics<span class="uscript-operator">(</span>PHYS_None<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    p<span class="uscript-operator">.</span>SetBase<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    pc <span class="uscript-operator">=</span> MyPlayerController<span class="uscript-operator">(</span>p<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//pc.ClientSetBehindView(true);</span>
+    <span class="uscript-comment">//pc.ClientSetFixedCamera(false);</span>
+
+    <span class="uscript-comment">// Disconnect PlyaerController from Driver and connect to KVehicle.</span>
+    pc<span class="uscript-operator">.</span>Unpossess<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Passengers<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetOwner<span class="uscript-operator">(</span>pc<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// This keeps the driver relevant.</span>
+    pc<span class="uscript-operator">.</span>PossessPassenger<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    PassengersControllers<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> pc<span class="uscript-operator">;</span>
+
+    pc<span class="uscript-operator">.</span>ClientSetViewTarget<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Set playercontroller to view the vehicle</span>
+
+    <span class="uscript-comment">// Change controller state to driver</span>
+    pc<span class="uscript-operator">.</span>GotoState<span class="uscript-operator">(</span><span class="uscript-name">'PlayerPassenger'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    ClientKPassengerEnter<span class="uscript-operator">(</span>pc<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    p<span class="uscript-operator">.</span>bHidden <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ClientKPassengerLeave<span class="uscript-operator">(</span>PlayerController pc<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">//local vector exitLookDir;</span>
+
+    <span class="uscript-comment">//log("Leave: "$pc.Pawn);</span>
+
+    pc<span class="uscript-operator">.</span>bBehindView <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    pc<span class="uscript-operator">.</span>bFixedCamera <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    pc<span class="uscript-operator">.</span>bFreeCamera <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">// This removes any 'roll' from the look direction.</span>
+    <span class="uscript-comment">//exitLookDir = Vector(pc.Rotation);</span>
+    <span class="uscript-comment">//pc.SetRotation(Rotator(exitLookDir));</span>
+
+    pc<span class="uscript-operator">.</span>myHUD<span class="uscript-operator">.</span>bCrosshairShow <span class="uscript-operator">=</span> pc<span class="uscript-operator">.</span>myHUD<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>bCrosshairShow<span class="uscript-operator">;</span>
+    pc<span class="uscript-operator">.</span>myHUD<span class="uscript-operator">.</span>bShowWeaponInfo <span class="uscript-operator">=</span> pc<span class="uscript-operator">.</span>myHUD<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>bShowWeaponInfo<span class="uscript-operator">;</span>
+    <span class="uscript-comment">//pc.myHUD.bShowPersonalInfo = pc.myHUD.default.bShowPersonalInfo;</span>
+    pc<span class="uscript-operator">.</span>myHUD<span class="uscript-operator">.</span>bShowPoints <span class="uscript-operator">=</span> pc<span class="uscript-operator">.</span>myHUD<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>bShowPoints<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Reset the view-smoothing</span>
+    NextHistorySlot <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    bHistoryWarmup <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// Called from the PlayerController when player wants to get out.</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> KPassengerLeave<span class="uscript-operator">(</span><span class="uscript-type">bool</span> bForceLeave<span class="uscript-operator">,</span> MyPlayerController pc<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">,</span> PassengerNum<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> havePlaced<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> vector HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> tryPlace<span class="uscript-operator">;</span>
+
+    PassengerNum <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>MaxPassengers<span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>PassengersControllers<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> pc<span class="uscript-operator">)</span>
+            PassengerNum <span class="uscript-operator">=</span> i<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>PassengerNum <span class="uscript-operator">==</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Before we can exit, we need to find a place to put the driver.</span>
+    <span class="uscript-comment">// Iterate over array of possible exit locations.</span>
+    
+    Passengers<span class="uscript-operator">[</span>PassengerNum<span class="uscript-operator">]</span><span class="uscript-operator">.</span>bCollideWorld <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    Passengers<span class="uscript-operator">[</span>PassengerNum<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetCollision<span class="uscript-operator">(</span><span class="uscript-keyword">true</span><span class="uscript-operator">,</span> <span class="uscript-keyword">true</span><span class="uscript-operator">,</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+    havePlaced <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> ExitPositions<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">&amp;&amp;</span> havePlaced <span class="uscript-operator">==</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-comment">//Log("Trying Exit:"$i);</span>
+    
+        tryPlace <span class="uscript-operator">=</span> Location <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>ExitPositions<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">&gt;&gt;</span> Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+        <span class="uscript-comment">// First, do a line check (stops us passing through things on exit).</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Trace<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> tryPlace<span class="uscript-operator">,</span> Location<span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+            <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+            
+        <span class="uscript-comment">// Then see if we can place the player there.</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-operator">!</span>Passengers<span class="uscript-operator">[</span>PassengerNum<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>tryPlace<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+        
+        havePlaced <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        
+        <span class="uscript-comment">//Log("SUCCESS!");      </span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">// If we could not find a place to put the driver, leave driver inside as before.</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>havePlaced <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>bForceLeave<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"Could not place driver."</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+        Passengers<span class="uscript-operator">[</span>PassengerNum<span class="uscript-operator">]</span><span class="uscript-operator">.</span>bCollideWorld <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+        Passengers<span class="uscript-operator">[</span>PassengerNum<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetCollision<span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    ClientKPassengerLeave<span class="uscript-operator">(</span>pc<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Reconnect PlayerController to Driver.</span>
+    pc<span class="uscript-operator">.</span>UnpossessPassenger<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    pc<span class="uscript-operator">.</span>Possess<span class="uscript-operator">(</span>Passengers<span class="uscript-operator">[</span>PassengerNum<span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    pc<span class="uscript-operator">.</span>ClientSetViewTarget<span class="uscript-operator">(</span>Passengers<span class="uscript-operator">[</span>PassengerNum<span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Set playercontroller to view the persone that got out</span>
+
+    PassengersControllers<span class="uscript-operator">[</span>PassengerNum<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+
+    Passengers<span class="uscript-operator">[</span>PassengerNum<span class="uscript-operator">]</span><span class="uscript-operator">.</span>PlayWaiting<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Passengers<span class="uscript-operator">[</span>PassengerNum<span class="uscript-operator">]</span><span class="uscript-operator">.</span>bPhysicsAnimUpdate <span class="uscript-operator">=</span> Passengers<span class="uscript-operator">[</span>PassengerNum<span class="uscript-operator">]</span><span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>bPhysicsAnimUpdate<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Do stuff on client</span>
+    <span class="uscript-comment">//pc.ClientSetBehindView(false);</span>
+    <span class="uscript-comment">//pc.ClientSetFixedCamera(true);</span>
+
+    Passengers<span class="uscript-operator">[</span>PassengerNum<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Acceleration <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">24000</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Passengers<span class="uscript-operator">[</span>PassengerNum<span class="uscript-operator">]</span><span class="uscript-operator">.</span>TouchingWaterVolume<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Passengers<span class="uscript-operator">[</span>PassengerNum<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetPhysics<span class="uscript-operator">(</span>PHYS_Swimming<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span><span class="uscript-keyword">else</span><span class="uscript-operator">{</span>
+        Passengers<span class="uscript-operator">[</span>PassengerNum<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetPhysics<span class="uscript-operator">(</span>PHYS_Falling<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    Passengers<span class="uscript-operator">[</span>PassengerNum<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SetBase<span class="uscript-operator">(</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Passengers<span class="uscript-operator">[</span>PassengerNum<span class="uscript-operator">]</span><span class="uscript-operator">.</span>bHidden <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Car now has no Passenger[Num]</span>
+    Passengers<span class="uscript-operator">[</span>PassengerNum<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> PossessedByPassenger<span class="uscript-operator">(</span>Controller C<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    NetPriority <span class="uscript-operator">=</span> <span class="uscript-number">3</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> C<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'PlayerController'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">!=</span> NM_Standalone <span class="uscript-operator">)</span>
+            RemoteRole <span class="uscript-operator">=</span> ROLE_AutonomousProxy<span class="uscript-operator">;</span>
+        BecomeViewTarget<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+        RemoteRole <span class="uscript-operator">=</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>RemoteRole<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//  The real controller is already owner</span>
+<span class="uscript-comment">//  SetOwner(C);    // for network replication</span>
+    Eyeheight <span class="uscript-operator">=</span> BaseEyeHeight<span class="uscript-operator">;</span>
+    ChangeAnimation<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> deltaSeconds<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bGetOut <span class="uscript-operator">&amp;&amp;</span> ROLE<span class="uscript-operator">==</span>Role_Authority<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>MaxPassengers<span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Passengers<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            KPassengerLeave<span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span> MyPlayerController<span class="uscript-operator">(</span>PassengersControllers<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Tick<span class="uscript-operator">(</span>deltaSeconds<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> SpecialCalcView<span class="uscript-operator">(</span><span class="uscript-keyword">out</span> actor ViewActor<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> vector CameraLocation<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> rotator CameraRotation <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> vector CamLookAt<span class="uscript-operator">,</span> HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">,</span> averageOver<span class="uscript-operator">;</span>
+
+    ViewActor <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+    CamLookAt <span class="uscript-operator">=</span> Location <span class="uscript-operator">+</span> <span class="uscript-operator">(</span><span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-operator">-</span><span class="uscript-number">100</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">100</span><span class="uscript-operator">)</span> <span class="uscript-operator">&gt;&gt;</span> Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span> 
+
+    <span class="uscript-comment">//////////////////////////////////////////////////////</span>
+    <span class="uscript-comment">// Smooth lookat position over a few frames.</span>
+    CameraHistory<span class="uscript-operator">[</span>NextHistorySlot<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> CamLookAt<span class="uscript-operator">;</span>
+    NextHistorySlot<span class="uscript-operator">++</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bHistoryWarmup<span class="uscript-operator">)</span>
+        averageOver <span class="uscript-operator">=</span> NextHistorySlot<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        averageOver <span class="uscript-operator">=</span> FilterFrames<span class="uscript-operator">;</span>
+
+    CamLookAt <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span>averageOver<span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+        CamLookAt <span class="uscript-operator">+=</span> CameraHistory<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+
+    CamLookAt <span class="uscript-operator">/=</span> <span class="uscript-type">float</span><span class="uscript-operator">(</span>averageOver<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>NextHistorySlot <span class="uscript-operator">==</span> FilterFrames<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        NextHistorySlot <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+        bHistoryWarmup<span class="uscript-operator">=</span><span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-comment">//////////////////////////////////////////////////////</span>
+
+    CameraLocation <span class="uscript-operator">=</span> CamLookAt <span class="uscript-operator">+</span> <span class="uscript-operator">(</span><span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-operator">-</span><span class="uscript-number">600</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">&gt;&gt;</span> CameraRotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Trace<span class="uscript-operator">(</span> HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> CameraLocation<span class="uscript-operator">,</span> CamLookAt<span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">,</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">10</span><span class="uscript-operator">,</span> <span class="uscript-number">10</span><span class="uscript-operator">,</span> <span class="uscript-number">10</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        CameraLocation <span class="uscript-operator">=</span> HitLocation<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    MaxPassengers <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+    bAllowDriver <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.2"></a>MyPlayerController</h3>
+<pre class="uscript"><span class="uscript-keyword">class</span> MyPlayerController <span class="uscript-keyword">extends</span> xPlayer<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> MyVehicle Vehicle<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Pawn Passenger<span class="uscript-operator">;</span>
+    <span class="uscript-comment">//Don't destroy driver if in vehicle, could also be passenger!</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Pawn <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Pawn<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'MyVehicle'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>  <span class="uscript-comment">//Now you've done it, your in a vehicle</span>
+        <span class="uscript-operator">{</span>
+            Vehicle <span class="uscript-operator">=</span> MyVehicle<span class="uscript-operator">(</span>Pawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>Vehicle<span class="uscript-operator">.</span>MaxPassengers<span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>    <span class="uscript-comment">//If find self in vehicle, throw out, and destroy the pawn.</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Vehicle<span class="uscript-operator">.</span>PassengersControllers<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">)</span>
+                <span class="uscript-operator">{</span>
+                    Passenger <span class="uscript-operator">=</span> Vehicle<span class="uscript-operator">.</span>Passengers<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+                    Vehicle<span class="uscript-operator">.</span>KPassengerLeave<span class="uscript-operator">(</span><span class="uscript-keyword">true</span><span class="uscript-operator">,</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Force the driver out of the car</span>
+                    Passenger<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                    Pawn <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+                <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// Possess a pawn</span>
+<span class="uscript-keyword">function</span> PossessPassenger<span class="uscript-operator">(</span>MyVehicle aPawn<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PlayerReplicationInfo<span class="uscript-operator">.</span>bOnlySpectator <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    SetRotation<span class="uscript-operator">(</span>aPawn<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    aPawn<span class="uscript-operator">.</span>PossessedByPassenger<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Pawn <span class="uscript-operator">=</span> aPawn<span class="uscript-operator">;</span>
+    Pawn<span class="uscript-operator">.</span>bStasis <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    PlayerReplicationInfo<span class="uscript-operator">.</span>bIsFemale <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">.</span>bIsFemale<span class="uscript-operator">;</span>
+    Restart<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// unpossessed a pawn (not because pawn was killed)</span>
+<span class="uscript-keyword">function</span> UnPossessPassenger<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Pawn <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        SetLocation<span class="uscript-operator">(</span>Pawn<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Viewtarget <span class="uscript-operator">==</span> Pawn <span class="uscript-operator">)</span>
+            SetViewTarget<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    Pawn <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    GotoState<span class="uscript-operator">(</span><span class="uscript-name">'Spectating'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">state</span> PlayerPassenger
+<span class="uscript-operator">{</span>
+<span class="uscript-keyword">ignores</span> SeePlayer<span class="uscript-operator">,</span> HearNoise<span class="uscript-operator">,</span> Bump<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">function</span> ProcessMove<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">,</span> vector NewAccel<span class="uscript-operator">,</span> eDoubleClickDir DoubleClickMove<span class="uscript-operator">,</span> rotator DeltaRot<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> Fire<span class="uscript-operator">(</span><span class="uscript-keyword">optional</span> <span class="uscript-type">float</span> F<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> AltFire<span class="uscript-operator">(</span><span class="uscript-keyword">optional</span> <span class="uscript-type">float</span> F<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">// Set the throttle, steering etc. for the vehicle based on the input provided</span>
+    <span class="uscript-keyword">function</span> ProcessDrive<span class="uscript-operator">(</span><span class="uscript-type">float</span> InForward<span class="uscript-operator">,</span> <span class="uscript-type">float</span> InStrafe<span class="uscript-operator">,</span> <span class="uscript-type">bool</span> InJump<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">local</span> MyVehicle DrivenVehicle<span class="uscript-operator">;</span>
+
+        DrivenVehicle <span class="uscript-operator">=</span> MyVehicle<span class="uscript-operator">(</span>Pawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>DrivenVehicle <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            log<span class="uscript-operator">(</span><span class="uscript-string">"PlayerPassenger.PlayerMove: No Vehicle"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+        <span class="uscript-comment">// check for 'jump' to throw the driver out.</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>InJump <span class="uscript-operator">&amp;&amp;</span> Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            Log<span class="uscript-operator">(</span><span class="uscript-string">"Passenger tries to leave"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            DrivenVehicle<span class="uscript-operator">.</span>KPassengerLeave<span class="uscript-operator">(</span><span class="uscript-keyword">False</span><span class="uscript-operator">,</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> PlayerMove<span class="uscript-operator">(</span> <span class="uscript-type">float</span> DeltaTime <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">local</span> KVehicle DrivenVehicle<span class="uscript-operator">;</span>
+
+        <span class="uscript-comment">// Only servers can actually do the driving logic.</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Role <span class="uscript-operator">&lt;</span> ROLE_Authority<span class="uscript-operator">)</span>
+            ServerDrive<span class="uscript-operator">(</span>aForward<span class="uscript-operator">,</span> aStrafe<span class="uscript-operator">,</span> bPressedJump<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+            ProcessDrive<span class="uscript-operator">(</span>aForward<span class="uscript-operator">,</span> aStrafe<span class="uscript-operator">,</span> bPressedJump<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-comment">// If the vehicle is being controlled here - set replicated variables.</span>
+        DrivenVehicle <span class="uscript-operator">=</span> KVehicle<span class="uscript-operator">(</span>Pawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-comment">// update 'looking' rotation - no affect on driving</span>
+        UpdateRotation<span class="uscript-operator">(</span>DeltaTime<span class="uscript-operator">,</span> <span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> BeginState<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        CleanOutSavedMoves<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> EndState<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        CleanOutSavedMoves<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.1"></a>Discussion</h2>
+<p><em class="em2">mosquito</em> What does the second one do? I looks like an extendion of the first</p>
+<p><em class="em2">Highlander:</em> First one is the actual code for the vehicle, second one looks like it handles the players inside the vehicle. (new controller class)</p>
+<hr class="thin"><p><a href="category-custom-class.html">Category Custom Class</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("MyVehicle", "#0.0.1");
+menuItemAdd("MyPlayerController", "#0.0.2");
+menuItemAdd("Discussion", "#0.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="vehicles.html">Vehicles</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Vehicles/Passengers">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Vehicles/Passengers">View other revisions</a><br>Last edited April 6, 2006 18:04 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Vehicles/Passengers">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Vehicles/Passengers">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Worst-case scenario: the UEd Goblin wipes the map and burns down your house.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

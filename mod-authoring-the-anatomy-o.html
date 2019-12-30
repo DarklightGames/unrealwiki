@@ -1,0 +1,106 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Mod Authoring/The Anatomy Of Mutator</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Mod_Authoring/The_Anatomy_Of_Mutator; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="mod-authoring.html">Mod Authoring</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Mod+Authoring/The+Anatomy+Of+Mutator">The Anatomy Of Mutator</a></h1>
+	<div class="wiki"><p>So now you've had your first exposure to writing a simple UT mod. Clearly this isn't enough to shake the world or get a job in the industry. Let's take a close look at the methods inside the <a href="mutator.html">Mutator</a> base class. This will give you a better idea of what you can do with them. It only scratches the surface, however, because you have the power to use a multitude of inherited functions as well as interact with other objects.</p>
+<dl><dt>ModifyPlayer</dt><dd>We'll skip the <code>PostRender</code> function for now and look at <code>ModifyPlayer</code>. This is called by the game whenever a <a href="pawn-ut.html">Pawn (UT)</a> is respawned. It gives you a chance to modify the pawn's variables or perform some game logic on the pawn. Remember to call <code>Super.ModifyPlayer()</code> if you override this function. That will call the parent class' version of the function.</dd><dt>ScoreKill</dt><dd>is called whenever a pawn kills another pawn. This lets you influence the score rules of the game, preventing point gains in certain situations or awarding more points in others. Remember to call <code>Super.ScoreKill()</code> if you override this function.</dd><dt>MutatedDefaultWeapon</dt><dd>gives you an opportunity to give a different default weapon to a player that enters a game or respawns. In UT, the default weapon is the Enforcer. If you just want to change the default weapon, you don't need to override this function. Instead, just add a DefaultWeapon definition to the defaultproperties of your mutator. (See the bottom of PulseArena for an example).</dd><dt>MyDefaultWeapon, AddMutator</dt><dd>You don't need to mess with <code>MyDefaultWeapon</code> or <code>AddMutator</code>.</dd><dt>ReplaceWith, AlwaysKeep</dt><dd>allow you to interdict objects that the game wants to add to the world. You can replace objects on the fly with other objects as they appear. The Botpack.Arena mutators are a great example of this. They take all the weapons in a game and replace them with one other weapon. If you are adding a new weapon to the game, you might want to add an Arena mutator for it.</dd><dt>IsRelevant</dt><dd>is called when the game wants to add an object to the world. You can override it with special code and return true, to keep the object, or false, to reject it. If you say false, the object will be destroyed.</dd><dt>Mutate</dt><dd>is cool. It lets your mutator define new commands that player's can bind to keys. If a player binds "mutate givehealth" to a key and then uses that key, every mutator will get a mutate call with a "givehealth" parameter. Your mutator might look for this string and give the player who sent the message some extra health.</dd><dt>MutatorTakeDamage</dt><dd>as described above, is called on DamageMutators. It lets damage mutators do some kind of game logic based on a pawn taking damage. It also tells you where the pawn was hit, the type of damage, and how much force the damage imparted.</dd><dt>RegisterHUDMutator</dt><dd>is used to tell the game that this mutator should get PostRender calls. PostRender passes you a Canvas every frame. You can use the Canvas to draw stuff on the HUD. Look in the Botpack.ChallengeHUD class for extensive examples of abusing the Canvas. Hehe.</dd></dl>
+<p>The best way to learn mutators is to read the code in the mutators that ship with UT. In fact, you'll probably want to spend a lot of time just pooring over the massive amount of code that comes with the game. Trace execution paths and look at how the various classes override and interact with each other. It can be <em class="em2">very intimidating</em> at first, but with time you'll get more experienced with where things are and what things do. Don't be afraid to go online and ask questions either or read other mod authors code. If you spend the time it takes to learn, you will be rewarded with the ability to take on larger, more difficult projects.</p>
+<hr class="thin"><p>Prev Page: <a href="mod-authoring-making-a-muta.html">/Making A Mutator</a> &ndash; <em class="em2">Section 8 of 12</em> &ndash; Next Page: <a href="mod-authoring-introduction.html">/Introduction to GameTypes</a></p>
+</div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="mod-authoring.html">Mod Authoring</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Mod_Authoring/The_Anatomy_Of_Mutator">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Mod_Authoring/The_Anatomy_Of_Mutator">View other revisions</a><br>Last edited May 14, 2002 7:32 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Mod_Authoring/The_Anatomy_Of_Mutator">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Mod_Authoring/The_Anatomy_Of_Mutator">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I love the smell of UnrealEd crashing in the morning. (tarquin)</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

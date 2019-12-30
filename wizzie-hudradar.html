@@ -1,0 +1,394 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Wizzie/HUDRadar</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Wizzie/HUDRadar; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="wizzie.html">Wizzie</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Wizzie/HUDRadar">HUDRadar</a></h1>
+	<div class="wiki"><p>The radar I use for my mod. The function RestartPlayer() in pGameInfo shows how to add an actor to be shown in the radar area. Any kind of actor can be added, not just playerpawns. Hope someone finds it usefull. Enjoy.</p>
+<pre class="paraverbatim"> </pre><h4><a name="0.0.0.1"></a>pGameInfo.uc</h4>
+<pre class="uscript"><span class="uscript-keyword">class</span> pGameInfo <span class="uscript-keyword">extends</span> GameInfo<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> RestartPlayer<span class="uscript-operator">(</span> Controller aPlayer <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>RestartPlayer<span class="uscript-operator">(</span> aPlayer <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> aPlayer <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">&amp;&amp;</span> aPlayer<span class="uscript-operator">.</span>Pawn <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+        pGameReplicationInfo<span class="uscript-operator">(</span>GameReplicationInfo<span class="uscript-operator">)</span><span class="uscript-operator">.</span>CreateRadarActor<span class="uscript-operator">(</span> aPlayer<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">,</span> TYPE_PlayerPawn <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    PlayerControllerClassName <span class="uscript-operator">=</span> <span class="uscript-string">"myMod.pPlayerController"</span>
+    GameReplicationInfoClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'pGameReplicationInfo'</span>
+    HUDType <span class="uscript-operator">=</span> <span class="uscript-string">"myMod.pHUDBase"</span>
+<span class="uscript-operator">}</span></pre><pre class="paraverbatim"> </pre><h4><a name="0.0.0.2"></a>pGameReplicationInfo.uc</h4>
+<pre class="uscript"><span class="uscript-keyword">class</span> pGameReplicationInfo <span class="uscript-keyword">extends</span> GameReplicationInfo<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">enum</span> EItemType
+<span class="uscript-operator">{</span>
+    TYPE_PlayerPawn<span class="uscript-operator">,</span>
+    TYPE_DeadPawn<span class="uscript-operator">,</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">struct</span> RadarActor
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">var</span> <span class="uscript-type">int</span> PosX<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">var</span> <span class="uscript-type">int</span> PosY<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">var</span> <span class="uscript-type">float</span> Distance<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">var</span> EItemType ItemType<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>pRadarActor<span class="uscript-operator">&gt;</span> RadarActorsArray<span class="uscript-operator">;</span>
+
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostNetBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> pRadarActor actor<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>PostNetBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">ForEach</span> DynamicActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'pRadarActor'</span><span class="uscript-operator">,</span> actor<span class="uscript-operator">)</span>
+        AddRadarItem<span class="uscript-operator">(</span> actor <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">function</span> CreateRadarActor<span class="uscript-operator">(</span> Actor aActor<span class="uscript-operator">,</span> EItemType ItemType <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> pRadarActor RRI<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-operator">!</span>aActor<span class="uscript-operator">.</span>bDeleteMe <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">for</span><span class="uscript-operator">(</span> i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span>RadarActorsArray<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> RadarActorsArray<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Owner <span class="uscript-operator">==</span> aActor <span class="uscript-operator">)</span>
+                <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+        RRI <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'pRadarActor'</span><span class="uscript-operator">,</span> aActor<span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span><span class="uscript-keyword">rot</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> RRI <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+            RRI<span class="uscript-operator">.</span>ItemType <span class="uscript-operator">=</span> ItemType<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> AddRadarItem<span class="uscript-operator">(</span> pRadarActor RRI <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    RadarActorsArray<span class="uscript-operator">[</span>RadarActorsArray<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> RRI<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> RemoveRadarItem<span class="uscript-operator">(</span> pRadarActor RRI <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">for</span><span class="uscript-operator">(</span> i<span class="uscript-operator">=</span><span class="uscript-number">0</span> <span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span>RadarActorsArray<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">;</span> i<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> RadarActorsArray<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> RRI <span class="uscript-operator">)</span>
+            <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> i <span class="uscript-operator">==</span> RadarActorsArray<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        log<span class="uscript-operator">(</span><span class="uscript-string">"GameReplicationInfo::RemoveRadarItem() RRI="</span><span class="uscript-operator">$</span>RRI<span class="uscript-operator">$</span><span class="uscript-string">" not found."</span><span class="uscript-operator">,</span> <span class="uscript-name">'Error'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    RadarActorsArray<span class="uscript-operator">.</span><span class="uscript-keyword">Remove</span><span class="uscript-operator">(</span> i<span class="uscript-operator">,</span> <span class="uscript-number">1</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-keyword">Array</span><span class="uscript-operator">&lt;</span>RadarActor<span class="uscript-operator">&gt;</span> GetVisibleRadarActors<span class="uscript-operator">(</span> Pawn PawnOwner <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-keyword">Array</span><span class="uscript-operator">&lt;</span>RadarActor<span class="uscript-operator">&gt;</span> RadarActors<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> RadarActor rActor<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> vector OriginLoc<span class="uscript-operator">,</span> TargetLoc<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> rotator OriginRot<span class="uscript-operator">,</span> TargetRot<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> Distance<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">,</span> TeamIndex<span class="uscript-operator">;</span>
+
+    TeamIndex <span class="uscript-operator">=</span> PawnOwner<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">.</span>Team<span class="uscript-operator">.</span>TeamIndex<span class="uscript-operator">;</span>
+
+    OriginLoc <span class="uscript-operator">=</span> PawnOwner<span class="uscript-operator">.</span>Location <span class="uscript-operator">*</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    OriginRot <span class="uscript-operator">=</span> PawnOwner<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">;</span>
+    OriginRot<span class="uscript-operator">.</span>Yaw <span class="uscript-operator">+=</span> <span class="uscript-number">16384</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">for</span><span class="uscript-operator">(</span> i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> RadarActorsArray<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">;</span> i<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> RadarActorsArray<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>PlayerOwner <span class="uscript-operator">==</span> PlayerController<span class="uscript-operator">(</span>PawnOwner<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> TeamIndex <span class="uscript-operator">==</span> RadarActorsArray<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>TeamIndex <span class="uscript-operator">||</span> RadarActorsArray<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>TeamIndex <span class="uscript-operator">==</span> <span class="uscript-number">255</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            TargetLoc<span class="uscript-operator">.</span>X <span class="uscript-operator">=</span> RadarActorsArray<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>RadarLocationX<span class="uscript-operator">;</span>
+            TargetLoc<span class="uscript-operator">.</span>Y <span class="uscript-operator">=</span> RadarActorsArray<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>RadarLocationY<span class="uscript-operator">;</span>
+            TargetLoc<span class="uscript-operator">.</span>Z <span class="uscript-operator">=</span> <span class="uscript-number">0.0</span><span class="uscript-operator">;</span>
+            Distance <span class="uscript-operator">=</span> VSize<span class="uscript-operator">(</span> OriginLoc <span class="uscript-operator">-</span> TargetLoc <span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-number">0.03125</span><span class="uscript-operator">;</span>    <span class="uscript-comment">// 2048 units radius viewrange (64/2048=0.03125)</span>
+            <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Distance <span class="uscript-operator">&lt;</span> <span class="uscript-number">64</span> <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                TargetRot <span class="uscript-operator">=</span> rotator<span class="uscript-operator">(</span> TargetLoc <span class="uscript-operator">-</span> OriginLoc <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                TargetRot<span class="uscript-operator">.</span>Yaw <span class="uscript-operator">-=</span> OriginRot<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">;</span>
+                TargetLoc <span class="uscript-operator">=</span> vector<span class="uscript-operator">(</span> TargetRot <span class="uscript-operator">)</span> <span class="uscript-operator">*</span> Distance<span class="uscript-operator">;</span>
+                rActor<span class="uscript-operator">.</span>PosX <span class="uscript-operator">=</span> TargetLoc<span class="uscript-operator">.</span>X<span class="uscript-number">+64</span><span class="uscript-operator">;</span>
+                rActor<span class="uscript-operator">.</span>PosY <span class="uscript-operator">=</span> TargetLoc<span class="uscript-operator">.</span>Y<span class="uscript-number">+64</span><span class="uscript-operator">;</span>
+                rActor<span class="uscript-operator">.</span>ItemType <span class="uscript-operator">=</span> RadarActorsArray<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ItemType<span class="uscript-operator">;</span>
+                rActor<span class="uscript-operator">.</span>Distance <span class="uscript-operator">=</span> Distance<span class="uscript-operator">;</span>
+                RadarActors<span class="uscript-operator">[</span>RadarActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> rActor<span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">return</span> RadarActors<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><pre class="paraverbatim"> </pre><h4><a name="0.0.0.3"></a>pRadarActor.uc</h4>
+<pre class="uscript"><span class="uscript-keyword">class</span> pRadarActor <span class="uscript-keyword">extends</span> ReplicationInfo<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> RadarLocationX<span class="uscript-operator">,</span> RadarLocationY<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">byte</span> TeamIndex<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> PlayerController PlayerOwner<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> pGameReplicationInfo<span class="uscript-operator">.</span>EItemType ItemType<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">replication</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bNetInitial <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        TeamIndex<span class="uscript-operator">,</span> PlayerOwner<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bNetDirty <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        ItemType<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">unreliable</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bNetDirty <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        RadarLocationX<span class="uscript-operator">,</span> RadarLocationY<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">event</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Pawn P<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Role <span class="uscript-operator">&lt;</span> ROLE_Authority <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    P <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> P <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> P<span class="uscript-operator">.</span>Controller <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+            PlayerOwner <span class="uscript-operator">=</span> PlayerController<span class="uscript-operator">(</span>P<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-operator">(</span>P<span class="uscript-operator">.</span>PlayerReplicationInfo <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>P<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">.</span>Team <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            TeamIndex <span class="uscript-operator">=</span> P<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">.</span>Team<span class="uscript-operator">.</span>TeamIndex<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    SetTimer<span class="uscript-operator">(</span> <span class="uscript-number">1.0</span><span class="uscript-operator">/</span>NetUpdateFrequency<span class="uscript-operator">,</span> <span class="uscript-keyword">true</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> PostNetBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> pGameReplicationInfo GRI<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">foreach</span> DynamicActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'pGameReplicationInfo'</span><span class="uscript-operator">,</span>GRI<span class="uscript-operator">)</span>
+        GRI<span class="uscript-operator">.</span>AddRadarItem<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> pGameReplicationInfo GRI<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">ForEach</span> DynamicActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'pGameReplicationInfo'</span><span class="uscript-operator">,</span>GRI<span class="uscript-operator">)</span>
+        GRI<span class="uscript-operator">.</span>RemoveRadarItem<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">event</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Owner <span class="uscript-operator">==</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    RadarLocationX <span class="uscript-operator">=</span> Owner<span class="uscript-operator">.</span>Location<span class="uscript-operator">.</span>X<span class="uscript-operator">;</span>
+    RadarLocationY <span class="uscript-operator">=</span> Owner<span class="uscript-operator">.</span>Location<span class="uscript-operator">.</span>Y<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>ItemType <span class="uscript-operator">!=</span> TYPE_DeadPawn<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Health <span class="uscript-operator">&lt;=</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        ItemType <span class="uscript-operator">=</span> TYPE_DeadPawn<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+    TeamIndex <span class="uscript-operator">=</span> <span class="uscript-number">255</span>
+    NetUpdateFrequency <span class="uscript-operator">=</span> <span class="uscript-number">10.00</span>
+<span class="uscript-operator">}</span></pre><pre class="paraverbatim"> </pre><h4><a name="0.0.0.4"></a>pHUDBase.uc</h4>
+<pre class="uscript"><span class="uscript-keyword">class</span> pHUDBase <span class="uscript-keyword">extends</span> HudBase
+    <span class="uscript-keyword">config</span><span class="uscript-operator">(</span>User<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> Material HUDMaterial1<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> Material RadarBase<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">globalconfig</span> <span class="uscript-type">bool</span> bShowRadar<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">globalconfig</span> <span class="uscript-type">float</span> RadarPosX<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">globalconfig</span> <span class="uscript-type">float</span> RadarPosY<span class="uscript-operator">;</span>
+
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> UpdatePrecacheMaterials<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'InterfaceContent.HUD.SkinA'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>AddPrecacheMaterial<span class="uscript-operator">(</span>Material<span class="uscript-name">'Radar.RadarFinal'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> DrawHudPassC <span class="uscript-operator">(</span>Canvas C<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bShowRadar <span class="uscript-operator">)</span>
+        DrawRadar<span class="uscript-operator">(</span>C<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> DrawRadar<span class="uscript-operator">(</span> Canvas C <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> DotSize<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">,</span> Alpha<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> pGameReplicationInfo GRI<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-keyword">Array</span><span class="uscript-operator">&lt;</span>pGameReplicationInfo<span class="uscript-operator">.</span>RadarActor<span class="uscript-operator">&gt;</span> RadarActors<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> PlayerOwner <span class="uscript-operator">==</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">||</span> PawnOwner <span class="uscript-operator">==</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">||</span>
+        PawnOwner<span class="uscript-operator">.</span>PlayerReplicationInfo <span class="uscript-operator">==</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">||</span> PawnOwner<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">.</span>Team <span class="uscript-operator">==</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    GRI <span class="uscript-operator">=</span> pGameReplicationInfo<span class="uscript-operator">(</span>PlayerOwner<span class="uscript-operator">.</span>GameReplicationInfo<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> GRI <span class="uscript-operator">==</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    C<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span> RadarPosX <span class="uscript-operator">*</span> C<span class="uscript-operator">.</span>ClipX<span class="uscript-operator">,</span> RadarPosY <span class="uscript-operator">*</span> C<span class="uscript-operator">.</span>ClipY <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    C<span class="uscript-operator">.</span>DrawTile<span class="uscript-operator">(</span> RadarBase<span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> RadarBase<span class="uscript-operator">.</span>MaterialUSize<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span> RadarBase<span class="uscript-operator">.</span>MaterialVSize<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    DotSize <span class="uscript-operator">=</span> <span class="uscript-number">6</span><span class="uscript-operator">;</span>
+    RadarActors <span class="uscript-operator">=</span> GRI<span class="uscript-operator">.</span>GetVisibleRadarActors<span class="uscript-operator">(</span> PawnOwner <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">for</span><span class="uscript-operator">(</span> i<span class="uscript-operator">=</span><span class="uscript-number">0</span> <span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span>RadarActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">;</span> i<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> RadarActors<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Distance <span class="uscript-operator">&lt;</span> <span class="uscript-operator">(</span><span class="uscript-number">64</span><span class="uscript-number">-8</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            Alpha <span class="uscript-operator">=</span> <span class="uscript-number">160</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+            Alpha <span class="uscript-operator">=</span> <span class="uscript-number">160</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-number">8</span><span class="uscript-operator">-</span><span class="uscript-operator">(</span>RadarActors<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Distance<span class="uscript-operator">-</span><span class="uscript-operator">(</span><span class="uscript-number">64</span><span class="uscript-number">-8</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">8</span><span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> RadarActors<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ItemType <span class="uscript-operator">==</span> TYPE_PlayerPawn <span class="uscript-operator">)</span>
+            C<span class="uscript-operator">.</span>DrawColor <span class="uscript-operator">=</span> C<span class="uscript-operator">.</span>MakeColor<span class="uscript-operator">(</span> <span class="uscript-number">255</span><span class="uscript-operator">,</span> <span class="uscript-number">255</span><span class="uscript-operator">,</span> <span class="uscript-number">255</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> RadarActors<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ItemType <span class="uscript-operator">==</span> TYPE_DeadPawn <span class="uscript-operator">)</span>
+            C<span class="uscript-operator">.</span>DrawColor <span class="uscript-operator">=</span> C<span class="uscript-operator">.</span>MakeColor<span class="uscript-operator">(</span> <span class="uscript-number">255</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        C<span class="uscript-operator">.</span>DrawColor<span class="uscript-operator">.</span>A <span class="uscript-operator">=</span> Alpha<span class="uscript-operator">;</span>
+
+        C<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span> RadarPosX<span class="uscript-operator">*</span>C<span class="uscript-operator">.</span>ClipX<span class="uscript-operator">+</span>RadarActors<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>PosX<span class="uscript-number">-0.5</span><span class="uscript-operator">*</span>DotSize <span class="uscript-operator">,</span> RadarPosY<span class="uscript-operator">*</span>C<span class="uscript-operator">.</span>ClipY<span class="uscript-operator">+</span>RadarActors<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>PosY<span class="uscript-number">-0.5</span><span class="uscript-operator">*</span>DotSize <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        C<span class="uscript-operator">.</span>DrawTile<span class="uscript-operator">(</span> HUDMaterial1<span class="uscript-operator">,</span> DotSize<span class="uscript-operator">,</span> DotSize<span class="uscript-operator">,</span> <span class="uscript-number">838</span><span class="uscript-operator">,</span> <span class="uscript-number">238</span><span class="uscript-operator">,</span> <span class="uscript-number">144</span><span class="uscript-operator">,</span> <span class="uscript-number">144</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    HUDMaterial1 <span class="uscript-operator">=</span> Material<span class="uscript-name">'InterfaceContent.Hud.SkinA'</span>
+    RadarBase <span class="uscript-operator">=</span> Material<span class="uscript-name">'Radar.RadarFinal'</span>
+
+    RadarPosX <span class="uscript-operator">=</span> <span class="uscript-number">0.87</span>
+    RadarPosY <span class="uscript-operator">=</span> <span class="uscript-number">0.03</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.1"></a>Comments</h3>
+<pre class="paraverbatim"> </pre><hr class="thin"><p><a href="category-custom-class.html">Category Custom Class</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("pGameInfo.uc", "#0.0.0.1");
+menuItemAdd("pGameReplicationInfo.uc", "#0.0.0.2");
+menuItemAdd("pRadarActor.uc", "#0.0.0.3");
+menuItemAdd("pHUDBase.uc", "#0.0.0.4");
+menuItemAdd("Comments", "#0.0.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="wizzie.html">Wizzie</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Wizzie/HUDRadar">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Wizzie/HUDRadar">View other revisions</a><br>Last edited November 29, 2003 15:46 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Wizzie/HUDRadar">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Wizzie/HUDRadar">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Mostly Harmless
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

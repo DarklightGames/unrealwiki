@@ -1,0 +1,298 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Power Core Volume Control Mutator</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Power_Core_Volume_Control_Mutator; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Power Core Volume Control Mutator">Power Core Volume Control Mutator</a></h1>
+	<div class="wiki"><p>After a team's Power Core has been destroyed in an Onslaught<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Onslaught&referrerid=Power_Core_Volume_Control_Mutator">?</a> game in <a href="unreal-tournament-2004.html">UT2004</a> it explodes.  After the initial explosion a repetative and loud electricity-short-circuit type sound is played.</p>
+<p>This tutorial will show you the steps required to write a small mutator that will allow the volume of both the Power Core's initial explosion and the subsequent electricity sound to be adjusted to your preference.</p>
+<h2><a name="0.1"></a>How does the Power Core explosion actually work</h2>
+<p>In order to change the volume of the Power Core's end of game sounds we must first find the code that is responsible for playing the sound and explosion.  Since the explosion relates directly to the Power Core it would seem sensible to look for it within the Onslaught.PowerCore<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=PowerCore&referrerid=Power_Core_Volume_Control_Mutator">?</a> class.  Sure enough conveniently tucked away within the class is the method <a href="power-core-volume-control-1.html">/PowerCoreDestroyed</a>.  The critical lines are shown below.</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PowerCoreDestroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">!=</span> NM_DedicatedServer<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-comment">// If this code is running on either a Listen server or a pure game client then</span>
+    <span class="uscript-comment">// create the Power Core's explosion effect and sound.</span>
+    ExplosionEffect <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'ONSPowerCoreBreachEffect'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>The most important thing to note about this code is that the <em class="em1">ONSPowerCoreBreachEffect</em> object that is ultimately responsible for playing the sounds we wish to modify is <em class="em2">only</em> spawn on game clients.  This object is <em class="em2">never</em> created on a dedicated server.</p>
+<p>An inspection of the ONSPowerCoreBreachEffect<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ONSPowerCoreBreachEffect&referrerid=Power_Core_Volume_Control_Mutator">?</a> code shows us two things.</p>
+<ul><li>It is subclassed directly from Emitter.</li>
+<li>All of it's properties are created as in-line objects within the defaultproperties sections.</li>
+</ul>
+<p><a href="emitter.html">Emitter</a> objects by default have two really impotant properties.</p>
+<pre class="uscript">  RemoteRole<span class="uscript-operator">=</span>ROLE_None <span class="uscript-comment">// Emitters are never sent across the network</span>
+  bNotOnDedServer<span class="uscript-operator">=</span><span class="uscript-keyword">true</span> <span class="uscript-comment">// Emitters cannot be created on a dedicated server</span></pre><p>So, in order to change the sound volumes via our mutator we need to locate the ONSPowerCoreBreachEffect object on each of the game clients and then adjust the Emitter's sound properties.</p>
+<h2><a name="0.2"></a>Using the CheckReplacement() function</h2>
+<p>When changing the properties of objects (like sound volume, ammo counts etc) you would typically <em class="em1">catch</em> their creation within the Mutator's <em class="em1">CheckReplacement()</em> function as follows:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> PowerCoreVolumeControl <span class="uscript-keyword">extends</span> Mutator<span class="uscript-operator">;</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CheckReplacement<span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> <span class="uscript-type">byte</span> bSuperRelevant<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'ONSPowerNodeEnergySphere'</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-comment">// Code to change volume goes in here.</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>Unfortunately the <em class="em1">CheckReplacement()</em> function is called <em class="em2">on the server</em> rather than any of the game's clients.  As we discovered in the previous section the <a href="emitter.html">Emitter</a> responsible for the Power Core's destruction effects is only ever spawned on the client.  We need another way of doing it.</p>
+<h2><a name="0.3"></a>Controlling Emitters on the game clients</h2>
+<p>Since we cannot use our Mutator to trap the creation of the Power Core's breach effect we need to do the next best thing.  That is, find it once it has been spawned on the client.  In order to do this we create an instance of a new class that can be spawned by our Mutator and replicated to the game clients.</p>
+<p>The code to adjust the Emitter's sound volume has been left out for now and instead we write out a log message.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> VolumeControlClient <span class="uscript-keyword">extends</span> Actor<span class="uscript-operator">;</span>
+
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bAdjustVolume<span class="uscript-operator">;</span> <span class="uscript-comment">// False once the volume has been changed.</span>
+
+<span class="uscript-comment">// Every game tick we run through all of the current Emitter actors looking</span>
+<span class="uscript-comment">// for the ONSPowerCoreBreachEffect Emitter.  Once we have found this we can</span>
+<span class="uscript-comment">// update its volume settings and stop checking.</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> Tick<span class="uscript-operator">(</span> <span class="uscript-type">float</span> DeltaTime <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> ONSPowerCoreBreachEffect breachEffect<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Tick<span class="uscript-operator">(</span> DeltaTime <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>bAdjustVolume <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-comment">// The foreach will examine every actor in the game!!!</span>
+    <span class="uscript-comment">// This is an expensive (aka slow) operation.</span>
+    <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'ONSPowerCoreBreachEffect'</span><span class="uscript-operator">,</span> breachEffect<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+      <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>bAdjustVolume <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+      Log<span class="uscript-operator">(</span><span class="uscript-string">"We found a breach effect so update its sound"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+<span class="uscript-comment">// Set the remote role so that the client will run the tick function when the</span>
+<span class="uscript-comment">// object is created there.</span>
+<span class="uscript-comment">// If bAlwaysRelevant is not set to true then the object is never replicated</span>
+<span class="uscript-comment">// to the game clients</span>
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+  bAdjustVolume<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+  RemoteRole<span class="uscript-operator">=</span>ROLE_SimulatedProxy
+  bAlwaysRelevant<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-operator">}</span></pre><p>Even though we only adjust our Emitters volume once as we set the <em class="em1">bAdjustVolume</em> property to <em class="em1">false</em> once we have adjusted the Emitters volume this is still a very inneficient way of doing things.</p>
+<p>Running through all of the Actors in the game with <em class="em2">every</em> game tick is bad news.  Since the Power Core's breach effect is only ever created when the game has been won we only really need to start looking for the Emitter after the game has ended.</p>
+<h2><a name="0.4"></a>Catching the end of game</h2>
+<p>Luckily for us UT2004 has a class specifically designed to allow the game ending conditions to be trapped and/or overidden.  We need to create a subclass of <a href="gamerules.html">GameRules</a>.  The GameRules class has a bunch of methods that are called whenever a player needs to start, scores a kill, etc.  Most importantly it has a function that is called to see if the game has ended.  Our GameRules subclass looks like this.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> VolumeControlGameRule <span class="uscript-keyword">extends</span> GameRules<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// If the game has ended then create the object responsible for setting the</span>
+<span class="uscript-comment">// Power Core's sound effects volume on the game-client machines.</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CheckEndGame<span class="uscript-operator">(</span>PlayerReplicationInfo Winner<span class="uscript-operator">,</span> <span class="uscript-type">string</span> Reason<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> VolumeControlClient volTracker<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> bGameEnded<span class="uscript-operator">;</span>
+
+  bGameEnded <span class="uscript-operator">=</span> <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>CheckEndGame<span class="uscript-operator">(</span>Winner<span class="uscript-operator">,</span> Reason<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bGameEnded <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    volTracker <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'VolumeControlClient'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">return</span> bGameEnded<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>As you can see from the above code it doesn't do very much.  We are not interested in changing the rules of the game - merely detecting when it happens so we pass on the "game ended" check to any other game rules that are currently active.  If the game has ended then we spawn the object (a VolumeControlClient) that will actually handle the volume update.</p>
+<p>So how do we get our VolumeControlGameRule object into the set of rules the game is using?  Easy - we get our Mutator class to add our GameRule object to it.</p>
+<h2><a name="0.5"></a>Adding the VolumeControlGameRule to the current game-rule set</h2>
+<p>Adding an instance of our VolumeControlGameRule class to the current game rules is very easy.  We can do it by adding the following code to our Mutator.</p>
+<pre class="uscript"><span class="uscript-comment">// Announce to the log file that we have started and create the</span>
+<span class="uscript-comment">// GameRule object that will ultimately be responsible for spotting the end</span>
+<span class="uscript-comment">// of the game and creating the object that will actually update the sound</span>
+<span class="uscript-comment">// volumes we need.</span>
+<span class="uscript-keyword">event</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> GameRules volumeRule<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  volumeRule <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'VolumeControlGameRule'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>GameRulesModifiers <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>GameRulesModifiers <span class="uscript-operator">=</span> volumeRule<span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span> <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+    Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>GameRulesModifiers<span class="uscript-operator">.</span>AddGameRules<span class="uscript-operator">(</span>volumeRule<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-comment">// NOTE: Vampire mutator calls Destroy() here!</span>
+<span class="uscript-operator">}</span></pre><p class="indent1">The only oddity about this function is that the Vampire mutator calls the Mutator's Destroy() function once it has spawned its game rule object.  The implication of this is that game rules are <em class="em1">sticky</em>.  By this I mean carried from one level to the next.  However, in my testing I did not find that this was the case.  It could be a minor performance enhancement - after all once our game rule object has been created the mutator object has no further use.</p>
+<h2><a name="0.6"></a>Changing the Emitter sound volume</h2>
+<p>At this point we have created our <em class="em1">PowerCoreVolumeControl</em> mutator class.  This mutator exists solely for the purpose of adding a custom game rule (<em class="em1">VolumeControlGameRule</em>) to the current list of game rules.  Our game rule class detects when the game has ended and creates a <em class="em1">VolumeControlClient</em> object.  It is the <em class="em1">VolumeControlClient</em> object that is responsible for actually adjusting the volume of the emitter sound.</p>
+<p>The Power Core's breach effect Emitter is actually a composition of 11 separate Emitters.  All of these Emitters are stored in the Emitters property of the Emitter class.  Adjusting the sound volume of the breach effect is simply a matter of looping through each of the emitters making up the breach effect and altering the volume of the sounds.  The following code will do this.</p>
+<pre class="uscript"><span class="uscript-comment">// This is the function that actually updates the sound volume of the Emitter.</span>
+<span class="uscript-comment">// It loops through each of the Emitter's attached to the the BreachEffect</span>
+<span class="uscript-comment">// emitter and examines the sound attached to the "child" emitter updating as</span>
+<span class="uscript-comment">// required.</span>
+<span class="uscript-comment">// It is declared as simulated so it can be called from the simulated Tick() event.</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> AdjustSoundVolume<span class="uscript-operator">(</span> Emitter breachEffect <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span>breachEffect<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-comment">// If the emitter we have found has a sound then check further.</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> breachEffect<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Sounds<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> i <span class="uscript-operator">==</span> <span class="uscript-number">8</span> <span class="uscript-operator">||</span> i <span class="uscript-operator">==</span> <span class="uscript-number">9</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-comment">// child emitters 8 and 9 are the electricity sound, so turn them off.</span>
+        breachEffect<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Sounds<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Volume<span class="uscript-operator">.</span>Min <span class="uscript-operator">=</span> <span class="uscript-number">0.0</span><span class="uscript-operator">;</span>
+        breachEffect<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Sounds<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Volume<span class="uscript-operator">.</span>Max <span class="uscript-operator">=</span> <span class="uscript-number">0.0</span><span class="uscript-operator">;</span>
+      <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>The for .. loop in the above code is a little redundant.  However it does make it a little easier to allow the change in volume of the power core explosion and the electricity sound to be made configurable.</p>
+<h2><a name="0.7"></a>Making the power core volume changes configurable</h2>
+<p>In order to allow the user to configure the change in volume of the Power Core explosion and the electricity sound we need to update the signature of the class (to allow for the storage of the configuration information).  We also need to add the configurable variables to the class definition.  By the time you have done this your class should look something like that shown below.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> PowerCoreVolumeControl <span class="uscript-keyword">extends</span> Mutator <span class="uscript-keyword">config</span> <span class="uscript-operator">(</span>MutPowerCoreVolumeControl<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// Values that will be stored within the MutPowerCoreColumeControl.ini file</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">config</span> <span class="uscript-type">float</span> ExplosionVol<span class="uscript-operator">;</span>    <span class="uscript-comment">// The modifier for the explosion volume</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">config</span> <span class="uscript-type">float</span> ElectricityVol<span class="uscript-operator">;</span>  <span class="uscript-comment">// The modifier for the electricity volume</span>
+
+<span class="uscript-comment">// Create the GameRule object that will catch the end of the game</span>
+<span class="uscript-keyword">event</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> GameRules volumeRule<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  volumeRule <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'VolumeControlGameRule'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>GameRulesModifiers <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>GameRulesModifiers <span class="uscript-operator">=</span> volumeRule<span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span> <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+    Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>GameRulesModifiers<span class="uscript-operator">.</span>AddGameRules<span class="uscript-operator">(</span>volumeRule<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+  ExplosionVol<span class="uscript-operator">=</span><span class="uscript-number">1.0</span>
+  ElectricityVol<span class="uscript-operator">=</span><span class="uscript-number">0.1</span>
+<span class="uscript-operator">}</span></pre><p>However, this still doesn't make the attributes configurable via the GUI.  In order to do this we can make use of some new functions added in UT2004.  The function's are shown below:</p>
+<pre class="uscript"><span class="uscript-comment">// We need the following additional properties</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span> GIPropsDisplayText<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Config property display names</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span> GIPropDescText<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>     <span class="uscript-comment">// Config property descriptions</span>
+
+<span class="uscript-comment">// This function is called when the Mutator Configuration window is displayed</span>
+<span class="uscript-comment">// It is responsible for returning the widget information to be used to</span>
+<span class="uscript-comment">// configure the mutator.</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">function</span> FillPlayInfo<span class="uscript-operator">(</span>PlayInfo PlayInfo<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>FillPlayInfo<span class="uscript-operator">(</span>PlayInfo<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  PlayInfo<span class="uscript-operator">.</span>AddSetting<span class="uscript-operator">(</span> <span class="uscript-keyword">default</span><span class="uscript-operator">.</span>RulesGroup<span class="uscript-operator">,</span> <span class="uscript-string">"ExplosionVol"</span><span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-name">'PowerCoreVolumeControl'</span><span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>GIPropsDisplayText<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-string">"Text"</span><span class="uscript-operator">,</span> <span class="uscript-string">"8;0.0:1.5"</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  PlayInfo<span class="uscript-operator">.</span>AddSetting<span class="uscript-operator">(</span> <span class="uscript-keyword">default</span><span class="uscript-operator">.</span>RulesGroup<span class="uscript-operator">,</span> <span class="uscript-string">"ElectricityVol"</span><span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-name">'PowerCoreVolumeControl'</span><span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>GIPropsDisplayText<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-string">"Text"</span><span class="uscript-operator">,</span> <span class="uscript-string">"8;0.0:1.5"</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// This function is called by the Mutator Configuration window when a</span>
+<span class="uscript-comment">// description of the configuration property is required.</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">event</span> <span class="uscript-type">string</span> GetDescriptionText<span class="uscript-operator">(</span><span class="uscript-type">string</span> PropName<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">switch</span> <span class="uscript-operator">(</span>PropName<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">case</span> <span class="uscript-string">"ExplosionVol"</span>:
+      <span class="uscript-keyword">return</span> <span class="uscript-keyword">class</span><span class="uscript-name">'PowerCoreVolumeControl'</span><span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>GIPropDescText<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">case</span> <span class="uscript-string">"ElectricityVol"</span>:
+      <span class="uscript-keyword">return</span> <span class="uscript-keyword">class</span><span class="uscript-name">'PowerCoreVolumeControl'</span><span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>GIPropDescText<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">return</span> <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>GetDescriptionText<span class="uscript-operator">(</span>PropName<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>The functions are relatively self explanatory.  Note that the second parameter to the <em class="em1">PlayInfo.AddSetting()</em> function call, and that used in the case statement <em class="em2">must</em> match the class property name being changed.  In this case we have allowed the properties to be assigned a value between 0.0 and 1.5.</p>
+<p>We still haven't quite finished yet though.  We hard-coded the volume setting within the function responsible for adjusting the volume.  We now need to go back and fix that.  The final function is reproduced below.</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> AdjustSoundVolume<span class="uscript-operator">(</span> Emitter breachEffect <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span>breachEffect<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> breachEffect<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Sounds<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> i <span class="uscript-operator">==</span> <span class="uscript-number">8</span> <span class="uscript-operator">||</span> i <span class="uscript-operator">==</span> <span class="uscript-number">9</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        breachEffect<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Sounds<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Volume<span class="uscript-operator">.</span>Min <span class="uscript-operator">*=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'PowerCoreVolumeControl'</span><span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>ElectricityVol<span class="uscript-operator">;</span>
+        breachEffect<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Sounds<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Volume<span class="uscript-operator">.</span>Max <span class="uscript-operator">*=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'PowerCoreVolumeControl'</span><span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>ElectricityVol<span class="uscript-operator">;</span>
+      <span class="uscript-operator">}</span> <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+        breachEffect<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Sounds<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Volume<span class="uscript-operator">.</span>Min <span class="uscript-operator">*=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'PowerCoreVolumeControl'</span><span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>ExplosionVol<span class="uscript-operator">;</span>
+        breachEffect<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Sounds<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Volume<span class="uscript-operator">.</span>Max <span class="uscript-operator">*=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'PowerCoreVolumeControl'</span><span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>ExplosionVol<span class="uscript-operator">;</span>
+      <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>You will notice that at no point do I ever replicate the server's Mutator configuration values to the clients.  This is done deliberately to allow each client to configure their own preferred volume settings.</p>
+<h2><a name="0.8"></a>Conclusion</h2>
+<p>If you got this far you should (in theory) have a working mutator that you can use to alter the volume of the Power Core's breach effects.  Not only that but you should have an appreciation of Emitter structure.  You should also be aware that Emitters are purely game-client constructions.  That is, they will never exist on a dedicated server.  I hope you found the tutorial useful.</p>
+<p>If you ever find a better way of catching an Emitter's creation than searching for it within the Tick() event I'd love to hear about it.</p>
+<p>The compiled code and source code for this mutator is available here: <a href="http://www.snout-clan.co.uk/p.php?p=3065">http://www.snout-clan.co.uk/p.php?p=3065</a></p>
+<hr class="thin"><p><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("How does the Power Core explosion actually work", "#0.1");
+menuItemAdd("Using the CheckReplacement() function", "#0.2");
+menuItemAdd("Controlling Emitters on the game clients", "#0.3");
+menuItemAdd("Catching the end of game", "#0.4");
+menuItemAdd("Adding the VolumeControlGameRule to the current game-rule set", "#0.5");
+menuItemAdd("Changing the Emitter sound volume", "#0.6");
+menuItemAdd("Making the power core volume changes configurable", "#0.7");
+menuItemAdd("Conclusion", "#0.8");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Power_Core_Volume_Control_Mutator">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Power_Core_Volume_Control_Mutator">View other revisions</a><br>Last edited September 7, 2004 13:36 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Power_Core_Volume_Control_Mutator">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Power_Core_Volume_Control_Mutator">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Gah - a solution with more questions. (EntropicLqd)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

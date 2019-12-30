@@ -1,0 +1,142 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Mod Ideas/Buddy List</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Mod_Ideas/Buddy_List; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="mod-ideas.html">Mod Ideas</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Mod+Ideas/Buddy+List">Buddy List</a></h1>
+	<div class="wiki"><div class="classpath">Mod ideas for UT Classic and UT2003 &ndash; BuddyList<br></div>
+<h2><a name="0.1"></a>Description</h2>
+<p>Gives the ability to store Buddy's in a list and edit (add/remove from) that list. </p>
+<dl><dt>Find out what server your buddy is on</dt><dd>(if that data is allowed by buddy)</dd><dt>Option to "Follow" buddy</dt><dd>makes you automatically join whatever server he/she goes to. (if that data is allowed by buddy)</dd><dt>Be Followed</dt><dd>(Option not to be automatically "Followed".)</dd><dt>Option to PM</dt><dd>(private message) buddies.</dd><dt>No PM's</dt><dd>(Option not to accept PM's. (at all))</dd><dt>Ignore list</dt><dd>(accept no PM's from whoever also do not give out current-server-attended-information)</dd><dt>Visible-To list</dt><dd>only allow PM's and current-server-attended-information to those in a list.</dd><dt>Hide-From list</dt><dd>similar to Visible-To list, but allow PM's and current-server-attended-information to anyone who is NOT in the list.)</dd></dl>
+<p>(Only ONE option, Visible-To OR Hide-From, will be used, by the client at a time. may end up being named Friends list and Shit list hehe.)</p>
+<p>(add more features at will, not all will end up in the final.)</p>
+<h2><a name="0.2"></a>Progress</h2>
+<p>Not started as of 5April04.</p>
+<p>(already have some code to build a buddy list from a window via the mod menu item that has  a combolist object, an add button, and a remove button. All entries in the combolist object are stored in an ini file and load back up when the window is called up. works great, even ignores duplicates, code available upon request for use in this mod or any other.)</p>
+<h2><a name="0.3"></a>Structure</h2>
+<p>I've been giving this some thought and have an idea of how it could be accomplished. Consideration has been given to avoid searching all the servers from the MasterServer list and then searching all those servers for a playername. That would take to long and would suck. This structure is proposed to only bombard with the MasterServer with no more than the heartbeat of just one more server.</p>
+<dl><dt>First of all, the server-side</dt><dd></dd></dl>
+<p>MasterPlayerServer: This is a ut dedicated server that recieves a heartbeat from all clients running the mod. The heartbeat includes Name, and IP address. The MasterPlayerServer will do only two things; track heartbeats and forward them upon requests. Everything else is done client-side once the client has gotten the ip address of his buddy.</p>
+<p>The server itself runs a new gametype and sends a heartbeat to the masterserver in case the MasterPlayerServer (this server)'s ip address stored in the client-side ini file should ever change. Upon not finding the server at that address the client-side mod will query the MasterServer for the server running that new gametype and update the ip address in the ini file.</p>
+<p>This server-side mod accepts no joins (could be as simple as a serverpackage set in the server ini file and allow downloads set to false, we don't want anyone to join this server). The new gametype can simply override the login function of GameInfo class to return False, then no one could log in.</p>
+<p>Possibly all heartbeats are added to or appended in a dynamic array server-side. The information in that heartbeat (Client's IP address) is forwarded to the client that sent the query looking for that player.</p>
+<p>I would consider the priveledge of hosting the MasterPlayerServer to be an honor, and already have a host in mind with unlimitted bandwidth. Upon completion of this mod I will present the opportunity to Ryan @ ShooterSGL.com. If for some reason he declines the offer I can only imagine there are plenty with the facilities to host it, and that they would be happy to. This mod should include in the interface a nice thank you to ie. "ShooterSGL.com for hosting the MasterPlayerServer". See the appeal? This message is stored in the Client-side ini file and should the host ever change, this message would be updated from the Server-side mod to reflect the name of the current host as he would edit that line in the Server-Side ini. </p>
+<dl><dt>Now, Client-side</dt><dd></dd></dl>
+<p>Clients running this mod will, upon launching UT, begin sending a heartbeat to the MasterPlayerServer every 60 seconds. </p>
+<p>Upon querying the MasterPlayerServer for a certain buddy, the dynamic array is searched for that player's name. If found that player's ip address is forwarded to the searching Client. If not found a confirmation is sent to that effect.</p>
+<p>Upon finding a buddy, via matching his Name to that of a heartbeat, a query is sent to the buddy's client requesting the ip address of the server he is playing on. That way the buddy can control who tracks him via an ignore list or possible a visible-to list. PM's can now be sent.</p>
+<p>The PM could even reach the buddy when he is on a server in the form a duplicate of the chat area drawn in the lower right of his screen. Or in the form of a "left message" depending on the buddy's set options reguarding incomming PM's.</p>
+<p>The hearbeat could even be sent from a subclassed form of dedicated server and could remain active to recieve PM's without even running any other instance of UT. Then PM's would be pop-up windows instead. </p>
+<p>I'm thinking that the main interface for this information will be under a new tab on the serverbrowser window. At the mod menu item for this mod you will add and remove buddys to and from a combolist controle that is saved to an ini file upon change. Here you will set you preferences for ignore, visible-to, allow pm's in game, that sort of thing.</p>
+<h4><a name="0.3.0.1"></a>Interested Scripters</h4>
+<p>If you are interested in developing this mod for UT then add your name to the list. Once you start development you should indicate that below (and hopefully include a link to a journal page). Before you start development you should also check this section to see if anyone else has started. </p>
+<ul><li>(name in link form, please specify engine version)</li>
+<li>(name in link form, please specify engine version)</li>
+</ul>
+<h2><a name="0.4"></a>Discussion</h2>
+<p><em class="em2">Ch3z:</em> Just throwing this idea out there. I have looked into some aspects of it, and so far have not coded any of it. The idea here is mold the structure into a plan before beginning to code it. Any and all usefull input is welcome here. I will come back perodically and factor the discussion into the structure section of this page until the plan becomes defined enough to continue. Don't let that stop you from starting the mod if you already have derived a direction to pull it off. The main goal here is that the mod becomes available. </p>
+<p>Discussion other than that below this line has already been refactored into the proposed structure above (as will the discussion below at some point).</p>
+<p>Past discussion offered different methodology, but was not supported by any suggestion of implementation. Discussion is still open here for the purpose of defining the structure of this project.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Description", "#0.1");
+menuItemAdd("Progress", "#0.2");
+menuItemAdd("Structure", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Interested Scripters", "#0.3.0.1");
+menuItemAdd("Discussion", "#0.4");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="mod-ideas.html">Mod Ideas</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Mod_Ideas/Buddy_List">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Mod_Ideas/Buddy_List">View other revisions</a><br>Last edited January 12, 2005 2:14 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Mod_Ideas/Buddy_List">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Mod_Ideas/Buddy_List">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Once I get that upgrade to 36-hour days, I will tackle that. (Mychaeel)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

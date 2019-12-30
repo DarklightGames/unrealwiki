@@ -1,0 +1,342 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: XPawn Priority Bug</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=XPawn_Priority_Bug; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=XPawn Priority Bug">XPawn Priority Bug</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Overview</h2>
+<h3><a name="0.1.1"></a>Goal</h3>
+<p>This page will describe, and will hopefully provide solutions to, the <a href="xpawn.html">xPawn</a> "priority bug" in <a href="unreal-tournament-2003.html">UT2003</a> and <a href="unreal-tournament-2004.html">UT2004</a>.</p>
+<h3><a name="0.1.2"></a>Volume Priority</h3>
+<p>The  <tt>priority</tt>  variable found in <a href="physicsvolume.html">PhysicsVolume</a> determines which one of several overlapping PhysicsVolumes gets to apply its physics properties (Gravity, GroundFriction, ZoneVelocity and so on) on players and other actors in the overlapping area. The higher the value of  <tt>priority</tt>, the higher the Priority.  Every <a href="physicsvolume.html">PhysicsVolume</a> added, however, even if  <tt>priority</tt>  is 0, has a higher priority than the <a href="defaultphysicsvolume.html">DefaultPhysicsVolume</a>.</p>
+<h3><a name="0.1.3"></a>The Bug - In Brief</h3>
+<p>There is a bug in the implementation of the priority scheme in <a href="xpawn.html">xPawn</a> as it pertains to interactions with <a href="physicsvolume.html">PhysicsVolume</a>s. If the player is contained within overlapping volumes and one of the volumes has <tt>bWaterVolume</tt> set to <tt>True</tt>, splashing sounds are likely to be played when a Player walks, dodges, or whatever, regardless of which volume has priority.</p>
+<h2><a name="0.2"></a>Cause</h2>
+<h3><a name="0.2.1"></a>How Volume Priority And Splashing Are Handled</h3>
+<h4><a name="0.2.1.1"></a>PlayerReplicationInfo</h4>
+<p>The following code was extracted from an export of the <a href="playerreplicationinfo.html">PlayerReplicationInfo</a> class, <a href="unreal-tournament-2004.html">UT2004</a> build 3186</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> UpdatePlayerLocation<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Volume V<span class="uscript-operator">,</span> Best<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Pawn P<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Controller C<span class="uscript-operator">;</span>
+
+    C <span class="uscript-operator">=</span> Controller<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> C <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        P <span class="uscript-operator">=</span> C<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> P <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        PlayerVolume <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+        PlayerZone <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PlayerZone <span class="uscript-operator">!=</span> P<span class="uscript-operator">.</span>Region<span class="uscript-operator">.</span>Zone <span class="uscript-operator">)</span>
+        PlayerZone <span class="uscript-operator">=</span> P<span class="uscript-operator">.</span>Region<span class="uscript-operator">.</span>Zone<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">foreach</span> P<span class="uscript-operator">.</span>TouchingActors<span class="uscript-operator">(</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Volume'</span><span class="uscript-operator">,</span> V <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> V<span class="uscript-operator">.</span>LocationName <span class="uscript-operator">==</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span>
+            <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Best <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>V<span class="uscript-operator">.</span>LocationPriority <span class="uscript-operator">&lt;=</span> Best<span class="uscript-operator">.</span>LocationPriority<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> V<span class="uscript-operator">.</span>Encompasses<span class="uscript-operator">(</span>P<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            Best <span class="uscript-operator">=</span> V<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PlayerVolume <span class="uscript-operator">!=</span> Best <span class="uscript-operator">)</span>
+        PlayerVolume <span class="uscript-operator">=</span> Best<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h4><a name="0.2.1.2"></a>xPawn</h4>
+<p>The following code was extracted from an export of the <a href="xpawn.html">xPawn</a> class, <a href="unreal-tournament-2004.html">UT2004</a> build 3186</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> FootStepping<span class="uscript-operator">(</span><span class="uscript-type">int</span> Side<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> SurfaceNum<span class="uscript-operator">,</span> i<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> actor A<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> material FloorMat<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> vector HL<span class="uscript-operator">,</span>HN<span class="uscript-operator">,</span>Start<span class="uscript-operator">,</span>End<span class="uscript-operator">;</span>
+
+    SurfaceNum <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span>Touching<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>PhysicsVolume<span class="uscript-operator">(</span>Touching<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> PhysicsVolume<span class="uscript-operator">(</span>Touching<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>bWaterVolume<span class="uscript-operator">)</span>
+            <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>FluidSurfaceInfo<span class="uscript-operator">(</span>Touching<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">&lt;</span> <span class="uscript-number">0.5</span> <span class="uscript-operator">)</span>
+                PlaySound<span class="uscript-operator">(</span>sound<span class="uscript-name">'PlayerSounds.FootStepWater2'</span><span class="uscript-operator">,</span> SLOT_Interact<span class="uscript-operator">,</span> FootstepVolume <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">else</span>
+                PlaySound<span class="uscript-operator">(</span>sound<span class="uscript-name">'PlayerSounds.FootStepWater1'</span><span class="uscript-operator">,</span> SLOT_Interact<span class="uscript-operator">,</span> FootstepVolume <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bIsCrouched <span class="uscript-operator">||</span> bIsWalking <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Base<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>Base<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'LevelInfo'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Base<span class="uscript-operator">.</span>SurfaceType<span class="uscript-operator">!=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        SurfaceNum <span class="uscript-operator">=</span> Base<span class="uscript-operator">.</span>SurfaceType<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+    <span class="uscript-operator">{</span>
+        Start <span class="uscript-operator">=</span> Location <span class="uscript-operator">-</span> <span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>CollisionHeight<span class="uscript-operator">;</span>
+        End <span class="uscript-operator">=</span> Start <span class="uscript-operator">-</span> <span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">16</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        A <span class="uscript-operator">=</span> Trace<span class="uscript-operator">(</span>hl<span class="uscript-operator">,</span>hn<span class="uscript-operator">,</span>End<span class="uscript-operator">,</span>Start<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span>FloorMat<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FloorMat <span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+            SurfaceNum <span class="uscript-operator">=</span> FloorMat<span class="uscript-operator">.</span>SurfaceType<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    PlaySound<span class="uscript-operator">(</span>SoundFootsteps<span class="uscript-operator">[</span>SurfaceNum<span class="uscript-operator">]</span><span class="uscript-operator">,</span> SLOT_Interact<span class="uscript-operator">,</span> FootstepVolume<span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-number">400</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h4><a name="0.2.1.3"></a>PhysicsVolume</h4>
+<p>The following code was extracted from an export of the <a href="physicsvolume.html">PhysicsVolume</a> class, <a href="unreal-tournament-2004.html">UT2004</a> build 3186</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    BACKUP_Gravity      <span class="uscript-operator">=</span> Gravity<span class="uscript-operator">;</span>
+    BACKUP_bPainCausing <span class="uscript-operator">=</span> bPainCausing<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> VolumeEffect <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> bWaterVolume <span class="uscript-operator">)</span>
+        VolumeEffect <span class="uscript-operator">=</span> <span class="uscript-keyword">new</span><span class="uscript-operator">(</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-keyword">class</span><span class="uscript-name">'EFFECT_WaterVolume'</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">// (...)</span>
+<span class="uscript-comment">//</span>
+
+
+<span class="uscript-keyword">event</span> touch<span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Pawn P<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> bFoundPawn<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Touch<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bNoInventory <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Pickup<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>Owner <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Other<span class="uscript-operator">.</span>LifeSpan <span class="uscript-operator">=</span> <span class="uscript-number">1.5</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bMoveProjectiles <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>ZoneVelocity <span class="uscript-operator">!=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>Physics <span class="uscript-operator">==</span> PHYS_Projectile <span class="uscript-operator">)</span>
+            Other<span class="uscript-operator">.</span>Velocity <span class="uscript-operator">+=</span> ZoneVelocity<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>Base <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> Other<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Emitter'</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>Physics <span class="uscript-operator">==</span> PHYS_None<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            Other<span class="uscript-operator">.</span>SetPhysics<span class="uscript-operator">(</span>PHYS_Projectile<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            Other<span class="uscript-operator">.</span>Velocity <span class="uscript-operator">+=</span> ZoneVelocity<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bPainCausing <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>bDestroyInPainVolume <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            Other<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>bCanBeDamaged <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>Other<span class="uscript-operator">.</span>bStatic <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            CausePainTo<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+                <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PainTimer <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+                PainTimer <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'VolumeTimer'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Pawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                <span class="uscript-keyword">ForEach</span> TouchingActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Pawn'</span><span class="uscript-operator">,</span> P<span class="uscript-operator">)</span>
+                    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>P <span class="uscript-operator">!=</span> Other<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> P<span class="uscript-operator">.</span>bCanBeDamaged <span class="uscript-operator">)</span>
+                    <span class="uscript-operator">{</span>
+                        bFoundPawn <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+                        <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+                    <span class="uscript-operator">}</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bFoundPawn <span class="uscript-operator">)</span>
+                    PainTimer<span class="uscript-operator">.</span>SetTimer<span class="uscript-operator">(</span><span class="uscript-number">1.0</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bWaterVolume <span class="uscript-operator">&amp;&amp;</span> Other<span class="uscript-operator">.</span>CanSplash<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        PlayEntrySplash<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">// (...)</span>
+<span class="uscript-comment">//</span>
+
+
+<span class="uscript-keyword">function</span> PlayEntrySplash<span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> SplashSize<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> actor splash<span class="uscript-operator">;</span>
+
+    splashSize <span class="uscript-operator">=</span> FClamp<span class="uscript-operator">(</span><span class="uscript-number">0.00003</span> <span class="uscript-operator">*</span> Other<span class="uscript-operator">.</span>Mass <span class="uscript-operator">*</span> <span class="uscript-operator">(</span><span class="uscript-number">250</span> <span class="uscript-operator">-</span> <span class="uscript-number">0.5</span> <span class="uscript-operator">*</span> FMax<span class="uscript-operator">(</span><span class="uscript-operator">-</span><span class="uscript-number">600</span><span class="uscript-operator">,</span>Other<span class="uscript-operator">.</span>Velocity<span class="uscript-operator">.</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span> <span class="uscript-number">0.1</span><span class="uscript-operator">,</span> <span class="uscript-number">1.0</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> EntrySound <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        PlaySound<span class="uscript-operator">(</span>EntrySound<span class="uscript-operator">,</span> SLOT_Interact<span class="uscript-operator">,</span> splashSize<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>Instigator <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+            MakeNoise<span class="uscript-operator">(</span>SplashSize<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> EntryActor <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        splash <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span>EntryActor<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> splash <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+            splash<span class="uscript-operator">.</span>SetDrawScale<span class="uscript-operator">(</span>splashSize<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">event</span> untouch<span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bWaterVolume <span class="uscript-operator">&amp;&amp;</span> Other<span class="uscript-operator">.</span>CanSplash<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        PlayExitSplash<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">function</span> PlayExitSplash<span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> SplashSize<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> actor splash<span class="uscript-operator">;</span>
+
+    splashSize <span class="uscript-operator">=</span> FClamp<span class="uscript-operator">(</span><span class="uscript-number">0.003</span> <span class="uscript-operator">*</span> Other<span class="uscript-operator">.</span>Mass<span class="uscript-operator">,</span> <span class="uscript-number">0.1</span><span class="uscript-operator">,</span> <span class="uscript-number">1.0</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> ExitSound <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        PlaySound<span class="uscript-operator">(</span>ExitSound<span class="uscript-operator">,</span> SLOT_Interact<span class="uscript-operator">,</span> splashSize<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> ExitActor <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        splash <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span>ExitActor<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> splash <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+            splash<span class="uscript-operator">.</span>SetDrawScale<span class="uscript-operator">(</span>splashSize<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.2.2"></a>The Problem</h3>
+<p>The most obvious problem is that the FootStepping() function in <a href="xpawn.html">xPawn</a> takes it upon itself to check for touching <a href="physicsvolume.html">PhysicsVolume</a>s, rather than using the <tt>PlayerVolume</tt> var in <a href="playerreplicationinfo.html">PlayerReplicationInfo</a>, in order to determine if a "splash" should be "played".  In doing this, it bypasses the priority check made in the UpdatePlayerLocation() function of <a href="playerreplicationinfo.html">PlayerReplicationInfo</a>, thus eliminating the priority scheme for the "splashing" functionality.</p>
+<h2><a name="0.3"></a>Solutions</h2>
+<h3><a name="0.3.1"></a>Proposal One: Avoid Overlapping Volumes</h3>
+<p><em class="em3">Note:</em> Obviously, this is just a work-around...</p>
+<p>Just like the title says: Avoid overlapping <a href="physicsvolume.html">PhysicsVolume</a>s.</p>
+<p><em class="em2">Pros:</em></p>
+<ul><li>You avoid the issue all together</li>
+</ul>
+<p><em class="em2">Cons:</em></p>
+<ul><li>You potentially sacrifice certain senarios&ndash;"dynamic" volumes attached to movers interacting with one another, for instance.</li>
+</ul>
+<h3><a name="0.3.2"></a>Proposal Two: Modify xPawn</h3>
+<p>One solution may be to add a new check to the simulated function FootStepping() in xPawn (or in your own new pawn class) that compares touching volumes with <tt>bWaterVolume</tt> set to <tt>True</tt> with <tt>PlayerVolume</tt> in <a href="playerreplicationinfo.html">PlayerReplicationInfo</a>.  If they are not one in the same, skip the splashing code.</p>
+<p><em class="em2">Pros:</em></p>
+<ul><li>Will likely solve the problem</li>
+</ul>
+<p><em class="em2">Cons:</em></p>
+<ul><li>By extending xPawn, you now essentially are forced into making a <a href="making-mods.html">mod</a>/<a href="mutator.html">mutator</a> in order to impliment your changes.  Pawn-type is set in  the <a href="player.html">player</a> class (by default, <a href="xplayer.html">xPlayer</a>) which is in turn is set by a <a href="gameinfo.html">GameInfo</a> actor like xDeathMatch.</li>
+</ul>
+<hr class="thin"><p><a href="category-mapping.html">Category Mapping</a></p>
+<p><a href="category-troubleshooting.html">Category Troubleshooting</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Overview", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Goal", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Volume Priority", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>The Bug - In Brief", "#0.1.3");
+menuItemAdd("Cause", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>How Volume Priority And Splashing Are Handled", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>PlayerReplicationInfo", "#0.2.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>xPawn", "#0.2.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>PhysicsVolume", "#0.2.1.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>The Problem", "#0.2.2");
+menuItemAdd("Solutions", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Proposal One: Avoid Overlapping Volumes", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Proposal Two: Modify xPawn", "#0.3.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=XPawn_Priority_Bug">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=XPawn_Priority_Bug">View other revisions</a><br>Last edited April 7, 2004 11:38 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=XPawn_Priority_Bug">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/XPawn_Priority_Bug">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Always snap to grid
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

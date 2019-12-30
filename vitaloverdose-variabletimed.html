@@ -1,0 +1,258 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: VitalOverdose/VariableTimedMover</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=VitalOverdose/VariableTimedMover; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="vitaloverdose.html">VitalOverdose</a>/<a href="http://wiki.beyondunreal.com/wiki?back=VitalOverdose/VariableTimedMover">VariableTimedMover</a></h1>
+	<div class="wiki"><div class="classpath"><img src="shared//gameicons/icon-ut2004.png"> <a href="unreal-tournament-2004.html">UT2004</a> :: <a href="actor.html">Actor</a> &gt;&gt; <a href="mover.html">Mover</a> &gt;&gt;VTM(Package: custom)<br></div>
+<pre class="paraverbatim"> </pre><p>by <a href="vitaloverdose.html">VitalOverdose</a></p>
+<p>Part of  <a href="vitaloverdose-vitals-pro-ma.html">Vital'sPMT</a></p>
+<h3><a name="0.0.1"></a>Overview</h3>
+<p>I was making a level one time where i needed to make a sort of cannon. Naturally i decided to use a <a href="mover.html">Mover</a> for the job but i couldn't get the 'Recoil' Effect looking right just by moving the cannon backwards and forwards at only one speed. What i really needed was something that first moved fast and then slowly reset to its original position.So i made the VariableTimedMover or 'Recoiler' By sub classing mover. This is not to be confused with the <a href="variabletimedmover.html">VariableTimedMover</a> written at a later date by SuperApe using a different method.</p>
+<p>Note:This custom class is not designed to work in any of the looping states already present in the mover class.</p>
+<h3><a name="0.0.2"></a>The Main Mover</h3>
+<p>The calculations for the new movetimes are done in PostBeginPlay<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=PostBeginPlay&referrerid=VitalOverdose/VariableTimedMover">?</a> and then assigned to global variables.This way the values don't have to be recalculated each time they need to be used.</p>
+<p>I've chosen to alter the value used in the actual move rather than replace the the original movetime variable with one that the mapper can set. This makes cleaner code thats easy to spot/update at a later date.</p>
+<p>The .Super <a href="function-syntax.html">function</a> effectively copies any code from the parent of this function and put it in on the next line... so you don't have togo to all the bother of writting it in your self. This also results in a very slimline script that's easy to understand/update <img alt=";)" src="emoticons/wink.gif" align="middle"></p>
+<p>Note:If you subclass mover directly in Unrealed youll notice 'Placeable' after the class name in the code. This is apparently wrong as movers shouldnt have Placeable for some reason.</p>
+<pre class="uscript"><span class="uscript-comment">//------------- VTM  VariableTimedMover V1 -----------</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">// By Fataloverdose</span>
+
+<span class="uscript-keyword">Class</span> VTM <span class="uscript-keyword">extends</span> Mover
+
+<span class="uscript-keyword">Placeable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span>     Openspeed<span class="uscript-operator">;</span>      <span class="uscript-comment">// Open speed muliplyer</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span>     CloseSpeed<span class="uscript-operator">;</span>     <span class="uscript-comment">// Close speed muliplyer</span>
+
+<span class="uscript-keyword">Function</span> Postbeginplay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ Openspeed <span class="uscript-operator">*=</span>Movetime<span class="uscript-operator">;</span>          <span class="uscript-comment">// Calculate and assign new move time in PostBeginPlay.</span>
+ CloseSpeed<span class="uscript-operator">*=</span>Movetime<span class="uscript-operator">;</span>          <span class="uscript-comment">// This way the calculation is only done once.</span>
+ <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>Postbeginplay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> DoOpen<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>                                    
+ movetime<span class="uscript-operator">=</span>Openspeed<span class="uscript-operator">;</span>                                 
+ <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>DoOpen<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> DoClose<span class="uscript-operator">(</span><span class="uscript-operator">)</span>            <span class="uscript-comment">// Close Mover</span>
+<span class="uscript-operator">{</span>                                                   
+ movetime<span class="uscript-operator">=</span>CloseSpeed<span class="uscript-operator">;</span>         <span class="uscript-comment">// Set MoveTime To new Close Movetime</span>
+ <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>DoClose<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+ Openspeed<span class="uscript-operator">=</span><span class="uscript-number">0.5000000</span>
+ CloseSpeed<span class="uscript-operator">=</span><span class="uscript-number">2.000000</span>
+ bBlockKarma<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-operator">}</span></pre><p>After that i decided to add some FX</p>
+<pre class="uscript"><span class="uscript-comment">//------------- VTM  VariableTimedMover -----------</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">// By VitalOverdose</span>
+
+<span class="uscript-keyword">Class</span> VTM <span class="uscript-keyword">extends</span> Mover
+<span class="uscript-keyword">Placeable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">Array</span> <span class="uscript-operator">&lt;</span> <span class="uscript-keyword">Class</span><span class="uscript-operator">&lt;</span> Emitter <span class="uscript-operator">&gt;</span> <span class="uscript-operator">&gt;</span>  TheFX<span class="uscript-operator">;</span>          <span class="uscript-comment">// Dynamic array</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">Float</span>                       Openspeed<span class="uscript-operator">;</span>      <span class="uscript-comment">// Open speed muliplyer</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">Float</span>                       CloseSpeed<span class="uscript-operator">;</span>     <span class="uscript-comment">// Close speed muliplyer</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span>                        FX_Attatch<span class="uscript-operator">;</span>     <span class="uscript-comment">// Hard attach the fx to the mover</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">Bool</span>                        FX_bOnOpened<span class="uscript-operator">;</span>   <span class="uscript-comment">// FX spawn timeframe</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">Bool</span>                        FX_bOnClosed<span class="uscript-operator">;</span>   <span class="uscript-comment">// FX spawn timeframe</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">Bool</span>                        FX_bOnClosing<span class="uscript-operator">;</span>  <span class="uscript-comment">// FX spawn timeframe</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">Bool</span>                        FX_bOnOpening<span class="uscript-operator">;</span>  <span class="uscript-comment">// FX spawn timeframe</span>
+
+<span class="uscript-keyword">Function</span> Postbeginplay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ Openspeed <span class="uscript-operator">*=</span>Movetime<span class="uscript-operator">;</span>          <span class="uscript-comment">// Calculate and assign new move time in PostBeginPlay.</span>
+ CloseSpeed<span class="uscript-operator">*=</span>Movetime<span class="uscript-operator">;</span>          <span class="uscript-comment">// This way the calculation is only done once.</span>
+ <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>Postbeginplay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Spawnfx<span class="uscript-operator">(</span><span class="uscript-operator">)</span>                                  <span class="uscript-comment">// function SpawnFX</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> Emitter Effect<span class="uscript-operator">;</span>                               <span class="uscript-comment">// Define local variable of type Emitter</span>
+ <span class="uscript-keyword">local</span> <span class="uscript-type">int</span>             MaxArraypos<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">local</span> <span class="uscript-type">int</span>             Pickedno<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">local</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span> emitter<span class="uscript-operator">&gt;</span> pickedEmitterClass<span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> TheFX<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>                     <span class="uscript-comment">// Check to see if mapper wants any FX Spawned</span>
+    <span class="uscript-operator">}</span>
+
+ MaxArraypos        <span class="uscript-operator">=</span> TheFX<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">;</span>
+ Pickedno           <span class="uscript-operator">=</span> Rand<span class="uscript-operator">(</span>MaxArraypos<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ pickedEmitterClass <span class="uscript-operator">=</span> TheFX<span class="uscript-operator">[</span>Pickedno<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+ NetUpdateTime      <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">-</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>                <span class="uscript-comment">// Quick Update</span>
+ Effect             <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span>pickedEmitterClass<span class="uscript-operator">,</span><span class="uscript-keyword">self</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span>Location<span class="uscript-operator">,</span>Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>    <span class="uscript-comment">// SpawnFX</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> FX_Attatch <span class="uscript-operator">==</span> <span class="uscript-keyword">True</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     Effect<span class="uscript-operator">.</span>SetBase<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                  <span class="uscript-comment">// HardAttachFX</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> DoOpen<span class="uscript-operator">(</span><span class="uscript-operator">)</span>                                     <span class="uscript-comment">// Open Mover</span>
+<span class="uscript-operator">{</span>
+ movetime<span class="uscript-operator">=</span>Openspeed<span class="uscript-operator">;</span>                                   <span class="uscript-comment">// Set Movtime to new OpenMovetime</span>
+ <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> FX_bOnOpening<span class="uscript-operator">==</span><span class="uscript-keyword">True</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     Spawnfx<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>     <span class="uscript-comment">// Call function Spawnfx</span>
+    <span class="uscript-operator">}</span>
+ <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>DoOpen<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Function</span> FinishedOpening<span class="uscript-operator">(</span><span class="uscript-operator">)</span>                            <span class="uscript-comment">// FinishedOpening</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> FX_bOnOpened<span class="uscript-operator">==</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     Spawnfx<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                      <span class="uscript-comment">// Call function Spawnfx</span>
+    <span class="uscript-operator">}</span>
+ <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>FinishedOpening<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Function</span> DoClose<span class="uscript-operator">(</span><span class="uscript-operator">)</span>                                    <span class="uscript-comment">// Close Mover</span>
+<span class="uscript-operator">{</span>
+ movetime<span class="uscript-operator">=</span>CloseSpeed<span class="uscript-operator">;</span>                                  <span class="uscript-comment">// Set MoveTime To new Close Movetime</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> FX_bOnClosing<span class="uscript-operator">==</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     Spawnfx<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                       <span class="uscript-comment">// Call function Spawnfx</span>
+    <span class="uscript-operator">}</span>
+ <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>DoClose<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Function</span> FinishedClosing<span class="uscript-operator">(</span><span class="uscript-operator">)</span>                            <span class="uscript-comment">// Finished Closing</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> FX_bOnClosed<span class="uscript-operator">==</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     Spawnfx<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                      <span class="uscript-comment">// Call function Spawnfx</span>
+    <span class="uscript-operator">}</span>
+ <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>FinishedClosing<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+Openspeed<span class="uscript-operator">=</span><span class="uscript-number">0.5000000</span>
+CloseSpeed<span class="uscript-operator">=</span><span class="uscript-number">2.000000</span>
+bBlockKarma<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-operator">}</span></pre><p>The array used for the FX is a <a href="dynamic-array.html">Dynamic Array</a>. The idea is that the mapper can choose as many <a href="emitter.html">emitter</a> as hes like and the Game Engine will pick one at random at spawn time. There are 4 spawn times which happen at the same time as the Event triggers in the mover properties.Open,Opening,close,closing and there's options are controlled by the use of Boolean variables.</p>
+<pre class="paraverbatim"> </pre><p>A dynamic array has no elements(blank spaces to hold info) defined at build time unlike a static array which mean the mapper can enter as many emitter fx as he wants and the editor creates a new element and add it onto the end  of the last value stored in the array. If there are no elements used in the array anything added in go in at position [0].</p>
+<p>To get our random number for our random FX we ask the game engine to pick a number between 0 and the the amount of elements used in the array. got get the elements used or the 'length' of the array we use;-</p>
+<pre class="uscript">ArrayName<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span>    <span class="uscript-comment">// Returns the number of elements in the array.</span></pre><p>So to the the GameEngine to return a random Int number we use..</p>
+<pre class="uscript">Rand<span class="uscript-operator">(</span>MaxIntNumber<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//Rand (int Max) [static]: Returns a random number ranging from 0 to Max-1.</span></pre><p>So rather than have to separate commands and to save using a variable we can combine two to come up with;-</p>
+<pre class="uscript">Rand<span class="uscript-operator">(</span>ArrayName<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">//will return a single int value. Max Possible Value = the length of ArrayName.</span></pre><p>Here is a link to a .uc file of this script;-</p>
+<p><a href="http://www.fataloverdose.copperstream.co.uk/fatal/demoscripts/vpmappingtools/classes/VTM.uc">http://www.fataloverdose.copperstream.co.uk/fatal/demoscripts/vpmappingtools/classes/VTM.uc</a></p>
+<h2><a name="0.1"></a>Related Topics</h2>
+<ul><li><a href="vitaloverdose-destructiblem.html">VitalOverdose/DestructibleMover</a></li>
+<li><a href="vitaloverdose-touringmover.html">VitalOverdose/TouringMover</a></li>
+</ul>
+<h2><a name="0.2"></a>Discussion</h2>
+<hr class="thin"><p><a href="category-custom-class.html">Category Custom Class</a></p>
+<p><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Overview", "#0.0.1");
+menuItemAdd("The Main Mover", "#0.0.2");
+menuItemAdd("Related Topics", "#0.1");
+menuItemAdd("Discussion", "#0.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="vitaloverdose.html">VitalOverdose</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=VitalOverdose/VariableTimedMover">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=VitalOverdose/VariableTimedMover">View other revisions</a><br>Last edited June 15, 2006 14:40 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=VitalOverdose/VariableTimedMover">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/VitalOverdose/VariableTimedMover">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I'm a doctor, not a mechanic
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

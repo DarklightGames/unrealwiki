@@ -1,0 +1,153 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Bilinear Filtering</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Bilinear_Filtering; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Bilinear Filtering">Bilinear Filtering</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>What is "filtering" anyway?</h2>
+<p>When an image is transformed (scaled, rotated, etc.) you often face the problem that there is simply not enough data to assign values to all pixels.  If an image's height and width are doubled, you are increasing the number of pixels by a factor of four.  You can assign data to a quarter of those pixels 100% reliably, but you need to guess, or <em class="em2">interpolate</em> values for all the pixels in between.  The simplest way is just to use the value of the nearest known pixel.  This is known as <em class="em1">point</em> or <em class="em1">nearest neighbour</em> interpolation, and can result in a blocky, unappealing image to look at and - in the case of a size reduction - can even cause large, noticable gaps in lines.</p>
+<p>Bilinear interpolation is a way of guessing pixel values in order to create a smoother image.</p>
+<table class="paratable" border=0 cellspacing=0 cellpadding=0><tr valign=top><td></td>
+<td><div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[texture_filter_example_small]" src="images/texture-filter-example-small.png"><p>No filter</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</td>
+<td><div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[texture_filter_example_point]" src="images/texture-filter-example-point.png"><p>3x Scale Point filter</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</td>
+<td><div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[texture_filter_example_bilinear]" src="images/texture-filter-example-bilin.png"><p>3x Scale Bilinear filter</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</td>
+</tr>
+</table>
+<h2><a name="0.2"></a>So what uses bilinear filtering?</h2>
+<p>In games, bilinear filtering is primarily used to apply a texture to a surface.  As you look around the world, the 2D shape of the surface is altered (vertices further away from the viewpoint appear closer together), and the texture must be transformed to fit the new shape.  If you've played older shooters (i.e. Doom) you can see how aliased and pixelated the texture looks when using point filtering for this process.</p>
+<p>Bilinear filtering will make these textures look smoother and more convincing.  However, on a surface that extends into the distance, the texture can get less and less clear as it gets further from the viewpoint.  This is where the mipmapping technique comes in to play - by creating several smaller, clear versions of the same texture, you can apply the larger versions close to the viewpoint and the smaller versions further away to result in an overall sharper texture application.</p>
+<p>However even this has its drawbacks:  Now that we're applying multiple textures to one surface and filtering them separately, there is often noticable lines where there is a change in mip level.  These lines look VERY unrealistic when you move, as they maintain a constant distance from the viewpoint (thus you have lines which appear to move as you move).  This is where <a href="trilinear-filtering.html">Trilinear Filtering</a> comes into play, by adding a third linear filter between the mipmap levels, these lines are eliminated.</p>
+<p>There is another type of filtering, called [Anisotropic Filtering]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Anisotropic_Filtering&referrerid=Bilinear_Filtering">?</a>, which works WITH bilinear/trilinear filtering to make far away textures appear *very* clear.</p>
+<h2><a name="0.3"></a>The math behind bilinear interpolation</h2>
+<p>The general idea when interpolating bilinearly is that the colour of an unknown pixel should be spaced proportionally between the colour values of the pixels around it. Therefore if an unknown pixel is halfway between two known pixels, its colour value should be halfway between their values.  If the unknown pixel is closer to one of the known pixels, it should be closer to that pixel's colour.</p>
+<p>More specifically, if the known pixels have values V1 and V2, and the distances from the unknown pixels are D1 and D2, the unknown pixel should have the value:</p>
+<pre class="uscript">V <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>V1 <span class="uscript-operator">*</span> D2 <span class="uscript-operator">+</span> V2 <span class="uscript-operator">*</span> D1<span class="uscript-operator">)</span> <span class="uscript-operator">/</span> <span class="uscript-operator">(</span>D1 <span class="uscript-operator">+</span> D2<span class="uscript-operator">)</span></pre><p>This equation will work for interpolating along a line, and is called <em class="em1">linear interpolation</em>  However, it is a bit more complicated for images, as they are comprised of horizontal <em class="em2">and</em> vertical lines.  We must use a combination of 2 linear filters - horizontal and vertical - to create the desired effect.  This results in a <em class="em1">bilinear interpolation</em>.</p>
+<p>When interpolating bilinearly, four reference pixels are required.  The pixel we are trying to determine the value of will lie somewhere in the square defined by those reference pixels.  Say we are trying to find the value of pixel at (X0, Y0), with our 4 reference pixels being at (x1, y1), (x2, y1), (x1, y2), (x2, y2).  If those pixels have values of V11, V12, V21, and V22, we will start by interpolating horizontally between the 2 horizontal pairs of pixels.</p>
+<pre class="uscript">V1 <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>V11 <span class="uscript-operator">*</span> dx2 <span class="uscript-operator">+</span> V21 <span class="uscript-operator">*</span> dx1<span class="uscript-operator">)</span> <span class="uscript-operator">/</span> <span class="uscript-operator">(</span>dx1 <span class="uscript-operator">+</span> dx2<span class="uscript-operator">)</span>
+V2 <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>V12 <span class="uscript-operator">*</span> dx2 <span class="uscript-operator">+</span> V22 <span class="uscript-operator">*</span> dx1<span class="uscript-operator">)</span> <span class="uscript-operator">/</span> <span class="uscript-operator">(</span>dx1 <span class="uscript-operator">+</span> dx2<span class="uscript-operator">)</span></pre><p>We will then interpolate these new values vertically to get our known value.</p>
+<pre class="uscript">V <span class="uscript-operator">=</span> <span class="uscript-operator">[</span><span class="uscript-operator">(</span>V11 <span class="uscript-operator">*</span> dx2 <span class="uscript-operator">+</span> V21 <span class="uscript-operator">*</span> dx1<span class="uscript-operator">)</span> <span class="uscript-operator">/</span> <span class="uscript-operator">(</span>dx1 <span class="uscript-operator">+</span> dx2<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> dy2 <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>V12 <span class="uscript-operator">*</span> dx2 <span class="uscript-operator">+</span> V22 <span class="uscript-operator">*</span> dx1<span class="uscript-operator">)</span> <span class="uscript-operator">/</span> <span class="uscript-operator">(</span>dx1 <span class="uscript-operator">+</span> dx2<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> dy1<span class="uscript-operator">)</span><span class="uscript-operator">]</span> <span class="uscript-operator">/</span> <span class="uscript-operator">(</span>dy1 <span class="uscript-operator">+</span> dy2<span class="uscript-operator">)</span>
+
+  <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>V11 <span class="uscript-operator">*</span> dx2 <span class="uscript-operator">*</span> dy2 <span class="uscript-operator">+</span> V21 <span class="uscript-operator">*</span> dx1 <span class="uscript-operator">*</span> dy2 <span class="uscript-operator">+</span> V12 <span class="uscript-operator">*</span> dx2 <span class="uscript-operator">*</span> dy1 <span class="uscript-operator">+</span> V22 <span class="uscript-operator">*</span> dx1 <span class="uscript-operator">*</span> dy1<span class="uscript-operator">)</span> <span class="uscript-operator">/</span> <span class="uscript-operator">(</span>dx1 <span class="uscript-operator">+</span> dx2<span class="uscript-operator">)</span> <span class="uscript-operator">/</span> <span class="uscript-operator">(</span>dy1 <span class="uscript-operator">+</span> dy2<span class="uscript-operator">)</span></pre><p>Now since all our reference pixels are adjacent to each other, dx1 + dx2 = 1, and dy1 + dy2 = 1.  Substitute:</p>
+<pre class="uscript">V <span class="uscript-operator">=</span> V11 <span class="uscript-operator">*</span> dx2 <span class="uscript-operator">*</span> dy2 <span class="uscript-operator">+</span> V21 <span class="uscript-operator">*</span> dx1 <span class="uscript-operator">*</span> dy2 <span class="uscript-operator">+</span> V12 <span class="uscript-operator">*</span> dx2 <span class="uscript-operator">*</span> dy1 <span class="uscript-operator">+</span> V22 <span class="uscript-operator">*</span> dx1 <span class="uscript-operator">*</span> dy1</pre><hr class="thin"><p><em class="em2">Draconx:</em> I'm not very good at explaining myself when it comes to equations.  I also don't think I formatted this particularly well.  Perhaps someone could clean this up a bit? <img alt=":P" src="emoticons/tongue.gif" align="middle"></p>
+<p><em class="em2">Foxpaw:</em> Err, isn't the title of this page extremely misleading? Bilinear filtering is one method by which different mipmaps are interpolated between when a frame is rendered, not the method by which the mipmaps are generated.</p>
+<p>Bilinear interpolation would be a much more accurate name for this page.</p>
+<p><em class="em2">Draconx:</em> I added a thing about bilinear filtering's application in games.  A bilinear filter is simply a transformation that uses bilinear interpolation, but it is not technically a requirement for mipmapping, nor is mipmapping a requirement for bilinear filtering of textures onto a surface.  And interpolating BETWEEN the mipmaps is a function of <a href="trilinear-filtering.html">Trilinear Filtering</a> - which mipmaps are required for.  Trilinear filtering is simply bilinearly filtered mipmaps with linear interpolation between them.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("What is \"filtering\" anyway?", "#0.1");
+menuItemAdd("So what uses bilinear filtering?", "#0.2");
+menuItemAdd("The math behind bilinear interpolation", "#0.3");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Bilinear_Filtering">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Bilinear_Filtering">View other revisions</a><br>Last edited March 3, 2005 18:18 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Bilinear_Filtering">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Bilinear_Filtering">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>The three virtues of a programmer: Laziness, Impatience, and Hubris. (Larry Wall)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

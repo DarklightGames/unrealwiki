@@ -1,0 +1,167 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: CheckReplacement</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=CheckReplacement; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=CheckReplacement">CheckReplacement</a></h1>
+	<div class="wiki"><p><a href="unreal-tournament-2004.html">UT2004</a>, Version Only.</p>
+<p>Ok so you've got your new weapon and you want to use it in a game.  To do this, we create a new weapon <a href="mutator.html">Mutator</a> and override the CheckReplacement() function.  This function is called for every Actor entering the game (whether being loaded with the map, or spawned on-the-fly), and you can use it to make substitutions and modifications as they are initialized.</p>
+<h2><a name="0.1"></a>First: Make a subclass of Mutator </h2>
+<p>This will allow you to do all the changes before the level starts, and will automatically iterate though all the level actors, allowing to you to look for any instances of the class you wish to replace. </p>
+<pre class="uscript"><span class="uscript-keyword">class</span> NewWeaponMutator <span class="uscript-keyword">extends</span> Mutator<span class="uscript-operator">;</span></pre><h2><a name="0.2"></a>Second: Swap weapon bases/pickups/etc in CheckReplacement() </h2>
+<p>We use CheckReplacement(), a probing function, to typecast <em class="em1">Other</em> to different subclasses to qualify them and to grab extra info and make substitutions, as needed:</p>
+<p><em class="em1">Note:  The local variables (</em>i<em class="em1"> and </em>L<em class="em1">) are only necessary if your mod is for UT2004 and you want it to work on Onslaught maps.</em></p>
+<pre class="uscript"><span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CheckReplacement<span class="uscript-operator">(</span> Actor Other<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> <span class="uscript-type">byte</span> bSuperRelevant <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+   <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>                <span class="uscript-comment">// for UT2004 Onslaught weapon lockers</span>
+   <span class="uscript-keyword">local</span> WeaponLocker L<span class="uscript-operator">;</span>       <span class="uscript-comment">// for UT2004 Onslaught weapon lockers</span>
+
+   bSuperRelevant <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span></pre><p>Inside the function the first check is to see if <em class="em1">Other</em> is the right class (xWeaponBase).  This is to stop the second check going wrong:</p>
+<pre class="uscript">   <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>XWeaponBase<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> </pre><p>Now that we know that <em class="em1">Other</em> is a xWeaponBase and its WeaponType is the class we want to replace, we override it with our new WeaponType: </p>
+<pre class="uscript">   <span class="uscript-operator">{</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>XWeaponBase<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>WeaponType <span class="uscript-operator">==</span> <span class="uscript-keyword">Class</span><span class="uscript-name">'WeaponClassWantToReplace'</span><span class="uscript-operator">)</span> 
+         XWeaponbase<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>WeaponType <span class="uscript-operator">=</span> <span class="uscript-keyword">Class</span><span class="uscript-name">'NewWeaponClass'</span><span class="uscript-operator">;</span> 
+      <span class="uscript-keyword">else</span> 
+         <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span> 
+   <span class="uscript-operator">}</span> </pre><p>As we've only modified weapon bases so far, you need to do the same thing again, checking for the weapon pickup class to grab any stray weapons of that class lying about in the level for whatever reason (e.g. if they are placed on the map itself, or when a player is killed and drops it). Remember the mutator has to work on other people's levels too, so it should be able to cope with any setup they come up with. So we add:</p>
+<p><em class="em1">Note: We use "~=" for a case-insensitive string comparison, but rememeber that class names are fully-qualified.  You "PickupClassWantToReplace" would be something like "XWeapons.Minigun".</em></p>
+<pre class="uscript">   <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>WeaponPickup<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> 
+   <span class="uscript-operator">{</span> 
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-type">String</span><span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span><span class="uscript-keyword">Class</span><span class="uscript-operator">)</span> <span class="uscript-operator">~=</span> <span class="uscript-string">"PickupClassWantToReplace"</span><span class="uscript-operator">)</span> 
+         ReplaceWith<span class="uscript-operator">(</span>Other<span class="uscript-operator">,</span> <span class="uscript-string">"NewPickupClass"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      <span class="uscript-keyword">else</span> 
+         <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span> 
+   <span class="uscript-operator">}</span></pre><p>This next section is only for UT2004, and adds support for Onslaught mode's WeaponLockers.  Basically, it searches through each WeaponLocker's inventory (array), weapon by weapon, replacing the old weapon class with the new:</p>
+<pre class="uscript">   <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> WeaponLocker<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+   <span class="uscript-operator">{</span>
+      L <span class="uscript-operator">=</span> WeaponLocker<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> L<span class="uscript-operator">.</span>Weapons<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+         <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span> L<span class="uscript-operator">.</span>Weapons<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>WeaponClass <span class="uscript-operator">)</span> <span class="uscript-operator">~=</span> <span class="uscript-string">"WeaponClassWantToReplace"</span> <span class="uscript-operator">)</span>
+            L<span class="uscript-operator">.</span>Weapons<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>WeaponClass <span class="uscript-operator">=</span> <span class="uscript-keyword">Class</span><span class="uscript-name">'NewWeaponClass'</span><span class="uscript-operator">;</span>
+
+      <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+   <span class="uscript-operator">}</span></pre><p>And now, finish off CheckReplacement() with the following:</p>
+<pre class="uscript">   <span class="uscript-keyword">else</span> 
+      <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span> 
+
+   <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.3"></a>Third: Add default properties to describe the new Mutator</h2>
+<p>So that the new weapon mutator has a name and description: </p>
+<pre class="uscript"><span class="uscript-keyword">defaultproperties</span> 
+<span class="uscript-operator">{</span> 
+   FriendlyName<span class="uscript-operator">=</span><span class="uscript-string">"name in mutator list"</span> 
+   Description<span class="uscript-operator">=</span><span class="uscript-string">"new weapon mutator description"</span> 
+<span class="uscript-operator">}</span></pre><p>-VitalOverdose.</p>
+<h2><a name="0.4"></a>Discussion</h2>
+<p><em class="em2">Geist:</em> Yeah, that's better.  I took the liberty of adding the extra <em class="em2">return false;</em> at the end, and a section that supports WeaponLockers from UT2004 Onslaught mode.  Personally, I would have placed <em class="em2">return false;</em> lines where needed, then finish up the function with a <em class="em2">return true;</em>, as that would make the logic make more sense... but that doesn't seem to be the style here (or at Epic, as seen in the other weapon mutator scripts).</p>
+<p>Btw, I also realize that comments like "if you're making a UT2004 mod" might be redundant, since the top of the page <em class="em1">seems</em> to indicate this page is already UT2004-only.  So if this page is <em class="em1">meant</em> to be UT2004-specific through and through, please remove the extraneous UT2004 comments in the code/text and be more explicit at the top of the page. (how many times can I say "UT2004" in one paragraph?) <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p>_<em class="em2">FatalOverdose</em> - thanks , will do that.</p>
+<p><em class="em2">Sweavo:</em> Shouldn't there be a call to NextMutator.CheckReplacement rather than a simple return...?</p>
+<p><em class="em2">Wormbo:</em> CheckReplacement should <em class="em1">never</em> call NextMutator.CheckReplacement(). The function is called by IsRelevant, which also handles the <a href="linked-list.html">linked list</a> stuff.</p>
+<p><em class="em2">AgentBionicman</em> I don't think projectiles are sent through this function anymore. Anyone else notice this?</p>
+<p><em class="em2">Bonehed316:</em> Projectiles arent sent through this function because they have bGameRelevant=True.  This function only works on those actors which are !bGameRelevant.  Maybe there should be a small section which explains how/why this function gets called, and where from?</p>
+<p><em class="em2">Sweavo:</em> seconded.  This page is hit number one for a search for CheckReplacement, but does not tell us what the <em class="em2">out</em> parameter bSuperRelevant does, nor what the return value means.</p>
+<p><em class="em2">Neuroflare:</em> None of the CheckReplacement tutorials I have seen here elaborate on changing out ammo, or am I mistaken?</p>
+<p><em class="em2">MythOpus:</em> I don't think you can change firemodes/ammo because they're set to only be able to be access by the class the references them.. in this case Weapon.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("First: Make a subclass of Mutator ", "#0.1");
+menuItemAdd("Second: Swap weapon bases/pickups/etc in CheckReplacement() ", "#0.2");
+menuItemAdd("Third: Add default properties to describe the new Mutator", "#0.3");
+menuItemAdd("Discussion", "#0.4");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=CheckReplacement">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=CheckReplacement">View other revisions</a><br>Last edited January 19, 2006 17:24 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=CheckReplacement">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/CheckReplacement">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>The three virtues of a programmer: Laziness, Impatience, and Hubris. (Larry Wall)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

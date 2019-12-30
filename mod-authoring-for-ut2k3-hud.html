@@ -1,0 +1,256 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Mod Authoring For UT2K3/HUD</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Mod_Authoring_For_UT2K3/HUD; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="mod-authoring-for-ut2k3.html">Mod Authoring For UT2K3</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Mod+Authoring+For+UT2K3/HUD">HUD</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>What is a HUD?</h2>
+<p>The HUD is the graphical representation of information that the user sees superimposed over the action during play.  It shows their health, weapons, armor, etc; anything relevant to the game at that time.  If you are implementing a whole new game type you may wish to build your own HUD.  However, if you wanted to add an element to the existing HUD, e.g. <em class="em1">time remaining</em> in the match or perhaps a <em class="em1">radar</em> like in the <em class="em1">Invasion</em> Gametype, you probably just want to create an <a href="interaction.html">Interaction</a>.</p>
+<h2><a name="0.2"></a>Implementing your own HUD</h2>
+<p>Implementing your own HUD is not that hard.  Let's start by simply copying an existing HUD and then making small changes to the code.  You can find the <em class="em2">HUD</em> class in the following class structure.</p>
+<pre class="paraverbatim"> <a href="object.html">Object</a>
+  +-<a href="actor.html">Actor</a>
+      +-<a href="hud.html">HUD</a>  
+          +-CinematicHud<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=CinematicHud&referrerid=Mod_Authoring_For_UT2K3/HUD">?</a>
+          +-<a href="hudbase.html">HudBase</a>
+              +-HudBDeathMatch<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=HudBDeathMatch&referrerid=Mod_Authoring_For_UT2K3/HUD">?</a>
+                  +-HudBTeamDeathMatch<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=HudBTeamDeathMatch&referrerid=Mod_Authoring_For_UT2K3/HUD">?</a>
+                  +-HudBBombingRun<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=HudBBombingRun&referrerid=Mod_Authoring_For_UT2K3/HUD">?</a>
+                  +-HudBCaptureTheFlag<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=HudBCaptureTheFlag&referrerid=Mod_Authoring_For_UT2K3/HUD">?</a>
+                  +-HudBDoubleDomination<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=HudBDoubleDomination&referrerid=Mod_Authoring_For_UT2K3/HUD">?</a></pre><p>There are several HUD subclasses to choose from.  I looked at the one that matched my game type the most.  <em class="em1">HudBDeathMatch</em> is the class that I wanted to copy so I subclassed <em class="em1">HudBase</em>, saved the file as <em class="em1">HudBMyNewHUDName</em> in my package and then copied the entire code from <em class="em1">HudBDeathMatch</em>.</p>
+<p>Then I went into the <em class="em2">GameType</em> that I created and added this line in my <a href="default-properties.html">default properties</a>:</p>
+<pre class="uscript">HUDType<span class="uscript-operator">=</span><span class="uscript-string">"MyPackage.HUDMyNewHUDName"</span></pre><ul><li><em class="em1">MyPackage</em> is simply the <a href="package.html">package</a> that you create and are saving your work.</li>
+<li><em class="em1">HUDMyNewHUDName</em> is the actual name of your HUD class, I chose one that was very similar to the existing HUD types.</li>
+</ul>
+<p>Compile the code and start your game and if you handled the copy and paste work correctly then everything should run and appear as normal correctly.  The the hard part is trying to figure out everything inside the HUD and how to edit it.  So lets actually look at the code.</p>
+<h2><a name="0.3"></a>Inside the belly of the beast</h2>
+<p>This code below is taken from the <em class="em2">HUDBase</em> class and talks about the multiple passes the class goes through when drawing the HUD.</p>
+<pre class="uscript"><span class="uscript-comment">// Derived HUDs override UpdateHud to update variables before rendering;</span>
+<span class="uscript-comment">// NO draw code should be in derived DrawHud's; they should instead override</span>
+<span class="uscript-comment">// DrawHudPass[A-D] and call their base class' DrawHudPass[A-D] (This cuts</span>
+<span class="uscript-comment">// down on render state changes).</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> UpdateHud<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> DrawHudPassA <span class="uscript-operator">(</span>Canvas C<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Alpha Pass</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> DrawHudPassB <span class="uscript-operator">(</span>Canvas C<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Additive Pass</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> DrawHudPassC <span class="uscript-operator">(</span>Canvas C<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Alpha Pass</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> DrawHudPassD <span class="uscript-operator">(</span>Canvas C<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Alternate Texture Pass</span></pre><p>Each pass takes care of drawing a different aspect of the HUD.  Now looking specifically at the functions in our HUD we should note what happens in each function as well as some other functions that are being used.</p>
+<dl><dt>DrawHudPassA</dt><dd>seems to take care of most of the graphical features of the HUD.</dd><dt>ShowPointBarTop</dt><dd>and  : ShowPointBarBottom :  draw parts of the graphical HUD in DrawHudPassA.</dd><dt>DrawHudPassC</dt><dd>seems to take care of most of the numbers and strings that the user sees, like his health, adrenaline, crosshairs and other personal information.  </dd><dt>DrawWeaponBar</dt><dd>draws the weapon bar</dd></dl>
+<p>So this HUD class uses two of the four passes and then uses three extra function to draw some of the HUD as well.  But what is being drawn when it draws the HUD, what are the elements of the HUD.  Looking at the element classes at the top of the class I find that there are types of objects being drawn <em class="em1">NumericWidget</em>, which controlls all number values (life,shield,ammo), and <em class="em1">SpriteWidget</em>, which is every other piece (borders,icons,pictures).</p>
+<h3><a name="0.3.1"></a>Tackling the NumericWidget and SpriteWidget </h3>
+<p>In <em class="em2">defaultproperties</em> the graphical look of both elements are set. I'm going to specifically look at <em class="em2">ShieldCount</em> which is the total amount of shield points that a player has in the game.  </p>
+<pre class="uscript">ShieldCount<span class="uscript-operator">=</span><span class="uscript-operator">(</span>RenderStyle<span class="uscript-operator">=</span>STY_Alpha<span class="uscript-operator">,</span>TextureScale<span class="uscript-operator">=</span><span class="uscript-number">0.100000</span><span class="uscript-operator">,</span>DrawPivot<span class="uscript-operator">=</span>DP_LowerLeft<span class="uscript-operator">,</span>PosX<span class="uscript-operator">=</span><span class="uscript-number">0.500000</span><span class="uscript-operator">,</span>PosY<span class="uscript-operator">=</span><span class="uscript-number">0.500000</span><span class="uscript-operator">,</span>OffsetX<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>OffsetY<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Tints<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>B<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>G<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>R<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>A<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span>Tints<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>B<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>G<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>R<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>A<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span></pre><p>Now, lets look specifically at what is being set here in detail and go blow-by-blow at each of these attributes.</p>
+<dl><dt>RenderStyle</dt><dd>RenderStyle is an ERenderStyle enumeration.  It controls the type of <a href="color-blending.html">color blending</a> or its effect on the other units that it lays over in the HUD.</dd><dt>TextureScale</dt><dd>Texture Scale is the scale that is applied to the texture, relative to a screen resolution of 640 x 480 pixels (that means: at that screen resolution a sprite with TextureScale=1.0 will be drawn one-to-one; at other screen resolutions it will be proportionally scaled up or down).</dd><dt>PosX, PosY, OffsetX, OffsetY</dt><dd><div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[ScreenPosition]" src="images/screenposition.gif"></div>
+</td>
+</tr>
+</table>
+</div>
+<p>The values of PosX and PosY are decimal values representing the position on the screen.  This frees the user from having to worry about the position of their HUD items in relation to the screen resolution.  So if you set the PosX=0.5000000 and PosY=0.5000000 then you always get a position in the center of the screen.  </p>
+<p>OffsetX and OffsetY are in actual pixels.  You might be able to get to the point of the map that you want, but then you want to shift it a specific number of pixels and this is where OffsetX and OffsetY would come into play.</p>
+</dd><dt>Drawpivot</dt><dd><p>Drawpivot is a point on the texture or numeric image.</p>
+<pre class="paraverbatim">  DP_UpperLeft
+  DP_UpperMiddle
+  DP_UpperRight
+  DP_LowerLeft
+  DP_LowerMiddle
+  DP_LowerRight
+  DP_MiddleLeft
+  DP_MiddleMiddle
+  DP_MiddleRight</pre><p>The position and offset properties specify a single point on the screen.  Drawpivot specifies what part of the bitmap is to appear at that point.  So if you specified DP_UpperLeft, the bitmap would "hang" down and to the right of the position specified.</p>
+</dd><dt>Tints</dt><dd>This is the color of the mesh/text and can be dependant on the team (in three color intensity format).  Tint[0] is the first team and Tint[1] is the second team.  For armor it isn’t important to have the difference in color.  I would recommend using a graphical color chooser to find the Red-Green-Blue (three-color intensity) you are looking for.</dd></dl>
+<h3><a name="0.3.2"></a>SpriteWidget </h3>
+<p>So here are the properties specific to the sprite widget call.  Up to this point a lot of them are already covered in the <em class="em2">NumericWidget</em>.  </p>
+<dl><dt>WidgetTexture</dt><dd><p>WidgetTexture loads the texture from a texture pack for the SpriteWidget.  You are able to view all the textures that UT2K3 uses through UnrealEd 3.0.  Here is an example of the HUD Textures that are used.</p>
+<pre class="uscript"><span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span>WidgetTexture<span class="uscript-operator">=</span>Texture<span class="uscript-name">'InterfaceContent.HUD.SkinA'</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span></pre><p><center></center></p>
+<p>This texture is not actual size.</p>
+</dd><dt>TextureCoords</dt><dd>Textures usually come with several on the same sheet.  So you often need to specify the rectangle that surrounds the texture that you want.  In this case we just want to grab the shield from that texture pack, and so there is a start point (x,y) and then a length in both directions.</dd></dl>
+<h4><a name="0.3.2.1"></a>TextureScale</h4>
+<p><center></center></p>
+<p>The texture scale is a percentage at which you want the texture to be displayed.  This is useful as the texture picture is usually larger than you want it to appear in your HUD.</p>
+<h4><a name="0.3.2.2"></a>ScaleMode</h4>
+<pre class="paraverbatim">  SM_None
+  SM_Up
+  SM_Down
+  SM_Left
+  SM_Right</pre><p>This is the side that it is scale from.  This is used for the bars that adjust with your health and ammo.  Most of those start from the left side.  But this is if you plan to have your texture start to get chopped off through use. </p>
+<h4><a name="0.3.2.3"></a>Scale</h4>
+<p>This is a float value that represents how much is cut off from the direction specified above.  So for ammo depletion they probably calculate an amount appropriate based on the maximum and how much you are firing off.</p>
+<h3><a name="0.3.3"></a>Drawing with Numeric and Sprite Widget.</h3>
+<p>I noticed there were a two function calls: DrawSpriteWidge and DrawNumericWidget.</p>
+<p>These are native functions that take care of drawing the two widgets we defined above.</p>
+<pre class="uscript">DrawSpriteWidget <span class="uscript-operator">(</span>Canvas C<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> SpriteWidget W<span class="uscript-operator">)</span> <span class="uscript-operator">[</span><span class="uscript-keyword">simulated</span><span class="uscript-operator">,</span> <span class="uscript-keyword">final</span><span class="uscript-operator">]</span>
+<span class="uscript-comment">// Draws the HUD element described by the SpriteWidget W.</span>
+
+DrawNumericWidget <span class="uscript-operator">(</span>Canvas C<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> NumericWidget W<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> DigitSet D<span class="uscript-operator">)</span> <span class="uscript-operator">[</span><span class="uscript-keyword">simulated</span><span class="uscript-operator">,</span> <span class="uscript-keyword">final</span><span class="uscript-operator">]</span>
+<span class="uscript-comment">// Draws a number.</span></pre><h3><a name="0.3.4"></a>Calculating the final size of the widget</h3>
+<p>If your wanting to calculate the final size of the widget, from my observations the formula for doing so seems to be:</p>
+<pre class="uscript">SpriteWidgetWidth <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>SpriteWidget<span class="uscript-operator">.</span>TextureCoords<span class="uscript-operator">.</span>X2 <span class="uscript-operator">-</span> SpriteWidget<span class="uscript-operator">.</span>TextureCoords<span class="uscript-operator">.</span>X1<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> SpriteWidget<span class="uscript-operator">.</span>TextureScale <span class="uscript-operator">*</span> C<span class="uscript-operator">.</span>ClipX<span class="uscript-operator">/</span><span class="uscript-number">640</span> <span class="uscript-operator">*</span> MyHUD<span class="uscript-operator">.</span>HUDScale<span class="uscript-operator">;</span>
+SpriteWidgetHeight <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>SpriteWidget<span class="uscript-operator">.</span>TextureCoords<span class="uscript-operator">.</span>Y2 <span class="uscript-operator">-</span> SpriteWidget<span class="uscript-operator">.</span>TextureCoords<span class="uscript-operator">.</span>Y1<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> SpriteWidget<span class="uscript-operator">.</span>TextureScale <span class="uscript-operator">*</span> C<span class="uscript-operator">.</span>ClipY<span class="uscript-operator">/</span><span class="uscript-number">480</span> <span class="uscript-operator">*</span> MyHUD<span class="uscript-operator">.</span>HUDScale<span class="uscript-operator">;</span></pre><h2><a name="0.4"></a>Adding a Time Display</h2>
+<p>So I wanted the user to be aware of the time in the game. NOTE: I'm not sure if this is the players time in game or the lifetime of the game.  And so, by example I thought I would go through adding a time display.</p>
+<h3><a name="0.4.1"></a>Writing a Function</h3>
+<pre class="uscript"><span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> NumericWidget myTime_seconds<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> NumericWidget myTime_minutes<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> NumericWidget myTime_hours<span class="uscript-operator">;</span></pre><p>I added these variables near the beginning of the class where the other Widgets were being declared.</p>
+<h3><a name="0.4.2"></a>Calculating Game Time</h3>
+<p>I wanted to calculate game time and as I previously discussed I know that some of the information about the game and the players were in it are carried in the <a href="gamereplicationinfo.html">GameReplicationInfo</a> and <a href="playerreplicationinfo.html">PlayerReplicationInfo</a> classes.</p>
+<pre class="paraverbatim"> </pre><p>So I created a function that would calculate game time.</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> CalculateGameTime<span class="uscript-operator">(</span><span class="uscript-operator">)</span>  <span class="uscript-operator">{</span>
+
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> iElapsedTime<span class="uscript-operator">;</span>
+
+    iElapsedTime <span class="uscript-operator">=</span> PlayerOwner<span class="uscript-operator">.</span>GameReplicationInfo<span class="uscript-operator">.</span>ElapsedTime<span class="uscript-operator">;</span>
+
+    myTime_hours<span class="uscript-operator">.</span>Value <span class="uscript-operator">=</span> iElapsedTime <span class="uscript-operator">/</span> <span class="uscript-number">3600</span><span class="uscript-operator">;</span>
+
+    iElapsedTime <span class="uscript-operator">=</span> iElapsedTime <span class="uscript-operator">%</span> <span class="uscript-number">3600</span><span class="uscript-operator">;</span>
+    myTime_minutes<span class="uscript-operator">.</span>Value <span class="uscript-operator">=</span> iElapsedTime <span class="uscript-operator">/</span> <span class="uscript-number">60</span><span class="uscript-operator">;</span>
+
+    iElapsedTime <span class="uscript-operator">=</span> iElapsedTime <span class="uscript-operator">%</span> <span class="uscript-number">60</span><span class="uscript-operator">;</span>
+    myTime_seconds<span class="uscript-operator">.</span>Value <span class="uscript-operator">=</span> iElapsedTime<span class="uscript-operator">;</span>
+
+<span class="uscript-operator">}</span></pre><p>This converts the game time in seconds into hours, minutes, and seconds.  I didn't want the player to have to do the conversion in their head from the seconds.  I imagine I could have done this another way, but these seemed like a good idea at the time.</p>
+<h3><a name="0.4.3"></a>Getting my time to update</h3>
+<p>So I created a way to update the game time but I needed to figure out how to get it displayed.  I again copied form that the other widgets used.  Inside a <em class="em2">DrawHudPassC</em> I added this code (replaced some code with a ... for space reasons). </p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> DrawHudPassC <span class="uscript-operator">(</span>Canvas C<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> PortraitWidth<span class="uscript-operator">,</span>PortraitHeight<span class="uscript-operator">,</span> XL<span class="uscript-operator">,</span> YL<span class="uscript-operator">,</span> Abbrev<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> PortraitString<span class="uscript-operator">;</span>
+    
+    <span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span>
+
+    <span class="uscript-comment">// Screen</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bShowPersonalInfo <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        …
+    
+       <span class="uscript-comment">//time</span>
+       DrawNumericWidget<span class="uscript-operator">(</span> C<span class="uscript-operator">,</span> myTime_hours<span class="uscript-operator">,</span> DigitsBig <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+       DrawNumericWidget<span class="uscript-operator">(</span> C<span class="uscript-operator">,</span> myTime_minutes<span class="uscript-operator">,</span> DigitsBig <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+       DrawNumericWidget<span class="uscript-operator">(</span> C<span class="uscript-operator">,</span> myTime_seconds<span class="uscript-operator">,</span> DigitsBig <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span></pre><p><em class="em1">C</em> is the Canvas that these Widgets are drawn on, the widgets that I'm drawing are what follow, and the digits that I'm going to use are a set called DigitsBig previously loaded in the defaultproperties.</p>
+<h3><a name="0.4.4"></a>Giving my Widgets a look in the defaultproperties</h3>
+<pre class="uscript">myTime_hours<span class="uscript-operator">=</span><span class="uscript-operator">(</span>RenderStyle<span class="uscript-operator">=</span>STY_Alpha<span class="uscript-operator">,</span>TextureScale<span class="uscript-operator">=</span><span class="uscript-number">0.100000</span><span class="uscript-operator">,</span>DrawPivot<span class="uscript-operator">=</span>DP_LowerMiddle<span class="uscript-operator">,</span>PosX<span class="uscript-operator">=</span><span class="uscript-number">0.450000</span><span class="uscript-operator">,</span>PosY<span class="uscript-operator">=</span><span class="uscript-number">0.500000</span><span class="uscript-operator">,</span>OffsetX<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>OffsetY<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Tints<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>B<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>G<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>R<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>A<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span>Tints<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>B<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>G<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>R<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>A<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+myTime_minutes<span class="uscript-operator">=</span><span class="uscript-operator">(</span>RenderStyle<span class="uscript-operator">=</span>STY_Alpha<span class="uscript-operator">,</span>TextureScale<span class="uscript-operator">=</span><span class="uscript-number">0.100000</span><span class="uscript-operator">,</span>DrawPivot<span class="uscript-operator">=</span>DP_LowerMiddle<span class="uscript-operator">,</span>PosX<span class="uscript-operator">=</span><span class="uscript-number">0.470000</span><span class="uscript-operator">,</span>PosY<span class="uscript-operator">=</span><span class="uscript-number">0.500000</span><span class="uscript-operator">,</span>OffsetX<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>OffsetY<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Tints<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>B<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>G<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>R<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>A<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span>Tints<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>B<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>G<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>R<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>A<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+myTime_seconds<span class="uscript-operator">=</span><span class="uscript-operator">(</span>RenderStyle<span class="uscript-operator">=</span>STY_Alpha<span class="uscript-operator">,</span>TextureScale<span class="uscript-operator">=</span><span class="uscript-number">0.100000</span><span class="uscript-operator">,</span>DrawPivot<span class="uscript-operator">=</span>DP_LowerMiddle<span class="uscript-operator">,</span>PosX<span class="uscript-operator">=</span><span class="uscript-number">0.490000</span><span class="uscript-operator">,</span>PosY<span class="uscript-operator">=</span><span class="uscript-number">0.500000</span><span class="uscript-operator">,</span>OffsetX<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>OffsetY<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Tints<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>B<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>G<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>R<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>A<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span>Tints<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>B<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>G<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>R<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>A<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span></pre><p>This places them on the screen somewhere near the center next to the cursor.  The important thing is that they were displayed.  I also need to go back and give them more space and fill empty zeros.</p>
+<h2><a name="0.5"></a>Comments</h2>
+<p><em class="em2">Burtlo</em>: I haven't tried creating/adding/editing anything in the texture packs and need to read up on that so I can write more for this tutorial.  Also some help on formatting would be great.  First time really writing in a Wiki.</p>
+<p><em class="em2">Tarquin:</em> Can I move this to [Working with the HUD]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Working_With_The_HUD&referrerid=Mod_Authoring_For_UT2K3/HUD">?</a> maybe?</p>
+<p><em class="em2">Burtlo:</em>  I got to this page from the bottom of Making Mods.  If you think it would be more useful in a different category [Working with the HUD]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Working_With_The_HUD&referrerid=Mod_Authoring_For_UT2K3/HUD">?</a> then by all means go for it.</p>
+<p><em class="em2">Tarquin:</em> It's not really about "categories", it's just about making page names easier &ndash; subpages are not very easy to deal with or link to. And I would rather things were a part of the whole wiki than being seen as part of a smaller work-in-progress document.</p>
+<p><em class="em2">Nuleo:</em> Ok so I made a hud and it draws numeric widgets fine but for some reason the sprtie widgets aren't showing up, anyone want to do a tutorial on that?</p>
+<hr class="thin"><p><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("What is a HUD?", "#0.1");
+menuItemAdd("Implementing your own HUD", "#0.2");
+menuItemAdd("Inside the belly of the beast", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Tackling the NumericWidget and SpriteWidget ", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>SpriteWidget ", "#0.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>TextureScale", "#0.3.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>ScaleMode", "#0.3.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Scale", "#0.3.2.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Drawing with Numeric and Sprite Widget.", "#0.3.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Calculating the final size of the widget", "#0.3.4");
+menuItemAdd("Adding a Time Display", "#0.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Writing a Function", "#0.4.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Calculating Game Time", "#0.4.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Getting my time to update", "#0.4.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Giving my Widgets a look in the defaultproperties", "#0.4.4");
+menuItemAdd("Comments", "#0.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="mod-authoring-for-ut2k3.html">Mod Authoring For UT2K3</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Mod_Authoring_For_UT2K3/HUD">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Mod_Authoring_For_UT2K3/HUD">View other revisions</a><br>Last edited March 14, 2006 10:24 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Mod_Authoring_For_UT2K3/HUD">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Mod_Authoring_For_UT2K3/HUD">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I search for solutions in this order: Past Code, Unreal Source, Wiki, BUF, groups.yahoo, google, screaming at monitor. (RegularX)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

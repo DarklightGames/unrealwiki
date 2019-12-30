@@ -1,0 +1,153 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: ASCriticalObjectiveVolume</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=ASCriticalObjectiveVolume; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=ASCriticalObjectiveVolume">ASCriticalObjectiveVolume</a></h1>
+	<div class="wiki"><div class="classpath"><img src="shared//gameicons/icon-ut2004.png"> <a href="unreal-tournament-2004.html">UT2004</a> :: <a href="actor.html">Actor</a> &gt;&gt; <a href="brush.html">Brush</a> &gt;&gt; <a href="volume.html">Volume</a> &gt;&gt; ASCriticalObjectiveVolume (Package: UT2k4Assault)<br></div>
+<p>ASCriticalObjectiveVolumes are used in connection with <a href="gameobjective.html">GameObjective</a>s in the UT2004 Assault gametype.  If one or more GameObjectives have a CriticalObjectiveVolumeTag which matches this volume's Events&rarr;Tag.  Then whenever an attacker enters this volume, those objectives will be marked as "critical", and the "critical objective warning" (a siren and flashing HUD icon) will be signalled to the defending team.</p>
+<h2><a name="0.1"></a>Properties</h2>
+<h3><a name="0.1.1"></a>Main</h3>
+<dl><dt><a href="pawn.html">Pawn</a> ConstraintPawnClass</dt><dd>Only pawns matching this pawn class (or its descendants) will trigger the critical objective alarm when entering this volume.</dd></dl>
+<h3><a name="0.1.2"></a>Hidden</h3>
+<dl><dt>Info CheckTimer</dt><dd>Internal timer used to periodically check if the objective is still "critical".</dd></dl>
+<h3><a name="0.1.3"></a>Inherited from <a href="actor.html">Actor</a></h3>
+<dl><dt>Tag</dt><dd>This actor is associated with one or more <a href="gameobjective.html">GameObjective</a>s by matching this Tag with the GameObjective's <tt>CriticalObjectiveVolumeTag</tt> property.</dd></dl>
+<h2><a name="0.2"></a>Functions</h2>
+<dl><dt>PostBeginPlay()</dt><dd>Skips normal Volume initialization and goes straight to super(Brush).PostBeginPlay() to avoid the AssociatedActorTag stuff in <a href="volume.html">Volume</a> (ASCriticalVolumes do not support associated actors).</dd><dt>Destroyed()</dt><dd>Clean up the CheckTimer, if there is one.</dd><dt>bool IsCriticalPawn( <a href="pawn.html">Pawn</a> P )</dt><dd>Determine whether the Pawn P matches the requirements (ConstraintPawnClass) for triggering a critical state for the objective.</dd><dt>bool IsStillCritical()</dt><dd>Determine whether there are any Pawns touching this volume which pass the IsCriticalPawn test.  If there are, re-send the "critical objective warning" to the defenders of all of the objectives associated with this volume.  If there aren't any valid touching Pawns, clear the "critical" status on all associated objectives.</dd><dt>Reset()</dt><dd>Go to the "Safe" state.</dd></dl>
+<h2><a name="0.3"></a>States</h2>
+<h3><a name="0.3.1"></a>Safe (auto)</h3>
+<p>This is the "normal" state of the ASCriticalObjectiveVolume.</p>
+<h4><a name="0.3.1.1"></a>Events</h4>
+<dl><dt>Touch( Actor Other )</dt><dd>If Other is a Pawn matching the ConstraintPawnClass, set all associated objectives "critical status" to true, send warning to their defenders, and go into the "Critical" state.</dd></dl>
+<h3><a name="0.3.2"></a>Critical</h3>
+<p>This state is entered after the Touch event (in the Safe state) has set the objectives to be "critical".</p>
+<h4><a name="0.3.2.1"></a>Functions</h4>
+<dl><dt>BeginState()</dt><dd>Create a new VolumeTimer<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=VolumeTimer&referrerid=ASCriticalObjectiveVolume">?</a> (and store it in CheckTimer) to periodically see if we're still critical.</dd><dt>TimerPop( VolumeTimer<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=VolumeTimer&referrerid=ASCriticalObjectiveVolume">?</a> T )</dt><dd>When the CheckTimer pops, call IsStillCritical to check if we're still critical.</dd></dl>
+<h3><a name="0.3.3"></a>ObjectiveDisabled</h3>
+<p>Apparently entered when one of the associated objectives is disabled.</p>
+<h4><a name="0.3.3.1"></a>Functions </h4>
+<dl><dt>BeginState()</dt><dd>Check if we have any remaining active objectives, and if not, go to the "Disabled" state.</dd></dl>
+<h3><a name="0.3.4"></a>Disabled</h3>
+<p>This state is entered when we don't have any more active objectives to take care of.</p>
+<h4><a name="0.3.4.1"></a>Functions</h4>
+<dl><dt>BeginState()</dt><dd>If we have a CheckTimer, clean it up.</dd></dl>
+<h2><a name="0.4"></a>Related Topics</h2>
+<ul><li><a href="mapping-for-as-ut2004.html">Mapping For AS (UT2004)</a></li>
+<li><a href="gameobjective.html">GameObjective</a></li>
+<li><a href="team-number.html">Team Number</a></li>
+</ul>
+<hr class="thin"><p><a href="category-class-ut2004.html">Category Class (UT2004)</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Properties", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Main", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Hidden", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Inherited from <a href=\"actor.html\">Actor</a>", "#0.1.3");
+menuItemAdd("Functions", "#0.2");
+menuItemAdd("States", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Safe (auto)", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Events", "#0.3.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Critical", "#0.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Functions", "#0.3.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>ObjectiveDisabled", "#0.3.3");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Functions ", "#0.3.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Disabled", "#0.3.4");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Functions", "#0.3.4.1");
+menuItemAdd("Related Topics", "#0.4");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ASCriticalObjectiveVolume">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=ASCriticalObjectiveVolume">View other revisions</a><br>Last edited December 16, 2005 13:56 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=ASCriticalObjectiveVolume">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/ASCriticalObjectiveVolume">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>The three virtues of a programmer: Laziness, Impatience, and Hubris. (Larry Wall)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

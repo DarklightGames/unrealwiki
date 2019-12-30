@@ -1,0 +1,190 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Authorizer</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Authorizer; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Authorizer">Authorizer</a></h1>
+	<div class="wiki"><div class="classpath"><a href="actor.html">Actor</a> &gt;&gt; <a href="triggers.html">Triggers</a> &gt;&gt; Authorizer<br></div>
+<p>This tutorial base on key mover tutorial from Chimeric site. </p>
+<p>When I use key Mover for the first time I thought that some things are impossible with this class. First of all it would be better to instead a mover place a <a href="trigger.html">Trigger</a>. That's why I've made this class. Authorizer can be opened when player have specified key. We are able to destroy this key or turn to normal trigger after destroying key. Here is icon: .</p>
+<pre class="uscript"><span class="uscript-comment">//=================================================</span>
+<span class="uscript-comment">// Authorizer: This Trigger can replace</span>
+<span class="uscript-comment">// KeyMover (as base I use KeyMover avidible</span>
+<span class="uscript-comment">// form http://chimeric.beyondunreal.com/tutorials/tut11.html).</span>
+<span class="uscript-comment">//=================================================</span>
+<span class="uscript-comment">// by Raven</span>
+<span class="uscript-comment">// http://turniej.unreal.pl</span>
+<span class="uscript-comment">// http://tcn.unreal.pl</span>
+<span class="uscript-comment">// for The Chosen One SP mod</span>
+<span class="uscript-comment">//=================================================</span>
+<span class="uscript-keyword">class</span> Authorizer <span class="uscript-keyword">extends</span> Triggers<span class="uscript-operator">;</span>
+
+<span class="uscript-exec">#exec TEXTURE IMPORT NAME=Authorizer FILE="textures\Icons\auth.bmp" GROUP=Icons LODSET=2</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">class</span> keyclass<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span> DestroyKey<span class="uscript-operator">;</span>  
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span> NormalAfterDestroying<span class="uscript-operator">;</span> 
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span> ShowSuccessMessage<span class="uscript-operator">;</span> 
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span> ShowFailtureMessage<span class="uscript-operator">;</span> 
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">String</span> SuccessMessage<span class="uscript-operator">;</span> 
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">String</span> FailtureMessage<span class="uscript-operator">;</span> 
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> norm<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> opened<span class="uscript-operator">;</span> 
+
+<span class="uscript-keyword">function</span> Touch<span class="uscript-operator">(</span> actor Other <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Inventory key<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> actor A<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// BroadcastMessage("Bumped by "$Other.Name);</span>
+
+    <span class="uscript-comment">// First check to make sure this is a Pawn, cause they are</span>
+    <span class="uscript-comment">// only things that have inventories (i think:), and then</span>
+    <span class="uscript-comment">// make sure we have a keyclass to check for.</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Pawn'</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> keyclass <span class="uscript-operator">!=</span> <span class="uscript-keyword">NONE</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+       <span class="uscript-comment">// BroadcastMessage("Other.Class: "$Other.Class$", keyclass: "$keyclass);</span>
+
+       <span class="uscript-comment">// Now we just use FindInventoryType() to see if they have</span>
+       <span class="uscript-comment">// a copy of our desired key in their inventory...</span>
+       key <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>keyclass<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+       <span class="uscript-comment">// ...if so call the old foreach function and let the trigger</span>
+       <span class="uscript-comment">// do its thing.</span>
+       <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>key <span class="uscript-operator">!=</span> <span class="uscript-keyword">NONE</span><span class="uscript-operator">)</span>
+       <span class="uscript-operator">{</span>
+         <span class="uscript-comment">// Broadcastmessage("Found key");</span>
+         <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-keyword">Event</span> <span class="uscript-operator">!=</span> <span class="uscript-name">''</span> <span class="uscript-operator">)</span> <span class="uscript-comment">// trigger all matching actors.</span>
+          <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span> <span class="uscript-keyword">class</span> <span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> A<span class="uscript-operator">,</span> <span class="uscript-keyword">Event</span> <span class="uscript-operator">)</span>
+          <span class="uscript-operator">{</span>
+            A<span class="uscript-operator">.</span>Trigger<span class="uscript-operator">(</span> Other<span class="uscript-operator">,</span> Other<span class="uscript-operator">.</span>Instigator <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+          <span class="uscript-operator">}</span>
+
+         <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>DestroyKey<span class="uscript-operator">)</span>    <span class="uscript-comment">// if true will delete key from inventory!</span>
+           <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>norm<span class="uscript-operator">)</span>
+             Pawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>DeleteInventory<span class="uscript-operator">(</span>key<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+         <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>NormalAfterDestroying<span class="uscript-operator">)</span> <span class="uscript-comment">//trigger will act like normal trigger if true</span>
+           norm<span class="uscript-operator">=</span><span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+         opened<span class="uscript-operator">=</span><span class="uscript-keyword">true</span><span class="uscript-operator">;</span> <span class="uscript-comment">//door was opened</span>
+       <span class="uscript-operator">}</span>
+       <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>norm<span class="uscript-operator">)</span> <span class="uscript-comment">//is normal trigger</span>
+         <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-keyword">Event</span> <span class="uscript-operator">!=</span> <span class="uscript-name">''</span> <span class="uscript-operator">)</span> <span class="uscript-comment">// trigger all matching actors.</span>
+          <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span> <span class="uscript-keyword">class</span> <span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> A<span class="uscript-operator">,</span> <span class="uscript-keyword">Event</span> <span class="uscript-operator">)</span>
+           A<span class="uscript-operator">.</span>Trigger<span class="uscript-operator">(</span> Other<span class="uscript-operator">,</span> Other<span class="uscript-operator">.</span>Instigator <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+       <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>ShowSuccessMessage<span class="uscript-operator">)</span>
+         BroadcastMessage<span class="uscript-operator">(</span>SuccessMessage<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+       <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>ShowFailtureMessage<span class="uscript-operator">)</span>
+         <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>opened<span class="uscript-operator">)</span>
+         <span class="uscript-operator">{</span>
+           BroadcastMessage<span class="uscript-operator">(</span>FailtureMessage<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// show Failure message when we don't have a key</span>
+         <span class="uscript-operator">}</span>
+
+       <span class="uscript-comment">// ...otherwise just do nothing.</span>
+       <span class="uscript-comment">// else BroadcastMessage("Couldn't find key");</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+     ShowFailtureMessage<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     SuccessMessage<span class="uscript-operator">=</span><span class="uscript-string">"Access granded."</span>
+     FailtureMessage<span class="uscript-operator">=</span><span class="uscript-string">"You need a key to open this door."</span>
+     Texture<span class="uscript-operator">=</span>Texture<span class="uscript-name">'Authorizer.Icons.Authorizer'</span>
+<span class="uscript-operator">}</span></pre><hr class="thin"><p><a href="category-mapping.html">Category Mapping</a><br><a href="category-custom-class.html">Category Custom Class</a><br><a href="category-tutorial.html">Category Tutorial</a><br></p>
+</div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Authorizer">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Authorizer">View other revisions</a><br>Last edited October 3, 2006 2:11 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Authorizer">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Authorizer">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Describe the new page here.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

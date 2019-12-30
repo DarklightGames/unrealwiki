@@ -1,0 +1,146 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: FPS AI Architecture, Continued</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=FPS_AI_Architecture,_Continued; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=FPS AI Architecture, Continued">FPS AI Architecture, Continued</a></h1>
+	<div class="wiki"><p><em class="em1">(Continued from, <a href="first-person-shooter-ai-arc.html">First Person Shooter AI Architecture</a>)</em></p>
+<h2><a name="0.1"></a>The Simulation of Realistic AI Spatial Comprehension:</h2>
+<p>The primary problem for AIs attempting to perform spatial and pathfinding reasoning and determining strategy, is that the raw geometry of the level itself is incredibly difficult to parse. Attempting to perform reasoning with the raw geometry at runtime would be prohibitively expensive, because the geometry often contains so many extraneous and irrelevant details. A section of Solid Constructive Geometry (SCG), for example, might be composed of numerous aggregate polygons, but the AI is only concerned with its collision characteristic as a barrier to travel.</p>
+<p>As with the global pathfinding problem, the most often employed solution is to build an optimized structural database. Developers can construct a very simple, streamlined database of spatial tactical data that contains only the key information the combat AI will require to understand the tactical significance of various spatial configurations of the level.</p>
+<p>Customized Graphical User Interfaces can automatically analyze a given level?s static geometry, determine the tactical significance of different areas, and automatically generate a detailed tactical database that will be used to direct game agent mobility. Level designers also are required to embed specific indicator objects into their navigation systems, designating certain areas as ambush points, defense points, patrolling and event-driven activity, and other command options. (See also, <a href="navigationpoint.html">NavigationPoint</a>) </p>
+<p>The only major drawback to a precomputed database is that it can sometimes work poorly in environments with a large number of dynamic obstacles.</p>
+<h2><a name="0.2"></a>Combat AI Tactics during Gameplay</h2>
+<p>With the generation of a CSG tactical database, we need to direct the game AIs to access it. A combat AI component will typically draw from a structured library of tactics, in which each tactic is responsible for executing a specific behavior in combat. Prospective tactics must communicate with the movement and animation subsystems to ensure that it exhibits the appropriate behaviors.</p>
+<p>Another critical problem is the tactic selection problem. Given an arbitrary situation in combat, we need to pick the best tactic with which to attack our opponents so that the game is continually challenging. This decision will depend on three major factors: the nature of the tactic under consideration, the relative tactical significance of all the combatants? various locations (as determined by the tactical database), and the current tactical situation (the AI agents health, weapon, ammo, and location, plus the values of those characteristics for all of its allies and opponents).</p>
+<p>A related problem is the opponent-selection problem. Given a number of potential opponents, the combat AI needs to select one as the current ?target?. Although it does not necessarily ignore all of its other adversaries, we need to designate a ?target? to represent the fact that the AI will engage a single enemy at a time.</p>
+<p>In complex game situations, it is usually easy to find a good target-picking heuristic by considering the relative tactical situation of the AI against every potential opponent. An AI is primarily concerned with defending itself first, and then attempting to identify whether any particular opponent is immediately threatening. If not, it can identify the most vulnerable target nearest to itself. A simple ranking function can easily make this determination and call the appropriate combat command.</p>
+<p>After an AI has selected a target and initiated combat, it should consider changing its target whenever its tactical situation changes significantly. Obviously, if the AI or its target dies, that?s a good time to reconsider the current target.</p>
+<p>Finally, there?s the weapon-firing problem. Most FPS weapons are high-velocity ranged (or hit-scan) weapons, so the key problem is determining where and along which line of sight to fire.</p>
+<h2><a name="0.3"></a>The Integrated Agent Behavior Control Component</h2>
+<p>At the top of the AI system hierarchy is the dominant control component called the behavior controller. This controller is responsible for determining the AI agent?s current state and a range of high-level goals. It determines the AIs overall behavior ? how it animates, what audio files it plays, where it moves, and when and how it enters combat.</p>
+<p>There are any number of ways to model a behavior controller, depending on your game?s design requirements. Most FPS games use a finite-state machine (FSM) for this part of the AI. <br></p>
+<p>The list below provides some typical states in the FSM for a typical FPS:</p>
+<dl><dt>Idle</dt><dd>The AI is standing guard, or not engaged in combat or movement.</dd><dt>Patrolling</dt><dd>The AI is following a designer-specified patrol path.</dd><dt>Combat</dt><dd>The AI is engaged in combat and has passed most of the responsibility for character control over to the combat controller.</dd><dt>Wandering</dt><dd>Probably a fugue state, maybe even suffering romantic difficulties.</dd><dt>Fleeing</dt><dd>The AI is attempting to flee its opponent or any perceived threat.</dd><dt>Searching</dt><dd>The AI is looking for an opponent to fight or searching for an opponent who fled during combat.</dd></dl>
+<p>These behaviors are each represented by an object that is responsible for communicating with the movement, animation, and combat subsystems in order to represent the behaviors appropriately. Developing these behaviors will typically be very easy, since the movement, animation, and combat subsystems already do most of the work and provide a rich palette of basic behaviors for the behavioral component to assimilate.</p>
+<h2><a name="0.4"></a>The UnrealScript Language and the Event-Trigger System</h2>
+<p>Level designers will inevitably need some way to specify their design intentions in certain ambiguous or confusing sectors of the game. They need a way to take some degree of control over the AI for triggered gameplay sequences, cut scenes, or other ?triggered? or ?scripted? events that should happen during the game under certain circumstances. In order to make this happen, it?s necessary to design an interface for communication between the trigger/scripting system and the agent AI.</p>
+<p>This communication will typically take two forms. First, the triggered events can set AI parameters. For example, an event might enable or disable certain states of the behavior controller?s finite-state machine, or modify various aggressiveness parameters to change the priority of various potential combat tactics.</p>
+<p>The more common form of communication consists of sending commands to any of the AI subsystems from a triggered event. For example, the trigger system can tell an AI to move to a given point or to flee from its current target by issuing a command to its behavior controller. This command changes the current state of the FSM to one that will execute the appropriate behaviors.</p>
+<h2><a name="0.5"></a>Perceptual Modeling</h2>
+<p>A game player's perception (data input) is broken down into different subsystems. Different types of perception work differently, so we model our character's visual, auditory, and tactile subsystems seperately.</p>
+<p>The visual subsystem should take into account such factors as the distance to a given visual stimulus, the angle of the stimulus relative to the AIs field of view, and the current visibility level at the location of the stimulus (lighting and fog, and obstructions).</p>
+<p>In order to ensure that the AI can actually see the object, it's also essential to use a Ray-Tracing network. The AI should query the underlying game engine to ensure that there's a clear line-of-sight between the AIs eyes and the object its attempting to see.</p>
+<p>The final sensory subsystem is the tactile subsystem. This system is responsible for anything the AI feels. This includes damage notifications (whenever the AI is wounded) as well as collision notifications (whenever the AI bumps into something, or some other object bumps into it).</p>
+<h2><a name="0.6"></a>Related Topics</h2>
+<ul><li><a href="artificial-intelligence.html">Artificial Intelligence</a></li>
+<li><a href="introduction-to-game-ai.html">Introduction to Game AI</a></li>
+<li><a href="first-person-shooter-ai-arc.html">First Person Shooter AI Architecture</a></li>
+</ul>
+<h2><a name="0.7"></a>Discussion</h2>
+<p><em class="em2">SuperApe:</em> Heady stuff.  Nice addition to the wiki.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("The Simulation of Realistic AI Spatial Comprehension:", "#0.1");
+menuItemAdd("Combat AI Tactics during Gameplay", "#0.2");
+menuItemAdd("The Integrated Agent Behavior Control Component", "#0.3");
+menuItemAdd("The UnrealScript Language and the Event-Trigger System", "#0.4");
+menuItemAdd("Perceptual Modeling", "#0.5");
+menuItemAdd("Related Topics", "#0.6");
+menuItemAdd("Discussion", "#0.7");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=FPS_AI_Architecture,_Continued">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=FPS_AI_Architecture,_Continued">View other revisions</a><br>Last edited April 7, 2006 4:00 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=FPS_AI_Architecture,_Continued">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/FPS_AI_Architecture,_Continued">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I search for solutions in this order: Past Code, Unreal Source, Wiki, BUF, groups.yahoo, google, screaming at monitor. (RegularX)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

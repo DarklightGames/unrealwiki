@@ -1,0 +1,346 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Typecasting</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Typecasting; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Typecasting">Typecasting</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>What is Typecasting?</h2>
+<p>For an overview of typecasting, please read the indroduction to Typecasting located at <a href="using-objects.html">Using Objects</a>.</p>
+<p><em class="em3">Syntax:</em></p>
+<p>This is the basic typecasting syntax:</p>
+<p class="indent1"><em class="em1">desiredType</em> <em class="em2">(</em> <em class="em1">expression</em> <em class="em2">)</em></p>
+<p>Often you typecast objects to access certain properties, so here are two more specialized explainations for that case:</p>
+<p class="indent1"><em class="em1">ClassToTypecastTo</em> <em class="em2">(</em> <em class="em1">ObjectToTypecast</em> <em class="em2">) .</em> <em class="em1">PropertyToAccess</em></p>
+<p class="indent1"><em class="em1">ClassToTypecastTo</em> <em class="em2">(</em> <em class="em1">ThingToGetObjectFrom</em> <em class="em2">.</em> <em class="em1">ObjectToTypecast</em> <em class="em2">) .</em> <em class="em1">PropertyToAccess</em></p>
+<h2><a name="0.2"></a>Why Do I Need That?</h2>
+<h3><a name="0.2.1"></a>Example 1: Owners</h3>
+<p>Imagine you have a weapon class and you need to access properties or functions of its owner (a Pawn class). The most obvious way is to use the weapon's Owner property, but there's a small problem with that:</p>
+<p>The weapon has inherited the Owner property from the <a href="actor.html">Actor</a> class, and it's defined there using this line:</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> <span class="uscript-keyword">const</span> Actor Owner<span class="uscript-operator">;</span>   <span class="uscript-comment">// Owner actor.</span></pre><p>That means no matter what you specified as the actor's owner, the compiler will always think of it as an object of class Actor. If you want to access the Health property of the player holding the weapon, the compiler will tell you that there isn't a Health property in the actor class. This happens quite often and therefore UnrealScript provides a way around these errors:</p>
+<pre class="uscript"><span class="uscript-keyword">local</span> Pawn MyPawn<span class="uscript-operator">;</span> 
+MyPawn <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">;</span> 
+log<span class="uscript-operator">(</span>MyPawn<span class="uscript-operator">.</span>Health<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>This logs the health of the pawn owning this actor. We've typecast the Owner (an actor) into a Pawn, and we can then access a property of the Pawn class. It works most of the time, but sometimes Owner can be <a href="special-unrealscript-keywor.html">None</a> or at least not a Pawn. In that case an Accessed None error is logged at runtime. Accessing None can have unpredictable effects, so it should be avoided by adding some extra code:</p>
+<pre class="uscript"><span class="uscript-keyword">local</span> Pawn MyPawn<span class="uscript-operator">;</span>
+MyPawn <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> MyPawn <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+  log<span class="uscript-operator">(</span>MyPawn<span class="uscript-operator">.</span>Health<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">else</span>
+  log<span class="uscript-operator">(</span><span class="uscript-string">"Owner is not a Pawn!"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>You can also do the same thing without an additional variable:</p>
+<pre class="uscript"><span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+  log<span class="uscript-operator">(</span>Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Health<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">else</span>
+  log<span class="uscript-operator">(</span><span class="uscript-string">"Owner is not a Pawn!"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><h3><a name="0.2.2"></a>Example 2</h3>
+<p>In a gametype you want to send a message to a player when he kills someone.</p>
+<pre class="uscript">PlayerController<span class="uscript-operator">.</span>ClientMessage<span class="uscript-operator">(</span><span class="uscript-string">"message"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>will do fine for that, but the Killed function of GameInfo doesn't give PlayerController, but Controller. So you have to typecast:</p>
+<pre class="uscript">PlayerController<span class="uscript-operator">(</span>Killed<span class="uscript-operator">)</span><span class="uscript-operator">.</span>ClientMessage<span class="uscript-operator">(</span><span class="uscript-string">"Message"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>would work fine, but what if the Controller isn't a PlayerController, but a AIController for example, then nothing would happen, except that it shows an "Accessed None" error in the log. That's not so good. You can use the IsA function to stop that.</p>
+<pre class="uscript"><span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Killer<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'PlayerController'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    PlayerController<span class="uscript-operator">(</span>Killer<span class="uscript-operator">)</span><span class="uscript-operator">.</span>ClientMessage<span class="uscript-operator">(</span><span class="uscript-string">"Message"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.2.3"></a>Example 3: Typecasting to a Custom Pawn</h3>
+<p>If you have a custom controller and a custom pawn and you wish you access properties on your custom pawn, a natural way to do it would be like this:</p>
+<pre class="uscript">CustomController<span class="uscript-operator">(</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">.</span>CustomPawn<span class="uscript-operator">(</span>Controller<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Variable<span class="uscript-operator">;</span></pre><p>That however, will not work.  Instead, simplify things.  You don't need to typecast the controller because you aren't really accessing anything from your custom controller.  You are only accessing a variable in your custom pawn.  Therefore this should work:</p>
+<pre class="uscript">CustomPawn<span class="uscript-operator">(</span>Controller<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Variable<span class="uscript-operator">;</span> <span class="uscript-comment">//Accesses the variable of your custom pawn</span></pre><p>If for some reason you need to typecast your custom controller also, you can use this:</p>
+<pre class="uscript">CustomPawn<span class="uscript-operator">(</span> CustomController<span class="uscript-operator">(</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Pawn <span class="uscript-operator">)</span><span class="uscript-operator">.</span>Variable<span class="uscript-operator">;</span> <span class="uscript-comment">//Accesses the variable of your custom controller's custom pawn</span></pre><p>Typecasting the custom controller won't really be neccesary in this case as the controller has a direct reference to it's controlled pawn so no matter what type of Controller you are, the previous example will usually work.</p>
+<h3><a name="0.2.4"></a>So....?</h3>
+<p>You can also typecast classes to other classes:</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>actor<span class="uscript-operator">&gt;</span> AClass<span class="uscript-operator">;</span>
+AClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Foo'</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Foo<span class="uscript-operator">&gt;</span><span class="uscript-operator">(</span>AClass<span class="uscript-operator">)</span><span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>Bar <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span></pre><p>A lot of casting is automatic (e.g. int &rarr; float, byte &rarr; int) and other types can be converted using regular casting syntax (e.g. vector &rarr; rotator, numbers/names/objects &rarr; string), but there are also some types which need special treatment.<br>(Some of these conversions might not be very useful.)</p>
+<h2><a name="0.3"></a>Conversions</h2>
+<h3><a name="0.3.1"></a>Byte/Int/Float...</h3>
+<h4><a name="0.3.1.1"></a>to String </h4>
+<p>Numbers are converted to their actual string representation. Float values always have six digits after the decimal point in <a href="unreal-tournament.html">UT</a> and two in <a href="unreal-tournament-2003.html">UT2003</a>. (They are rounded.)</p>
+<h4><a name="0.3.1.2"></a>to Boolean </h4>
+<p>Zero (or first item of the enumeration) results in <em class="em1">False</em>, anything else is <em class="em1">True</em>.</p>
+<h4><a name="0.3.1.3"></a>to Enum</h4>
+<p>The following appears to work. No idea what happens if your int or float is out of the bounds of the enum.</p>
+<pre class="uscript">EnumVar <span class="uscript-operator">=</span> EMyEnum<span class="uscript-operator">(</span> myInt <span class="uscript-operator">)</span></pre><h3><a name="0.3.2"></a>Enum...</h3>
+<p>Note that for typecasting enums you always have to give an enum property or a fully qualified enum value, e.g. <tt>MyActor.Physics</tt> or <tt>Level.ENetMode.NM_ListenServer</tt>.</p>
+<h4><a name="0.3.2.1"></a>to String</h4>
+<p>When typecasting enum properties, the enum items are represented by their corresponing number. (first item = 0, second item = 1,...; e.g. PHYS_Falling = 2, ROLE_Authority = 4) You need to convert the enum item to Name and cast that to String if you want a string representation. (see below)</p>
+<h4><a name="0.3.2.2"></a>to Name</h4>
+<p>To get the name of an enum item you have to use the GetEnum function like this:</p>
+<pre class="uscript"><span class="uscript-keyword">local</span> <span class="uscript-type">name</span> EnumName<span class="uscript-operator">;</span>
+EnumName <span class="uscript-operator">=</span> GetEnum<span class="uscript-operator">(</span><span class="uscript-keyword">enum</span><span class="uscript-name">'ENetRole'</span><span class="uscript-operator">,</span> <span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+log<span class="uscript-operator">(</span>EnumName<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// logs 'ROLE_SimulatedProxy'</span></pre><h4><a name="0.3.2.3"></a>to Boolean</h4>
+<p>The first enum item results in False, anything else in True.</p>
+<h4><a name="0.3.2.4"></a>to Byte/Int</h4>
+<p>This conversion happens automatically in assignments.</p>
+<h3><a name="0.3.3"></a>Boolean...</h3>
+<h4><a name="0.3.3.1"></a>to Byte/Int/Float</h4>
+<p><em class="em1">True</em> results in 1, <em class="em1">False</em> results in 0.</p>
+<h4><a name="0.3.3.2"></a>to String</h4>
+<p>You get either "True" or "False". </p>
+<p>Keep in mind this is a special case variable. The difference is that it is localized, stored in Core.&lt;localized&gt;, where &lt;localized&gt; can be int, det, itt etc. (see <a href="localization.html">Localization</a> for some info).</p>
+<p>This is how the Engine knows what and how to use it:</p>
+<pre class="uscript"><span class="uscript-operator">[</span>General<span class="uscript-operator">]</span>
+<span class="uscript-keyword">True</span><span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-keyword">False</span><span class="uscript-operator">=</span><span class="uscript-keyword">False</span></pre><p>Therefore, a code like this:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> StatusCheck <span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> Boolean<span class="uscript-operator">;</span>
+
+    Boolean <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+    CheckMe<span class="uscript-operator">(</span><span class="uscript-type">string</span><span class="uscript-operator">(</span>Boolean<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> CheckMe <span class="uscript-operator">(</span><span class="uscript-type">string</span> Check<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Check <span class="uscript-operator">==</span> <span class="uscript-string">"True"</span><span class="uscript-operator">)</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"You're right, it's true..."</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"Sorry... the argument is false"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>... is very unreliable. The reason is, that on a frt localized install (French language), "True" would correspond to "Vrai", on a det install (German) it would correspond to "Wahr" etc. The best (and most secure) way is to use byte typecasting.</p>
+<h3><a name="0.3.4"></a>Name...</h3>
+<h4><a name="0.3.4.1"></a>to String</h4>
+<p>The <em class="em1">name</em> is converted to the string used in the source code. Since names are not case-sensitive the first appearance of the name within the complete source is used. <em class="em1">(This might be an answer to the question why the name of the <a href="locationid.html">LocationID</a> actor is completely lowercase while its script says "LocationID".)</em></p>
+<h3><a name="0.3.5"></a>Object...</h3>
+<p>"Object" can be any <a href="actor.html">Actor</a>, <a href="object.html">Object</a>, class, <a href="texture.html">Texture</a>, mesh, <a href="sound.html">Sound</a>, etc.</p>
+<h4><a name="0.3.5.1"></a>to String</h4>
+<p>For classes, textures, meshes, sounds and some other objects the string usually looks like "Package.ObjectName". Actors are usually represented by "MapName.ActorClass<em class="em1">&lt;number&gt;</em>", but in <a href="unreal-tournament-2003.html">UT2003</a> objects created at runtime (i.e. not in the editor) don't get a number added to their name by default. In general objects are represented as "RootObject.FirstChild.<em class="em1">(...)</em>.ThisObject". Examples for this are UWindow objects in UT and objects embedded in the default properties of UT2003 classes. For some objects (like <a href="commandlet.html">Commandlet</a>s or the UWindow objects) <em class="em1">RootObject</em> is "Transient" in UT and "Package" in UT2003.</p>
+<h4><a name="0.3.5.2"></a>to Boolean</h4>
+<p>The boolean will be <em class="em1">False</em> if the object, class, etc. is <em class="em1">None</em> and <em class="em1">True</em> otherwise.</p>
+<h3><a name="0.3.6"></a>Struct...</h3>
+<p><em class="em2">Note:</em> Vectors and rotators are structs, too.</p>
+<h4><a name="0.3.6.1"></a>to String</h4>
+<p>Every part of the struct is converted separately and all values are separated by commas. This might only work for certain <a href="built-in-struct.html">Built-In Struct</a>.</p>
+<h4><a name="0.3.6.2"></a>to Boolean</h4>
+<p>Results in <em class="em1">False</em> if all parts of the struct are null values, i.e. <em class="em1">0</em>, empty strings or <em class="em1">None</em>. Anything else results in <em class="em1">True</em>.</p>
+<h3><a name="0.3.7"></a>String...</h3>
+<h4><a name="0.3.7.1"></a>to Byte/Int</h4>
+<p>The string has to start with a number which must not be negative for <em class="em1">byte</em>. The string is cut off at the first non-numerical character. Any other string results in 0.</p>
+<h4><a name="0.3.7.2"></a>to Float</h4>
+<p>Similar to integer conversion, but the value can use a much more complex format. "-12.3e-2" will be converted to -1.23, "1e4" is 10000 and "12.3" is (guess what) 12.3.</p>
+<h4><a name="0.3.7.3"></a>to Boolean</h4>
+<p>The conversion returns <em class="em1">True</em> if the string starts either with the characters "true" (not case-sensitive) or results in a non-zero number (see string to integer/float above). It returns <em class="em1">False</em> in all other cases.</p>
+<h4><a name="0.3.7.4"></a>to Struct</h4>
+<p>The components of the struct have to be in the same order the struct &rarr; string cast uses and also have to be separated by commas. All components that are not present in the string are set to 0, <em class="em1">False</em>, empty strings, etc. This might only work for certain <a href="built-in-struct.html">Built-In Struct</a>.</p>
+<h4><a name="0.3.7.5"></a>to Name</h4>
+<p>Names refuse to be set with expressions or from string variables. They only like something like this:</p>
+<pre class="uscript">MyName <span class="uscript-operator">=</span> <span class="uscript-name">'thisStringIsHardcoded'</span><span class="uscript-operator">;</span>          <span class="uscript-comment">// This works.</span>
+SetPropertyText<span class="uscript-operator">(</span><span class="uscript-string">"MyName"</span><span class="uscript-operator">,</span> MyStringValue<span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Workaround, see below</span></pre><p>The workaround by using SetPropertyText to assign a calculated value to a name variable works reasonably well, but there's a reason to the fact that it's not possible to directly assign strings to names.  Doing so creates a new name table entry which isn't communicated to remote machines in network games, which can in turn lead to many sorts of ugly inconsistency problems if it's involved in replication.</p>
+<h4><a name="0.3.7.6"></a>to Object</h4>
+<p>Strings can't be casted to objects directly. Instead use the <a href="dynamicloadobject.html">DynamicLoadObject</a> method to load the specified object and then cast it to the desired class.</p>
+<pre class="uscript"><span class="uscript-keyword">local</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Actor<span class="uscript-operator">&gt;</span> aClass<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> Actor A<span class="uscript-operator">;</span>
+
+aClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Actor<span class="uscript-operator">&gt;</span><span class="uscript-operator">(</span>DynamicLoadObject<span class="uscript-operator">(</span><span class="uscript-string">"MyPackage.MyActorClass"</span><span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Class'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+A <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span>aClass<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><pre class="uscript"><span class="uscript-keyword">local</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>UWindowList<span class="uscript-operator">&gt;</span> ListClass<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> UWindowList L<span class="uscript-operator">;</span>
+
+ListClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>UWindowList<span class="uscript-operator">&gt;</span><span class="uscript-operator">(</span>DynamicLoadObject<span class="uscript-operator">(</span><span class="uscript-string">"MyPackage.MyList"</span><span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Class'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+L <span class="uscript-operator">=</span> <span class="uscript-keyword">New</span> ListClass<span class="uscript-operator">;</span></pre><pre class="uscript"><span class="uscript-keyword">local</span> Texture T<span class="uscript-operator">;</span>
+
+T <span class="uscript-operator">=</span> Texture<span class="uscript-operator">(</span>DynamicLoadObject<span class="uscript-operator">(</span><span class="uscript-string">"MyPackage.MyTexture"</span><span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Texture'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><h3><a name="0.3.8"></a>Vector...</h3>
+<h4><a name="0.3.8.1"></a>to Rotator</h4>
+<p>Vectors and Rotators can automatically be casted to each other. Vector &rarr; Rotator returns a rotator with the roll component set to 0, while Rotator &rarr; Vector returns a vector with length 1.</p>
+<p>See <a href="rotator.html">rotator</a> for more.</p>
+<h3><a name="0.3.9"></a>Rotator...</h3>
+<h4><a name="0.3.9.1"></a>to Vector</h4>
+<p>Rotators represent three angles of rotation. A rotator in itself does not necessarily represent a direction until it is used in conjunction with a vector. For instance, a Yaw += 16384 will rotate an arbitrary vector 90 degrees but if you do not know the direction of the arbitrary vector, you cannot say what the direction of the new rotated vector is. The best you can say is that the new vector is 90 degrees rotated.</p>
+<p>However, the vector(rotator) typecast returns a vector given only a rotator (without any other explicit vector information). It is assumed that the source vector is vect(1,0,0) so that the returned value is a vector rotated from vect(1,0,0). This makes sense since vect(1,0,0) is the vector used to represent the forward direction.</p>
+<p>Examples:</p>
+<table class="paratable-border" border=0 cellspacing=0 cellpadding=0><tr valign=top><td align=center colspan=3><em class="em2">Rotator</em></td>
+<td>&rarr;</td>
+<td align=center colspan=3><em class="em2">Vector</em></td>
+</tr>
+<tr valign=top><td align=center><em class="em2">Pitch</em></td>
+<td align=center><em class="em2">Yaw</em></td>
+<td align=center><em class="em2">Roll</em></td>
+<td>&rarr;</td>
+<td align=center><em class="em2">X</em></td>
+<td align=center><em class="em2">Y</em></td>
+<td align=center><em class="em2">Z</em></td>
+</tr>
+<tr valign=top><td align=right>0</td>
+<td align=right>0</td>
+<td align=right>any</td>
+<td>&rarr;</td>
+<td align=right>1</td>
+<td align=right>0</td>
+<td align=right>0</td>
+</tr>
+<tr valign=top><td align=right>0</td>
+<td align=right>-32768</td>
+<td align=right>any</td>
+<td>&rarr;</td>
+<td align=right>-1</td>
+<td align=right>0</td>
+<td align=right>0</td>
+</tr>
+<tr valign=top><td align=right>0</td>
+<td align=right>16384</td>
+<td align=right>any</td>
+<td>&rarr;</td>
+<td align=right>0</td>
+<td align=right>1</td>
+<td align=right>0</td>
+</tr>
+<tr valign=top><td align=right>0</td>
+<td align=right>-16384</td>
+<td align=right>any</td>
+<td>&rarr;</td>
+<td align=right>0</td>
+<td align=right>-1</td>
+<td align=right>0</td>
+</tr>
+<tr valign=top><td align=right>16384</td>
+<td align=right>any</td>
+<td align=right>any</td>
+<td>&rarr;</td>
+<td align=right>0</td>
+<td align=right>0</td>
+<td align=right>1</td>
+</tr>
+<tr valign=top><td align=right>49151</td>
+<td align=right>any</td>
+<td align=right>any</td>
+<td>&rarr;</td>
+<td align=right>0</td>
+<td align=right>0</td>
+<td align=right>-1</td>
+</tr>
+</table>
+<p>See <a href="rotator.html">rotator</a> for more.</p>
+<h2><a name="0.4"></a>Related Topics</h2>
+<ul><li><a href="unrealscript.html">UnrealScript</a> topic page</li>
+<li><a href="variable-type.html">Variable Type</a></li>
+<li><a href="function-syntax.html">Function Syntax</a></li>
+</ul>
+<script type="text/javascript"><!--
+ menuItemAdd("What is Typecasting?", "#0.1");
+menuItemAdd("Why Do I Need That?", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Example 1: Owners", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Example 2", "#0.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Example 3: Typecasting to a Custom Pawn", "#0.2.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>So....?", "#0.2.4");
+menuItemAdd("Conversions", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Byte/Int/Float...", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to String ", "#0.3.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to Boolean ", "#0.3.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to Enum", "#0.3.1.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Enum...", "#0.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to String", "#0.3.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to Name", "#0.3.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to Boolean", "#0.3.2.3");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to Byte/Int", "#0.3.2.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Boolean...", "#0.3.3");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to Byte/Int/Float", "#0.3.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to String", "#0.3.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Name...", "#0.3.4");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to String", "#0.3.4.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Object...", "#0.3.5");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to String", "#0.3.5.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to Boolean", "#0.3.5.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Struct...", "#0.3.6");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to String", "#0.3.6.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to Boolean", "#0.3.6.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>String...", "#0.3.7");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to Byte/Int", "#0.3.7.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to Float", "#0.3.7.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to Boolean", "#0.3.7.3");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to Struct", "#0.3.7.4");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to Name", "#0.3.7.5");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to Object", "#0.3.7.6");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Vector...", "#0.3.8");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to Rotator", "#0.3.8.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Rotator...", "#0.3.9");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>to Vector", "#0.3.9.1");
+menuItemAdd("Related Topics", "#0.4");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Typecasting">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Typecasting">View other revisions</a><br>Last edited April 16, 2006 18:00 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Typecasting">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Typecasting">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I search for solutions in this order: Past Code, Unreal Source, Wiki, BUF, groups.yahoo, google, screaming at monitor. (RegularX)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

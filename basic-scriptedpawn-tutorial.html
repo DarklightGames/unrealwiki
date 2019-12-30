@@ -1,0 +1,245 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Basic ScriptedPawn Tutorial</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Basic_ScriptedPawn_Tutorial; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Basic ScriptedPawn Tutorial">Basic ScriptedPawn Tutorial</a></h1>
+	<div class="wiki"><p>This is a tutorial that sets up a UT NPC (Monster) via <a href="scriptedpawn.html">ScriptedPawn</a>.</p>
+<p>For a tutorial on using UT2004 <a href="monster.html">Monster</a>s, see <a href="a-ut2004-monster-tutorial.html">A UT2004 Monster Tutorial</a>.</p>
+<h2><a name="0.1"></a>Prerequisites</h2>
+<p>You should already be familiar with <a href="bot-pathing.html">Bot Pathing</a>, <a href="testing-botplay.html">Testing Botplay</a> and <a href="bot-mind.html">Bot Mind</a>.  Although we're not dealing with bots, creatures use the same bot path network and perform many similar actions in navigation.  You should also be familiar with the properties available on <a href="scriptedpawn.html">ScriptedPawn</a>.</p>
+<h2><a name="0.2"></a>Overview</h2>
+<p>"Scripting" <a href="pawn-ut.html">Pawn (UT)</a>s was a common practice for mappers in <a href="unreal-tournament.html">UT</a>.  Whether scripting advanced bot support or setting up monsters to patrol the level, the native AI of the UT Pawns was used in conjuction with <a href="aiscript.html">AIScript</a>s to create relatively realistic behavior.</p>
+<p>This tutorial will show how to implement UT creatures, subclasses of ScriptedPawn.</p>
+<h2><a name="0.3"></a>Tutorial</h2>
+<p>This is a general tutorial and guide designed to demonstrate the implementation of several different creatures set to perform several different tasks.  After completing this tutorial, you should have a good idea how these AI functions work and be able to experiment combining them in different ways, with different settings, etc.</p>
+<h3><a name="0.3.1"></a>Setting Up</h3>
+<p>You should start with a bot pathed map that is working properly.  See also <a href="bot-pathing.html">Bot Pathing</a>.</p>
+<h4><a name="0.3.1.1"></a>Classes Used</h4>
+<ul><li><a href="scriptedpawn.html">ScriptedPawn</a></li>
+<li><a href="homebase.html">HomeBase</a></li>
+<li><a href="alarmpoint.html">AlarmPoint</a></li>
+<li><a href="ambushpoint.html">AmbushPoint</a></li>
+<li><a href="patrolpoint.html">PatrolPoint</a></li>
+<li><a href="creaturefactory.html">CreatureFactory</a></li>
+<li><a href="spawnpoint.html">SpawnPoint</a></li>
+</ul>
+<h3><a name="0.3.2"></a>Retreating</h3>
+<p>This is an automatic function rather than an explicit Order.  The creature can be made to retreat to a specific spot if hurt or otherwise frightened.</p>
+<ol><li>Place a creature in the map and enter a unique Tag that will be used to associate this creature with a HomeBase.</li>
+<li>Place a HomeBase somewhere in the map.  This will the place the creature will retreat to.  Likely places to retreat to include out of the way places, spots "deeper" into the map's layout or objective sequence, or where other creatures can be found to help this creature in combat.</li>
+<li>Enter the Tag of the HomeBase to match the creature's Tag.</li>
+<li>Decide an appropriate Extend to set for the HomeBase.  This is the radius (in UU) that the creature's "home" extends from the HomeBase actor.  Note that the creature will only consider themselves at "home" if they are within the Extend and have a line of sight to the HomeBase.</li>
+<li>Decide an appropriate LookDir for the HomeBase.  This is the direction the creature will face once they are at "home."</li>
+</ol>
+<h3><a name="0.3.3"></a>Alarm</h3>
+<p>Although this is not an explicit Order, Alarm functions can direct a creature to perform complex tasks when an enemy player is first seen.  In practical terms, the creature will attempt to perform these tasks at all cost.  After the task is complete, the creature will attack the enemy, if still available.  After combat, the creature will return to a RestFormation or resume it's normal Orders.</p>
+<ol><li>Place a creature in the map and enter a unique AlarmTag that will be used to associate this creature with it's AlarmPoint.</li>
+<li>Place an AlarmPoint in a spot that will represent a destination for the task the creature is to perform once "alarmed".  This could be a spot near other creatures to help in combat, it could be an actual alarm trigger (a switch the creature activates to set off an audible alarm sound), or it could be a better tactical position to attack from.  While the specific tasks the creature is to perform can vary, the main idea is that it will travel to this AlarmPoint once "alarmed".</li>
+<li>You may add additional AlarmPoints as long as they all have a unique Tag.  Place as many additional AlarmPoints as you like.  These will make the creature travel from the first AlarmPoint to the next in a series until the last AlarmPoint is reached.</li>
+<li>Enter the Tag of the next AlarmPoint in the NextAlarm property of this AlarmPoint.  Move on to the next AlarmPoint in the series and continue to enter the NextAlarm property until all are properly associated.</li>
+<li>Decide if the creature should perform a specific animation sequence when this AlarmPoint is reached.  If so, enter the name of the animation sequence in the AlarmAnim property of the AlarmPoint.  A list of animation sequece names can be found in the <a href="mesh-browser.html">Mesh Browser</a>.  Note that animation sequences are specific to the creature used.</li>
+<li>Decide if the creature should play a specific sound while at this AlarmPoint.  Enter the sound in the AlarmSound property of the AlarmPoint.</li>
+<li>If no AlarmAnim is used, decide if the creature should pause and play default waiting animations when this AlarmPoint is reached.  Enter the time to pause (in seconds) in the PauseTime property on the AlarmPoint.</li>
+<li>The creature can be made to shoot at any actor when this AlarmPoint is reached.  Enter the Tag of the actor in the ShootTarget property on this AlarmPoint.</li>
+</ol>
+<p>Note: The AlarmPoint actor has many other properties with which to adjust the creature's behavior.  In conjunction with other AlarmPoints, Triggers, etc., the creature can be made to perform complex behavior once a player enemy is detected.  See also <a href="alarmpoint.html">AlarmPoint</a>. <em class="em1">(See also Steve Polge's guide linked to at the bottom of this page.  Some properties on the AlarmPoint page here on the wiki are suspect.)</em></p>
+<h3><a name="0.3.4"></a>Waiting</h3>
+<p>This is the default Order.  The creature will wait near its location, sometimes randomly wandering, until a player enemy is seen to attack.  After combat, the creature will return to a waiting state.</p>
+<ol><li>Place a creature in the map and enter "Waiting" in the Orders property, if it isn't already set.</li>
+<li>That's it.  You may want to rotate the creature to face a particular direction at match start, but after a short while, it will wander and change it's location and rotation on its own.</li>
+</ol>
+<h3><a name="0.3.5"></a>Ambushing</h3>
+<p>The creature will find a place to wait in ambush for a player to attack.  Once combat is over, the creature will find another spot to ambush from and again wait for a player to attack.</p>
+<ol><li>Place a creature in the map and enter "Ambushing" in the Orders property.</li>
+<li>Enter a unique OrderTag that will be used to associate this creature with it's AmbushPoints.</li>
+<li>Place AmbushPoints in the map at places where the creature can reach, can watch out for players, and hopefully can attack from with some element of suprise.  A ledge, a side passage or a hole are likely places to Ambush from.  Place as many as you like.</li>
+<li>Enter the Tag of these AmbushPoints to match your creature's OrderTag.  This will associate the creature to these AmbushPoints.</li>
+<li>Decide whether to set bFixedStart to true on the creature or not.  If true, the creature will always start the match at the placed position and travel to a random AmbushPoint to ambush players.  If false, the creature will be teleported to a random AmbushPoint at match start.</li>
+<li>Decide whether to set bSniping to true on the various AmbushPoints.  If true, the creature will likely snipe from that position when it sees a player to attack.</li>
+<li>Adjust the SightRadius on the various AmbushPoints, if necessary.  This is the radius (in UU) that will be used by the creature when it is waiting to ambush at this point.</li>
+</ol>
+<h3><a name="0.3.6"></a>Patroling</h3>
+<p>The creature will move from spot to spot in a patrol route until a player enemy is seen to attack.  After combat, the creature will return to the patrol route and continue to patrol.</p>
+<ol><li>Place a creature in your map and enter "Patroling" in the Orders property.</li>
+<li>Enter a unique OrderTag that will be used to match this creature with a starting PatrolPoint. <em class="em1">(suggested name, "Patrol1")</em></li>
+<li>Place a series of PatrolPoints in the map to define the patroling route for this creature.  The creature will follow the normal path network to get from PatrolPoint to PatrolPoint, so you do not need to define each corner.  Instead, find places that might be good to have this creature pause while patroling.  A room, a lookout, a switchback or dead end are likely places to place PatrolPoints.  Place as many as you like.</li>
+<li>Enter the Tag of the first PatrolPoint to match the creature's OrderTag.  This will associate the creature with this patrol route and further associate this PatrolPoint as the creature's start.</li>
+<li>Enter the NextPatrol property of this PatrolPoint to match the Tag of the next PatrolPoint in the series along this patrol route.  Enter the Tag of the next PatrolPoint to match.</li>
+<li>Repeat 4-5 until the patrol route is defined.  Match the NextPatrol property of the last PatrolPoint with the Tag of the first PatrolPoint in the route to complete the loop.</li>
+<li>Decide whether to set bFixedStart to true on the creature.  If true, the creature will always start the match at the placed position and travel to the starting PatrolPoint.  If false, the creature will be teleported to the starting PatrolPoint at match start.</li>
+<li>Decide whether to set bDelayedPatrol to true on the creature.  If true, the creature will wait at the placed location until it is triggered before it will travel to the first PatrolPoint and begin the patrol.</li>
+<li>Decide whether the creature should perform a specific animation sequence while at this PatrolPoint.  The creature can be made to play an animation, pause using standard waiting animations or neither and simply move on to the next PatrolPoint.  If a specific animation sequence is desired, enter the name of the sequence in the PatrolAnim property of the PatrolPoint.  A list of animation sequences can be found in the <a href="mesh-browser.html">Mesh Browser</a>.  Note that animation sequences are specific to the creature used.</li>
+<li>If an animation sequence is used, the creature can be made to loop the animation sequence a number of times.  Enter the desired number of sequence loops in the NumAnims property of the PatrolPoint.</li>
+<li>Decide whether the creature should play a specific sound while performing an animation sequence at this PatrolPoint.  Enter the sound in the PatrolSound property of the PatrolPoint.</li>
+<li>If no PatrolAnim is defined but a pause is desired, enter the number of seconds to pause in the PauseTime properties of the PatrolPoint.</li>
+</ol>
+<h3><a name="0.3.7"></a>Guarding</h3>
+<p>The creature will guard an item.  It will stay at its placed location until an enemy player is seen, when it will challenge the player to combat.  After combat, the creature will return to the placed location and continue to guard the item.  If the item is touched, the creature will consider the "toucher" an enemy.</p>
+<ol><li>Place a creature in the map and set its Order property to "Guarding".  It's a good idea to place the creature near the item to be guarded, or at least within a line of sight to that item or the area surrounding the item.</li>
+<li>Enter a unique Tag on the item that will associate it with the creature guarding it.  Match the creature's OrderTag to the Tag of the item.</li>
+</ol>
+<h3><a name="0.3.8"></a>PawnSpecific Orders</h3>
+<p>Some individual creatures have unique Orders or functions.  See also the <a href="scriptedpawn.html">ScriptedPawn</a> subclasses for the various creatures.</p>
+<h3><a name="0.3.9"></a>CreatureFactory and SpawnPoints</h3>
+<p>CreatureFactory is a subclass of <a href="thingfactory.html">ThingFactory</a>.  SpawnPoints are associated to factories to provide a suitable place to spawn an actor.  CreatureFactories are specifically designed to spawn creatures in-game and give appropriate settings to various properties.</p>
+<ol><li>Place a CreatureFactory in the map.  Thing and CreatureFactories can either be triggered externally or activated via Touch, just like a Trigger.  For this tutorial, place the CreatureFactory in a spot where a player is likely to walk by.  We will set this CreatureFactory to spawn the creature when touched.</li>
+<li>Place a SpawnPoint somewhere in the map that will allow access to the bot path network and give enough space for the creature to be spawned.  Also rotate the SpawnPoint to a good orientation for the creature to be spawned.</li>
+<li>Enter a unique Tag on the SpawnPoint that will associate it with the CreatureFactory.  Match the CreatureFactory's Tag to the SpawnPoint Tag.</li>
+<li>Place as many additional SpawnPoints as you like, up to a total of 16.  Make sure their Tags all match the Tag of the CreatureFactory.  Spawned creatures will appear randomly at one of these SpawnPoints.</li>
+<li>Set the ThingFactory&rarr;Prototype property on the CreatureFactory to the desired creature to spawn.</li>
+<li>Set the ThingFactory&rarr;MaxItems property on the CreatureFactory to the maximum number of creatures this factory will allow in game at one time.</li>
+<li>Set the ThingFactory&rarr;Capacity property on the CreatureFactory to the maximum number of total creatures to spawn.  After this number is reached, the factory will shut down.  A value of -1 here indicates the factory should never shut down.</li>
+<li>Set the ThingFactory&rarr;Interval property to the (average) number of seconds to wait before this factory is ready to spawn the next creature.  Note that spawning several creature with an interval of zero will likely cause a "hiccup", where the engine stalls momentarily while spawning.  Set the interval to something small instead, like 0.1</li>
+<li>Set the ThingFactory&rarr;bOnlyPlayerTouched property on the CreatureFactory to true.  For this tutorial, we want the player to trigger the factory when it touches it, but we don't want other creatures to trigger it.  If true, only player pawns are able to activate this factory.</li>
+<li>Decide if the ThingFactory&rarr;bCovert property on the CreatureFactory should be set to false.  It is set to true by default.  If true, the creature will only be spawned if a player is unable to see it spawned, otherwise the factory will wait.  If your SpawnPoint is in plain sight but you'd like creatures to spawn at it even if a player sees the creature appear from (seemingly) nowhere, this could be set to false.</li>
+<li>Decide if the ThingFactory&rarr;bStoppable property on the CreatureFactory should be set to true.  If true, the factory will spawn creatures if Touched (or triggered) and will stop spawning creatures when it is unTouched.</li>
+<li>Set the CreatureFactory&rarr;Orders, OrderTag and AlarmTag properties on the CreatureFactory to those desired property settings for the spawned creatures.</li>
+<li>If the game is set to CoOp mode, decide if extra creatures should be spawned from this factory.  Enter the number of extra creatures to spawn in the AddedCoopCapacity property on the CreatureFactory.</li>
+</ol>
+<p>NOTE: Creatures spawned from a given SpawnPoint will have their Event set to match the Tag of the CreatureFactory (and the SpawnPoint).  That way, once the creature is killed, it will automatically trigger a new creature to be spawned.</p>
+<h2><a name="0.4"></a>External Links</h2>
+<h3><a name="0.4.1"></a>Steve Polge's Docs</h3>
+<ul><li><a href="http://unreal.epicgames.com/AI.htm">[Unreal Creature Care and Feeding Guide]</a> &ndash; The definitive reference.</li>
+</ul>
+<h3><a name="0.4.2"></a>Matthias Worch's Tutorials</h3>
+<p>Matthias Worch, who worked on the Unreal 2 team, has written a couple of tutorials that are highly useful. He's even provided a small demo level.</p>
+<p><em class="em2">Set up dialog and AI scripting for a level</em> and <em class="em2">Create a basic AI script</em> are the articles of interest here.</p>
+<ul><li><a href="http://www.langsuyar.com/articles/u2_tutorialsmain.html">[Worch's Unreal 2 Tutorials]</a></li>
+</ul>
+<h2><a name="0.5"></a>Related Topics</h2>
+<ul><li><a href="artificial-intelligence.html">Artificial Intelligence</a><ul><li><a href="bot-support.html">Bot Support</a><ul><li><a href="bot-support-ut.html">Bot Support (UT)</a></li>
+</ul>
+</li>
+<li><a href="monster-support.html">Monster Support</a></li>
+<li><a href="npc-support.html">NPC Support</a></li>
+</ul>
+</li>
+<li><a href="pawn-ut-ai-functions.html">Pawn (UT)/AI Functions</a></li>
+<li><a href="aiscript.html">AIScript</a></li>
+<li><a href="ai-scripting-reference.html">AI Scripting Reference</a></li>
+<li><a href="ucs-file.html">Ucs File</a> (U2 only) <em class="em1">?</em></li>
+</ul>
+<h2><a name="0.6"></a>Discussion</h2>
+<p><em class="em2">SuperApe:</em> This tutorial needs to be written.  The external links above might be used to help write an original tutorial.  This tutorial should at least cover Patroling and Ambushing.</p>
+<p><em class="em2">SuperApe:</em> I've been working with the original ScriptedPawn code from UT.  I believe I know how all this works, but I don't have UT.  If no one writes this soon, I will probably take a crack at it, based on what I'm seeing in the code.</p>
+<p><em class="em2">SuperApe:</em> Although I do not have UT, I am now familiar with the code that these AI systems ran on, having looked at the code for ScriptedPawn.  I am writing this tutorial with the stipulation that it may not be complete or completely accurrate.  However, it should be close at the very least.</p>
+<p><em class="em2">SuperApe:</em> Finished the tutorial.  Let me know if there are any problems.</p>
+<hr class="thin"><p><a href="category-mapping.html">Category Mapping</a></p>
+<p><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Prerequisites", "#0.1");
+menuItemAdd("Overview", "#0.2");
+menuItemAdd("Tutorial", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Setting Up", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Classes Used", "#0.3.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Retreating", "#0.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Alarm", "#0.3.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Waiting", "#0.3.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Ambushing", "#0.3.5");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Patroling", "#0.3.6");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Guarding", "#0.3.7");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>PawnSpecific Orders", "#0.3.8");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>CreatureFactory and SpawnPoints", "#0.3.9");
+menuItemAdd("External Links", "#0.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Steve Polge's Docs", "#0.4.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Matthias Worch's Tutorials", "#0.4.2");
+menuItemAdd("Related Topics", "#0.5");
+menuItemAdd("Discussion", "#0.6");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Basic_ScriptedPawn_Tutorial">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Basic_ScriptedPawn_Tutorial">View other revisions</a><br>Last edited December 23, 2006 11:31 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Basic_ScriptedPawn_Tutorial">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Basic_ScriptedPawn_Tutorial">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I don't need to test my programs. I have an error-correcting modem.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

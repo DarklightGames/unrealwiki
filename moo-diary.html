@@ -1,0 +1,265 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Moo/Diary</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Moo/Diary; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="moo.html">Moo</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Moo/Diary">Diary</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>6 July 2005</h2>
+<p>I went to take a look at <span class="interwiki"><img 
+      alt="MeatBall logo"
+      title="MeatBall"
+      src="shared//InterWiki-MeatBall.png">&nbsp;<a href="http://www.usemod.com/cgi-bin/mb.pl?InfiniteMonkey">InfiniteMonkey</a></span>. Funny how you can miss totally obvious features, eg RSS output. This really amounts to a totally different output channel for the script. Then I read the bit about working with Wiki Clients, which adds a potential third channel.</p>
+<p>So... do I add a level of abstraction in my Page hierarchy, like this:</p>
+<PRE class="tree">Page
+  +- HtmlPage
+       +- WikiHtmlPage
+            +- usual classes</PRE><p>Or do I introduce Yet Another orthogonal class system of "Output modules" that provide wrapping to the Wiki output? These would be HTML and RSS initially, and WikiClient could be a plug-in later.</p>
+<p>My gut instinct it to lean towards the 2nd option, even though it's a big change in how the script works and it's also a whole new class tree to think about. </p>
+<h3><a name="0.1.1"></a>HtmlPage class</h3>
+<p>Pro:</p>
+<ul><li>Relatively simple</li>
+<li>RssPage will have different children to a certain extent. Rss won't need things like a Diff page, or an Edit page and so on. So having a new branch of the Page class tree makes sense in this light. But...</li>
+</ul>
+<p>Con:</p>
+<ul><li>Some duplication of classes would occur: we'd basically have two RecentChangesPage classes. Would any other classes find themselves repeated? Certainly the ClientOutput would need things like old revisions and history list pages.</li>
+</ul>
+<h3><a name="0.1.2"></a>New output classes</h3>
+<p>Pro:</p>
+<ul><li>Features such as site-wide linkbars or user-specific custom linkbars could be added as a new Output class. I have no idea how these could be plug-ins in current system.</li>
+</ul>
+<p>Con:</p>
+<ul><li>RssPage and other output methods will need some way of knowing that it can't do a Diff page, for example. This will need to be expansion-proof. </li>
+<li>RSS outputs a completely different kind of markup. It's not just a wrapping of template and whatever around the formatted Wiki markup. Two RecentChangesPage classes actually make sense here.</li>
+</ul>
+<p>Hmm.... </p>
+<h2><a name="0.2"></a>5 July 2005</h2>
+<p>The really big thing that's still missing is the database. Things like edit conflict and diff too, but while these are core features, they're not totally essential. With a database system and the basic UseMod parser, Moo should at least be ok to run on a local system as a personal notepad.</p>
+<p>Oh and a system for user registration!</p>
+<p>My To Do list at the moment is mainly cleaning up tasks &ndash; making variable names consistent and standardizing the way things are accessed. </p>
+<h2><a name="0.3"></a>1 July 2005</h2>
+<p><em class="em2">Tarquin:</em> Today I've taken a tentative look at the script for Moo. It runs. It doesn't have a markup parser or a database, but you can edit and save a page, and there's basic support in place for things like category page listings. I need to spend some time getting reacquainted with the script so I understand it again. Fortunately, I've caught Mych's habit of leaving LOTS of comments. There's even POD too!</p>
+<h2><a name="0.4"></a>Old stuff</h2>
+<p>Rough notes for the class structure</p>
+<ul><li>Page<ul><li>PageWiki: pages that open a page from the server<ul><li>Edit<ul><li>Edit Conflict</li>
+</ul>
+</li>
+<li>Diff</li>
+<li>History</li>
+<li>PageWikiSpecial<ul><li>RecentChanges (maybe this &amp; below given a base class, SpecialPage)</li>
+<li>Search</li>
+<li>Wanted Pages</li>
+<li>RandomPage</li>
+<li>Image Upload</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Preferences</li>
+<li>Login</li>
+<li>List all pages</li>
+<li>Admin-Only<ul><li>Rename</li>
+<li>Ban IP</li>
+<li>Lock / unlock site</li>
+<li>Lock / Unlock page</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>I had an idea to isolate behaviour for diff, edit, conflict, history in subclasses. The problem is that PageWikiSpecial children need that behavour too.</p>
+<p>Possible solution: treat SpecialPages as a seperate tree of plug-in behaviours. (like bot brains). </p>
+<p>Aside: can a class's parent be set at runtime? I suppose it can, since it's just </p>
+<pre class="paraverbatim">   our @ISA = Block;</pre><p>which sets parentage. Nothing stopping a </p>
+<pre class="paraverbatim"> if( pants ) {
+  our @ISA = Block; }
+ else {
+  our @ISA = NotBlock;}</pre><p>and thus</p>
+<ol><li>indentify requirement as Browse, Edit, Diff, Etc</li>
+<li>determine if SpecialPage</li>
+<li>spawn object of (desired SpecialPage) as child of requirement in 1</li>
+</ol>
+<p>Would that count as REALLY twisted though?</p>
+<p><em class="em2">Mychaeel:</em>  It can be done and is even documented as doable (in that the method inheritance namespace cache is documented to be cleared when it's done), but it's a last resort at most... if you can avoid stuff like that, do it.</p>
+<p><em class="em2">Tarquin:</em>  Doh! Diff &amp; Edit etc dont need to load in the generated content... just the saved wiki text. So if the object is if class "Diff" (say), then the fact that it doesnt load the generated behaviour is irrelevant!</p>
+<h4><a name="0.4.0.1"></a>Admin Pages</h4>
+<p>Maybe make a base class for Admin-only pages. Hmm. maybe not, a simple Admin-only flag somewhere.</p>
+<p class="indent1"><a href="http://c2.com/cgi/wiki?ShallowHierarchies">http://c2.com/cgi/wiki?ShallowHierarchies</a>  Let's have a class PageAdmin which handles checking the viewer's admin status &amp; displaying a message.</p>
+<h4><a name="0.4.0.2"></a>Home Page</h4>
+<p>slightly special because no page specified means go here... so not a class, but a special case in PageWiki</p>
+<p>Actually, might as well make it a special case at the class level. The class for HomePage could be as simple as reading a config variable for which page to open.</p>
+<h4><a name="0.4.0.3"></a>Diff &amp; History</h4>
+<p>not sure how to handle diff &amp; history. probably:</p>
+<ul><li>Page<ul><li>PageWiki<ul><li>History</li>
+<li>Diff</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>The really clever thing to do would be to have History, Diff and EditConflict create a new PageWiki object that handles opening the second page.</p>
+<p>This business that new() is non-special means that a class can have <em class="em1">several</em> creation functions, I suppose.</p>
+<p class="indent1"><em class="em2">Mychaeel:</em>  Absolutely.  (Naming convention is C++-like, by the way &ndash; start class names with capital letters, method names with lowercase letters.  You can structure either by using capital letters inbetween.)</p>
+<p>That means page classes could have a NewPage() and a NewNested() (or whatever. names subject to improvement). If a nested page is needed for diff, history, edit conflict, etc, create a new instance of PageWiki, but the NewNested obviously doesn't need to make headers, it just needs to open a file &amp; display text.</p>
+<h2><a name="0.5"></a>Main function</h2>
+<p>Pondering two approaches:</p>
+<p>method 1:</p>
+<pre class="uscript">sub doBrowse <span class="uscript-operator">{</span>
+  print <span class="uscript-operator">&amp;</span>getHttpHeader<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  print <span class="uscript-operator">&amp;</span>getHtmlHeader<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  print <span class="uscript-operator">&amp;</span>getPageHeader<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  print <span class="uscript-operator">&amp;</span>getDocumentText<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  # etc
+<span class="uscript-operator">}</span>
+
+
+method <span class="uscript-number">2</span>:
+
+<span class="uscript-operator">&lt;</span>uscript<span class="uscript-operator">&gt;</span>
+sub doBrowse <span class="uscript-operator">{</span>
+  getHttpHeader<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  getHtmlHeader<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  getPageHeader<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  getDocumentText<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  # etc
+<span class="uscript-operator">}</span>
+# each <span class="uscript-keyword">function</span> handles its own printing<span class="uscript-operator">.</span></pre><p>As I see it, the advantage of (2) is that I can choose whether to build up a $text and print in one go, or print pieces as it goes. </p>
+<p><em class="em2">Mychaeel:</em> I strongly suggest you build the entire page in memory first, then print it at once if appropriate.  Just think of the <a href="offline-wiki.html">Offline Wiki</a> (plus, you can send a decent "Content-Length" HTTP header so browsers know in advance how much content to expect and can display working progress bars while loading).</p>
+<h2><a name="0.6"></a>New()</h2>
+<p>In wookee.pm, new() is only ever called with one argument. Therefore, is the second line in sub new() useful:</p>
+<pre>
+    my $owner = shift;
+</pre><p>It's causing me problems as I'm calling new( %PageVariables ) and the first piece of the hash gets eaten by it. Do i risk death or disaster by removing it?</p>
+<p><em class="em2">Mychaeel:</em> At one place in Wookee, new() takes a reference to an object's "owner" (to propagate information about embedded links and headers up the block nesting hierarchy).  That's not a Perl built-in, it's merely my own design.</p>
+<hr class="thin"><p><em class="em2">Mychaeel:</em>  Moo?  I like the name.  <img alt=":-D" src="emoticons/biggrin.gif" align="middle"></p>
+<p><em class="em2">Tarquin:</em>  <img alt=":D" src="emoticons/biggrin.gif" align="middle"></p>
+<p><em class="em2">ZxAnPhOrIaN:</em>  I like moo too. <img alt=":D" src="emoticons/biggrin.gif" align="middle"></p>
+<hr class="thin"><pre class="paraverbatim">  sub Browse {
+    my $page          = ' ';
+    # need to know:
+    # URL params
+    # User name and status
+    
+    my %browseParams  = ( page=&gt;'Home', action=&gt;'edit');
+    
+    # determine which class to set $page equal to...
+    foreach $subclass ( @registered ) {
+      $page = $subclass&rarr;ChildofPage($page, %browseParams );
+      print "checking... $page\n";
+      # Page
+      ## PageAdminTask
+      ## PageWiki
+      ## PageLogin
+      ## PagePreferences
+    }
+    print $page&rarr;GenerateContent();
+    #print scalar @registered;
+  }</pre><p>hmm.... not ideal. I'm trying to think if there's ever a situation where different tasks might both want to perform, given the input, and one should take precedence. If not, might as well have classes return nothing unless they want to take on the task, and use some sort of a "while ..." construction instead of "foreach".</p>
+<script type="text/javascript"><!--
+ menuItemAdd("6 July 2005", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>HtmlPage class", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>New output classes", "#0.1.2");
+menuItemAdd("5 July 2005", "#0.2");
+menuItemAdd("1 July 2005", "#0.3");
+menuItemAdd("Old stuff", "#0.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Admin Pages", "#0.4.0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Home Page", "#0.4.0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Diff &amp; History", "#0.4.0.3");
+menuItemAdd("Main function", "#0.5");
+menuItemAdd("New()", "#0.6");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="moo.html">Moo</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Moo/Diary">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Moo/Diary">View other revisions</a><br>Last edited July 6, 2005 9:19 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Moo/Diary">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Moo/Diary">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Cogito, ergo sum
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

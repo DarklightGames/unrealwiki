@@ -1,0 +1,146 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Firing Projectile Weapons</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Firing_Projectile_Weapons; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Firing Projectile Weapons">Firing Projectile Weapons</a></h1>
+	<div class="wiki"><p><a href="how-ut2003-weapons-work.html">How UT2003 Weapons Work</a>: Projectile Weapons</p>
+<h3><a name="0.0.1"></a>Easy Way</h3>
+<div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[projectilefireflow]" src="images/projectilefireflow.jpeg"><p>Projectile Fire Flowchart</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<h3><a name="0.0.2"></a>In English</h3>
+<p>The player hits the Fire button.  The engine then executes the alias attached to Fire.  The alias fire is set to Button bFire, and the exec command Fire().  Check <a href="binding-keys.html">aliases</a> for more information on how this works but basically bFire is a boolean variable that is automatically set by the engine to true when the fire button is being held down, and false when the fire button is released.  The engine has a native event set such that when bFire is held down the Pawn.Weapons.WeaponFire.ModeDoFire() is called.  As well PlayerController.Fire() is called.  It's important to note that these are two distinctly separate chains of events.</p>
+<h4><a name="0.0.2.1"></a>The Second Chain</h4>
+<p>The second chain is shorter, and as such will be examined first.  PlayerController.Fire() checks to see if the game is currently paused, and if it is unpauses the game and returns without further action.  If the game is not paused, PlayerController.Fire() calls Pawn.Fire().</p>
+<pre class="uscript"><span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> Fire<span class="uscript-operator">(</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">float</span> F <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Level<span class="uscript-operator">.</span>Pauser <span class="uscript-operator">==</span> PlayerReplicationInfo <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        SetPause<span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    Pawn<span class="uscript-operator">.</span>Fire<span class="uscript-operator">(</span>F<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Pawn.Fire() checks to see if there's a valid weapon, and if so executes Weapon.Fire().  You'll note the check against None; this prevents access nones from appearing when the player does not have a valid weapon.  Similar error checking code should be introduced in any code you write.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> Fire<span class="uscript-operator">(</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">float</span> F <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Weapon<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        Weapon<span class="uscript-operator">.</span>Fire<span class="uscript-operator">(</span>F<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Weapon.Fire() would seem to be the function that actually fires the weapon, but this is not true.  The base Weapon.Fire() is actually empty.  As an abstract class this would be expected, except that most every class that derives from Weapon fails to override Fire() with their own function.  It is, effectively, blank for every weapon included with Unreal Tournament 2003.</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Fire<span class="uscript-operator">(</span><span class="uscript-type">float</span> F<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span></pre><h4><a name="0.0.2.2"></a>The First Chain</h4>
+<p>The actual processing of the firing of the weapon occurs in the first chain of events mentioned above.  There is no visible link in the UnrealScript code provided by Epic or extracted from UnrealEd from Unreal Tournament 2003 between the Fire alias and ModeDoFire().  The link is handled by the engine, natively, through the boolean variable bFire and ModeDoFire().</p>
+<p>ModeDoFire is called based upon the player's currently selected weapon, and whether or not we're in the Fire or AltFire chain of events.  They proceed identically; the major difference is that FireModeClass(0).ModeDoFire() is called with Fire, and FireModeClass(1).ModeDoFire() is called with AltFire.  (<em class="em1">FireModeClass(x) is defined in the weapon class, and directs the engine to the appropriate class to be called when a weapon is fired. See <a href="weapon.html">Weapon</a> for more information.</em>)</p>
+<p>The first thing ModeDoFire does is check if firing is currently allowed.  A variety of circumstances may exist to prevent firing:  a timer may have to expire between shots, the player may not have ammunition, the player may be dead.  If any of these circumstances are met ModeDoFire simply exits and acts as if fire was not pressed.  Then, again, we split off into two chains of possible events.</p>
+<h6><a name="0.0.2.2.0.1"></a>The First Chain:  Server</h6>
+<hr class="thin"><p><em class="em2">Wormbo:</em> There's a small error in the Projectile Fire Flowchart. The ProcessTouch function isn't called by the engine. Instead the engine calls the Touch function which calculates the exact hitlocation and calls ProcessTouch.</p>
+<p><em class="em2">Dante:</em> It seems as if UT is calling Weapon.ClientStartFire/Weapon.ServerStartFire which sets WeaponFire.bIsFiring = true (in Weapon.StartFire) which might be the trigger to call modeDoFire.</p>
+<p><em class="em2">Ceej:</em> Excellent flowchart, thank you. This is really the page to start with when attempting to understand weapons. The general weapon firing page still has the misleading PlayerController.Fire() call chain front and center. Maybe move the flowchart onto the general page and save this for projectile specifics?</p>
+<p><em class="em2">Solid Snake:</em> I've been dealing with the weapon code a lot now for the last 12 hours, and it seems that there is a little more complxities to this than detailed about. Other statements such as ServerStartFire(), ClientStartFire() and StartFire() all seem to play an important role into what makes the gun fire, of course you can always called DoFireMode to force fire the gun, but you miss out some other checks as well that may be important to make sure that the gun is fired properly over a network game. I'm not exactly to sure about this at the moment, but I will report back about this on my studies in this area. The one thing I can say is that Epic certainly doesn't make any easier to decipher what exactly is going on.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Easy Way", "#0.0.1");
+menuItemAdd("In English", "#0.0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>The Second Chain", "#0.0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>The First Chain", "#0.0.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>The First Chain:  Server", "#0.0.2.2.0.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Firing_Projectile_Weapons">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Firing_Projectile_Weapons">View other revisions</a><br>Last edited January 9, 2004 21:58 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Firing_Projectile_Weapons">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Firing_Projectile_Weapons">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Describe the new page here.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

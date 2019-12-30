@@ -1,0 +1,159 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Object Pool</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Object_Pool; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Object Pool">Object Pool</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>UT2003 Object Pool</h2>
+<h3><a name="0.1.1"></a>Overview</h3>
+<p>The object pool allows you to dynamically assign and create objects during the game. A main use is that of allocating textures during the game as they are needed rather than creating all of them beforehand. This method is far easier and more versatile than manually creating all the files you may possibly need. There are of coures many other uses for the object pool but for this example I will use textures.</p>
+<h3><a name="0.1.2"></a>Allocating Objects</h3>
+<p>When you allocate an object the game will first check if any existing objects of that type are available for use and if not, will create a new one to be used. Allocating an object is a simple process, here is an example using a shader.</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> Shader Shader1<span class="uscript-operator">;</span>
+
+Shader1 <span class="uscript-operator">=</span> Shader<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>AllocateObject<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Shader'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>That will first check the object pool for any existing Shader objects in the pool. If one is found it will be removed from the pool and returned as the reference. If none are available it will create a new Shader and return that instead.</p>
+<h3><a name="0.1.3"></a>Freeing Objects</h3>
+<p>Since most uses of the object pool are temporary you need to free up an object once you are done using it. This will add the object to the object pool for later use. This too is a simple process.</p>
+<pre class="uscript">Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>FreeObject<span class="uscript-operator">(</span>Shader1<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>That line will add Shader1 back into the object pool where it can be re-allocated later as needed.</p>
+<table class="paratable" border=0 cellspacing=0 cellpadding=0><tr valign=top><td></td>
+</tr>
+</table>
+<h3><a name="0.1.4"></a>Important Notes</h3>
+<p>While the object pool is very simple and powerful there are several things you should be aware of.</p>
+<h4><a name="0.1.4.1"></a>You should clear any references to an object before you free it and place it back into the object pool.</h4>
+<pre class="uscript"><span class="uscript-keyword">var</span> Shader Shader1<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> ConstantColor Fader1<span class="uscript-operator">;</span>
+
+Fader1 <span class="uscript-operator">=</span> ConstantColor<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>AllocateObject<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'ConstantColor'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+Shader1 <span class="uscript-operator">=</span> Shader<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>AllocateObject<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Shader'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+Shader1<span class="uscript-operator">.</span>Opacity <span class="uscript-operator">=</span> Fader1<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//code here</span>
+
+Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>FreeObject<span class="uscript-operator">(</span>Fader1<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>FreeObject<span class="uscript-operator">(</span>Shader1<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>Note that after allocating the Shader and ConstantColor I assign Fader1 as the opacity value for Shader1. I must be careful how I free these objects up once I am done with them. The code above is incorrect. You cannot properly free Fader1 because it is in use and referenced by Shader1. Although not necessarily required it is generally a good idea to manually clear the reference as well to ensure that no problems occur. Therefore the proper way to free these objects would be as follows.</p>
+<pre class="uscript">Shader1<span class="uscript-operator">.</span>Opacity <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>FreeObject<span class="uscript-operator">(</span>Shader1<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>FreeObject<span class="uscript-operator">(</span>Fader1<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>As I said this is not necessarily required but it should be done anyways to ensure maximum compatibility and avoid any possible problems. Even though problems relating to this seem rare we are dealing with objects not actors and any problems tend to cause a GPF crash so you are most likely better safe than sorry.</p>
+<table class="paratable" border=0 cellspacing=0 cellpadding=0><tr valign=top><td></td>
+</tr>
+</table>
+<h4><a name="0.1.4.2"></a>Properties of an object are not reset to default when placed in the object pool but instead remain intact.</h4>
+<pre class="uscript"><span class="uscript-keyword">var</span> Shader Shader1<span class="uscript-operator">;</span>
+
+Shader1 <span class="uscript-operator">=</span> Shader<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>AllocateObject<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Shader'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+Shader1<span class="uscript-operator">.</span>TwoSided <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+
+Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>FreeObject<span class="uscript-operator">(</span>Shader1<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>In that example we allocate a Shader, set the TwoSided variable to true, then free the Shader and place it back into the object pool. This creates a huge problem. When you free Shader1 the TwoSided variable is not reset but remains as you left it. The next person to allocate a Shader may now get one that has TwoSided set to true. This is not the default value so if they do not expect this it can cause major compatibility problems. Although you can reset the variables yourself before you free the object this only works for your code and there is no garuntee that other scripts also running will be as courteous. As you can imagine the lack of consistency with the objects you allocate can cause a great deal of problems. While you could manually set every variable of an object each time you allocate it there is a far more easy and effective solution to this problem. Instead of directly allocating the class you want create a custom subclass.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MyTwoSidedShader <span class="uscript-keyword">extends</span> Shader<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    TwoSided<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-operator">}</span></pre><p>By using class'MyTwoSidedShader' instead of simply class'Shader' you ensure that nobody will be using objects of this type except you. Now you can assume with a reasonable amount of safety that the properties of these objects will not be changed unless you yourself change them. You can also save time, effort and performance by using default properties instead of having to manually set the variables every time you allocate the object. Overall it is a far cleaner and more compatible way of using the object pool.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("UT2003 Object Pool", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Overview", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Allocating Objects", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Freeing Objects", "#0.1.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Important Notes", "#0.1.4");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>You should clear any references to an object before you free it and place it back into the object pool.", "#0.1.4.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Properties of an object are not reset to default when placed in the object pool but instead remain intact.", "#0.1.4.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Object_Pool">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Object_Pool">View other revisions</a><br>Last edited May 29, 2003 19:51 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Object_Pool">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Object_Pool">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Gah - a solution with more questions. (EntropicLqd)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

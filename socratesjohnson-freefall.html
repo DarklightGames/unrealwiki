@@ -1,0 +1,268 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: SocratesJohnson/Freefall</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=SocratesJohnson/Freefall; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="socratesjohnson.html">SocratesJohnson</a>/<a href="http://wiki.beyondunreal.com/wiki?back=SocratesJohnson/Freefall">Freefall</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Freefall</h2>
+<p>Freefall is a <a href="mutator.html">mutator</a> that turns off the gravity.  I've given the players the ability to bounce off walls, or really any available surface that's near enough. Just face away from a wall and press space to push off.</p>
+<p>I don't reccommend using this on a large open-air map, it would be quite deadly to be caught drifting slowly through the sky so anyone can get a potshot at you.</p>
+<p>The idea is basically from the book Ender's Game by Orson Scott Card in which children train in a battle school in Earth's orbit fighting within student-headed armies with Lasertag-esque guns in zero gravity.</p>
+<p>The concept gives first person shooter combat an extra spice. It can be tricky to get used to it, especially since I've removed any ability to move other then bouncing or rotating, but I've found with practice I could move around quite well.</p>
+<p>There are a few things I want to play around with more. It would be nice to be able to play against AI controlled bots; they have no clue what to do and just sit there letting you shoot them. That's quite a challenge. It would also be great to be able to unlimit the player's yaw movement. I find it annoying in a zero-G environment that a player view can't push beyond a fully "up" or "down" position as in normal FPS play although solving that problem will be tricky. I imagine getting rid of that might not be popular with players so used to the concept of up and down. I might try to tweak how the bounce angle works to make it easier on the player to judge the way he goes; currently the acceleration is just using vector addition. I'm thinking of angling it a bit more away from the current direction of movement as some sort of correction scheme.  Also it would be cool to have different weapons kick you back different rates when they're fired.  Currently explosions will toss you around as will the shield glove if you use it against a wall.</p>
+<p>I've probably done a no-no by subclassing <a href="playercontroller.html">PlayerController</a> like it says NOT to do on the<a href="maintaining-compatibility.html">Maintaining Compatibility</a> but I couldn't find a good way to get the massive changes in movement to work.  I would appreciate any advice on the subject since I'm sure I'm probably going about some things in the wrong way.  I almost wish I choose an easier mutator to implement for my first go because this was a real bear.</p>
+<p>Please download the <em class="em1">latest version</em> (Version 101, 3/11/03) of the UMOD file here:  <a href="http://www.lloydslounge.org/freefall/Freefall.umod">http://www.lloydslounge.org/freefall/Freefall.umod</a></p>
+<p>Just for fun's sake I'll include the source (old):</p>
+<h3><a name="0.1.1"></a>MutZeroG.uc</h3>
+<pre class="uscript"><span class="uscript-keyword">class</span> MutZeroG <span class="uscript-keyword">extends</span> Mutator<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">name</span> FreefallState<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> MutatorIsAllowed<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> PreBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Pawn<span class="uscript-operator">&gt;</span> GamePawnClass<span class="uscript-operator">;</span>
+
+  log<span class="uscript-operator">(</span><span class="uscript-string">"MutZeroG:PreBeginPlay()"</span><span class="uscript-operator">,</span> <span class="uscript-name">'FF'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>PlayerControllerClassName <span class="uscript-operator">=</span> <span class="uscript-string">"Freefall.ZeroGxPlayer"</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>PlayerControllerClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>PlayerController<span class="uscript-operator">&gt;</span><span class="uscript-operator">(</span>DynamicLoadObject<span class="uscript-operator">(</span><span class="uscript-string">"Freefall.ZeroGxPlayer"</span><span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Class'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    GamePawnClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Pawn<span class="uscript-operator">&gt;</span><span class="uscript-operator">(</span> DynamicLoadObject<span class="uscript-operator">(</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>DefaultPlayerClassName<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Class'</span> <span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    GamePawnClass<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>LandMovementState <span class="uscript-operator">=</span> FreefallState<span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  log<span class="uscript-operator">(</span><span class="uscript-string">"MutZeroG:PreBeginPlay() done"</span><span class="uscript-operator">,</span> <span class="uscript-name">'FF'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  log<span class="uscript-operator">(</span><span class="uscript-string">"MutZeroG:PostBeginPlay()"</span><span class="uscript-operator">,</span> <span class="uscript-name">'FF'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Level<span class="uscript-operator">.</span>DefaultGravity <span class="uscript-operator">=</span> <span class="uscript-number">0.0</span><span class="uscript-operator">;</span>
+  log<span class="uscript-operator">(</span><span class="uscript-string">"MutZeroG:PostBeginPlay() done"</span><span class="uscript-operator">,</span> <span class="uscript-name">'FF'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CheckReplacement<span class="uscript-operator">(</span>Actor other<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> <span class="uscript-type">byte</span> bSuperRelevant<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> PhysicsVolume PV<span class="uscript-operator">;</span>
+    
+  PV <span class="uscript-operator">=</span> PhysicsVolume<span class="uscript-operator">(</span>other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PV <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    PV<span class="uscript-operator">.</span>Gravity<span class="uscript-operator">.</span>Z <span class="uscript-operator">=</span> <span class="uscript-number">0.0</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+  IconMaterialName<span class="uscript-operator">=</span><span class="uscript-string">"MutatorArt.nosym"</span>
+  ConfigMenuClassName<span class="uscript-operator">=</span><span class="uscript-string">""</span>
+  GroupName<span class="uscript-operator">=</span><span class="uscript-string">"Gravity"</span>
+  FriendlyName<span class="uscript-operator">=</span><span class="uscript-string">"ZeroG"</span>
+  Description<span class="uscript-operator">=</span><span class="uscript-string">"No Gravity."</span>
+  RemoteRole<span class="uscript-operator">=</span>ROLE_SimulatedProxy
+  bAlwaysRelevant<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+  FreefallState<span class="uscript-operator">=</span>PlayerFreefall<span class="uscript-operator">;</span> 
+<span class="uscript-operator">}</span></pre><h3><a name="0.1.2"></a>ZeroGxPlayer.uc</h3>
+<pre class="uscript"><span class="uscript-keyword">class</span> ZeroGxPlayer <span class="uscript-keyword">extends</span> xPlayer<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> fBounceAcceleration<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> fBounceDistance<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> fBounceAntiDrag<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> EnterStartState<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">name</span> NewState<span class="uscript-operator">;</span>
+  log<span class="uscript-operator">(</span><span class="uscript-string">"ZeroGxPlayer:EnterStartState()"</span><span class="uscript-operator">,</span> <span class="uscript-name">'FF'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  NewState <span class="uscript-operator">=</span> <span class="uscript-name">'PlayerFreefall'</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>IsInState<span class="uscript-operator">(</span>NewState<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    BeginState<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+    GotoState<span class="uscript-operator">(</span>NewState<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  log<span class="uscript-operator">(</span><span class="uscript-string">"ZeroGxPlayer:EnterStartState() done"</span><span class="uscript-operator">,</span> <span class="uscript-name">'FF'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">state</span> PlayerFreefall <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">ignores</span> SeePlayer<span class="uscript-operator">,</span> HearNoise<span class="uscript-operator">,</span> Bump<span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">function</span> PlayerMove<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> vector view<span class="uscript-operator">,</span> endPoint<span class="uscript-operator">,</span> acc<span class="uscript-operator">;</span>
+    <span class="uscript-comment">//log("ZeroGxPlayer:PlayerMove()", 'FF');</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bPressedJump<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+      bPressedJump <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+      view <span class="uscript-operator">=</span> Vector<span class="uscript-operator">(</span>Pawn<span class="uscript-operator">.</span>GetViewRotation<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      endPoint <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> <span class="uscript-operator">(</span>view <span class="uscript-operator">*</span> fBounceDistance<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>Pawn<span class="uscript-operator">.</span>FastTrace<span class="uscript-operator">(</span>endPoint<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        acc <span class="uscript-operator">=</span> fBounceAcceleration <span class="uscript-operator">*</span> view<span class="uscript-operator">;</span>
+      <span class="uscript-operator">}</span>
+      Pawn<span class="uscript-operator">.</span>Acceleration <span class="uscript-operator">=</span> acc<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+      Pawn<span class="uscript-operator">.</span>Acceleration <span class="uscript-operator">*=</span> <span class="uscript-number">0.9</span><span class="uscript-operator">;</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>VSize<span class="uscript-operator">(</span>Pawn<span class="uscript-operator">.</span>Acceleration<span class="uscript-operator">)</span> <span class="uscript-operator">&lt;</span> VSize<span class="uscript-operator">(</span>Pawn<span class="uscript-operator">.</span>Velocity <span class="uscript-operator">*</span> fBounceAntiDrag<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        Pawn<span class="uscript-operator">.</span>Acceleration <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">.</span>Velocity <span class="uscript-operator">*</span> fBounceAntiDrag<span class="uscript-operator">;</span>
+      <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">// Update rotation.</span>
+    UpdateRotation<span class="uscript-operator">(</span>DeltaTime<span class="uscript-operator">,</span> <span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Role <span class="uscript-operator">&lt;</span> ROLE_Authority <span class="uscript-operator">)</span> <span class="uscript-operator">{</span> <span class="uscript-comment">// then save this move and replicate it</span>
+      <span class="uscript-comment">//log("ZeroGxPlayer:PlayMove ReplicateMove", 'FF');</span>
+      ReplicateMove<span class="uscript-operator">(</span>DeltaTime<span class="uscript-operator">,</span> Pawn<span class="uscript-operator">.</span>Acceleration<span class="uscript-operator">,</span> DCLICK_None<span class="uscript-operator">,</span> <span class="uscript-keyword">rot</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+      <span class="uscript-comment">//log("ZeroGxPlayer:PlayMove ProcessMove", 'FF');</span>
+      ProcessMove<span class="uscript-operator">(</span>DeltaTime<span class="uscript-operator">,</span> Pawn<span class="uscript-operator">.</span>Acceleration<span class="uscript-operator">,</span> DCLICK_None<span class="uscript-operator">,</span> <span class="uscript-keyword">rot</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">//log("ZeroGxPlayer:PlayMove done", 'FF');</span>
+  <span class="uscript-operator">}</span>
+
+  <span class="uscript-keyword">function</span> BeginState<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    log<span class="uscript-operator">(</span><span class="uscript-string">"ZeroGxPlayer:beginning Freefall state"</span><span class="uscript-operator">,</span> <span class="uscript-name">'FF'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//Pawn.Velocity.Z = 1.0;</span>
+    Pawn<span class="uscript-operator">.</span>SetPhysics<span class="uscript-operator">(</span>PHYS_Flying<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    log<span class="uscript-operator">(</span><span class="uscript-string">"ZeroGxPlayer:beginning Freefall state done"</span><span class="uscript-operator">,</span> <span class="uscript-name">'FF'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">defaultproperties</span> <span class="uscript-operator">{</span>
+  fBounceAcceleration <span class="uscript-operator">=</span> <span class="uscript-number">1500.0</span><span class="uscript-operator">;</span>
+  fBounceDistance <span class="uscript-operator">=</span> <span class="uscript-number">150.0</span><span class="uscript-operator">;</span>
+  fBounceAntiDrag <span class="uscript-operator">=</span> <span class="uscript-number">0.15</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.2"></a>Code Notes</h2>
+<p>I was originally using PHYS_Falling for the player state.  Seemed to make since for a Free<em class="em1">FALL</em> mutator.  It was a bit tough since the physics engine wanted to set the player in PHYS_Walking whenever he touched the floor.  Getting around that wasn't too difficult since I just could override the landed() method (I think that's the name) as well as change the physics back to PHYS_Falling if it was in anything else.  One interesting thing to note about PHYS_Falling is that it completely ignores any acceleration in the Z direction.  I imagine it only takes into account the effects of the gravity in the particular zone the pawn is in.  After trying many different ways of getting around that limitation with little to no effect I decided to go with PHYS_Flying.  The problem with that physics mode is that is automatically reduces the pawn's velocity over time kind of like you'd see with some manner of friction.  The effect was very noticible and unacceptable.  I believe the cheat-Flying mode that allows the user to stop on a dime has something to do with this effect.  The code above that deals with fBounceAntiDrag eliminates this problem by keeping an acceleration vector on the pawn in the same direction as the pawn was traveling to counteract the drag.  I came at using 0.15 for a multiplier just by trial and error.</p>
+<h3><a name="0.2.1"></a>Comments</h3>
+<p><em class="em2">Mecha:</em> It's a good start. It really seems like it needs custom maps; I can do a bit of free-fall follies in DM-Oceanic, but static meshes tend to trip you up when you catch on them. It'd also be interesting to have a grapple or jetpack to boost yourself around with, since x-loc'ing doesn't change your momentum.</p>
+<p>I sympathise with maintaining compatibility. I smashed my head against getting the pawns to register hitwalls(without changing the pawn/playercontroller) for a solid month before giving up.</p>
+<dl><dt>Code notes</dt><dd></dd></dl>
+<ul><li>All you need to do to change the playercontroller is in PostBeginPlay. There's not much reason to use Pre, and could potentially cause problems on a network.</li>
+<li>Replacing only the actual PlayerController does weird things to the bots. I've managed to shock them out of the standstill(which is probably because they're trying to move regularly), and if they touch the floor, they will get set to PHYS_Walking, and run around like normal&ndash;until they try to jump, where they stop again since PHYS_Falling is probably getting confused.</li>
+<li>You shouldn't be replacing the <em class="em2">default</em> player controller or movement state&ndash;once the mutator is used, players(not bots!) will be unable to move until they quit and restart the game itself, even if switching gametypes and removing the mutator.</li>
+</ul>
+<p>So get rid of the PreBeginPlay function, and your PostBeginPlay function should look something like this:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  log<span class="uscript-operator">(</span><span class="uscript-string">"MutZeroG:PostBeginPlay()"</span><span class="uscript-operator">,</span> <span class="uscript-name">'FF'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>PlayerControllerClassName<span class="uscript-operator">=</span><span class="uscript-string">"Freefall.ZeroGxPlayer"</span><span class="uscript-operator">;</span>
+  Level<span class="uscript-operator">.</span>DefaultGravity <span class="uscript-operator">=</span> <span class="uscript-number">0.0</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  log<span class="uscript-operator">(</span><span class="uscript-string">"MutZeroG:PostBeginPlay() done"</span><span class="uscript-operator">,</span> <span class="uscript-name">'FF'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>and that will take care of any lingering effects.</p>
+<p><em class="em2">Piglet:</em> Really pretty cool, it's just ashame the bots dont like it much, oh well.  By lasertag style guns do you mean simmilar to my <a href="piglet-lasertag.html">Piglet/LaserTag</a> mutator, i've tested them together and the work fairly well together (except I of course couldn't play with bots and we've only one computer fast enough for UT2003 so i couldnt play networked either <img alt=":(" src="emoticons/sad.gif" align="middle"> ).  Anyway a very nice idea, though it would probably be even cooler with some form of jetpacky thing (maybe replacement for shieldguns crappy secondary fire) and new maps.</p>
+<p><em class="em2">SocratesJohnson:</em> Hey thanks for the feedback!  Mecha, I haven't had a chance to implement that code change, I have seen that problem requiring a restart like you said, that change should do the trick.  I agree with the custom maps, although I don't really have any experience mapping.  Please be my guest if anyone is interested!  <img alt=":D" src="emoticons/biggrin.gif" align="middle">  I'm going to have to try and do something to get the bots to understand what's going on but I imagine it will be a bit tricky.  Piglet, the guns in the novel would freze portions of the suit everyone was wearing, so a hit to the arm would disable that arm (BTW it's a fantastic book!).  I'll have to try it with your mutator as well, I'm glad to hear they played nice!  I think jetpacks might be a bit much but I like the idea of a grappling hook.  Does a mutator exist for grappling hooks yet?  If not I'd love to try and implement one, maybe replace the shieldgun's crappy secondary fire like you said. <img alt=":)" src="emoticons/smile.gif" align="middle"> I think I have some time to work on this stuff tonight.  Once again, thanks for the input!</p>
+<p><em class="em2">Mecha:</em> Captain Kewl has notes on building a grapple in his journal<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Developer_Journals/Captain_Kewl&referrerid=SocratesJohnson/Freefall">?</a>. It's not a terribly hard concept, but might take some practice. He also has some notes on correctly replicating client acceleration, which may answer the questions you posed to dma.</p>
+<p>For teaching the bots what to do, you will probably need to change how they react to physics and hitwalls before actually changing their Orders function. Botpathing may also be a big factor in trying to get them to go places. I know that the author of Greed complained that invalid results for FindPathToward() in a bot will slow down the engine considerably; Epic is supposedly fixing this in the next patch.</p>
+<p><em class="em2">SocratesJohnson:</em> Implemented your suggested change and it works like a charm!  Thanks!  I'll create a new UMOD file tonight hopefully.  I also started work on a grapple mutator, just laid some preliminary framework based on the TransLauncher<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=TransLauncher&referrerid=SocratesJohnson/Freefall">?</a> and related code.  Thanks for the pointers!</p>
+<p><em class="em2">SocratesJohnson:</em> Updated the UMOD file with version 101 a week ago but forgot to mention it here. <img alt=":D" src="emoticons/biggrin.gif" align="middle">  The source on this page is still old, I'll update it when I get a chance.</p>
+<p><em class="em2">Mysterial:</em>FindPathToward() appears to be fixed since the 2217 beta patch.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Freefall", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>MutZeroG.uc", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>ZeroGxPlayer.uc", "#0.1.2");
+menuItemAdd("Code Notes", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Comments", "#0.2.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="socratesjohnson.html">SocratesJohnson</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=SocratesJohnson/Freefall">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=SocratesJohnson/Freefall">View other revisions</a><br>Last edited April 6, 2006 18:04 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=SocratesJohnson/Freefall">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/SocratesJohnson/Freefall">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Once I get that upgrade to 36-hour days, I will tackle that. (Mychaeel)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

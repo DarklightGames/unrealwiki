@@ -1,0 +1,270 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Linked List/Existing Lists In Unreal Tournament</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Linked_List/Existing_Lists_In_Unreal_Tournament; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="linked-list.html">Linked List</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Linked+List/Existing+Lists+In+Unreal+Tournament">Existing Lists In Unreal Tournament</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Existing Lists in Unreal Tournament</h2>
+<p>This part of the tutorial explains existing <a href="linked-list.html">linked list</a>s in Unreal Tournament.</p>
+<h3><a name="0.1.1"></a>Actor List</h3>
+<h4><a name="0.1.1.1"></a>Type and Scope</h4>
+<p><em class="em2">Type:</em> All actors in Unreal are connected though a gigantic list (well it is actually a dynamic array, but to make life easier think of it as a list) that exists only in the native C++ code. Without this list, actors would be just plain old objects. The base of this "list" is actually the native level object (all actors have a pointer to this: Xlevel).</p>
+<p><em class="em2">Scope:</em> Exists on both client and server. When a client "receives" an actor, it is added and when its connection is closed (except with <a href="replication.html">bNetTemporary</a>), it is removed.</p>
+<h4><a name="0.1.1.2"></a>Adding and Removing</h4>
+<p><em class="em2">Adding:</em> Spawning an actor automatically does this. It adds at the end of the list. Note that <a href="levelinfo.html">LevelInfo</a> is always the first actor.</p>
+<p><em class="em2">Removing:</em> Destroying an actor automatically does this.</p>
+<h4><a name="0.1.1.3"></a>Navigating</h4>
+<p>In the <a href="actor.html">Actor</a> class, various "iterators" exist. These allow you read the list in different ways. Simply use <code>ForEach Iterator_Function(params)</code> to use them. ForEach acts much like a For Loop.</p>
+<dl><dt>AllActors ( class&lt;actor&gt; BaseClass, out actor Actor, optional name MatchTag )</dt><dd>BaseClass is the parent of classes you wish to look for. The actor pointer passed in the second parameter becomes the actor outputted. As the iterator functions are hard-coded into the compiler, you can have the actor pointer be of the BaseClass or any of its parents. Matchtag, if given, will only return actors, which have that tag. This will go through every actor in the level and is thus somewhat slow (this is not noticeable however unless it is called multiple times in one frame), and thus use it sparingly. If a more class specific list exists, such as that for pawns and navigation points (see below), use those instead. Note that if you wish to terminate the loop when a certain actor is returned, simply use <code>break;</code>.</dd><dt>ChildActors ( class&lt;actor&gt; BaseClass, out actor Actor )</dt><dd>The parameters work the same as AllActors'. However, this only returns actors with their owner set to the class this is run on. It has the same speed hit as AllActors.</dd><dt>BasedActors ( class&lt;actor&gt; BaseClass, out actor Actor )</dt><dd>Returns all actors that have this as a base. Same speed hit as AllActors.</dd><dt>TraceActors ( class&lt;actor&gt; BaseClass, out actor Actor, out vector HitLoc, out vector HitNorm, vector End, optional vector Start, optional vector Extent )</dt><dd>This is supposed to trace a line from Start to End and return all actors hit (executes as fast as a normal trace). However, this is not ever used by Epic in code and I recall of no one ever getting it to work right. I do not recommend using it.</dd><dt>RadiusActors ( class&lt;actor&gt; BaseClass, out actor Actor, float Radius, optional vector Loc )</dt><dd>This returns all actors that are within radius units of Loc (or if it isn't given; then the actor's location). Same speed hit as AllActors().</dd><dt>VisibleActors ( class&lt;actor&gt; BaseClass, out actor Actor, optional float Radius, optional vector Loc )</dt><dd>This is much like RadiusActors() only it also checks if an actor is visible from Loc. Same speed hit as AllActors.</dd><dt>VisibleCollidingActors ( class&lt;actor&gt; BaseClass, out actor Actor, optional float Radius, optional vector Loc, optional bool bIgnoreHidden )</dt><dd>This only returns actors with bCollideActors as true. It uses the collision hash to check, and thus it is much faster than Allactors, in normal circumstances. If a very high radius is used (900 or so), then it becomes very slow, and VisibleActors should be used instead.</dd><dt>ZoneInfo.ZoneActors( class&lt;actor&gt; BaseClass, out actor Actor )</dt><dd>Returns all actors inside that zone. Same speed hit as AllActors(). Go figure.</dd></dl>
+<h3><a name="0.1.2"></a>Inventory List</h3>
+<h4><a name="0.1.2.1"></a>Type and Scope</h4>
+<p><em class="em2">Type:</em>  Standard one way linked list. Notice how it is defined in actor, and not in inventory. This is designed so other actors (pawns) can have a link to the base, while keeping the same pointer name.</p>
+<p><em class="em2">Scope:</em>  Server. On the client side however, it will only exist for the player being controlled and within his inventory. Other player's will not have an inventory list. Note that in very rare events, replication can come at a weird order and cause the inventory pointer of one item to point to an older one in the list. Thus when using this list client-side, you should have a check so that no more than 100 or so loops occur (to avoid infinite iterators).</p>
+<h4><a name="0.1.2.2"></a>Adding and Removing</h4>
+<p><em class="em2">Adding:</em> Call AddInventory() on the pawn you wish to add that inventory item to with that item in the parameters. It is then added to the beginning of the inventory list. This should only be done server-side. Note that inventory's GiveTo() automatically does this.</p>
+<p><em class="em2">Removing:</em> Class DeleteInventory() on the pawn(owner) with the item you wish to delete in the parameters. Again, this should only be performed server-side. When an inventory item is destroyed, this automatically occurs (see Inventory.Destroyed()).</p>
+<h4><a name="0.1.2.3"></a>Navigating</h4>
+<p>If you are only searching for one item of a certain class (not child classes!), you can simply call FindInventoryType on the pawn who owns the items. Yet to search through the entire list do the following:</p>
+<pre class="uscript"><span class="uscript-keyword">Local</span> Inventory Inv<span class="uscript-operator">;</span>
+<span class="uscript-keyword">For</span> <span class="uscript-operator">(</span>Inv<span class="uscript-operator">=</span>somepawn<span class="uscript-operator">.</span>Inventory<span class="uscript-operator">;</span>Inv<span class="uscript-operator">!=</span><span class="uscript-keyword">none</span><span class="uscript-operator">;</span>Inv<span class="uscript-operator">=</span>Inv<span class="uscript-operator">.</span>Inventory<span class="uscript-operator">)</span>
+  <span class="uscript-comment">//do stuff here</span></pre><h3><a name="0.1.3"></a>Pawn List</h3>
+<p>This list is the reason I am writing this tutorial. I tire of seeing code that uses ForEach AllActors(class'pawn',p), when there is a much faster way this can be done.</p>
+<h4><a name="0.1.3.1"></a>Type and Scope</h4>
+<p><em class="em2">Type:</em> Native controlled standard one way list linked by LevelInfo.PawnList.</p>
+<p><em class="em2">Scope:</em> Server Side only at BeginPlay() in gameinfo. Thus, on a client or in a mutator (post/pre)BeginPlay(), you need to stick with AllActors(class'pawn',p)</p>
+<h4><a name="0.1.3.2"></a>Adding and Removing</h4>
+<p><em class="em2">Adding:</em> Simply call AddPawn() on the pawn. Note that pawn automatically does this in its PreBeginPlay() so you really do not need to worry about calling this. Adds to the end of the list.</p>
+<p><em class="em2">Removing:</em> Call RemovePawn() on the pawn. This is automatically taken care of in Destroyed().</p>
+<h4><a name="0.1.3.3"></a>Navigating</h4>
+<p>The list base is located in levelinfo. Simply call (in any actor):</p>
+<pre class="uscript"><span class="uscript-keyword">Local</span> pawn p<span class="uscript-operator">;</span>
+<span class="uscript-keyword">For</span> <span class="uscript-operator">(</span>p<span class="uscript-operator">=</span>level<span class="uscript-operator">.</span>pawnlist<span class="uscript-operator">;</span>p<span class="uscript-operator">!=</span><span class="uscript-keyword">none</span><span class="uscript-operator">;</span>p<span class="uscript-operator">=</span>p<span class="uscript-operator">.</span>nextpawn<span class="uscript-operator">)</span>
+  <span class="uscript-comment">//do stuff</span></pre><h3><a name="0.1.4"></a>Navigation Point List</h3>
+<h4><a name="0.1.4.1"></a>Type and Scope</h4>
+<p><em class="em2">Type:</em> Constant standard one way list linked by LevelInfo.NavigationPointList.</p>
+<p><em class="em2">Scope:</em> Server-side only.</p>
+<h4><a name="0.1.4.2"></a>Adding and Removing</h4>
+<p>Cannot be done. The list is generated upon building the paths in UnrealEd.</p>
+<h4><a name="0.1.4.3"></a>Navigating</h4>
+<p>Most likely you will use the navigation point list to find path nodes (a simple navpoint added by level authors). This allows you to spawn actors at many different locations in the map, and still have bots touch them. For instance, the relics mutator searches the Navigation Point list for pathnodes. Relics are then spawned at a random node. Like the pawn list, the base is in LevelInfo. </p>
+<pre class="uscript"><span class="uscript-keyword">Local</span> NavigationPoint np<span class="uscript-operator">;</span>
+<span class="uscript-keyword">For</span> <span class="uscript-operator">(</span>np<span class="uscript-operator">=</span>level<span class="uscript-operator">.</span>NavigationPointList<span class="uscript-operator">;</span>np<span class="uscript-operator">!=</span><span class="uscript-keyword">none</span><span class="uscript-operator">;</span>np<span class="uscript-operator">=</span>np<span class="uscript-operator">.</span>nextnavigationpoint<span class="uscript-operator">)</span>
+  <span class="uscript-comment">//do stuff</span></pre><p>Note that many other lists exist within navigation point. They are all used exclusively for AI navigation. Unless your name is Pfhoenix, they have no meaning.</p>
+<h3><a name="0.1.5"></a>Mutator List</h3>
+<p>The introduction of mutators in Unreal 2.24 was one of the best things ever done for mod makers. What makes mutators so powerful? The fact that they are linked lists. This allows many different mods to be run at once and change many different game elements.</p>
+<p>There are in fact 4 mutator lists in Unreal Tournament; the primary mutator list, damage mutators that only affect (Mutator)TakeDamage calls, message mutators that only affect messages (BroadCast, BroadCastLocalized, and player's talking), and finally HUD mutators that allow mutators to draw on the HUD.</p>
+<h4><a name="0.1.5.1"></a>Type and Scope</h4>
+<p><em class="em2">Type:</em> All are standard one-way linked lists. HUD mutators are linked to by a HUD, and all others are linked by the GameInfo.</p>
+<p><em class="em2">Scope:</em> Mutators normally (default) only exist server-side. However, the HUD mutators must be on the client (see below).</p>
+<h4><a name="0.1.5.2"></a>Adding</h4>
+<h5><a name="0.1.5.2.1"></a>Normal Mutators</h5>
+<p>When a user selects start, UT opens a map with a special parameter:</p>
+<pre class="paraverbatim">  ?mutator=MutatorPackage.MutatorClass,AnotherMutatorPackage.AnotherMutatorClass</pre><p>The GameInfo's InitGame() is called when it is first spawned. First the base mutator (generally DMMutator) is spawned. From there the mutator options are parsed (this tutorial is not about string manipulation and Unreal URLs!), the mutator class dynamically loaded, then spawned, then finally added to the list:</p>
+<pre class="uscript">log<span class="uscript-operator">(</span><span class="uscript-string">"Add mutator "</span><span class="uscript-operator">$</span>LeftOpt<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+MClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Mutator<span class="uscript-operator">&gt;</span><span class="uscript-operator">(</span>DynamicLoadObject<span class="uscript-operator">(</span>LeftOpt<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Class'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> 
+BaseMutator<span class="uscript-operator">.</span>AddMutator<span class="uscript-operator">(</span>Spawn<span class="uscript-operator">(</span>MClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>AddMutator() adds to the end of the list with the "1337 function" method described earlier in this tutorial. Now the mutator list is ready to receive notification of actor spawning, mutate commands, player respawnings, death notifications, and all those other wonderful events mutators receive from pawns and, more commonly, the gameinfo.</p>
+<h5><a name="0.1.5.2.2"></a>Damage Mutators</h5>
+<p>To make a mutator be used as a damage mutator (it still has normal mutator functions!), simply call Level.Game.RegisterDamageMutator(MutatorToBeRegistered). The mutator will now receive notification whenever a pawn takes damage and can modify certain values.</p>
+<h5><a name="0.1.5.2.3"></a>Message Mutators</h5>
+<p>This is another specialized mutator, not unlike a damage mutator. Simply call Level.Game.RegisterMessageMutator(MutatorToBeRegistered) to be able to edit all of the wonderful messages. Incidentally, message mutators did not exist until UT version 4.13. They were created simply for support of Rocket Arena. They have also been beneficial in stopping message hacking. <img alt=":p" src="emoticons/tongue.gif" align="middle"></p>
+<h5><a name="0.1.5.2.4"></a>HUD Mutators</h5>
+<p>I cannot even count the amount of times people have asked why their HUD mutator will not work in network play. What is the reason for this problem? It is quite simple; mutators exist only on the server, yet HUDs are client-side only. Epic's code makes it appear that you can simply call RegisterHUDMutator, which is untrue. The following is one way of adding a HUD mutator on the client:</p>
+<p><em class="em2">Step 1:</em> In the default properties of your mutator, place the following:</p>
+<pre class="uscript">bAlwaysRelevant<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+bNetTemporary<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+RemoteRole<span class="uscript-operator">=</span>ROLE_SimulatedProxy</pre><p>These values cause the mutator to be replicated to all clients, but the connection only stays open until the client has received the mutator. The mutator must also be a Simulated Proxy on the client for step 2 to work.</p>
+<p><em class="em2">Step 2:</em> Now add the following code to your mutator:</p>
+<pre class="uscript"><span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">Function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> delta<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">==</span> NM_DedicatedServer <span class="uscript-operator">||</span> bHUDMutator<span class="uscript-operator">)</span>
+    Disable<span class="uscript-operator">(</span><span class="uscript-name">'Tick'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">Else</span>
+    RegisterHUDMutator<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Each frame, RegisterHUDMutator() is called. If it finds a PlayerPawn with a HUD (local player!), it will set that HUD's HUDMutator to this mutator (as well as preserve the list) and set bHUDMutator to true. If the mutator has already been registered or this is a dedicated server (no HUDs!), then tick () can be safely disabled.</p>
+<p>On a final note, I ask that all mod makers who make use of HUD mutators to do the following:  At the end of PostRender() in your HUD mutator, <em class="em1">please</em> add:</p>
+<pre class="uscript"><span class="uscript-keyword">If</span> <span class="uscript-operator">(</span>NextHUDMutator <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+  NextHUDMutator<span class="uscript-operator">.</span>PostRender<span class="uscript-operator">(</span>Canvas<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>For some dumb reason, Epic did not add that support to begin with. Without those lines, your mutator will be the only HUD mutator used. Other HUD mutators will not receive PostRender() calls, and thus not be able to display anything on screen.</p>
+<h4><a name="0.1.5.3"></a>Removing</h4>
+<p>No specialized functions exist to remove elements from mutator lists. Simply follow the removal model at the beginning of this tutorial.</p>
+<h4><a name="0.1.5.4"></a>Navigating</h4>
+<p>Rarely will you ever need to iterate through the mutator list. All functions of mutators simply call that same function on the next mutator, returning a result if necessary. Yet if you wish to go through all mutators simply use:</p>
+<pre class="uscript"><span class="uscript-keyword">Local</span> mutator m<span class="uscript-operator">;</span>
+<span class="uscript-keyword">For</span> <span class="uscript-operator">(</span>m <span class="uscript-operator">=</span> ListStart<span class="uscript-operator">;</span> m <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span> m <span class="uscript-operator">=</span> m<span class="uscript-operator">.</span>ListNext<span class="uscript-operator">)</span>
+  <span class="uscript-comment">//do stuff</span></pre><p>Replace <code>ListStart</code> and <code>ListNext</code> as follows:</p>
+<table class="paratable-border" border=0 cellspacing=0 cellpadding=0><tr valign=top><td><em class="em2">Mutator Type</em></td>
+<td><em class="em2">ListStart</em></td>
+<td><em class="em2">ListNext</em></td>
+</tr>
+<tr valign=top><td>Normal</td>
+<td><code>Level.Game.BaseMutator</code></td>
+<td><code>NextMutator</code></td>
+</tr>
+<tr valign=top><td>Damage</td>
+<td><code>Level.Game.DamageMutator</code></td>
+<td><code>NextDamageMutator</code></td>
+</tr>
+<tr valign=top><td>Message</td>
+<td><code>Level.Game.MessageMutator</code></td>
+<td><code>NextMessageMutator</code></td>
+</tr>
+<tr valign=top><td>HUD</td>
+<td><code>MyPlayerPawn.myHUD.HUDMutator</code></td>
+<td><code>NextHUDMutator</code></td>
+</tr>
+</table>
+<h3><a name="0.1.6"></a>Spawn Notification List</h3>
+<p>This is a list of very powerful actors; SpawnNotifies. For more information read <a href="http://unreal.epicgames.com/UTMagic.html">http://unreal.epicgames.com/UTMagic.html</a>. Whenever an actor is spawned/received on a client, native code calls SpawnNotification(actor) on the LevelInfo.SpawnNotify.</p>
+<h4><a name="0.1.6.1"></a>Type and Scope</h4>
+<p><em class="em2">Type:</em> Standard one-way list linked by LevelInfo.SpawnNotify.</p>
+<p><em class="em2">Scope:</em> Server and client-side. Note however that SpawnNotifies manually add themselves on both server and client, rather than having the list replicated, as is the case with inventory.</p>
+<h4><a name="0.1.6.2"></a>Adding and Removing</h4>
+<p><em class="em2">Adding:</em> SpawnNotify.PostBeginPlay() automatically adds to the beginning of the list.</p>
+<p><em class="em2">Removing:</em> SpawnNotify.Destroyed() automatically removes that SpawnNotify. Feel free to call Destroyed() yourself to remove a SpawnNotify from a list, for this does not actually destroy the actor.</p>
+<p><em class="em2">Note:</em> The entire spawn notification system can be temporary deactivated as follows:</p>
+<pre class="uscript"><span class="uscript-keyword">Local</span> SpawnNotify Sn<span class="uscript-operator">;</span>
+Sn<span class="uscript-operator">=</span>level<span class="uscript-operator">.</span>SpawnNotify<span class="uscript-operator">;</span>
+Level<span class="uscript-operator">.</span>SpawnNotify<span class="uscript-operator">=</span><span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+<span class="uscript-comment">//do stuff here without worrying about Spawn Notifies.</span>
+Level<span class="uscript-operator">.</span>SpawnNotify<span class="uscript-operator">=</span>Sn<span class="uscript-operator">;</span></pre><h3><a name="0.1.7"></a>Other Cases of Linked Lists</h3>
+<dl><dt>InterpolationPoint</dt><dd>Uses a two-way list for interpolation of player locations and other properties between each point. While the list is created in unrealscript, that is as far as unrealscript handles it. Everything else is handled by native code.</dd><dt>Pbolt</dt><dd>Uses a standard one-way list that you will probably never need to touch. The plasma beam you see when alt firing the Pulse Gun is actually a linked list of Pbolt's. Unfortunately, the system wasn't written in the best way possible. Ideally, there should be a pointer to the StarterBolt in all beams. Variables only important to the beam as a whole (AccumulatedDamage, LastHitTime) are controlled in each beam, rather than only the list base. Thus when beams are destroyed, some of those values are lost, resulting in odd damage patterns.</dd><dt>Mover</dt><dd>Uses a one-way linked list that also has a pointer to the base. This is used for movers that follow other movers. Feel free to explore this code on your own.</dd><dt>Actor.Deleted</dt><dd>A list of actors that have been deleted and are awaiting garbage collection. This occurs when 128 actors are in the list. This is only used in Epic's native C++ code.</dd><dt>SavedMove</dt><dd>For player movement in a network environment, the client must save old moves to be sent later (to avoid overflowing the network and in cases of packet loss). The actual list is the standard one-way one, which carries move information. A playerpawn has pointers to the SavedMoves (the beginning of the SaveMove list), FreeMoves (a move that is "free"), and PendingMove (the next move to be sent to the server). Yet, this is a tutorial on lists, not something else. Study the SavedMove class and PlayerPawn.ReplicateMove() to learn more.</dd><dt>Menu.ParentMenu</dt><dd>This is simply a pointer to the previous green menu that showed. These "green menus" were used in Unreal I only.  There is little need to understand how they work if you script in UT.</dd><dt>ListElement</dt><dd>This is a two-way list that was set up for use with the WebAdmin. It is a quite powerful method of storing data.</dd><dt>UWindowList</dt><dd>This is a very advanced list, which stores various data for the uWindow system.</dd><dt>UWindowWindow</dt><dd>All the menus seen in UT are actually stored with this complex list system.</dd></dl>
+<h2><a name="0.2"></a>Related Topics</h2>
+<ul><li><a href="scripting-linked-lists.html">Scripting Linked Lists</a></li>
+</ul>
+<h2><a name="0.3"></a>Comments</h2>
+<p><em class="em2">Daid303:</em> How about a UT2003 version of this page?</p>
+<p><em class="em2">Foxpaw:</em> UT2003 uses the same lists. New lists of items have mostly been implemented as dynamic arrays instead. There is also one new linked list to my knowledge, the inventory list of an actor.</p>
+<p><em class="em2">Wormbo:</em> The linked list of Inventory actors was declared in <a href="actor.html">Actor</a> back in Unreal 1 v205 already. <img alt=";)" src="emoticons/wink.gif" align="middle"> We should probably create a page for all <em class="em1">useful</em> lists (not only linked lists) both in UT and UT2003. Things like the list of deleted actors can hardly be called useful in everyday UnrealScript coding...</p>
+<p><em class="em2">Daid303:</em> In UT2003 you also have the GUI, linked list? (didn't look) and controller ofcouse, is pawn still linked? And it would be nice to know what does and doesn't apply to UT2003. Oh, and how about a 'base' for linked list, 1 way, and 2 way. It would be alot easier of you could just copy a basic then work from that. I made a mistake in a 2 way linked list, and it took me quite a while to fix the remove function.</p>
+<p><em class="em2">Wormbo:</em> The GUI stuff is a set of dynamic arrays in the <a href="guicontroller.html">GUIController</a>. Pawns aren't "listed" anymore, the Level.PawnList has been replaced by the Level.ControllerList.</p>
+<p><em class="em2">Tarquin:</em> I've rearranged other pages on linked lists. What should be done with this one? </p>
+<hr class="thin"><p>Prev Page: [/What Are Linked Lists]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Linked_List/What_Are_Linked_Lists&referrerid=Linked_List/Existing_Lists_In_Unreal_Tournament">?</a> &ndash; <em class="em2">Section 2 of 2</em> &ndash; End of Document</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Existing Lists in Unreal Tournament", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Actor List", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Type and Scope", "#0.1.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Adding and Removing", "#0.1.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Navigating", "#0.1.1.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Inventory List", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Type and Scope", "#0.1.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Adding and Removing", "#0.1.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Navigating", "#0.1.2.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Pawn List", "#0.1.3");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Type and Scope", "#0.1.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Adding and Removing", "#0.1.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Navigating", "#0.1.3.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Navigation Point List", "#0.1.4");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Type and Scope", "#0.1.4.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Adding and Removing", "#0.1.4.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Navigating", "#0.1.4.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Mutator List", "#0.1.5");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Type and Scope", "#0.1.5.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Adding", "#0.1.5.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt>Normal Mutators", "#0.1.5.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt>Damage Mutators", "#0.1.5.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt>Message Mutators", "#0.1.5.2.3");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt>HUD Mutators", "#0.1.5.2.4");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Removing", "#0.1.5.3");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Navigating", "#0.1.5.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Spawn Notification List", "#0.1.6");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Type and Scope", "#0.1.6.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Adding and Removing", "#0.1.6.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Other Cases of Linked Lists", "#0.1.7");
+menuItemAdd("Related Topics", "#0.2");
+menuItemAdd("Comments", "#0.3");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="linked-list.html">Linked List</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Linked_List/Existing_Lists_In_Unreal_Tournament">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Linked_List/Existing_Lists_In_Unreal_Tournament">View other revisions</a><br>Last edited September 5, 2005 10:10 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Linked_List/Existing_Lists_In_Unreal_Tournament">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Linked_List/Existing_Lists_In_Unreal_Tournament">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I'm a doctor, not a mechanic
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

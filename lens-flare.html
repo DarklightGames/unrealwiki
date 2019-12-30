@@ -1,0 +1,293 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Lens Flare</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Lens_Flare; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Lens Flare">Lens Flare</a></h1>
+	<div class="wiki"><p>A <em class="em2">lens flare</em> is a visual effect assembled of several circles/hexagons that &ndash; when the person is moving &ndash; move opposite of the light source and don't stay on one spot. So they move in the direction that the person is moving. The color of lens flares is generally related to the color of the light. A lens flare is a result of compound lens systems used in cameras and other optical devices, and so some consideration should be given to their use - lens flares do not occur on light sources viewed with the naked eye. Also, lens flares can make it harder to see, so be careful that their use does not adversely impact gameplay.</p>
+<p>The textures that are displayed around light sources, but stick at the place where the light is are <a href="corona.html">corona</a>s. For some reason they're frequently erroneously called "lens flare" as well.</p>
+<div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[corona]" src="images/corona.gif"></div>
+</td>
+</tr>
+</table>
+</div>
+<h2><a name="0.1"></a>Lens Flare in the Unreal Engine</h2>
+<p>No support for lens flares is built in to the Unreal Engine, but lens flares can be created using UnrealScript. This should be possible with any version of the Unreal Engine, though the specific Unrealscript code required will vary. Lens flares can be created two ways - by drawing them directly onto the screen using the <a href="canvas.html">Canvas</a>, or by creating non-colliding actors in the world. Using actors allows you to make better use of hardware graphics acceleration, though drawing to the <a href="canvas.html">Canvas</a> will require marginally less memory. Drawing to the <a href="canvas.html">Canvas</a> may also produce slightly better results, as actors may be clipped by nearby meshes. Both solutions should have negligible impact on performance. With either solution, Unrealscript will be needed to compute the correct positions for the lens flares.</p>
+<h2><a name="0.2"></a>Making Lens Flares</h2>
+<p>Here's the code I used for a proof of concept I threw together a short while back.  References can be found in the comments.</p>
+<p>The idea is that a light source is creating a glare against the "lens" through which we are viewing the world &ndash; in this case the canvas.  The flare effect is then created by drawing a series of coronas along a vector on the canvas which passes through both the light source and the center of the screen.</p>
+<pre class="uscript"><span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-comment">// FlareInteraction.</span>
+<span class="uscript-comment">// Adds 1337 lens flares for lights w/ coronas.</span>
+<span class="uscript-comment">// (c) 2002 jasonyu</span>
+<span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-keyword">class</span> FlareInteraction <span class="uscript-keyword">extends</span> Interaction<span class="uscript-operator">;</span>
+
+<span class="uscript-exec">#exec OBJ LOAD FILE=Textures\FlareTextures.utx PACKAGE=LensFlare</span>
+
+<span class="uscript-keyword">var</span> Actor PlayerOwner<span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> HLSMAX <span class="uscript-operator">=</span> <span class="uscript-number">240</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> RGBMAX <span class="uscript-operator">=</span> <span class="uscript-number">255</span><span class="uscript-operator">;</span>
+
+
+<span class="uscript-keyword">event</span> Initialized<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    PlayerOwner <span class="uscript-operator">=</span> ViewportOwner<span class="uscript-operator">.</span>Actor<span class="uscript-operator">;</span>
+    log<span class="uscript-operator">(</span><span class="uscript-string">"Lensflare interaction initialized."</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// adapted from:</span>
+<span class="uscript-comment">// http://plaza27.mbn.or.jp/~satomii/design/win32/hls2rgb.html</span>
+<span class="uscript-keyword">final</span> <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">float</span> HueToRGB<span class="uscript-operator">(</span><span class="uscript-type">float</span> n1<span class="uscript-operator">,</span> <span class="uscript-type">float</span> n2<span class="uscript-operator">,</span> <span class="uscript-type">float</span> hue<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> hue <span class="uscript-operator">&lt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span> hue <span class="uscript-operator">+=</span> HLSMAX<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> hue <span class="uscript-operator">&gt;</span> HLSMAX <span class="uscript-operator">)</span> hue <span class="uscript-operator">-=</span> HLSMAX<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">/* return r,g, or b value from this tridrant */</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> hue <span class="uscript-operator">&lt;</span> <span class="uscript-operator">(</span>HLSMAX<span class="uscript-operator">/</span><span class="uscript-number">6</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-operator">(</span> n1 <span class="uscript-operator">+</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>n2<span class="uscript-operator">-</span>n1<span class="uscript-operator">)</span><span class="uscript-operator">*</span>hue <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>HLSMAX<span class="uscript-operator">/</span><span class="uscript-number">12</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-operator">(</span>HLSMAX<span class="uscript-operator">/</span><span class="uscript-number">6</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> hue <span class="uscript-operator">&lt;</span> <span class="uscript-operator">(</span>HLSMAX<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> n2<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> hue <span class="uscript-operator">&lt;</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>HLSMAX<span class="uscript-operator">*</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">3</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-operator">(</span> n1 <span class="uscript-operator">+</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>n2<span class="uscript-operator">-</span>n1<span class="uscript-operator">)</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>HLSMAX<span class="uscript-operator">*</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span>hue<span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>HLSMAX<span class="uscript-operator">/</span><span class="uscript-number">12</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-operator">(</span>HLSMAX<span class="uscript-operator">/</span><span class="uscript-number">6</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        <span class="uscript-keyword">return</span> n1<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">final</span> <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Color hls2rgb<span class="uscript-operator">(</span><span class="uscript-type">byte</span> hue<span class="uscript-operator">,</span> <span class="uscript-type">byte</span> lum<span class="uscript-operator">,</span> <span class="uscript-type">byte</span> sat<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Color C<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> Magic1<span class="uscript-operator">,</span> Magic2<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> R<span class="uscript-operator">,</span>G<span class="uscript-operator">,</span>B<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> sat<span class="uscript-operator">==</span><span class="uscript-number">0</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>     <span class="uscript-comment">/* achromatic case */</span>
+        C<span class="uscript-operator">.</span>R <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>lum<span class="uscript-operator">*</span>RGBMAX<span class="uscript-operator">)</span> <span class="uscript-operator">/</span> HLSMAX<span class="uscript-operator">;</span>
+        C<span class="uscript-operator">.</span>G <span class="uscript-operator">=</span> C<span class="uscript-operator">.</span>R<span class="uscript-operator">;</span>
+        C<span class="uscript-operator">.</span>B <span class="uscript-operator">=</span> C<span class="uscript-operator">.</span>R<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+    <span class="uscript-operator">{</span>       <span class="uscript-comment">/* chromatic case */</span>
+        <span class="uscript-comment">/* set up magic numbers */</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>lum <span class="uscript-operator">&lt;=</span> <span class="uscript-operator">(</span>HLSMAX<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+            Magic2 <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>lum<span class="uscript-operator">*</span><span class="uscript-operator">(</span>HLSMAX<span class="uscript-operator">+</span>sat<span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-operator">(</span>HLSMAX<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">/</span> HLSMAX<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+            Magic2 <span class="uscript-operator">=</span> lum<span class="uscript-operator">+</span>sat <span class="uscript-operator">-</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>lum<span class="uscript-operator">*</span>sat<span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-operator">(</span>HLSMAX<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">/</span> HLSMAX<span class="uscript-operator">;</span>
+
+        Magic1 <span class="uscript-operator">=</span> <span class="uscript-number">2</span><span class="uscript-operator">*</span>lum <span class="uscript-operator">-</span> Magic2<span class="uscript-operator">;</span>
+
+        <span class="uscript-comment">/* get RGB, change units from HLSMAX to RGBMAX */</span>
+        R <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>HueToRGB<span class="uscript-operator">(</span>Magic1<span class="uscript-operator">,</span> Magic2<span class="uscript-operator">,</span> hue<span class="uscript-operator">+</span><span class="uscript-operator">(</span>HLSMAX<span class="uscript-operator">/</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+                <span class="uscript-operator">*</span> RGBMAX <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>HLSMAX<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">/</span> HLSMAX<span class="uscript-operator">;</span>
+        G <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>HueToRGB<span class="uscript-operator">(</span>Magic1<span class="uscript-operator">,</span> Magic2<span class="uscript-operator">,</span> hue<span class="uscript-operator">)</span>
+                <span class="uscript-operator">*</span> RGBMAX <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>HLSMAX<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">/</span> HLSMAX<span class="uscript-operator">;</span>
+
+        B <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>HueToRGB<span class="uscript-operator">(</span>Magic1<span class="uscript-operator">,</span> Magic2<span class="uscript-operator">,</span> hue<span class="uscript-operator">-</span><span class="uscript-operator">(</span>HLSMAX<span class="uscript-operator">/</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+                <span class="uscript-operator">*</span> RGBMAX <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>HLSMAX<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">/</span> HLSMAX<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    C<span class="uscript-operator">.</span>R <span class="uscript-operator">=</span> R<span class="uscript-operator">;</span>
+    C<span class="uscript-operator">.</span>G <span class="uscript-operator">=</span> G<span class="uscript-operator">;</span>
+    C<span class="uscript-operator">.</span>B <span class="uscript-operator">=</span> B<span class="uscript-operator">;</span>
+    C<span class="uscript-operator">.</span>A <span class="uscript-operator">=</span> <span class="uscript-number">255</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span> C<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+
+<span class="uscript-comment">// adapted from:</span>
+<span class="uscript-comment">// http://www.gamedev.net/reference/articles/article813.asp</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostRender<span class="uscript-operator">(</span> canvas Canvas <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Light Other<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> Dist<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Vector X<span class="uscript-operator">,</span>Y<span class="uscript-operator">,</span>Z<span class="uscript-operator">,</span> Dir<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">local</span> Vector V<span class="uscript-operator">,</span> C<span class="uscript-operator">,</span> L<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> <span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> ScaleX<span class="uscript-operator">,</span> ScaleY<span class="uscript-operator">;</span>
+
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> ViewportOwner<span class="uscript-operator">.</span>Actor<span class="uscript-operator">.</span>Pawn <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> PlayerOwner <span class="uscript-operator">=</span> ViewportOwner<span class="uscript-operator">.</span>Actor<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span> PlayerOwner <span class="uscript-operator">=</span> ViewportOwner<span class="uscript-operator">.</span>Actor<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PlayerOwner <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        ScaleX <span class="uscript-operator">=</span> Canvas<span class="uscript-operator">.</span>SizeX <span class="uscript-operator">/</span> <span class="uscript-number">640.0</span><span class="uscript-operator">;</span>
+        ScaleY <span class="uscript-operator">=</span> Canvas<span class="uscript-operator">.</span>SizeY <span class="uscript-operator">/</span> <span class="uscript-number">480.0</span><span class="uscript-operator">;</span>
+
+        C<span class="uscript-operator">.</span>X <span class="uscript-operator">=</span> Canvas<span class="uscript-operator">.</span>ClipX<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">;</span>
+        C<span class="uscript-operator">.</span>Y <span class="uscript-operator">=</span> Canvas<span class="uscript-operator">.</span>ClipY<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">;</span>
+        GetAxes<span class="uscript-operator">(</span>PlayerOwner<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">,</span> X<span class="uscript-operator">,</span>Y<span class="uscript-operator">,</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">ForEach</span> PlayerOwner<span class="uscript-operator">.</span>RadiusActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Light'</span><span class="uscript-operator">,</span> Other<span class="uscript-operator">,</span> <span class="uscript-number">2000</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            Dir <span class="uscript-operator">=</span> Other<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> PlayerOwner<span class="uscript-operator">.</span>Location<span class="uscript-operator">;</span>
+            Dist <span class="uscript-operator">=</span> VSize<span class="uscript-operator">(</span>Dir<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            Dir <span class="uscript-operator">=</span> Dir<span class="uscript-operator">/</span>Dist<span class="uscript-operator">;</span>
+            
+            <span class="uscript-comment">// find an appropriate light source (bright, in FOV)</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Dir <span class="uscript-operator">Dot</span> X<span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">0.7</span> <span class="uscript-operator">&amp;&amp;</span> Other<span class="uscript-operator">.</span>bCorona <span class="uscript-operator">&amp;&amp;</span>
+                <span class="uscript-operator">(</span>
+                <span class="uscript-operator">(</span>PlayerOwner<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Pawn'</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span>  Pawn<span class="uscript-operator">(</span>PlayerOwner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>LineOfSightTo<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">||</span>
+                <span class="uscript-operator">(</span>PlayerOwner<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Controller'</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> Controller<span class="uscript-operator">(</span>PlayerOwner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>LineOfSightTo<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+                <span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span>
+                Other<span class="uscript-operator">.</span>LightRadius <span class="uscript-operator">&gt;=</span> <span class="uscript-number">64</span> <span class="uscript-operator">&amp;&amp;</span> Other<span class="uscript-operator">.</span>DrawScale <span class="uscript-operator">&gt;</span> <span class="uscript-number">0.2</span> <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                <span class="uscript-comment">//Convert 3d location to 2d for display on the Canvas</span>
+                L <span class="uscript-operator">=</span> WorldToScreen<span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+                V<span class="uscript-operator">.</span>X <span class="uscript-operator">=</span> L<span class="uscript-operator">.</span>X <span class="uscript-operator">-</span> C<span class="uscript-operator">.</span>X<span class="uscript-operator">;</span>
+                V<span class="uscript-operator">.</span>Y <span class="uscript-operator">=</span> L<span class="uscript-operator">.</span>Y <span class="uscript-operator">-</span> C<span class="uscript-operator">.</span>Y<span class="uscript-operator">;</span>
+                <span class="uscript-keyword">Length</span> <span class="uscript-operator">=</span> VSize<span class="uscript-operator">(</span>V<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                V <span class="uscript-operator">=</span> Normal<span class="uscript-operator">(</span>V<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+                Canvas<span class="uscript-operator">.</span>Style <span class="uscript-operator">=</span> PlayerOwner<span class="uscript-operator">.</span>ERenderStyle<span class="uscript-operator">.</span>STY_Additive<span class="uscript-operator">;</span>
+
+                <span class="uscript-comment">// tint the corona textures to match the hue of the light</span>
+                Canvas<span class="uscript-operator">.</span>DrawColor <span class="uscript-operator">=</span> hls2rgb<span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>LightHue<span class="uscript-operator">,</span> <span class="uscript-number">15</span><span class="uscript-operator">,</span> <span class="uscript-number">75</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+                <span class="uscript-comment">// place flares along directional vector</span>
+                Canvas<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span> <span class="uscript-operator">(</span>V<span class="uscript-operator">.</span>X<span class="uscript-operator">*</span><span class="uscript-keyword">Length</span><span class="uscript-operator">*</span><span class="uscript-number">1.2</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">32</span><span class="uscript-operator">*</span>ScaleX<span class="uscript-operator">+</span>C<span class="uscript-operator">.</span>X<span class="uscript-operator">,</span> <span class="uscript-operator">(</span>V<span class="uscript-operator">.</span>Y<span class="uscript-operator">*</span><span class="uscript-keyword">Length</span><span class="uscript-operator">*</span><span class="uscript-number">1.2</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">32</span><span class="uscript-operator">*</span>ScaleY<span class="uscript-operator">+</span>C<span class="uscript-operator">.</span>Y <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                Canvas<span class="uscript-operator">.</span>DrawTile<span class="uscript-operator">(</span>Texture<span class="uscript-name">'LensFlare3'</span><span class="uscript-operator">,</span> <span class="uscript-number">64</span><span class="uscript-operator">*</span>ScaleX<span class="uscript-operator">,</span><span class="uscript-number">64</span><span class="uscript-operator">*</span>ScaleY<span class="uscript-operator">,</span><span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+                Canvas<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span> <span class="uscript-operator">(</span>V<span class="uscript-operator">.</span>X<span class="uscript-operator">*</span><span class="uscript-keyword">Length</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">32</span><span class="uscript-operator">*</span>ScaleX<span class="uscript-operator">+</span>C<span class="uscript-operator">.</span>X<span class="uscript-operator">,</span> <span class="uscript-operator">(</span>V<span class="uscript-operator">.</span>Y<span class="uscript-operator">*</span><span class="uscript-keyword">Length</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">32</span><span class="uscript-operator">*</span>ScaleY<span class="uscript-operator">+</span>C<span class="uscript-operator">.</span>Y <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                Canvas<span class="uscript-operator">.</span>DrawTile<span class="uscript-operator">(</span>Texture<span class="uscript-name">'LensFlare1'</span><span class="uscript-operator">,</span> <span class="uscript-number">64</span><span class="uscript-operator">*</span>ScaleX<span class="uscript-operator">,</span><span class="uscript-number">64</span><span class="uscript-operator">*</span>ScaleY<span class="uscript-operator">,</span><span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+                Canvas<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span> <span class="uscript-operator">(</span>V<span class="uscript-operator">.</span>X<span class="uscript-operator">*</span><span class="uscript-keyword">Length</span><span class="uscript-operator">*</span><span class="uscript-number">0.66</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">64</span><span class="uscript-operator">*</span>ScaleX<span class="uscript-operator">+</span>C<span class="uscript-operator">.</span>X<span class="uscript-operator">,</span> <span class="uscript-operator">(</span>V<span class="uscript-operator">.</span>Y<span class="uscript-operator">*</span><span class="uscript-keyword">Length</span><span class="uscript-operator">*</span><span class="uscript-number">0.66</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">64</span><span class="uscript-operator">*</span>ScaleY<span class="uscript-operator">+</span>C<span class="uscript-operator">.</span>Y <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                Canvas<span class="uscript-operator">.</span>DrawTile<span class="uscript-operator">(</span>Texture<span class="uscript-name">'LensFlare1'</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">*</span>ScaleX<span class="uscript-operator">,</span><span class="uscript-number">128</span><span class="uscript-operator">*</span>ScaleY<span class="uscript-operator">,</span><span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+                Canvas<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span> <span class="uscript-operator">(</span>V<span class="uscript-operator">.</span>X<span class="uscript-operator">*</span><span class="uscript-keyword">Length</span><span class="uscript-operator">*</span><span class="uscript-number">0.33</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">64</span><span class="uscript-operator">*</span>ScaleX<span class="uscript-operator">+</span>C<span class="uscript-operator">.</span>X<span class="uscript-operator">,</span> <span class="uscript-operator">(</span>V<span class="uscript-operator">.</span>Y<span class="uscript-operator">*</span><span class="uscript-keyword">Length</span><span class="uscript-operator">*</span><span class="uscript-number">0.33</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">64</span><span class="uscript-operator">*</span>ScaleY<span class="uscript-operator">+</span>C<span class="uscript-operator">.</span>Y <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                Canvas<span class="uscript-operator">.</span>DrawTile<span class="uscript-operator">(</span>Texture<span class="uscript-name">'LensFlare0'</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">*</span>ScaleX<span class="uscript-operator">,</span><span class="uscript-number">128</span><span class="uscript-operator">*</span>ScaleY<span class="uscript-operator">,</span><span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+                Canvas<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span> <span class="uscript-operator">(</span>V<span class="uscript-operator">.</span>X<span class="uscript-operator">*</span><span class="uscript-keyword">Length</span><span class="uscript-operator">*</span><span class="uscript-number">0.125</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">64</span><span class="uscript-operator">*</span>ScaleX<span class="uscript-operator">+</span>C<span class="uscript-operator">.</span>X<span class="uscript-operator">,</span> <span class="uscript-operator">(</span>V<span class="uscript-operator">.</span>Y<span class="uscript-operator">*</span><span class="uscript-keyword">Length</span><span class="uscript-operator">*</span><span class="uscript-number">0.125</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">64</span><span class="uscript-operator">*</span>ScaleY<span class="uscript-operator">+</span>C<span class="uscript-operator">.</span>Y <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                Canvas<span class="uscript-operator">.</span>DrawTile<span class="uscript-operator">(</span>Texture<span class="uscript-name">'LensFlare2'</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">*</span>ScaleX<span class="uscript-operator">,</span><span class="uscript-number">128</span><span class="uscript-operator">*</span>ScaleY<span class="uscript-operator">,</span><span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+                Canvas<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span> <span class="uscript-operator">(</span>V<span class="uscript-operator">.</span>X<span class="uscript-operator">*</span><span class="uscript-keyword">Length</span><span class="uscript-operator">*</span><span class="uscript-operator">-</span><span class="uscript-number">0.21</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">64</span><span class="uscript-operator">*</span>ScaleX<span class="uscript-operator">+</span>C<span class="uscript-operator">.</span>X<span class="uscript-operator">,</span> <span class="uscript-operator">(</span>V<span class="uscript-operator">.</span>Y<span class="uscript-operator">*</span><span class="uscript-keyword">Length</span><span class="uscript-operator">*</span><span class="uscript-operator">-</span><span class="uscript-number">0.21</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">64</span><span class="uscript-operator">*</span>ScaleY<span class="uscript-operator">+</span>C<span class="uscript-operator">.</span>Y <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                Canvas<span class="uscript-operator">.</span>DrawTile<span class="uscript-operator">(</span>Texture<span class="uscript-name">'LensFlare3'</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">*</span>ScaleX<span class="uscript-operator">,</span><span class="uscript-number">128</span><span class="uscript-operator">*</span>ScaleY<span class="uscript-operator">,</span><span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+                Canvas<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span> <span class="uscript-operator">(</span>V<span class="uscript-operator">.</span>X<span class="uscript-operator">*</span><span class="uscript-keyword">Length</span><span class="uscript-operator">*</span><span class="uscript-operator">-</span><span class="uscript-number">0.30</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">32</span><span class="uscript-operator">*</span>ScaleX<span class="uscript-operator">+</span>C<span class="uscript-operator">.</span>X<span class="uscript-operator">,</span> <span class="uscript-operator">(</span>V<span class="uscript-operator">.</span>Y<span class="uscript-operator">*</span><span class="uscript-keyword">Length</span><span class="uscript-operator">*</span><span class="uscript-operator">-</span><span class="uscript-number">0.30</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">32</span><span class="uscript-operator">*</span>ScaleY<span class="uscript-operator">+</span>C<span class="uscript-operator">.</span>Y <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                Canvas<span class="uscript-operator">.</span>DrawTile<span class="uscript-operator">(</span>Texture<span class="uscript-name">'LensFlare4'</span><span class="uscript-operator">,</span> <span class="uscript-number">64</span><span class="uscript-operator">*</span>ScaleX<span class="uscript-operator">,</span><span class="uscript-number">64</span><span class="uscript-operator">*</span>ScaleY<span class="uscript-operator">,</span><span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+                Canvas<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span> <span class="uscript-operator">(</span>V<span class="uscript-operator">.</span>X<span class="uscript-operator">*</span><span class="uscript-keyword">Length</span><span class="uscript-operator">*</span><span class="uscript-operator">-</span><span class="uscript-number">0.5</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">90</span><span class="uscript-operator">*</span>ScaleX<span class="uscript-operator">+</span>C<span class="uscript-operator">.</span>X<span class="uscript-operator">,</span> <span class="uscript-operator">(</span>V<span class="uscript-operator">.</span>Y<span class="uscript-operator">*</span><span class="uscript-keyword">Length</span><span class="uscript-operator">*</span><span class="uscript-operator">-</span><span class="uscript-number">0.5</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-number">90</span><span class="uscript-operator">*</span>ScaleY<span class="uscript-operator">+</span>C<span class="uscript-operator">.</span>Y <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                Canvas<span class="uscript-operator">.</span>DrawTile<span class="uscript-operator">(</span>Texture<span class="uscript-name">'LensFlare4'</span><span class="uscript-operator">,</span> <span class="uscript-number">180</span><span class="uscript-operator">*</span>ScaleX<span class="uscript-operator">,</span><span class="uscript-number">180</span><span class="uscript-operator">*</span>ScaleY<span class="uscript-operator">,</span><span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">,</span> <span class="uscript-number">128</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+   bVisible<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+   bActive<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+<span class="uscript-operator">}</span></pre><p>A compiled .u with textures and activating mutator may be located at <a href="http://www.boilingpoint.com/~jasonyu/ut/LensFlare.zip">http://www.boilingpoint.com/~jasonyu/ut/LensFlare.zip</a></p>
+<p>Enjoy.</p>
+<p><em class="em2">capt.</em></p>
+<h2><a name="0.3"></a>Links</h2>
+<p><a href="http://www.wildtangent.com/developer/howtos/LensFlareHowTo/">http://www.wildtangent.com/developer/howtos/LensFlareHowTo/</a> - Explanation of how to calculate positions for lens flare effects.</p>
+<p><a href="http://www.blackpawn.com/texts/lensflare/default.html">http://www.blackpawn.com/texts/lensflare/default.html</a> - Information on creating good textures for use with lens flares.</p>
+<p><a href="http://www.cambridgeincolour.com/tutorials/lens-flare.html">[Understanding Lens Flare]</a> - Background on what causes lens flare and techniques to reduce it in photography.</p>
+<hr class="thin"><p><em class="em2">Ghost3021:</em> Wow! Lets combine this with realtime SquirrelZ's realtimeshadows.... <img alt=":D" src="emoticons/biggrin.gif" align="middle"> </p>
+<p><em class="em2">Wormbo:</em> Lense flares only appear when you use an optical device like a camera, that's why they are called <em class="em1">lense</em> flares. You will never see them with bare eyes, so why combine them with realistic real-time shadows? Both work independantly and that's a good thing, actually.</p>
+<p><em class="em2">GG-Xtreme:</em> It doesn't seem to come with the textures, and it doesn't use a default texture package. Does anyone have a download to LensFlares.utx?</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Lens Flare in the Unreal Engine", "#0.1");
+menuItemAdd("Making Lens Flares", "#0.2");
+menuItemAdd("Links", "#0.3");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Lens_Flare">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Lens_Flare">View other revisions</a><br>Last edited March 2, 2007 19:30 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Lens_Flare">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Lens_Flare">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>The three virtues of a programmer: Laziness, Impatience, and Hubris. (Larry Wall)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

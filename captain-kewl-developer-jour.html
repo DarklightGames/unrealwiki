@@ -1,0 +1,145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Captain Kewl/Developer Journal</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Captain_Kewl/Developer_Journal; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="captain-kewl.html">Captain Kewl</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Captain+Kewl/Developer+Journal">Developer Journal</a></h1>
+	<div class="wiki"><h4><a name="0.0.0.1"></a>05 Oct 2002</h4>
+<p>Last monday I made my way to the local EB and forced them to happily sell me a copy of UT2k3 before they were ready to put it up on display.  In the days since, I have spent unhealthy amounts of time studying the new codebase, and can thus far only conclude this:</p>
+<p>I am shocked and APPALLED that they have removed the "Fatness" actor display property.</p>
+<p>In spite of this tragedy, I feel it is my duty to not only myself but to the greater UT community that I continue in my efforts to contribute.  Thus we take our first steps toward the As-yet-unnamed "XCTF"-based mod.</p>
+<p>My working idea for constructing this mod is to use a series of mutators, each responsible for specific rules.  The reason why I chose this is because 1.) A basic CTF gametype already exists in 2k3, and 2.) the additional rules (full weapons), are general enough that they can be effectively applied to virtually any other gametype as well.  Avoid redundancy and insure consistency.</p>
+<p>The only real sticking point here is the Grapple.  The difficult part isn't the implementation of the grapple itself, but effective application to the Bot AI.  Would we be able to get away with using mutators for this?  In UT I implemented bot grappling by co-opting the actions induced by the translocator &ndash; none of the AI changes were made to the Bots themselves.  I haven't looked through the 2k3 code in depth yet, but in UT translocation was handled specifically by the navgationpoints and the X-loc itself: the navigationpoint forced the bot to switch to the X-loc and then fire.  Keeping it short, my implementation of the grapple involved simply replacing the X-loc and tweaking where the bot aimed.</p>
+<p>So yes, it's possible to get a bot to use a grapple to get to unreachable places without gutting the bot AI.  But something that sticks out in my mind about 2k3 is the way bots USE the X-loc.  As a means of normal travel, even if it's just to the other side of a room.  If we're going to have a grapple, it's only right that we have the bots use it in the same *intelligent* manner it uses the X-loc... which raises the issue of whether or not the same hack can be used.  When using the X-loc to travel, are bots still using navpoints?  Or are they just using fuzzy logic to guess how best to get to their destination?</p>
+<p>If it's the latter, then we might have to go the route of tweaking the bot controller AI.  Which is where we have to decide about mutator use.  Would a mutator be the best way to swap controllers?  (Is it even possible with a mutator?)</p>
+<p>Mutator construction itself is still pretty straightforward.  Game Rules &ndash; player stats, scoring, and damage modification &ndash; have now been split off from GameInfo.  Thus for a mutator to hook into any of the GameRules functions, you now need to accompany the mutator with GameRules subclass.  It's otherwise pretty much unchanged.</p>
+<h4><a name="0.0.0.2"></a>07 Oct 2002</h4>
+<p>The DE particle emission class == cool.  It’s about damn time UT had some proper support for beam effects.</p>
+<p>So the grapple is in and more or less functional.  Interesting exercise in aquinting myself with the new structure for weapons; there’s now something like 5 different classes to deal with.  The weapon as an inventory class is still intact, but really now just exists to serve the same purpose as ammo – to show that the weapon exists in the player’s inventory.  Facets of the weapon have been abstracted into wholely separate classes, including ones which represent the weapon as viewed as either a pickup or 3pp, and ones which control the actual weapon behavior.  Which actually makes a whole lot of sense, particularly the different pickup and 3pp classes, but makes things a bit more difficult to keep track of.</p>
+<p>The grapple is more or less based on various previous UT implementations, mostly my own.  The weapon fires a projectile which, when it lands, adds a velocity to the player which draws him near.  One nice thing about the WeaponFire class is that the abstraction supports firing modes that are contingent upon the player holding the fire button down; no need for any kind of tick-bound “if ( bFire != 0 )” checks.  Thus the grapple can have two modes:  the first is a Quake-style automatic recall on buttonup, the alternate fire is a normal fire/recall.  The rope is implemented using an xEmitter subclass, largely based on the Ion Painter beam.</p>
+<p>I subclassed the xPlayer controller class in order to put in an exec function which grabs the grapple in inventory and co-opts its WeaponFire.  I’m using the alt mode, so calling the “hook” function once will fire the hook, and calling it again, or “unhook”, will recall it.  There’s our offhand grapple.  I’m considering removing this and placing it in an inventory item instead – it would make an offhand/no offhand gametype configuration easier to implement, I think.</p>
+<p>The keybinding for the grapple goes to an alias… don’t have my user.ini open right now, but it’s something like “hook | onbuttonup unhook”  I’m a bit trepid about going this route – somehow it evokes that shock combo binding used by people who aren’t coordinated enough to move two fingers.  For a while I was considering implementing another input byte… but then, that would also require using a similar alias, and on top of that, could get pretty nasty code-wise with the grapple needing some controller-specific code; it counters the abstraction I’d like to maintain.  Choose the lesser of two evils, I guess.</p>
+<p>Net code is probably a bigger priority than bot support.  Arbitrarily calling AddVelocity for the purpose of pawn locomotion isn’t the most client-friendly thing to do.  Player movement prediction is pretty much how I had it figured while toying with the idea of changing player physics on M:R – all taken care of in the controller’s PlayerMove() function which makes one call to the client and one call to the server – though it’s nice that they now have comments which confirm this.  I’m thinking more and more that I’m going to have to go with a new movement state.  (Hey, if we’re going to mess around with the controller, might as well go all the way.)</p>
+<h4><a name="0.0.0.3"></a>13 Oct 2002</h4>
+<p>Um…  <a href="http://www.boilingpoint.com/~jasonyu/ut/">[I got distracted]</a>.</p>
+<p>Anyway.  I ended up going with a new movement state for the playerpawn.  </p>
+<p>Each time the user manually presses a key to move in any direction, an acceleration is applied to the pawn.  This acceleration is what causes the player to move – the player’s velocity is what results.  Client prediction doesn’t care about the velocity – the player’s position over time – but instead uses the acceleration – the player’s velocity over time.  That way it can not only determine the client’s position, but also where it will likely be in the next update.</p>
+<p>Arbitrarily using AddVelocity doesn’t work, since velocity is neither replicated nor predicted.  The new version of the grapple instead tells the player to accelerate in a given vector and sends the player to the new state, “Hooked”.  There the controller uses state-specific versions of PlayerMove and ProcessMove to handle the changes.  The Hooked state itself is extended from the PlayerFlying state, as we basically want the same thing – to have the player fly – only in this case the player’s acceleration will only be affected by the grapple and no player input.</p>
+<p>The magnitude of acceleration for grappling players is 2048, the same amount used for all pawn movenent with the exception of jumping, which I believe is something like 6000.  The latter is more than sufficient, though, as with such a player can easily do instant 180-degree turns and start running in the opposite direction without missing a beat.  The grapple tells the player to cap the maximum air speed at 700, so a grappling player will never move at more than twice as fast as his running speed.  This value will most likely undergo further tweaking.</p>
+<p>Oh, and bots can grapple-walk.  Basically done by hacking up the xloc-hop code and refitting it for use with the grapple.  Bots use manual fire on the immediate next node they want to travel to, and when they are pulled close enough, the grapple unhooks.  The  grapple will automatically unhook and drop the bot after two seconds anyway, just to insure that the bot doesn’t somehow get stuck.  Still needs some tweaking – need to write up some better logic for the bots’s grapple aiming.  Keep it from shooting the hook off into space while aiming at an uphill target.  Things like that.  Need to work on getting the bots to grapple on to actual targets, ie high platforms, next.</p>
+<p>Seeing the bots use the grapple to get around is extremely, extremely gratifying.</p>
+<h4><a name="0.0.0.4"></a>21 Oct 2002</h4>
+<p>And then I passed everything off to the guys at the <a href="http://www.thecgn.com/q2/">[Coliseum]</a> to tweak to their hearts' content.</p>
+<p>If anyone else is interested in the sources, drop me a note and I'll hook you up.  (Ba-dum-bum-crash!)</p>
+<h4><a name="0.0.0.5"></a>20 Nov 2002</h4>
+<p>Something I hacked together, based on a <a href="lens-flare.html">discussion</a> from sometime back.</p>
+<p><img src="http://www.boilingpoint.com/~jasonyu/ut/lensflare.jpg"></p>
+<h4><a name="0.0.0.6"></a>21 Nov 2002</h4>
+<p>Some tweaking of the textures and placement.  Another screenshot:</p>
+<p><img src="http://www.boilingpoint.com/~jasonyu/ut/lensflare2.jpg"></p>
+<p>What I'd like is to be able to somehow hook into however standard coronas are rendered and have the flares mirror that behavior.  I suspect it's somewhere in the native code, though, so I may be SOL.</p>
+<hr class="thin"><p><a href="category-journal.html">Category Journal</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("05 Oct 2002", "#0.0.0.1");
+menuItemAdd("07 Oct 2002", "#0.0.0.2");
+menuItemAdd("13 Oct 2002", "#0.0.0.3");
+menuItemAdd("21 Oct 2002", "#0.0.0.4");
+menuItemAdd("20 Nov 2002", "#0.0.0.5");
+menuItemAdd("21 Nov 2002", "#0.0.0.6");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="captain-kewl.html">Captain Kewl</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Captain_Kewl/Developer_Journal">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Captain_Kewl/Developer_Journal">View other revisions</a><br>Last edited January 11, 2005 10:30 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Captain_Kewl/Developer_Journal">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Captain_Kewl/Developer_Journal">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Mostly Harmless
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

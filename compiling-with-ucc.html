@@ -1,0 +1,288 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Compiling With UCC</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Compiling_With_UCC; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Compiling With UCC">Compiling With UCC</a></h1>
+	<div class="wiki"><p><em class="em2">UCC</em> is the <a href="unrealscript.html">UnrealScript</a> compiler. This page explains how to compile with the <em class="em2">ucc make</em> command. As an alternative, you may want to consider using <a href="umake.html">UMake</a>, which makes the whole thing much simpler.  If you are a cygwin geek, you might like use <a href="gnumake.html">GnuMake</a></p>
+<h2><a name="0.1"></a>Compiling</h2>
+<p>So, you've spent some time lovingly crafting your mod using well laid out, commented, and maintainable Unreal Script.  You have done the decent thing and placed your .uc class files in /UnrealTournament/YourModPackage/Classes.  The big moment approaches - will it compile first time?</p>
+<p>Well, there's only one way to find out, and that's to do it.  At the very least you need to edit your <a href="game-ini-file.html">Game Ini File</a> and add your package name to the list of editable packages.  Search the ini file for a list of lines starting with EditPackages.  Add your package to the bottom of the list like so:</p>
+<pre class="paraverbatim">  EditPackages=YourModPackage</pre><p>Save the changes. You will now be able to compile your mod using the following command:</p>
+<pre class="paraverbatim">  ucc make</pre><p>By default this command examines all of the EditPackages lines searching for packages which have no corresponding .u (a compiled package file) files and attempts to compile them.  If you have previously built YourModPackage and you have updated the code the build command will not recompile your package unless your first delete it.  It's well worth creating a small batch file to do this for you, e.g.</p>
+<pre class="paraverbatim">  cd C:\UnrealTournament\System
+  del YourModPackage.u
+  ucc make</pre><p>One of the things that's really easy to forget is the <a href="int-file.html">INT file</a> associated with your new package.  This file defines the public classes in the package.  Look in any of the <a href="int-file.html">INT file</a>s for examples of this.  Remember to include the <em class="em1">[Public]</em> directive at the top of the file though or your mod won't be visible in the UT front end.  It's worth keeping a copy of your <a href="int-file.html">INT file</a> in the /UnrealTournament/YourModPackage directory so you don't lose it and always have an up to date version.</p>
+<h2><a name="0.2"></a>Tips</h2>
+<p>To reduce compile time, create the following:</p>
+<ul><li>An ini file, named for example MyProject.ini. Copy UnrealTournament.ini or UT2003.ini and only include those EditPackages entries that your classes depend on.</li>
+<li>Make a batch file that reads:<br><tt>ucc make ini=MyProject.ini</tt></li>
+</ul>
+<p>Note that to see output you'll still have to run it from the command prompt.  (<a href="umake.html">UMake</a> does all that automatically for you and stores an .ini file called make.ini in your project directory.)</p>
+<h3><a name="0.2.1"></a>Batch File</h3>
+<p>When I still used UCC Make I made a batch file that looked like this:</p>
+<pre class="paraverbatim">  COPY MyMod.U *.U_Backup
+  DEL MyMod.U
+  UCC MAKE
+  PAUSE</pre><p>This backs up your U file, deletes it, recompiles it, and then PAUSE, "press any key to continue". This combined with the INI said above here could make a very nice way to compile.</p>
+<h3><a name="0.2.2"></a>Mod System Batch File for ut2k4</h3>
+<p>Last Updated: 15 January 2006</p>
+<p>Easy to adjust to any mod just input the unreal tournament 2004 directory, the mod name and the package and your off.</p>
+<p>If you want to add extra packages just copy the lines containing %package1% or package1 and replace them with %package2% or package2.</p>
+<pre class="uscript">:init
+<span class="uscript-operator">@</span>echo Off
+set utk4dir<span class="uscript-operator">=</span><span class="uscript-string">"Your Unreal 2k4 Dir"</span>
+set utk4sysdir<span class="uscript-operator">=</span><span class="uscript-operator">%</span>utk4dir<span class="uscript-operator">%</span>system\
+
+set modname<span class="uscript-operator">=</span><span class="uscript-string">"Your Mod Name"</span>
+set moddir<span class="uscript-operator">=</span><span class="uscript-operator">%</span>utk4dir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>modname<span class="uscript-operator">%</span>
+set modbakdir<span class="uscript-operator">=</span><span class="uscript-operator">%</span>moddir<span class="uscript-operator">%</span>SysBak\
+set modlogdir<span class="uscript-operator">=</span><span class="uscript-operator">%</span>moddir<span class="uscript-operator">%</span>System\logs\
+
+set package1<span class="uscript-operator">=</span><span class="uscript-string">"Your Package Here"</span>
+<span class="uscript-keyword">goto</span> bak
+
+:bak
+md <span class="uscript-operator">%</span>modbakdir<span class="uscript-operator">%</span>
+md <span class="uscript-operator">%</span>modlogdir<span class="uscript-operator">%</span>
+copy <span class="uscript-operator">%</span>moddir<span class="uscript-operator">%</span><span class="uscript-operator">*</span><span class="uscript-operator">.</span>ucl <span class="uscript-operator">%</span>modbakdir<span class="uscript-operator">%</span><span class="uscript-operator">*</span><span class="uscript-operator">.</span>ucl
+copy <span class="uscript-operator">%</span>moddir<span class="uscript-operator">%</span><span class="uscript-operator">*</span><span class="uscript-operator">.</span><span class="uscript-type">int</span> <span class="uscript-operator">%</span>modbakdir<span class="uscript-operator">%</span><span class="uscript-operator">*</span><span class="uscript-operator">.</span><span class="uscript-type">int</span>
+copy <span class="uscript-operator">%</span>moddir<span class="uscript-operator">%</span><span class="uscript-operator">*</span><span class="uscript-operator">.</span>u <span class="uscript-operator">%</span>modbakdir<span class="uscript-operator">%</span><span class="uscript-operator">*</span><span class="uscript-operator">.</span>u
+echo <span class="uscript-comment">//-----------------------Old Files Backed Up!------------------------</span>
+<span class="uscript-keyword">goto</span> del
+
+:del
+del <span class="uscript-operator">/</span>q <span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>Package1<span class="uscript-operator">%</span><span class="uscript-operator">.</span><span class="uscript-operator">*</span> <span class="uscript-operator">&gt;</span> nul
+del <span class="uscript-operator">/</span>q <span class="uscript-operator">%</span>moddir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>Package1<span class="uscript-operator">%</span><span class="uscript-operator">.</span><span class="uscript-operator">*</span> <span class="uscript-operator">&gt;</span> nul
+echo <span class="uscript-comment">//-----------------------Echo Old Files Deleted!----------------------</span>
+<span class="uscript-keyword">goto</span> make
+
+:make
+<span class="uscript-operator">%</span>utk4dir<span class="uscript-operator">%</span>UCC<span class="uscript-operator">.</span>exe make <span class="uscript-operator">-</span>mod<span class="uscript-operator">=</span><span class="uscript-operator">%</span>modname<span class="uscript-operator">%</span>
+copy <span class="uscript-operator">%</span>utk4dir<span class="uscript-operator">%</span>ucc<span class="uscript-operator">.</span>log <span class="uscript-operator">%</span>modlogdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>modname<span class="uscript-operator">%</span>_ucc<span class="uscript-operator">.</span>log
+echo <span class="uscript-comment">//---------------------------*.u Complete!----------------------------</span>
+<span class="uscript-keyword">goto</span> make<span class="uscript-operator">&amp;</span><span class="uscript-type">int</span>
+
+:make<span class="uscript-operator">&amp;</span><span class="uscript-type">int</span> 
+<span class="uscript-operator">%</span>utk4Dir<span class="uscript-operator">%</span>UCC<span class="uscript-operator">.</span>exe dumpint <span class="uscript-operator">-</span>mod<span class="uscript-operator">=</span><span class="uscript-operator">%</span>modname<span class="uscript-operator">%</span> <span class="uscript-operator">%</span>moddir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package1<span class="uscript-operator">%</span><span class="uscript-operator">.</span>u
+copy <span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span>ucc<span class="uscript-operator">.</span>log <span class="uscript-operator">%</span>modlogdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>modname<span class="uscript-operator">%</span>_int<span class="uscript-operator">.</span>log
+copy <span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package1<span class="uscript-operator">%</span><span class="uscript-operator">.</span><span class="uscript-type">int</span> <span class="uscript-operator">%</span>moddir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package1<span class="uscript-operator">%</span><span class="uscript-operator">.</span><span class="uscript-type">int</span>
+del <span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package1<span class="uscript-operator">%</span><span class="uscript-operator">.</span><span class="uscript-type">int</span>
+del <span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span>ucc<span class="uscript-operator">.</span>log
+echo <span class="uscript-comment">//--------------------------*.int Complete!---------------------------</span>
+<span class="uscript-keyword">goto</span> make<span class="uscript-operator">&amp;</span>ucl
+
+:make<span class="uscript-operator">&amp;</span>ucl
+<span class="uscript-operator">%</span>utk4Dir<span class="uscript-operator">%</span>UCC<span class="uscript-operator">.</span>exe exportcache <span class="uscript-operator">-</span>v <span class="uscript-operator">-</span>mod<span class="uscript-operator">=</span><span class="uscript-operator">%</span>modname<span class="uscript-operator">%</span> <span class="uscript-operator">%</span>moddir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>Package1<span class="uscript-operator">%</span><span class="uscript-operator">.</span>u 
+copy <span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span>ucc<span class="uscript-operator">.</span>log <span class="uscript-operator">%</span>modlogdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>modname<span class="uscript-operator">%</span>_ucl<span class="uscript-operator">.</span>log
+del <span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span>ucc<span class="uscript-operator">.</span>log
+echo <span class="uscript-comment">//--------------------------*.ucl Complete!---------------------------</span>
+<span class="uscript-keyword">goto</span> end
+
+:end
+echo <span class="uscript-comment">//--------------------------Make Complete!---------------------------</span></pre><h3><a name="0.2.3"></a>Another ucc batch file</h3>
+<p>Displays time and result of last compilation, updates window title, restarts with single key press.</p>
+<pre class="uscript"><span class="uscript-operator">@</span>echo off
+:start
+title COMPILING :: MyProject
+CLS
+
+Copy UCC_MyProject<span class="uscript-operator">.</span>log UCC_MyProject_OLD<span class="uscript-operator">.</span>log
+
+del MyProject<span class="uscript-operator">.</span>u
+
+ucc make <span class="uscript-operator">-</span>INI<span class="uscript-operator">=</span>MyProject<span class="uscript-operator">.</span>ini <span class="uscript-operator">-</span>LOG<span class="uscript-operator">=</span>UCC_MyProject<span class="uscript-operator">.</span>log
+<span class="uscript-keyword">if</span> errorlevel <span class="uscript-number">1</span> <span class="uscript-keyword">goto</span> end
+
+title OK :: MyProject
+findstr <span class="uscript-operator">/</span>c:<span class="uscript-string">"Log file closed"</span> UCC_MyProject<span class="uscript-operator">.</span>log
+
+echo<span class="uscript-operator">.</span>
+pause
+<span class="uscript-keyword">goto</span> start
+
+:end
+title ERROR :: MyProject 
+findstr <span class="uscript-operator">/</span>c:<span class="uscript-string">"Log file closed"</span> UCC_MyProject<span class="uscript-operator">.</span>log
+
+echo<span class="uscript-operator">.</span>
+pause
+<span class="uscript-keyword">goto</span> start</pre><h2><a name="0.3"></a>Related Topics</h2>
+<ul><li><a href="setting-up-unrealscript.html">Setting Up UnrealScript</a></li>
+<li><a href="compiler-errors.html">Compiler Errors</a></li>
+<li><a href="umake.html">UMake</a> &ndash; convenient "ucc make" wrapper tool.</li>
+<li><a href="set-up-package-folders.html">Set Up Package Folders</a></li>
+<li><a href="ut2k4-default-ini.html">UT2k4 Default.ini</a> &ndash; Using Default.ini to Compile with mod Support.</li>
+<li><a href="commandlet.html">Commandlet</a></li>
+</ul>
+<h2><a name="0.4"></a>Discussion</h2>
+<p><em class="em2">Xaklse:</em> Very useful, thanks! But I had many problems with your first batch example. In case anyone has problems with it, here goes my batch file. Mine includes a custom key binding and exports cache to a single file.</p>
+<pre class="uscript">:init
+<span class="uscript-operator">@</span>echo Off
+set utk4dir<span class="uscript-operator">=</span>C:\UT2004\
+set utk4sysdir<span class="uscript-operator">=</span><span class="uscript-operator">%</span>utk4dir<span class="uscript-operator">%</span>System\
+
+set modname<span class="uscript-operator">=</span>AshuraDarkReign
+set moddir<span class="uscript-operator">=</span><span class="uscript-operator">%</span>utk4dir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>modname<span class="uscript-operator">%</span>\
+set modsysdir<span class="uscript-operator">=</span><span class="uscript-operator">%</span>moddir<span class="uscript-operator">%</span>System\
+set modbakdir<span class="uscript-operator">=</span><span class="uscript-operator">%</span>moddir<span class="uscript-operator">%</span>SYSBAK\
+
+set package1<span class="uscript-operator">=</span>AshuraDarkReign
+set package2<span class="uscript-operator">=</span>ADRGame
+set package3<span class="uscript-operator">=</span>ADRMonsters
+<span class="uscript-keyword">goto</span> bak
+
+:bak
+md <span class="uscript-operator">%</span>modbakdir<span class="uscript-operator">%</span>
+copy <span class="uscript-operator">%</span>modsysdir<span class="uscript-operator">%</span><span class="uscript-operator">*</span><span class="uscript-operator">.</span>ucl <span class="uscript-operator">%</span>modbakdir<span class="uscript-operator">%</span><span class="uscript-operator">*</span><span class="uscript-operator">.</span>ucl
+copy <span class="uscript-operator">%</span>modsysdir<span class="uscript-operator">%</span><span class="uscript-operator">*</span><span class="uscript-operator">.</span><span class="uscript-type">int</span> <span class="uscript-operator">%</span>modbakdir<span class="uscript-operator">%</span><span class="uscript-operator">*</span><span class="uscript-operator">.</span><span class="uscript-type">int</span>
+copy <span class="uscript-operator">%</span>modsysdir<span class="uscript-operator">%</span><span class="uscript-operator">*</span><span class="uscript-operator">.</span>u <span class="uscript-operator">%</span>modbakdir<span class="uscript-operator">%</span><span class="uscript-operator">*</span><span class="uscript-operator">.</span>u
+echo <span class="uscript-comment">//------------------------Old Files Backed Up!------------------------</span>
+<span class="uscript-keyword">goto</span> del
+
+:del
+del <span class="uscript-operator">/</span>q <span class="uscript-operator">%</span>modsysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package1<span class="uscript-operator">%</span><span class="uscript-operator">.</span><span class="uscript-operator">*</span> <span class="uscript-operator">&gt;</span> nul
+del <span class="uscript-operator">/</span>q <span class="uscript-operator">%</span>modsysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package2<span class="uscript-operator">%</span><span class="uscript-operator">.</span><span class="uscript-operator">*</span> <span class="uscript-operator">&gt;</span> nul
+del <span class="uscript-operator">/</span>q <span class="uscript-operator">%</span>modsysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package3<span class="uscript-operator">%</span><span class="uscript-operator">.</span><span class="uscript-operator">*</span> <span class="uscript-operator">&gt;</span> nul
+echo <span class="uscript-comment">//-------------------------Old Files Deleted!-------------------------</span>
+<span class="uscript-keyword">goto</span> make
+
+:make
+<span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span>UCC<span class="uscript-operator">.</span>exe make <span class="uscript-operator">-</span>mod<span class="uscript-operator">=</span><span class="uscript-operator">%</span>modname<span class="uscript-operator">%</span>
+copy <span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span>ucc<span class="uscript-operator">.</span>log <span class="uscript-operator">%</span>modbakdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>modname<span class="uscript-operator">%</span>_ucc<span class="uscript-operator">.</span>log
+echo <span class="uscript-comment">//---------------------------*.u Complete!----------------------------</span>
+<span class="uscript-keyword">goto</span> make<span class="uscript-operator">&amp;</span><span class="uscript-type">int</span>
+
+:make<span class="uscript-operator">&amp;</span><span class="uscript-type">int</span>
+<span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span>UCC<span class="uscript-operator">.</span>exe dumpint <span class="uscript-operator">-</span>mod<span class="uscript-operator">=</span><span class="uscript-operator">%</span>modname<span class="uscript-operator">%</span> <span class="uscript-operator">%</span>modsysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package1<span class="uscript-operator">%</span><span class="uscript-operator">.</span>u
+<span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span>UCC<span class="uscript-operator">.</span>exe dumpint <span class="uscript-operator">-</span>mod<span class="uscript-operator">=</span><span class="uscript-operator">%</span>modname<span class="uscript-operator">%</span> <span class="uscript-operator">%</span>modsysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package2<span class="uscript-operator">%</span><span class="uscript-operator">.</span>u
+<span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span>UCC<span class="uscript-operator">.</span>exe dumpint <span class="uscript-operator">-</span>mod<span class="uscript-operator">=</span><span class="uscript-operator">%</span>modname<span class="uscript-operator">%</span> <span class="uscript-operator">%</span>modsysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package3<span class="uscript-operator">%</span><span class="uscript-operator">.</span>u
+copy <span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span>ucc<span class="uscript-operator">.</span>log <span class="uscript-operator">%</span>modbakdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>modname<span class="uscript-operator">%</span>_int<span class="uscript-operator">.</span>log
+copy <span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package1<span class="uscript-operator">%</span><span class="uscript-operator">.</span><span class="uscript-type">int</span> <span class="uscript-operator">%</span>modsysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package1<span class="uscript-operator">%</span><span class="uscript-operator">.</span><span class="uscript-type">int</span>
+copy <span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package2<span class="uscript-operator">%</span><span class="uscript-operator">.</span><span class="uscript-type">int</span> <span class="uscript-operator">%</span>modsysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package2<span class="uscript-operator">%</span><span class="uscript-operator">.</span><span class="uscript-type">int</span>
+copy <span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package3<span class="uscript-operator">%</span><span class="uscript-operator">.</span><span class="uscript-type">int</span> <span class="uscript-operator">%</span>modsysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package3<span class="uscript-operator">%</span><span class="uscript-operator">.</span><span class="uscript-type">int</span>
+del <span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package1<span class="uscript-operator">%</span><span class="uscript-operator">.</span><span class="uscript-type">int</span>
+del <span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package2<span class="uscript-operator">%</span><span class="uscript-operator">.</span><span class="uscript-type">int</span>
+del <span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package3<span class="uscript-operator">%</span><span class="uscript-operator">.</span><span class="uscript-type">int</span>
+del <span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span>ucc<span class="uscript-operator">.</span>log
+echo <span class="uscript-operator">[</span>Public<span class="uscript-operator">]</span><span class="uscript-operator">&gt;&gt;</span><span class="uscript-operator">%</span>modsysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package1<span class="uscript-operator">%</span><span class="uscript-operator">.</span><span class="uscript-type">int</span>
+echo Object<span class="uscript-operator">=</span><span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-operator">,</span>MetaClass<span class="uscript-operator">=</span>XInterface<span class="uscript-operator">.</span>GUIUserKeyBinding<span class="uscript-operator">,</span><span class="uscript-type">Name</span><span class="uscript-operator">=</span>AshuraDarkReign<span class="uscript-operator">.</span>ADRKeyBindings<span class="uscript-operator">)</span><span class="uscript-operator">&gt;&gt;</span><span class="uscript-operator">%</span>modsysdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>package1<span class="uscript-operator">%</span><span class="uscript-operator">.</span><span class="uscript-type">int</span>
+echo <span class="uscript-comment">//--------------------------*.int Complete!---------------------------</span>
+<span class="uscript-keyword">goto</span> make<span class="uscript-operator">&amp;</span>ucl
+
+:make<span class="uscript-operator">&amp;</span>ucl
+<span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span>UCC<span class="uscript-operator">.</span>exe exportcache <span class="uscript-operator">-</span>a <span class="uscript-operator">-</span>mod<span class="uscript-operator">=</span><span class="uscript-operator">%</span>modname<span class="uscript-operator">%</span> <span class="uscript-operator">%</span>package1<span class="uscript-operator">%</span><span class="uscript-operator">.</span>u <span class="uscript-operator">%</span>package1<span class="uscript-operator">%</span><span class="uscript-operator">.</span>ucl
+<span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span>UCC<span class="uscript-operator">.</span>exe exportcache <span class="uscript-operator">-</span>a <span class="uscript-operator">-</span>mod<span class="uscript-operator">=</span><span class="uscript-operator">%</span>modname<span class="uscript-operator">%</span> <span class="uscript-operator">%</span>package2<span class="uscript-operator">%</span><span class="uscript-operator">.</span>u <span class="uscript-operator">%</span>package1<span class="uscript-operator">%</span><span class="uscript-operator">.</span>ucl
+<span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span>UCC<span class="uscript-operator">.</span>exe exportcache <span class="uscript-operator">-</span>a <span class="uscript-operator">-</span>mod<span class="uscript-operator">=</span><span class="uscript-operator">%</span>modname<span class="uscript-operator">%</span> <span class="uscript-operator">%</span>package3<span class="uscript-operator">%</span><span class="uscript-operator">.</span>u <span class="uscript-operator">%</span>package1<span class="uscript-operator">%</span><span class="uscript-operator">.</span>ucl
+echo <span class="uscript-comment">//--------------------------*.ucl Complete!---------------------------</span>
+<span class="uscript-keyword">goto</span> end
+
+:end
+copy <span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span>ucc<span class="uscript-operator">.</span>log <span class="uscript-operator">%</span>modbakdir<span class="uscript-operator">%</span><span class="uscript-operator">%</span>modname<span class="uscript-operator">%</span>_ucl<span class="uscript-operator">.</span>log
+del <span class="uscript-operator">%</span>utk4sysdir<span class="uscript-operator">%</span>ucc<span class="uscript-operator">.</span>log
+echo <span class="uscript-comment">//-----------------------COMPILATION COMPLETED!-----------------------</span>
+pause</pre><script type="text/javascript"><!--
+ menuItemAdd("Compiling", "#0.1");
+menuItemAdd("Tips", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Batch File", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Mod System Batch File for ut2k4", "#0.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Another ucc batch file", "#0.2.3");
+menuItemAdd("Related Topics", "#0.3");
+menuItemAdd("Discussion", "#0.4");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Compiling_With_UCC">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Compiling_With_UCC">View other revisions</a><br>Last edited April 9, 2007 9:15 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Compiling_With_UCC">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Compiling_With_UCC">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>There is no spoon
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

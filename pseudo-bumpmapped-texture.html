@@ -1,0 +1,217 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Pseudo-Bumpmapped Texture</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Pseudo-Bumpmapped_Texture; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Pseudo-Bumpmapped Texture">Pseudo-Bumpmapped Texture</a></h1>
+	<div class="wiki"><p>This page explains how to make a pseudo bump mapped texture.</p>
+<h2><a name="0.1"></a>Credits </h2>
+<p>First of all, I would like to say thank you to these people who helped me to figure this thing out:</p>
+<ul><li>elmuerte: He had some ideas which led to final compilation of what goes and where.</li>
+<li>Plouj: He showed me a screenshot of what UArchitect had in his Texture Browser.</li>
+<li>UArchitect: He made the said screenshot which displayed what he used for this technique.</li>
+</ul>
+<h2><a name="0.2"></a>Limitations</h2>
+<p>While this may or may not be the way that <a href="http://torlan.forerunners.org/">[Project Torlan]</a> used, there are severe limitations to this method that are not immediately apparent when first thinking about this. First of all, this is not in any form bump mapping of even remotely close to it. It simply looks like it to a certain extent but nothing close to it at all. Thus there are some restrictions that I encountered:</p>
+<ol><li>Light direction is assumed by LightMap</li>
+<li>Use of a lot of textures - About 5 textures for 1 result</li>
+<li>It is not affected by lights</li>
+<li>Increased CPU usage - I'm not sure what the percentage is, but because I used a realtime texture it does use CPU to an extentas it is rendered per frame.</li>
+<li>Limited light palette - The method used, must use a 256 color texture</li>
+<li>Small resultant textures - The maximum texture size is 256 x 256. While I don't know what the result is like if the bump map overlay is stretched over a large surface, 256 X 256 is rather small.</li>
+<li>Possible texture errors - Some complex shaders do not render well on certain cards, so a fallback option is recommended.</li>
+<li>Texture creation is at first trial and error</li>
+</ol>
+<h2><a name="0.3"></a>Benefits</h2>
+<p>So after all those possible limitations, there are some benefits however.</p>
+<ol><li>If you mimic the movement of anything nearby to the lightmap movement, you may simulate proper bump mapping.</li>
+<li>There isn't a real noticeable slow down when using this technique</li>
+<li>It is not scripted, thus artists/mappers can do it</li>
+<li>The resultant texture is a shader, thus, it can be further modified for other purposes</li>
+<li>More possibilites exist with this and bump mapping is only 1 possibilty, more tinkering will result more issues</li>
+<li>It is possible to mimic actual light with the introduction of scripting [More on that in the future]</li>
+<li>It does enhance textures to look a bit better than just standard Phong shading</li>
+</ol>
+<h2><a name="0.4"></a>Method [Solidsnake](to madness)</h2>
+<h3><a name="0.4.1"></a>Part 1</h3>
+<div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[Page1]" src="images/page1.png"><p>Importing the textures</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<p>First you have to make your textures. You will need a minimum of 3 textures with a possibility of a 4th for an opacity control.</p>
+<dl><dt>Diffuse</dt><dd>This is just a normal texture that you see normally in the game.</dd><dt>Lightmap</dt><dd>This is gradient map that you use to simulate the lighting on the wall or mesh. You can use a pregenerated lightmap from 3DSMax6 I believe. The darkest color should be (0, 0, 0) while the brightest color should be (128, 128, 128) ... experiement a little although I found that using that as the highest light brightness did not overwash my diffuse in the end. This texture *must* be 256 colors and 256 X 256 or the same texture size as you input for the IceTexture.</dd><dt>Bumpmap</dt><dd>This is basically a texture which depicts the height of things you want on the texture. The darkest color should be (1, 1, 1) and not (0, 0, 0) and the brightest can be anything but (255, 255, 255). I found that using a flat 128, 128, 128 of the middle of the height map and then I beleved and embossed in Adobe to produce the height map. It is not the best method, but by far the quickest. This texture *must* be 256 colors and 256 X 256 or the same texture size as you input for the IceTexture. It is best to use a grayscale image for this.</dd><dt>Optional Opacity</dt><dd>This controls the opacity of the resultant bump map. It is this textures alpha which controls it, so it can be merged with say the diffuse. But it is up to you. This allows some extra control in the resultant effects.</dd></dl>
+<h3><a name="0.4.2"></a>Part 2</h3>
+<div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[Page2]" src="images/page2.png"><p>Setting up the IceTexture...</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<p>This is where you create the Ice Texture. Click on File &rarr; New. Select Real-Time Texture and select IceTexture. Enter the size of the texture, 256 X 256 is usually what you want since it offers the highest resolution. I'm not sure if this is just a code limit or an actual engine limit. It could be possible to edit that value for some large ice textures ...</p>
+<p>In the appropriate fields enter the textures as shown in the image (Glass=Bumpmap, Source=Lightmap). To test your bump map effect, click MoveIce to false so that it moves your 'light map' instead. Play with the values. To set your lightmap, turn off the moving and adjust the Amplitude to shift the lightmap around.</p>
+<h3><a name="0.4.3"></a>Part 3</h3>
+<div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[Page3]" src="images/page3.png"><p>Bringing it all together.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<p>This is where we bring everything together. Make a new <a href="shader.html">shader</a>, and put the diffuse texture into diffuse, and then add the ice texture to specular and then finally if you wish an alpha into the specular mask.</p>
+<p>Use the shader in a map and you have your result.</p>
+<p>I am sure there is many other things that you can toy with to get better results such as the use of combiners and texture modifiers, but this is simply the result.</p>
+<p>To get matching bump map movements, adjust the Ice Texture to simulate the movement.</p>
+<h2><a name="0.5"></a>Method [Xabora/Project Torlan]</h2>
+<h3><a name="0.5.1"></a>Part 1</h3>
+<p>Importing of the Textures</p>
+<p>(Borrowed These)</p>
+<dl><dt>Lightmap</dt><dd>This is gradient map that you use to simulate the lighting on the wall or mesh. You can use a pregenerated lightmap from 3DSMax6 I believe. The darkest color should be (0, 0, 0) while the brightest color should be (128, 128, 128) ... experiement a little although I found that using that as the highest light brightness did not overwash my diffuse in the end. This texture *must* be 256 colors and 256 X 256 or the same texture size as you input for the IceTexture.</dd></dl>
+<p>Added Note: For a neutral color/closest to the diffuse texture use (127,127,127).</p>
+<dl><dt>Bumpmap</dt><dd>This is basically a texture which depicts the height of things you want on the texture. The darkest color should be (1, 1, 1) and not (0, 0, 0) and the brightest can be anything but (255, 255, 255). I found that using a flat 128, 128, 128 of the middle of the height map and then I beleved and embossed in Adobe to produce the height map. It is not the best method, but by far the quickest. This texture *must* be 256 colors and 256 X 256 or the same texture size as you input for the IceTexture. You can also use standard bumpmaps also (Must be 256 colors), along with greyscale.</dd></dl>
+<h3><a name="0.5.2"></a>Part 2</h3>
+<p>Setting up the IceTexture...</p>
+<p>(This is the same)</p>
+<p>This is where you create the Ice Texture. Click on File &rarr; New. Select Real-Time Texture and select IceTexture. Enter the size of the texture, 256 X 256 is usually what you want since it offers the highest resolution. I'm not sure if this is just a code limit or an actual engine limit. It could be possible to edit that value for some large ice textures ...</p>
+<p>In the appropriate fields enter the textures as shown in the image (Glass=Bumpmap, Source=Lightmap). To test your bump map effect, click MoveIce to false so that it moves your 'light map' instead. Play with the values. To set your lightmap, turn off the moving and adjust the Amplitude to shift the lightmap around.</p>
+<h3><a name="0.5.3"></a>Part 3</h3>
+<p>Combiners</p>
+<p>Make a new <a href="combiner.html">combiner</a>, have the CombineOperation set to CO_Multiply.</p>
+<p>Have Material1 set as your Diffuse Texture and Material2 as your Lightmap.</p>
+<p>Apply the Combiner to a texture add a light... bingo... you have more control over the lighting around the bumpmap.</p>
+<h3><a name="0.5.4"></a>What else from here?</h3>
+<div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div>Bingo!<p>Bingo!</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<p>This is a very elementry approach. There is still more things that are doable such as the creation of bumpmapped models. While it is not possible to use a scripted texture within the IceTexture (Otherwise it is possible to do a lot more things), it may be possible to adjust other paramaters within IceTexture through Unrealscript which leads to other such possibilities.</p>
+<p>You can use colors in your light maps, and they do produce pleasing results.</p>
+<p>Other possibilities are the introduction of larger texture for IceTexture. It'd be nice but I'm not holding my breath on that one.</p>
+<p>Well, I hope this it! I spent an entire day and a sleepless night figuring this one out.</p>
+<p>Almost forgot, here is the link to download my texture that I created for this: <a href="http://forums.beyondunreal.com/attachment.php?attachmentid=86563">http://forums.beyondunreal.com/attachment.php?attachmentid=86563</a></p>
+<p>Enjoy, <em class="em2">Solid Snake</em></p>
+<h2><a name="0.6"></a>Related Topics</h2>
+<ul><li><a href="basic-procedure.html">Basic Procedure</a> tutorials:<ul><li><a href="create-a-material.html">Create A Material</a></li>
+<li><a href="import-the-texture.html">Import The Texture</a></li>
+</ul>
+</li>
+</ul>
+<h2><a name="0.7"></a>Comments</h2>
+<p><em class="em2">OlympusMons:</em> Good work snake, Ive seen the torlan version of this while browsing through the quake 2 evolved forums. Anyways I would love to see some scripted textures start happening, if at all possible. Here's a suggestion, have you tried using a normal map as a detail texture?? Im not too sure but this may give you some interesting results. Ive actually been wondering if its possible to use a normal map as a decal so when you shoot a wall you get the impression that you made a dent not just a flat looking thing.</p>
+<p><em class="em2">Xabora:</em> Nice work on the tut... although the major diffrences by mine and your way was that the diffuse ca be any size. I used 1 combiner layer for your 1 shader.</p>
+<p>Added some missing info that you forgot or didn't know.</p>
+<p><em class="em2">Solid Snake:</em> I do not see how using a Shader matters or not. In fact when using a Shader you can still use any sized Diffuse texture you want, it does not matter. Only in my example did I decide to use the same sized texture. The actual end combination doesn't play any role what so ever, and it is only the IceTexture part which matters. It is the IceTexture that does all the work and whether or not I used a Shader or you used a Combiner play any significant factor. In the end however, it doesn't really matter as it was just detailing that using an IceTexture in this method and combining it with a standard texture is all that mattered.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Credits ", "#0.1");
+menuItemAdd("Limitations", "#0.2");
+menuItemAdd("Benefits", "#0.3");
+menuItemAdd("Method [Solidsnake](to madness)", "#0.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Part 1", "#0.4.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Part 2", "#0.4.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Part 3", "#0.4.3");
+menuItemAdd("Method [Xabora/Project Torlan]", "#0.5");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Part 1", "#0.5.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Part 2", "#0.5.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Part 3", "#0.5.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>What else from here?", "#0.5.4");
+menuItemAdd("Related Topics", "#0.6");
+menuItemAdd("Comments", "#0.7");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Pseudo-Bumpmapped_Texture">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Pseudo-Bumpmapped_Texture">View other revisions</a><br>Last edited December 30, 2004 18:40 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Pseudo-Bumpmapped_Texture">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Pseudo-Bumpmapped_Texture">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Worst-case scenario: the UEd Goblin wipes the map and burns down your house.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

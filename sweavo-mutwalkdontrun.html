@@ -1,0 +1,148 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Sweavo/MutWalkDontRun</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Sweavo/MutWalkDontRun; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="sweavo.html">Sweavo</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Sweavo/MutWalkDontRun">MutWalkDontRun</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>9/01/06</h2>
+<p>looking good now.  I used a dynamic array of WalkEnforcers which correspond 1:1 with playercontrollers.  CheckReplacement is used to populate this.  I need to add user-configurability but the player experience is getting there.  <a href="http://www.sweavo.34sp.com/misc/utmods/MutWalkDontRun_64.tgz">http://www.sweavo.34sp.com/misc/utmods/MutWalkDontRun_64.tgz</a> <a href="http://www.sweavo.34sp.com/misc/utmods/MutWalkDontRun_64_src.tgz">http://www.sweavo.34sp.com/misc/utmods/MutWalkDontRun_64_src.tgz</a> </p>
+<p><em class="em2">Foxpaw:</em> Have you considered using Tick instead of using a timer synced across the server? This should eliminate the issue described in "Cut #2." ...</p>
+<p><em class="em2">Sweavo:</em> Heheh thanks for the feedback.  If ony you'd posted three days ago!  Many of these fixes I arrived at myself - the key problem was trying to do too much in the interaction rather than in an actor.  The reason I couldn't use Tick() is because I was not an Actor but an Interaction, which does not have actor in its ancestry.  I now have the architecture you describe.  Grace is a float and updated in tick() in an Actor-based object.  There is also a 1-second timer that issues penalties and rewards based on whether Grace is ==0 or ==GraceMax.  Display is done with a LocalMessage because I couldn't get drawLineHoriz() or whatever it's called to work so didn't bother trying to go as far as making some textures etc.  Would be cool to get someone to fix up the display better though.  Version 64 above makes a lot more sense than the example at cut2 (which I'll remove to save anyone else painstakingly going through the bad code!)</p>
+<h2><a name="0.2"></a>5/1/06 </h2>
+<p>Cut #3: There is an object called a WalkEnforcer which runs its clock independently for a given pawn.  The intention is to have it display a charge bar like the scorp or the hellbender rear turret, instead of instantly penalising health.  Then if the chargebar maxes out, a large penalty is made (100%?).</p>
+<p>At present, this simply calls TakeDamage like yesterday's mut.  I need to find out about displaying chargebars and figure out what's on the client and what on the server.</p>
+<h2><a name="0.3"></a>4/1/06 </h2>
+<p>Cut #2: I looked at <a href="regen-mutator.html">Regen Mutator</a> and adapted it so that it took 10 health per second off you if you were moving <tt>(VSize(P.Velocity))&gt;0</tt> and added 1 health per second if you were still and <tt>bCrouched</tt>.</p>
+<p>The problem with this was that the 1 second period was independent of the player, and synced across the whole playing area... so if you have a sense of rhythm you can run for 0.7 seconds and walk for 0.3 and get about faster... or more realistically, you would creep around in a well-behaved manner and then take one jump and get an instant penalty!</p>
+<h2><a name="0.4"></a>4/1/06</h2>
+<p>For a first cut, I just hooked into ModifyPlayer and altered the running speed to be the same as the walking speed:</p>
+<p>(Note that this is not endorsed by SAS sniper clan, just inspired by their server!)</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MutWalkDontRun <span class="uscript-keyword">extends</span> Mutator<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> ModifyPlayer<span class="uscript-operator">(</span>Pawn Other<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> xPawn myxPawn<span class="uscript-operator">;</span>
+
+    myxPawn <span class="uscript-operator">=</span> xPawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>myxPawn <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        myxPawn<span class="uscript-operator">.</span>GroundSpeed <span class="uscript-operator">=</span> myxPawn<span class="uscript-operator">.</span>GroundSpeed <span class="uscript-operator">*</span> myxPawn<span class="uscript-operator">.</span>WalkingPct<span class="uscript-operator">;</span>
+        myxPawn<span class="uscript-operator">.</span>CrouchedPct<span class="uscript-operator">=</span>myxPawn<span class="uscript-operator">.</span>CrouchedPct<span class="uscript-operator">/</span>myxPawn<span class="uscript-operator">.</span>WalkingPct<span class="uscript-operator">;</span>
+        myxPawn<span class="uscript-operator">.</span>WalkingPct<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> NextMutator <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        NextMutator<span class="uscript-operator">.</span>ModifyPlayer<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+     GroupName<span class="uscript-operator">=</span><span class="uscript-string">"Sniper Mods"</span>
+     FriendlyName<span class="uscript-operator">=</span><span class="uscript-string">"SAS Walk Don't Run"</span>
+     Description<span class="uscript-operator">=</span><span class="uscript-string">"Sets all players' running speeds to the same as walking speeds."</span>
+<span class="uscript-operator">}</span></pre><p>This is amusing because the running animations still play, and everyone moonwalks around the map.  A problem with is straight away is that if you use the speed combo, when your adrenaline runs out, the combo calls game.setplayerdefaults(you) but does not cause ModifyPlayer() to be called again - so you revert to your original running speed.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("9/01/06", "#0.1");
+menuItemAdd("5/1/06 ", "#0.2");
+menuItemAdd("4/1/06 ", "#0.3");
+menuItemAdd("4/1/06", "#0.4");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="sweavo.html">Sweavo</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Sweavo/MutWalkDontRun">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Sweavo/MutWalkDontRun">View other revisions</a><br>Last edited January 9, 2006 15:25 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Sweavo/MutWalkDontRun">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Sweavo/MutWalkDontRun">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>The three virtues of a programmer: Laziness, Impatience, and Hubris. (Larry Wall)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

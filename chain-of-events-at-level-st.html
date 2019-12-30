@@ -1,0 +1,186 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Chain Of Events At Level Startup</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Chain_Of_Events_At_Level_Startup; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Chain Of Events At Level Startup">Chain Of Events At Level Startup</a></h1>
+	<div class="wiki"><p>This page describes what happens right after a level was loaded. It lists the startup engine events and the UnrealScript functions subsequently called by those events and gives a short description how these events and functions could be used.</p>
+<p>Actors that were created because they are listed in the ServerActors list of a server's <a href="ini-file.html">INI file</a> also use the chain of events described on this page. Other actors spawned during this chain of events (e.g. <a href="mutator.html">Mutator</a>s or <a href="gamerules.html">GameRules</a>) use the <a href="chain-of-events-when-spawni.html">chain of events when spawning actors</a> and are not included here (unless UnrealEngine1 is used) except for the last event in this list.</p>
+<p><em class="em1">This whole page is based on a snippet of native UT2004 code posted on the UT2003Mods mailing list. Most parts will be similar in older engine versions, but there might be important differences in the functions called by these events.</em></p>
+<h2><a name="0.1"></a>Chain Of Events</h2>
+<p>These are the events directly called from native code. See the sections below for more details about functions called by these events.</p>
+<p>Here "all actors" means all actors that were placed in the map by the mapper or were created as ServerActors. Actors that have been created with the Spawn() function or that have received a Destroy() call are excluded from this chain of events.</p>
+<ol><li>the <a href="gameinfo.html">GameInfo</a>'s InitGame() event is called</li>
+<li>the <a href="gameinfo.html">GameInfo</a>'s SetGrammar() event is called <em class="em1">(UT2004)</em></li>
+<li>all <a href="actor.html">Actor</a>s' PreBeginPlay() events are called</li>
+<li>all <a href="actor.html">Actor</a>s' BeginPlay() events are called</li>
+<li>all <a href="actor.html">Actor</a>s' zones are set</li>
+<li>all <a href="actor.html">Actor</a>s' volumes are set</li>
+<li>all <a href="actor.html">Actor</a>s' PostBeginPlay() events are called</li>
+<li>all <a href="actor.html">Actor</a>s' PostNetBeginPlay() events are called</li>
+<li>all <a href="actor.html">Actor</a>s' SetInitialState() events are called</li>
+<li>all <a href="actor.html">Actor</a>s either with bShouldBaseAtStartup=True and Physics set to PHYS_None or PHYS_Rotating or with an AttachTag get their base set</li>
+</ol>
+<p>After all this players can start joining. This is especially also true for single player/instant action mode and means that the <a href="chain-of-events-when-a-play.html">chain of events when a player logs in</a> is only executed after these events.</p>
+<h3><a name="0.1.1"></a>1&nbsp;&nbsp;GameInfo.InitGame()</h3>
+<p>This initializes the GameInfo. At this point all the mapper-placed actors already exist, they just didn't get any of their initialization functions called yet.</p>
+<ol><li>The GameProfile<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=GameProfile&referrerid=Chain_Of_Events_At_Level_Startup">?</a> class specified in the "SaveGame" parameter is loaded and initialized. (if specified)</li>
+<li>The GameSpeed is set according to the "GameSpeed" parameter. (SetGameSpeed(), if specified)</li>
+<li>The base mutator is added via AddMutator().<br><em class="em2">Note:</em> Any actors spawned before this or during the base mutator's initialization (see <a href="chain-of-events-when-spawni.html">Chain Of Events When Spawning Actors</a>) must have <tt>bGameRelevant=True</tt> set or they will cause an <a href="log-warnings.html">Accessed None</a> when trying to call the base mutator's CheckRelevance() function and as a result of this destroy themselves.</li>
+<li>The BroadcastHandlerClass is spawned.</li>
+<li>The AccessControl class is spawned. Either the class specified in the "AccessControl" parameter will be used or the AccessControlClass. If neither of those are set, Engine.<a href="accesscontrol.html">AccessControl</a> is used.</li>
+<li>All <a href="gamerules.html">GameRules</a> specified in the "GameRules" parameter will be spawned.</li>
+<li>All <a href="mutator.html">Mutator</a>s specified in the "Mutator" parameter will be added via AddMutator().<br>AddMutator() only adds a mutator if its GroupName is an empty string or is not the same as the GroupName of any other mutator (including the base mutator) already added. The mutator's <tt>bUserAdded</tt> variable is set to False for the base mutator and to True for all mutators added via the "Mutator" parameter.</li>
+</ol>
+<p>For subclasses of <a href="deathmatch.html">DeathMatch</a> InitGame() looks for a <a href="levelgamerules.html">LevelGameRules</a> actor before going though the things described above. The first <a href="levelgamerules.html">LevelGameRules</a> actor found will receive an UpdateGame() call.</p>
+<p>InitGame() also reads some other parameters specified in the level URL, but these mostly don't call any important functions.</p>
+<h3><a name="0.1.2"></a>2&nbsp;&nbsp;GameInfo.SetGrammar() <em class="em1">(UT2004)</em></h3>
+<p>This loads the appropriate speech recognition grammar file.</p>
+<p><em class="em1">(no additional information about this so far)</em></p>
+<h3><a name="0.1.3"></a>3&nbsp;&nbsp;Actor.PreBeginPlay()</h3>
+<h4><a name="0.1.3.1"></a>...in UT2003</h4>
+<p>If the actor has <tt>bGameRelevant == False</tt> and this event is not executed on a client, the game's base <a href="mutator.html">mutator</a>'s CheckRelevance() function is called.</p>
+<p>CheckRelevance() first calls the base mutator's AlwaysRelevant() function which recursively calls the other mutators' AlwaysRelevant() functions. If this function returns True the actor is considered game relevant and CheckRelevance() returns True resulting in the Actor continuing to exist.</p>
+<p>If AlwaysRelevant() returns False, the base mutator's IsRelevant() function is called. This function calls the mutator's CheckReplacement() function and returns its result if it's False. Otherwise IsRelevant() returns the result of the next mutator's IsRelevant() function.</p>
+<p>Finally the result of the base mutator's IsRelevant() function is returned by CheckRelevance() and again, if that result is True the actor will continue to exist, otherwise it will destroy itself.</p>
+<h4><a name="0.1.3.2"></a>...in UT</h4>
+<p>If the actor has <tt>bGameRelevant == False</tt> and this event is not executed on a client, the <a href="gameinfo.html">GameInfo</a>'s IsRelevant() function is called.</p>
+<p>IsRelevant() first calls the base mutator's AlwaysRelevant() function which recursively calls the other mutators' AlwaysRelevant() functions. If this function returns True the actor is concidered game relevant and GameInfo.IsRelevant() returns True resulting in the Actor continuing to exist.</p>
+<p>If AlwaysRelevant() returns False, the base <a href="mutator.html">mutator</a>'s IsRelevant() function is called. This function calls the mutator's CheckReplacement() function and returns its result if it's False. Otherwise IsRelevant() returns the result of the next mutator's IsRelevant() function.</p>
+<p>If the base mutator's IsRelevant() function returns False the GameInfo's IsRelevant() function also returns False and the actor destroys itself. Otherwise if the bSuperRelevant property is set to 1 GameInfo.IsRelevant() returns True resulting in the Actor continuing to exist.</p>
+<p>If the base mutator's IsRelevant() function returns True but the bSuperRelevant property is not set to 1 the GameInfo's IsRelevant() function checks whether the actor may appear in the current difficulty level, if it's a "monster" (a non-player <a href="pawn-ut.html">Pawn (UT)</a>) and if there's a random chance for the actor to not appear in the game (<tt>OddsOfAppearing</tt>). The GameInfo.IsRelevant() function will also update the number of secret goals, item goals and kill goals before returning True and allowing the actor to exist.</p>
+<h3><a name="0.1.4"></a>4&nbsp;&nbsp;Actor.BeginPlay()</h3>
+<p>This event is called after an Actor is considered "relevant" for this game, i.e. no <a href="mutator.html">Mutator</a> wanted to get rid of it.</p>
+<p>Most actors don't use this event, but if you're looking for an event that is called before the actor is initialized, but after the mutator checks are done, then this is the place for you.</p>
+<h3><a name="0.1.5"></a>5&nbsp;&nbsp;Actor Zones</h3>
+<p>At this point the <a href="actor.html">Actor</a>.Region.Zone value becomes valid. This event also causes the ZoneChange() event to be called.</p>
+<h3><a name="0.1.6"></a>6&nbsp;&nbsp;Actor Volumes</h3>
+<p>At this point the <a href="actor.html">Actor</a>.PhysicsVolume value becomes valid. This event also causes the PhysicsVolumeChange() event to be called.</p>
+<h3><a name="0.1.7"></a>7&nbsp;&nbsp;Actor.PostBeginPlay()</h3>
+<p>Most actors use PostBeginPlay() to initialize their UnrealScript values. The actor's PhysicsVolume and Zone are valid but the actor is not yet in any state.</p>
+<h3><a name="0.1.8"></a>8&nbsp;&nbsp;Actor.PostNetBeginPlay()</h3>
+<p>PostNetBeginPlay() is called directly after PostBeginPlay() on the server. On clients it will be called when the initial replication is completed.</p>
+<h3><a name="0.1.9"></a>9&nbsp;&nbsp;Actor.SetInitialState()</h3>
+<p>At this point the actor is concidered "initialized" by the engine (bScriptInitialized is set to True in this event) and the actor's initial state is set. If the <a href="initialstate.html">InitialState</a> property is set, it will be used, otherwise the actor goes to its auto state. Since SetInitialState() is a <a href="simulated-function.html">simulated function</a> by default this happens on server and clients.</p>
+<p>This event uses GotoState to change the state, so during its executing the initial state's BeginState() event is called. The state's state code will however not yet start executing at this point. This will happen after all the events described on this page have finished doing their work.</p>
+<h3><a name="0.1.10"></a>10&nbsp;&nbsp;Actor Bases</h3>
+<p>Actors with an AttachTag other than <tt>None</tt> are attached to the first actor with a matching <a href="tag.html">Tag</a> or name via <code>SetBase(theMatchingActor)</code>. Actors with <tt>bCollideWorld = true</tt> and <tt>bShouldBaseAtStartup = true</tt> which use either PHYS_None or PHYS_Rotating try to find a suiting base as well. The AttachTag is evaluated first and if set bShouldBaseAtStartup  is ignored, whether or not the AttachTag matches anything.</p>
+<p>In both cases when a base is set the actor's BaseChange() event will be called. Note that this final step of startup initialization also includes actors that were <code>Spawn()</code>ed during any of the previous initialization steps.</p>
+<h2><a name="0.2"></a>Related Topics</h2>
+<ul><li><a href="unrealscript.html">UnrealScript</a></li>
+<li><a href="chain-of-events-when-spawni.html">Chain Of Events When Spawning Actors</a></li>
+<li><a href="chain-of-events-when-a-play.html">Chain Of Events When A Player Logs In</a></li>
+<li><a href="creating-actors-and-objects.html">Creating Actors And Objects</a></li>
+</ul>
+<script type="text/javascript"><!--
+ menuItemAdd("Chain Of Events", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>1&nbsp;&nbsp;GameInfo.InitGame()", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>2&nbsp;&nbsp;GameInfo.SetGrammar() <em class=\"em1\">(UT2004)</em>", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>3&nbsp;&nbsp;Actor.PreBeginPlay()", "#0.1.3");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>...in UT2003", "#0.1.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>...in UT", "#0.1.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>4&nbsp;&nbsp;Actor.BeginPlay()", "#0.1.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>5&nbsp;&nbsp;Actor Zones", "#0.1.5");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>6&nbsp;&nbsp;Actor Volumes", "#0.1.6");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>7&nbsp;&nbsp;Actor.PostBeginPlay()", "#0.1.7");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>8&nbsp;&nbsp;Actor.PostNetBeginPlay()", "#0.1.8");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>9&nbsp;&nbsp;Actor.SetInitialState()", "#0.1.9");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>10&nbsp;&nbsp;Actor Bases", "#0.1.10");
+menuItemAdd("Related Topics", "#0.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Chain_Of_Events_At_Level_Startup">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Chain_Of_Events_At_Level_Startup">View other revisions</a><br>Last edited June 28, 2006 4:57 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Chain_Of_Events_At_Level_Startup">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Chain_Of_Events_At_Level_Startup">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Worst-case scenario: the UEd Goblin wipes the map and burns down your house.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

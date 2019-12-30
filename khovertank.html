@@ -1,0 +1,466 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: KHoverTank</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=KHoverTank; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=KHoverTank">KHoverTank</a></h1>
+	<div class="wiki"><div class="classpath"><img src="shared//gameicons/icon-ut2003.png"> <a href="unreal-tournament-2003.html">UT2003</a> :: <a href="actor.html">Actor</a> &gt;&gt; <a href="pawn.html">Pawn</a> &gt;&gt; <a href="kvehicle.html">KVehicle</a> &gt;&gt; <a href="kcar.html">KCar</a> &gt;&gt; KHoverTank<br></div>
+<p>Adding extra wheels is pretty easy, useful for making tanks or hovercrafts. :] Also, Rear Steering with forward steering allows for some sharp turns and cool looking vehicle :]</p>
+<pre class="uscript"><span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// KHoverTank.</span>
+<span class="uscript-comment">// Base class for 6-invisible wheeled 'hover' vehicles using Karma</span>
+<span class="uscript-comment">// Assumes negative-X is forward, negative-Y is right</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">class</span> KHoverTank <span class="uscript-keyword">extends</span> KCar
+    <span class="uscript-keyword">abstract</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> KTire       midLeft<span class="uscript-operator">,</span> midRight<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span>KHoverTank<span class="uscript-operator">)</span>    <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>KTire<span class="uscript-operator">&gt;</span>    MidTireClass<span class="uscript-operator">;</span>
+<span class="uscript-comment">// Wheel positions</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">const</span> <span class="uscript-type">float</span>     WheelMidAlong<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">const</span> <span class="uscript-type">float</span>     WheelMidAcross<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">replication</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// We replicate the Gear for brake-lights etc.</span>
+    <span class="uscript-keyword">unreliable</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span>
+        CarState<span class="uscript-operator">,</span> Gear<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span>
+        FlipTimeLeft<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// When new information is received, see if it's new. If so, pass bits off the wheels.</span>
+<span class="uscript-comment">// Each part will then update its rigid body position via the KUpdateState event.</span>
+<span class="uscript-comment">// JTODO: This is where clever unpacking would happen.</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> VehicleStateReceived<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> vector ChassisY<span class="uscript-operator">,</span> SteerY<span class="uscript-operator">,</span> ChassisZ<span class="uscript-operator">,</span> calcPos<span class="uscript-operator">,</span> WheelY<span class="uscript-operator">,</span> lPos<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> vector chassisPos<span class="uscript-operator">,</span> chassisLinVel<span class="uscript-operator">,</span> chassisAngVel<span class="uscript-operator">,</span> WheelLinVel<span class="uscript-operator">,</span> wPosRel<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Quat relQ<span class="uscript-operator">,</span> WheelQ<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Don't do anything if car isn't started up. </span>
+    <span class="uscript-comment">// Shouldn't need to worry about Front or Rear as it's done in Super.</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> midLeft <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">||</span> midRight <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>VehicleStateReceived<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+
+    <span class="uscript-comment">////////////////////////// MID LEFT //////////////////////////</span>
+    midLeft<span class="uscript-operator">.</span>KGetRigidBodyState<span class="uscript-operator">(</span>midLeft<span class="uscript-operator">.</span>ReceiveState<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Position</span>
+    lPos<span class="uscript-operator">.</span>X <span class="uscript-operator">=</span> WheelMidAlong<span class="uscript-operator">;</span>
+    lPos<span class="uscript-operator">.</span>Y <span class="uscript-operator">=</span> WheelMidAcross<span class="uscript-operator">;</span>
+    lPos<span class="uscript-operator">.</span>Z <span class="uscript-operator">=</span> CarState<span class="uscript-operator">.</span>WheelHeight<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+    calcPos <span class="uscript-operator">=</span> chassisPos <span class="uscript-operator">+</span> QuatRotateVector<span class="uscript-operator">(</span>CarState<span class="uscript-operator">.</span>ChassisQuaternion<span class="uscript-operator">,</span> lPos<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>ReceiveState<span class="uscript-operator">.</span>Position <span class="uscript-operator">=</span> KRBVecFromVector<span class="uscript-operator">(</span>calcPos<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Rotation</span>
+    wheelQ <span class="uscript-operator">=</span> midLeft<span class="uscript-operator">.</span>KGetRBQuaternion<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    WheelY <span class="uscript-operator">=</span> QuatRotateVector<span class="uscript-operator">(</span>wheelQ<span class="uscript-operator">,</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    relQ <span class="uscript-operator">=</span> QuatFindBetween<span class="uscript-operator">(</span>WheelY<span class="uscript-operator">,</span> ChassisY<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>ReceiveState<span class="uscript-operator">.</span>Quaternion <span class="uscript-operator">=</span> QuatProduct<span class="uscript-operator">(</span>relQ<span class="uscript-operator">,</span> wheelQ<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+    <span class="uscript-comment">// Velocity</span>
+    wPosRel <span class="uscript-operator">=</span> calcPos <span class="uscript-operator">-</span> chassisPos<span class="uscript-operator">;</span>
+    WheelLinVel <span class="uscript-operator">=</span> chassisLinVel <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>chassisAngVel <span class="uscript-operator">Cross</span> wPosRel<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    WheelLinVel <span class="uscript-operator">+=</span> CarState<span class="uscript-operator">.</span>WheelVertVel<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span> <span class="uscript-operator">*</span> ChassisZ<span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>ReceiveState<span class="uscript-operator">.</span>LinVel <span class="uscript-operator">=</span> KRBVecFromVector<span class="uscript-operator">(</span>WheelLinVel<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    midLeft<span class="uscript-operator">.</span>bReceiveStateNew <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">////////////////////////// MID RIGHT //////////////////////////</span>
+    midRight<span class="uscript-operator">.</span>KGetRigidBodyState<span class="uscript-operator">(</span>midRight<span class="uscript-operator">.</span>ReceiveState<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Position</span>
+    lPos<span class="uscript-operator">.</span>X <span class="uscript-operator">=</span> WheelMidAlong<span class="uscript-operator">;</span>
+    lPos<span class="uscript-operator">.</span>Y <span class="uscript-operator">=</span> WheelMidAcross<span class="uscript-operator">;</span>
+    lPos<span class="uscript-operator">.</span>Z <span class="uscript-operator">=</span> CarState<span class="uscript-operator">.</span>WheelHeight<span class="uscript-operator">[</span><span class="uscript-number">3</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+    calcPos <span class="uscript-operator">=</span> chassisPos <span class="uscript-operator">+</span> QuatRotateVector<span class="uscript-operator">(</span>CarState<span class="uscript-operator">.</span>ChassisQuaternion<span class="uscript-operator">,</span> lPos<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>ReceiveState<span class="uscript-operator">.</span>Position <span class="uscript-operator">=</span> KRBVecFromVector<span class="uscript-operator">(</span>calcPos<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Rotation</span>
+    wheelQ <span class="uscript-operator">=</span> midRight<span class="uscript-operator">.</span>KGetRBQuaternion<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    WheelY <span class="uscript-operator">=</span> QuatRotateVector<span class="uscript-operator">(</span>wheelQ<span class="uscript-operator">,</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    relQ <span class="uscript-operator">=</span> QuatFindBetween<span class="uscript-operator">(</span>WheelY<span class="uscript-operator">,</span> ChassisY<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>ReceiveState<span class="uscript-operator">.</span>Quaternion <span class="uscript-operator">=</span> QuatProduct<span class="uscript-operator">(</span>relQ<span class="uscript-operator">,</span> wheelQ<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+    <span class="uscript-comment">// Velocity</span>
+    wPosRel <span class="uscript-operator">=</span> calcPos <span class="uscript-operator">-</span> chassisPos<span class="uscript-operator">;</span>
+    WheelLinVel <span class="uscript-operator">=</span> chassisLinVel <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>chassisAngVel <span class="uscript-operator">Cross</span> wPosRel<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    WheelLinVel <span class="uscript-operator">+=</span> CarState<span class="uscript-operator">.</span>WheelVertVel<span class="uscript-operator">[</span><span class="uscript-number">3</span><span class="uscript-operator">]</span> <span class="uscript-operator">*</span> ChassisZ<span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>ReceiveState<span class="uscript-operator">.</span>LinVel <span class="uscript-operator">=</span> KRBVecFromVector<span class="uscript-operator">(</span>WheelLinVel<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    midRight<span class="uscript-operator">.</span>bReceiveStateNew <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">////// OTHER //////</span>
+
+    <span class="uscript-comment">// Update control inputs</span>
+    Steering <span class="uscript-operator">=</span> CarState<span class="uscript-operator">.</span>ServerSteering<span class="uscript-operator">;</span>
+    OutputTorque <span class="uscript-operator">=</span> CarState<span class="uscript-operator">.</span>ServerTorque<span class="uscript-operator">;</span>
+    OutputBrake <span class="uscript-operator">=</span> CarState<span class="uscript-operator">.</span>ServerBrake<span class="uscript-operator">;</span>
+    OutputHandbrakeOn <span class="uscript-operator">=</span> CarState<span class="uscript-operator">.</span>ServerHandbrakeOn<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Update flags</span>
+
+    CarState<span class="uscript-operator">.</span>bNewState <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    bNewCarState <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// Pack current state of whole car into the state struct, to be sent to the client.</span>
+<span class="uscript-comment">// Should only get called on the server.</span>
+<span class="uscript-keyword">function</span> PackState<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> vector lPos<span class="uscript-operator">,</span> wPos<span class="uscript-operator">,</span> chassisPos<span class="uscript-operator">,</span> chassisLinVel<span class="uscript-operator">,</span> chassisAngVel<span class="uscript-operator">,</span> wPosRel<span class="uscript-operator">,</span> WheelLinVel<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> vector ChassisX<span class="uscript-operator">,</span> ChassisZ<span class="uscript-operator">,</span> WheelY<span class="uscript-operator">,</span> oldPos<span class="uscript-operator">,</span> oldLinVel<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> KRigidBodyState ChassisState<span class="uscript-operator">,</span> WheelState<span class="uscript-operator">,</span> TurrState<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PackState<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+
+    <span class="uscript-comment">////////////////////////// MID LEFT //////////////////////////</span>
+    midLeft<span class="uscript-operator">.</span>KGetRigidBodyState<span class="uscript-operator">(</span>WheelState<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    wPos <span class="uscript-operator">=</span> KRBVecToVector<span class="uscript-operator">(</span>WheelState<span class="uscript-operator">.</span>Position<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    lPos <span class="uscript-operator">=</span> QuatRotateVector<span class="uscript-operator">(</span>QuatInvert<span class="uscript-operator">(</span>CarState<span class="uscript-operator">.</span>ChassisQuaternion<span class="uscript-operator">)</span><span class="uscript-operator">,</span> wPos <span class="uscript-operator">-</span> chassisPos<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    CarState<span class="uscript-operator">.</span>WheelHeight<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> lPos<span class="uscript-operator">.</span>Z<span class="uscript-operator">;</span>
+
+    wPosRel <span class="uscript-operator">=</span> KRBVecToVector<span class="uscript-operator">(</span>WheelState<span class="uscript-operator">.</span>Position<span class="uscript-operator">)</span> <span class="uscript-operator">-</span> chassisPos<span class="uscript-operator">;</span>
+    WheelLinVel <span class="uscript-operator">=</span> chassisLinVel <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>chassisAngVel <span class="uscript-operator">Cross</span> wPosRel<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    CarState<span class="uscript-operator">.</span>WheelVertVel<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> 
+        <span class="uscript-operator">(</span><span class="uscript-operator">(</span>WheelState<span class="uscript-operator">.</span>LinVel<span class="uscript-operator">.</span>X <span class="uscript-operator">-</span> WheelLinVel<span class="uscript-operator">.</span>X<span class="uscript-operator">)</span><span class="uscript-operator">*</span> ChassisZ<span class="uscript-operator">.</span>X<span class="uscript-operator">)</span> <span class="uscript-operator">+</span> 
+        <span class="uscript-operator">(</span><span class="uscript-operator">(</span>WheelState<span class="uscript-operator">.</span>LinVel<span class="uscript-operator">.</span>Y <span class="uscript-operator">-</span> WheelLinVel<span class="uscript-operator">.</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">*</span> ChassisZ<span class="uscript-operator">.</span>Y<span class="uscript-operator">)</span> <span class="uscript-operator">+</span> 
+        <span class="uscript-operator">(</span><span class="uscript-operator">(</span>WheelState<span class="uscript-operator">.</span>LinVel<span class="uscript-operator">.</span>Z <span class="uscript-operator">-</span> WheelLinVel<span class="uscript-operator">.</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">*</span> ChassisZ<span class="uscript-operator">.</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    WheelY <span class="uscript-operator">=</span> QuatRotateVector<span class="uscript-operator">(</span>WheelState<span class="uscript-operator">.</span>Quaternion<span class="uscript-operator">,</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">////////////////////////// MID RIGHT //////////////////////////</span>
+    midRight<span class="uscript-operator">.</span>KGetRigidBodyState<span class="uscript-operator">(</span>WheelState<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    wPos <span class="uscript-operator">=</span> KRBVecToVector<span class="uscript-operator">(</span>WheelState<span class="uscript-operator">.</span>Position<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    lPos <span class="uscript-operator">=</span> QuatRotateVector<span class="uscript-operator">(</span>QuatInvert<span class="uscript-operator">(</span>CarState<span class="uscript-operator">.</span>ChassisQuaternion<span class="uscript-operator">)</span><span class="uscript-operator">,</span> wPos <span class="uscript-operator">-</span> chassisPos<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    CarState<span class="uscript-operator">.</span>WheelHeight<span class="uscript-operator">[</span><span class="uscript-number">3</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> lPos<span class="uscript-operator">.</span>Z<span class="uscript-operator">;</span>
+
+    wPosRel <span class="uscript-operator">=</span> KRBVecToVector<span class="uscript-operator">(</span>WheelState<span class="uscript-operator">.</span>Position<span class="uscript-operator">)</span> <span class="uscript-operator">-</span> chassisPos<span class="uscript-operator">;</span>
+    WheelLinVel <span class="uscript-operator">=</span> chassisLinVel <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>chassisAngVel <span class="uscript-operator">Cross</span> wPosRel<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    CarState<span class="uscript-operator">.</span>WheelVertVel<span class="uscript-operator">[</span><span class="uscript-number">3</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> 
+        <span class="uscript-operator">(</span><span class="uscript-operator">(</span>WheelState<span class="uscript-operator">.</span>LinVel<span class="uscript-operator">.</span>X <span class="uscript-operator">-</span> WheelLinVel<span class="uscript-operator">.</span>X<span class="uscript-operator">)</span><span class="uscript-operator">*</span> ChassisZ<span class="uscript-operator">.</span>X<span class="uscript-operator">)</span> <span class="uscript-operator">+</span> 
+        <span class="uscript-operator">(</span><span class="uscript-operator">(</span>WheelState<span class="uscript-operator">.</span>LinVel<span class="uscript-operator">.</span>Y <span class="uscript-operator">-</span> WheelLinVel<span class="uscript-operator">.</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">*</span> ChassisZ<span class="uscript-operator">.</span>Y<span class="uscript-operator">)</span> <span class="uscript-operator">+</span> 
+        <span class="uscript-operator">(</span><span class="uscript-operator">(</span>WheelState<span class="uscript-operator">.</span>LinVel<span class="uscript-operator">.</span>Z <span class="uscript-operator">-</span> WheelLinVel<span class="uscript-operator">.</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">*</span> ChassisZ<span class="uscript-operator">.</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+
+
+    WheelY <span class="uscript-operator">=</span> QuatRotateVector<span class="uscript-operator">(</span>WheelState<span class="uscript-operator">.</span>Quaternion<span class="uscript-operator">,</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// OTHER</span>
+    CarState<span class="uscript-operator">.</span>ServerSteering <span class="uscript-operator">=</span> Steering<span class="uscript-operator">;</span>
+    CarState<span class="uscript-operator">.</span>ServerTorque <span class="uscript-operator">=</span> OutputTorque<span class="uscript-operator">;</span>
+    CarState<span class="uscript-operator">.</span>ServerBrake <span class="uscript-operator">=</span> OutputBrake<span class="uscript-operator">;</span>
+    CarState<span class="uscript-operator">.</span>ServerHandbrakeOn <span class="uscript-operator">=</span> OutputHandbrakeOn<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// This flag lets the client know this data is new.</span>
+    CarState<span class="uscript-operator">.</span>bNewState <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostNetBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> vector RotX<span class="uscript-operator">,</span> RotY<span class="uscript-operator">,</span> RotZ<span class="uscript-operator">,</span> lPos<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostNetBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Set up suspension graphics</span>
+    GetAxes<span class="uscript-operator">(</span>Rotation<span class="uscript-operator">,</span>RotX<span class="uscript-operator">,</span>RotY<span class="uscript-operator">,</span>RotZ<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    frontLeft<span class="uscript-operator">.</span>bHidden <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Invisible wheels for hovercrafts</span>
+    frontRight<span class="uscript-operator">.</span>bHidden <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Invisible wheels for hovercrafts</span>
+    rearLeft<span class="uscript-operator">.</span>bHidden <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Invisible wheels for hovercrafts</span>
+    rearRight<span class="uscript-operator">.</span>bHidden <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Invisible wheels for hovercrafts</span>
+    midLeft <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span>MidTireClass<span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span> Location <span class="uscript-operator">+</span> WheelMidAlong<span class="uscript-operator">*</span>RotX <span class="uscript-operator">-</span> WheelMidAcross<span class="uscript-operator">*</span>RotY <span class="uscript-operator">+</span> <span class="uscript-operator">(</span><span class="uscript-number">256</span> <span class="uscript-comment">/*WheelVert*/</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>RotZ<span class="uscript-operator">,</span> Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>SetDrawScale3D<span class="uscript-operator">(</span><span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>bHidden <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Invisible wheels for hovercrafts</span>
+
+    midRight <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span>MidTireClass<span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span> Location <span class="uscript-operator">+</span> WheelMidAlong<span class="uscript-operator">*</span>RotX <span class="uscript-operator">-</span> WheelMidAcross<span class="uscript-operator">*</span>RotY <span class="uscript-operator">+</span> <span class="uscript-operator">(</span><span class="uscript-number">256</span> <span class="uscript-comment">/*WheelVert*/</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>RotZ<span class="uscript-operator">,</span> Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>SetDrawScale3D<span class="uscript-operator">(</span><span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>bHidden <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Invisible wheels for hovercrafts</span>
+
+    lPos<span class="uscript-operator">.</span>X <span class="uscript-operator">=</span> WheelMidAlong<span class="uscript-operator">;</span>
+    lPos<span class="uscript-operator">.</span>Y <span class="uscript-operator">=</span> <span class="uscript-operator">-</span>WheelMidAcross<span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>WheelJoint <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'KCarWheelJoint'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KPos1 <span class="uscript-operator">=</span> lPos<span class="uscript-operator">/</span><span class="uscript-number">50</span><span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KPriAxis1 <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KSecAxis1 <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KConstraintActor1 <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KPos2 <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KPriAxis2 <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KSecAxis2 <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KConstraintActor2 <span class="uscript-operator">=</span> midRight<span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>SetPhysics<span class="uscript-operator">(</span>PHYS_Karma<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    lPos<span class="uscript-operator">.</span>Y <span class="uscript-operator">=</span> WheelMidAcross<span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>WheelJoint <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'KCarWheelJoint'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KPos1 <span class="uscript-operator">=</span> lPos<span class="uscript-operator">/</span><span class="uscript-number">50</span><span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KPriAxis1 <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KSecAxis1 <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KConstraintActor1 <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KPos2 <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KPriAxis2 <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KSecAxis2 <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KConstraintActor2 <span class="uscript-operator">=</span> midLeft<span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>SetPhysics<span class="uscript-operator">(</span>PHYS_Karma<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Initially make sure parameters are synced with Karma</span>
+    KVehicleUpdateParams<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// Clean up wheels etc.</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+    <span class="uscript-comment">// Destroy joints holding wheels to car</span>
+    midLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Destroy wheels themselves.</span>
+    midLeft<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// Call this if you change any parameters (tire, suspension etc.) and they</span>
+<span class="uscript-comment">// will be passed down to each wheel/joint.</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> KVehicleUpdateParams<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>KVehicleUpdateParams<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    midLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>bKSteeringLocked <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>bKSteeringLocked <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// unlock rear wheels for steering</span>
+    rearLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>bKSteeringLocked <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+    rearLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KProportionalGap <span class="uscript-operator">=</span> SteerPropGap<span class="uscript-operator">;</span>
+    rearLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KMaxSteerTorque <span class="uscript-operator">=</span> SteerTorque<span class="uscript-operator">;</span>
+    rearLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KMaxSteerSpeed <span class="uscript-operator">=</span> SteerSpeed<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// unlock rear wheels for steering</span>
+    rearRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>bKSteeringLocked <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    rearRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KProportionalGap <span class="uscript-operator">=</span> SteerPropGap<span class="uscript-operator">;</span>
+    rearRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KMaxSteerTorque <span class="uscript-operator">=</span> SteerTorque<span class="uscript-operator">;</span>
+    rearRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KMaxSteerSpeed <span class="uscript-operator">=</span> SteerSpeed<span class="uscript-operator">;</span>
+
+    midLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KSuspHighLimit <span class="uscript-operator">=</span> SuspHighLimit<span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KSuspLowLimit <span class="uscript-operator">=</span> SuspLowLimit<span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KSuspStiffness <span class="uscript-operator">=</span> SuspStiffness<span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KSuspDamping <span class="uscript-operator">=</span> SuspDamping<span class="uscript-operator">;</span>
+
+    midRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KSuspHighLimit <span class="uscript-operator">=</span> SuspHighLimit<span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KSuspLowLimit <span class="uscript-operator">=</span> SuspLowLimit<span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KSuspStiffness <span class="uscript-operator">=</span> SuspStiffness<span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KSuspDamping <span class="uscript-operator">=</span> SuspDamping<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Sync parameters with Karma - even front and rear wheels… Just incase. :P</span>
+    frontLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KUpdateConstraintParams<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    frontRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KUpdateConstraintParams<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KUpdateConstraintParams<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KUpdateConstraintParams<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    rearLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KUpdateConstraintParams<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    rearRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KUpdateConstraintParams<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+
+
+    <span class="uscript-comment">// Mass</span>
+    frontLeft<span class="uscript-operator">.</span>KSetMass<span class="uscript-operator">(</span>TireMass<span class="uscript-number">+2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// maybe increase front wheels mass to simulte engine weight??</span>
+    frontRight<span class="uscript-operator">.</span>KSetMass<span class="uscript-operator">(</span>TireMass<span class="uscript-number">+2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// maybe increase front wheels mass to simulte engine weight??</span>
+    midLeft<span class="uscript-operator">.</span>KSetMass<span class="uscript-operator">(</span>TireMass<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>KSetMass<span class="uscript-operator">(</span>TireMass<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    midLeft<span class="uscript-operator">.</span>RollFriction <span class="uscript-operator">=</span> TireRollFriction<span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>LateralFriction <span class="uscript-operator">=</span> TireLateralFriction<span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>RollSlip <span class="uscript-operator">=</span> TireRollSlip<span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>LateralSlip <span class="uscript-operator">=</span> TireLateralSlip<span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>MinSlip <span class="uscript-operator">=</span> TireMinSlip<span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>SlipRate <span class="uscript-operator">=</span> TireSlipRate<span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>Softness <span class="uscript-operator">=</span> TireSoftness<span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>Adhesion <span class="uscript-operator">=</span> TireAdhesion<span class="uscript-operator">;</span>
+    midLeft<span class="uscript-operator">.</span>Restitution <span class="uscript-operator">=</span> TireRestitution<span class="uscript-operator">;</span>
+
+    midRight<span class="uscript-operator">.</span>RollFriction <span class="uscript-operator">=</span> TireRollFriction<span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>LateralFriction <span class="uscript-operator">=</span> TireLateralFriction<span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>RollSlip <span class="uscript-operator">=</span> TireRollSlip<span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>LateralSlip <span class="uscript-operator">=</span> TireLateralSlip<span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>MinSlip <span class="uscript-operator">=</span> TireMinSlip<span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>SlipRate <span class="uscript-operator">=</span> TireSlipRate<span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>Softness <span class="uscript-operator">=</span> TireSoftness<span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>Adhesion <span class="uscript-operator">=</span> TireAdhesion<span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>Restitution <span class="uscript-operator">=</span> TireRestitution<span class="uscript-operator">;</span>
+
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// Car Simulation</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> Delta<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> tana<span class="uscript-operator">,</span> sFactor<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Tick<span class="uscript-operator">(</span>Delta<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    WheelSpinSpeed <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>frontLeft<span class="uscript-operator">.</span>SpinSpeed 
+            <span class="uscript-operator">+</span> frontRight<span class="uscript-operator">.</span>SpinSpeed 
+            <span class="uscript-operator">+</span> rearLeft<span class="uscript-operator">.</span>SpinSpeed 
+            <span class="uscript-operator">+</span> midLeft<span class="uscript-operator">.</span>SpinSpeed 
+            <span class="uscript-operator">+</span> midRight<span class="uscript-operator">.</span>SpinSpeed 
+            <span class="uscript-operator">+</span> rearRight<span class="uscript-operator">.</span>SpinSpeed<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">6</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Motor</span>
+    <span class="uscript-comment">// MID .. make them wheel spin :]</span>
+    midLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KMotorTorque <span class="uscript-operator">=</span> <span class="uscript-number">0.5</span> <span class="uscript-operator">*</span> OutputTorque <span class="uscript-operator">*</span> TorqueSplit<span class="uscript-operator">;</span>
+    midRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KMotorTorque <span class="uscript-operator">=</span> <span class="uscript-number">0.5</span> <span class="uscript-operator">*</span> OutputTorque <span class="uscript-operator">*</span> TorqueSplit<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Braking</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>OutputBrake<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        midLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KBraking <span class="uscript-operator">=</span> MaxBrakeTorque<span class="uscript-operator">;</span>
+        midRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KBraking <span class="uscript-operator">=</span> MaxBrakeTorque<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+    <span class="uscript-operator">{</span>
+        midLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KBraking <span class="uscript-operator">=</span> <span class="uscript-number">0.0</span><span class="uscript-operator">;</span>
+        midRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KBraking <span class="uscript-operator">=</span> <span class="uscript-number">0.0</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">// Steering</span>
+    tana <span class="uscript-operator">=</span> Tan<span class="uscript-operator">(</span><span class="uscript-number">6.283</span><span class="uscript-operator">/</span><span class="uscript-number">65536</span> <span class="uscript-operator">*</span> Steering <span class="uscript-operator">*</span> MaxSteerAngle<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    sFactor <span class="uscript-operator">=</span> <span class="uscript-number">0.5</span> <span class="uscript-operator">*</span> tana <span class="uscript-operator">*</span> <span class="uscript-operator">(</span><span class="uscript-number">2</span> <span class="uscript-operator">*</span> WheelFrontAcross<span class="uscript-operator">)</span> <span class="uscript-operator">/</span> Abs<span class="uscript-operator">(</span>WheelFrontAlong <span class="uscript-operator">-</span> WheelRearAlong<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Make rear wheel turn in opposite direction to turn properly: -65536/6.283 </span>
+    RearLeft<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KSteerAngle <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">65536</span><span class="uscript-operator">/</span><span class="uscript-number">6.283</span> <span class="uscript-operator">*</span> Atan<span class="uscript-operator">(</span>tana<span class="uscript-operator">,</span> <span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">-</span>sFactor<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    RearRight<span class="uscript-operator">.</span>WheelJoint<span class="uscript-operator">.</span>KSteerAngle <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">65536</span><span class="uscript-operator">/</span><span class="uscript-number">6.283</span> <span class="uscript-operator">*</span> Atan<span class="uscript-operator">(</span>tana<span class="uscript-operator">,</span> <span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">+</span>sFactor<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Handbrake</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>OutputHandbrakeOn <span class="uscript-operator">==</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+
+        midLeft<span class="uscript-operator">.</span>LateralFriction <span class="uscript-operator">=</span> TireLateralFriction <span class="uscript-operator">+</span> TireHandbrakeFriction<span class="uscript-operator">;</span>
+        midLeft<span class="uscript-operator">.</span>LateralSlip <span class="uscript-operator">=</span> TireLateralSlip <span class="uscript-operator">+</span> TireHandbrakeSlip<span class="uscript-operator">;</span>
+
+        midRight<span class="uscript-operator">.</span>LateralFriction <span class="uscript-operator">=</span> TireLateralFriction <span class="uscript-operator">+</span> TireHandbrakeFriction<span class="uscript-operator">;</span>
+        midRight<span class="uscript-operator">.</span>LateralSlip <span class="uscript-operator">=</span> TireLateralSlip <span class="uscript-operator">+</span> TireHandbrakeSlip<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+    <span class="uscript-operator">{</span>
+        midLeft<span class="uscript-operator">.</span>LateralFriction <span class="uscript-operator">=</span> TireLateralFriction<span class="uscript-operator">;</span>
+        midLeft<span class="uscript-operator">.</span>LateralSlip <span class="uscript-operator">=</span> TireLateralSlip<span class="uscript-operator">;</span>
+
+        midRight<span class="uscript-operator">.</span>LateralFriction <span class="uscript-operator">=</span> TireLateralFriction<span class="uscript-operator">;</span>
+        midRight<span class="uscript-operator">.</span>LateralSlip <span class="uscript-operator">=</span> TireLateralSlip<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span></pre><p><a href="category-custom-class.html">Category Custom Class</a></p>
+</div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=KHoverTank">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=KHoverTank">View other revisions</a><br>Last edited January 5, 2005 5:00 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=KHoverTank">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/KHoverTank">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Always snap to grid
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

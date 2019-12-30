@@ -1,0 +1,423 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: VitalOverdose/SFX PawnTeleporting</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=VitalOverdose/SFX_PawnTeleporting; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="vitaloverdose.html">VitalOverdose</a>/<a href="http://wiki.beyondunreal.com/wiki?back=VitalOverdose/SFX+PawnTeleporting">SFX PawnTeleporting</a></h1>
+	<div class="wiki"><div class="classpath"><img src="shared//gameicons/icon-ut2004.png"> <a href="unreal-tournament-2004.html">UT2004</a> :: <a href="actor.html">Actor</a> &gt;&gt; <a href="emitter.html">Emitter</a> &gt;&gt;SFX VecTeleporting (Package: custom)<br></div>
+<pre class="paraverbatim"> </pre><p>by <a href="vitaloverdose.html">VitalOverdose</a></p>
+<p>Part of  <a href="vitaloverdose-vitals-pro-ma.html">Vital'sPMT</a></p>
+<h3><a name="0.0.1"></a>Overview</h3>
+<p>This custom emitter emits particles that teleport a pawn to a random destination when the pawn touches them.  The exit points for the teleporter can be any non solid actors in the map. <a href="navigationpoint.html">NavigationPoint</a>s work quite well for this propose.  The emitter scans the entire level when it is spawned, checking for anything that has 'tp' in for its tag properties.  The valid actor refs of these TP points get recorded in an array called TPact.</p>
+<h4><a name="0.0.1.1"></a>Global Variables</h4>
+<pre class="paraverbatim"> <em class="em2">TotalParticles</em>         - Internal counter for the number of active particles to track.
+ <em class="em2">TpAct</em>                  - Internal Dynamic array of type actor that gets emptied then populated every time <em class="em2">scapTPAct() is called.</em>
+ <em class="em2">ActiveEmitterNumb</em>      - The Number of the emitter within this emitter actor that will be tracked.
+ <em class="em2">BPlaySpawnEffect</em>       - A simple flag for triggering the pawns existing teleport fx.
+ <em class="em2">TimerFrequency</em>         - The scan rate for the particles.
+ <em class="em2">ScanSize</em>               - The scan radius of each particle that's being tracked.
+ <em class="em2">ReScanTime</em>             - How long between rescans of the available 'tp' points in the level.
+ </pre><pre class="uscript"><span class="uscript-keyword">Var</span> <span class="uscript-type">bool</span>                              bScanning<span class="uscript-operator">;</span>             <span class="uscript-comment">// The mapper has no access to these values In UnrealEd</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-type">int</span>                               TotalParticles<span class="uscript-operator">;</span>        <span class="uscript-comment">// The mapper has no access to these values In UnrealEd </span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">Array</span><span class="uscript-operator">&lt;</span>Actor<span class="uscript-operator">&gt;</span>                      TpAct<span class="uscript-operator">;</span>                 <span class="uscript-comment">// The mapper has no access to these values In UnrealEd</span>
+
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span>                            ActiveEmitterNumb<span class="uscript-operator">;</span>     <span class="uscript-comment">// The mapper can set these values In UnrealEd</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span>                           BPlaySpawnEffect<span class="uscript-operator">;</span>      <span class="uscript-comment">// The mapper can set these values In UnrealEd</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span>                          TimerFrequency<span class="uscript-operator">;</span>        <span class="uscript-comment">// The mapper can set these values In UnrealEd</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span>                          ScanSize<span class="uscript-operator">;</span>              <span class="uscript-comment">// The mapper can set these values In UnrealEd</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span>                          ReScanTime<span class="uscript-operator">;</span>            <span class="uscript-comment">// The mapper can set these values In UnrealEd     </span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">Array</span><span class="uscript-operator">&lt;</span> <span class="uscript-keyword">Class</span><span class="uscript-operator">&lt;</span>Emitter<span class="uscript-operator">&gt;</span> <span class="uscript-operator">&gt;</span>        TagFxPoolPawn<span class="uscript-operator">;</span>         <span class="uscript-comment">// The mapper can set these values In UnrealEd</span></pre><h3><a name="0.0.2"></a>Function PostBeginPlay()</h3>
+<p>In this function the <em class="em2">.super</em> function has been put before the modified code so we get anything from the parent class gets dealt with right away and leaves the rest of the function free for whatever code we need to add to it.</p>
+<p>We are using the <em class="em2">PostbeginPlay()</em> function to check some of the data entered by the mapper before we start scanning the particle locations.</p>
+<ul><li>The<em class="em3">MaxParticles<em class="em2"> on the active emitter is checked to see if it is higher than the Limit of 20. <ul><li>(true)  it is it gets set to 20.</li>
+</ul>
+</em></em></li>
+<li>The <em class="em2">scansize</em> Radius is checked to see it hasn't been set to low. <ul><li>(true) then it gets set to 64.</li>
+</ul>
+</li>
+<li>Then the <em class="em2">timerfrequency</em> is checked to see if it lower &lt; then 0.1 if it is.<ul><li>(true)it gets set to 0.1.</li>
+</ul>
+</li>
+<li>Finally the Timer is set to be called every <em class="em2">TimerFrequency</em> seconds on a continuous loop.</li>
+</ul>
+<pre class="uscript"><span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>         <span class="uscript-comment">//Copies code from the parent class relating to this function to this point.</span>
+ 
+ ScanTelPoint<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                <span class="uscript-comment">//The first scan for the TP point is performed</span>
+ 
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> TpAct<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">==</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span> 
+    <span class="uscript-operator">{</span>
+    Warn<span class="uscript-operator">(</span><span class="uscript-name">'The initial scan for actors TP (actors with TP in their tag fields) came up with nothing. This actor cannot function with out a TP list and had to be destroyed to avoid any other unexpected complications during game play'</span><span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Emitters<span class="uscript-operator">[</span>ActiveEmitterNumb<span class="uscript-operator">]</span><span class="uscript-operator">.</span>MaxParticles <span class="uscript-operator">&gt;</span> <span class="uscript-number">20</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     Warn<span class="uscript-operator">(</span><span class="uscript-name">'The emitter U have chosen as the active emitter Emitters["$ActiveEmitterNumb$"] has its MaxParticle rate set TO high. It has been set to max (20) as a result. If you are having problems with game speed at all this may be something you want to address..'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Emitters<span class="uscript-operator">[</span>ActiveEmitterNumb<span class="uscript-operator">]</span><span class="uscript-operator">.</span>MaxParticles <span class="uscript-operator">=</span> <span class="uscript-number">20</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+ 
+ <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span>TimerFrequency <span class="uscript-operator">&lt;</span> <span class="uscript-number">0.1</span> <span class="uscript-operator">)</span>             <span class="uscript-comment">// 0.1 is the min but its better to set this value a high as possible</span>
+    <span class="uscript-operator">{</span>
+     TimerFrequency <span class="uscript-operator">=</span> <span class="uscript-number">0.1</span><span class="uscript-operator">;</span>
+     Warn<span class="uscript-operator">(</span><span class="uscript-name">'The timerfrequency for this actor ("$timerfrequency$") is set to LOW and has been set to the min (0.1) as a result. If you are experiencing any problems with game speed them this may be something might want to address...)</span>
+    <span class="uscript-operator">}</span>
+ 
+ SetTimer<span class="uscript-operator">(</span> TimerFrequency <span class="uscript-operator">,</span> <span class="uscript-keyword">True</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.3"></a>Function ScanTpAct()</h3>
+<p>when is function is called  the emitter will perform a scan and record the valid actor refs of</p>
+<p>all the actors in the level that have <em class="em2">Tp</em> in their <em class="em2">Tag</em> field.</p>
+<ul><li>a local variable of type actor is declared to store the result of the scan.</li>
+<li>if the array of TP point is not empty..<ul><li>(true) -empty the array ready for re-population.</li>
+</ul>
+</li>
+<li>Using an Iterator check though all the actors in the level with <em class="em2">tp</em> in their tag field and store their valid actor ref in the variable <em class="em2">FoundTelPoint</em>.<ul><li>a new space in the array is created at position 0 and and existing refs already present in the array get shuffled up one place to make room.</li>
+</ul>
+</li>
+</ul>
+<pre class="uscript"><span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">function</span> ScanTpAct<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">Local</span> Actor FoundTelPoint<span class="uscript-operator">;</span>
+ 
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> TpAct<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">!=</span><span class="uscript-number">0</span> <span class="uscript-operator">)</span> 
+    <span class="uscript-operator">{</span>
+     TpAct<span class="uscript-operator">.</span><span class="uscript-keyword">Remove</span><span class="uscript-operator">(</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span>TpAct<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span> 
+    <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span> <span class="uscript-keyword">Class</span><span class="uscript-name">'Actor'</span> <span class="uscript-operator">,</span> FoundTelPoint<span class="uscript-operator">,</span> <span class="uscript-name">'TP'</span> <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+             TpAct<span class="uscript-operator">.</span><span class="uscript-keyword">Insert</span><span class="uscript-operator">(</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             TpAct<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> FoundTelPoint<span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span> 
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.4"></a>Function Timer()</h3>
+<p>The timer function is rather like an alarm clock, we can set it to go off after a certain amount of time. Whats really handy about this is we can also set it to run continuously which means any code we us the value <em class="em2">timerfrequency</em> and tell it to run continuously then the timer function will get called once every 'timerfrequency' seconds. This is particularly useful for scanning for things at regular intervals and timing delays. </p>
+<p>The reason for using timer() rather than tick() is because tick runs at a set rate. As timerfrequency can be set by the mapper in unrealed hes has some control of the amount of cpu strain this actor is causing whilst playing and with an actor such as this that has the capability of slowing the whole game to a crawl if not use correctly that control is very important.</p>
+<ul><li>first a local variable of type pawn is made to store the valid ref of any pawn that the iterator finds when scanning.</li>
+<li>A local variable of type Int is created to use as a counter in the for next loop that will cycle though the emitted particles currently being scanned.</li>
+<li>A for loop is ude to scan each emitted particle with an iterator and the valid actor ref of any pawn that gets detected get stored in the variable <em class="em2">FoundPawn</em>.</li>
+</ul>
+<pre class="paraverbatim">  . This iterator works differently from the last one because this on is looking for a physical collision.</pre><ul><li><ul><li>If a pawn is found the function process contact is called and the valid actor ref of what was touched gets passes to the function to.</li>
+</ul>
+</li>
+</ul>
+<pre class="uscript"><span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">Function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">Local</span> Actor           FoundActor<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">Local</span> <span class="uscript-type">Int</span>             Counter<span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bScanning <span class="uscript-operator">==</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> Counter<span class="uscript-operator">=</span><span class="uscript-number">0</span> <span class="uscript-operator">;</span> Counter <span class="uscript-operator">&lt;</span> Emitters<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Particles<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">;</span> Counter<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+         <span class="uscript-keyword">foreach</span> visiblecollidingActors<span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> FoundActor <span class="uscript-operator">,</span> ScanSize <span class="uscript-operator">,</span> Emitters<span class="uscript-operator">[</span>ActiveEmitterNumb<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Particles<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Location <span class="uscript-operator">)</span>
+              <span class="uscript-operator">{</span>
+               ProcessCollision<span class="uscript-operator">(</span>FoundActor<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+              <span class="uscript-operator">}</span>
+       <span class="uscript-operator">}</span>
+   <span class="uscript-operator">}</span>    
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.5"></a>Function Tport()</h3>
+<p>The final script dealls with the actual Teleporting of the pawn + the fx. The code for it is very small</p>
+<p>as by this point most of the variables have been qualified by earlyer functions.</p>
+<pre class="uscript"><span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">Function</span> <span class="uscript-type">Bool</span> TPort<span class="uscript-operator">(</span>Pawn TPPawn<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> exraheight<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">local</span> <span class="uscript-type">Int</span> Pickednumber<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">local</span> vector NewOffsetposition<span class="uscript-operator">;</span>
+ 
+ Pickednumber<span class="uscript-operator">=</span>FindSafeSpawnLoc<span class="uscript-operator">(</span>exraheight<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ NewOffsetposition<span class="uscript-operator">=</span>tpact<span class="uscript-operator">[</span>Pickednumber<span class="uscript-operator">]</span><span class="uscript-operator">.</span>location<span class="uscript-operator">;</span>
+ NewOffsetposition<span class="uscript-operator">.</span>z <span class="uscript-operator">=</span><span class="uscript-operator">+</span> NewOffsetposition<span class="uscript-operator">;</span>
+ TPPawn<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span> NewOffsetposition<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ TPPawn<span class="uscript-operator">.</span>SetRotation<span class="uscript-operator">(</span> TelPoint<span class="uscript-operator">.</span>Rotation <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ TPPawn<span class="uscript-operator">.</span>OldRotYaw <span class="uscript-operator">=</span> TPPawn<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">;</span>
+ 
+ <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> BPlaySpawnEffect <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     TPPawn<span class="uscript-operator">.</span>PlayTelePortEffect<span class="uscript-operator">(</span> <span class="uscript-keyword">False</span><span class="uscript-operator">,</span><span class="uscript-keyword">True</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.6"></a>Function FindSafeSpawnLocs()</h3>
+<p>the teleporter will try very hard to find a safe place for the Pawn to spawn so that nothing gets telefragged. It does this by first scanning the destination tp point and if there is a possibility of a telefrage it moves on to the next random spawn point. if in the unlikely event of all the spawn spawnpoints are unsuitable then it will go t through another random list but adding 90 (location.z) in height each time the list gets looped.</p>
+<pre class="uscript"><span class="uscript-keyword">Function</span> <span class="uscript-type">Int</span> FindSafeSpawnLoc<span class="uscript-operator">(</span><span class="uscript-keyword">out</span> <span class="uscript-type">float</span> Extraheight<span class="uscript-operator">)</span>                    <span class="uscript-comment">// this function checks for pawns being to close to the spawn point</span>
+<span class="uscript-operator">{</span>
+                                                                        <span class="uscript-comment">// this way no one should get telefraged. If a suitab</span>
+ <span class="uscript-keyword">Local</span> Pawn         Foundpawn<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">Local</span> <span class="uscript-type">Int</span>          Counter<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">Local</span> <span class="uscript-type">int</span>          PickedRNDNo<span class="uscript-operator">;</span>
+
+ Templist<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span>  <span class="uscript-operator">=</span> TPActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>
+ 
+ <span class="uscript-keyword">while</span><span class="uscript-operator">(</span> Foundpawn <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+      <span class="uscript-operator">{</span>
+       <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> Counter <span class="uscript-operator">=</span> <span class="uscript-number">0</span> <span class="uscript-operator">;</span> Counter <span class="uscript-operator">&lt;</span> TPActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">;</span> Counter<span class="uscript-operator">++</span> <span class="uscript-operator">)</span> 
+           <span class="uscript-operator">{</span>
+            Templist<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">=</span>Counter<span class="uscript-operator">;</span>
+           <span class="uscript-operator">}</span>
+
+       <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> Counter<span class="uscript-operator">=</span><span class="uscript-number">0</span> <span class="uscript-operator">;</span> Counter <span class="uscript-operator">&lt;</span> TPActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">;</span> Counter<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>             <span class="uscript-comment">// Here i want to pick Numbs at Random from a list</span>
+           <span class="uscript-operator">{</span>                                                                 <span class="uscript-comment">// First west up the Numbs in sequential order and then</span>
+             PickedRNDNo <span class="uscript-operator">=</span> Rand<span class="uscript-operator">(</span>Templist<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>                       <span class="uscript-comment">// Pick a RND No based on the Length of the list.</span>
+                                                                
+             <span class="uscript-keyword">foreach</span> radiusActors<span class="uscript-operator">(</span> <span class="uscript-keyword">Class</span><span class="uscript-name">'pawn'</span> <span class="uscript-operator">,</span> Foundpawn <span class="uscript-operator">,</span> ScanRadius <span class="uscript-operator">,</span> TPActors<span class="uscript-operator">[</span>PickedRNDNo<span class="uscript-operator">]</span><span class="uscript-operator">.</span>location <span class="uscript-operator">+</span> <span class="uscript-operator">(</span><span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">*</span> Extraheight<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                                 <span class="uscript-operator">{</span>
+                                  
+                                  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Foundpawn<span class="uscript-operator">.</span>bCollideActors <span class="uscript-operator">==</span> <span class="uscript-keyword">True</span> <span class="uscript-operator">)</span>
+                                     <span class="uscript-operator">{</span>
+                                      PickedRNDNo <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">10</span><span class="uscript-operator">;</span>
+                                     <span class="uscript-operator">}</span>
+                                   TempList<span class="uscript-operator">.</span><span class="uscript-keyword">remove</span><span class="uscript-operator">(</span> PickedRNDNo <span class="uscript-operator">,</span><span class="uscript-number">1</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                                  <span class="uscript-operator">}</span>
+           <span class="uscript-operator">}</span>
+       Extraheight <span class="uscript-operator">+=</span> <span class="uscript-number">90</span><span class="uscript-operator">;</span>
+      <span class="uscript-operator">}</span>
+<span class="uscript-keyword">return</span> PickedRNDNo<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Here Is the complete script</p>
+<pre class="uscript"><span class="uscript-comment">////////////////////////////////////////////////</span>
+<span class="uscript-comment">//Class SFX_Teleporting for Unrealtournament 2004</span>
+<span class="uscript-comment">//by VitalOverdose Jan 2006</span>
+<span class="uscript-comment">//Http://vitaloverdose.zapme.to.org</span>
+<span class="uscript-comment">//This actor is also Part of Vitals Pro Mapping Tools.</span>
+<span class="uscript-comment">//Http://ProMappingTools.zapto.org</span>
+<span class="uscript-comment">///////////////////////////////////////////////</span>
+<span class="uscript-keyword">Class</span> SFX_Teleporting <span class="uscript-keyword">extends</span> vitalsfx
+<span class="uscript-keyword">placeable</span><span class="uscript-operator">;</span>
+
+
+<span class="uscript-keyword">Var</span> <span class="uscript-type">bool</span>                              bScanning<span class="uscript-operator">;</span>             <span class="uscript-comment">// The mapper has no access to these values In UnrealEd</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-type">int</span>                               TotalParticles<span class="uscript-operator">;</span>        <span class="uscript-comment">// The mapper has no access to these values In UnrealEd</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">Array</span><span class="uscript-operator">&lt;</span>Actor<span class="uscript-operator">&gt;</span>                      TpAct<span class="uscript-operator">;</span>                 <span class="uscript-comment">// The mapper has no access to these values In UnrealEd</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span>                            ActiveEmitterNumb<span class="uscript-operator">;</span>     <span class="uscript-comment">// The mapper can set these values In UnrealEd</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span>                           BPlaySpawnEffect<span class="uscript-operator">;</span>      <span class="uscript-comment">// The mapper can set these values In UnrealEd</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span>                          TimerFrequency<span class="uscript-operator">;</span>        <span class="uscript-comment">// The mapper can set these values In UnrealEd</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span>                          ScanSize<span class="uscript-operator">;</span>              <span class="uscript-comment">// The mapper can set these values In UnrealEd</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span>                          ReScanTime<span class="uscript-operator">;</span>            <span class="uscript-comment">// The mapper can set these values In UnrealEd</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">Array</span><span class="uscript-operator">&lt;</span> <span class="uscript-keyword">Class</span><span class="uscript-operator">&lt;</span>Emitter<span class="uscript-operator">&gt;</span> <span class="uscript-operator">&gt;</span>        TagFxPoolPawn<span class="uscript-operator">;</span>         <span class="uscript-comment">// The mapper can set these values In UnrealEdFunction</span>
+
+<span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>         <span class="uscript-comment">//Copies code from the parent class relating to this function to this point.</span>
+
+ ScanTelPoint<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                <span class="uscript-comment">//The first scan for the TP point is performed</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> TpAct<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">==</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+    Warn<span class="uscript-operator">(</span><span class="uscript-name">'The initial scan for actors TP (actors with TP in their tag fields) came up with nothing. This actor cannot function with out a TP list and had to be destroyed to avoid any other unexpected complications during game play'</span><span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Emitters<span class="uscript-operator">[</span>ActiveEmitterNumb<span class="uscript-operator">]</span><span class="uscript-operator">.</span>MaxParticles <span class="uscript-operator">&gt;</span> <span class="uscript-number">20</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     Warn<span class="uscript-operator">(</span><span class="uscript-name">'The emitter U have chosen as the active emitter Emitters["$ActiveEmitterNumb$"] has its MaxParticle rate set TO high. It has been set to max (20) as a result. If you are having problems with game speed at all this may be something you want to address..'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Emitters<span class="uscript-operator">[</span>ActiveEmitterNumb<span class="uscript-operator">]</span><span class="uscript-operator">.</span>MaxParticles <span class="uscript-operator">=</span> <span class="uscript-number">20</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span>TimerFrequency <span class="uscript-operator">&lt;</span> <span class="uscript-number">0.1</span> <span class="uscript-operator">)</span>             <span class="uscript-comment">// 0.1 is the min but its better to set this value a high as possible</span>
+    <span class="uscript-operator">{</span>
+     TimerFrequency <span class="uscript-operator">=</span> <span class="uscript-number">0.1</span><span class="uscript-operator">;</span>
+     Warn<span class="uscript-operator">(</span><span class="uscript-name">'The timerfrequency for this actor ("$timerfrequency$") is set to LOW and has been set to the min (0.1) as a result. If you are experiencing any problems with game speed them this may be something might want to address...)</span>
+    <span class="uscript-operator">}</span>
+
+ SetTimer<span class="uscript-operator">(</span> TimerFrequency <span class="uscript-operator">,</span> <span class="uscript-keyword">True</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">function</span> ScanTpAct<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">Local</span> Actor FoundTelPoint<span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> TpAct<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">!=</span><span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     TpAct<span class="uscript-operator">.</span><span class="uscript-keyword">Remove</span><span class="uscript-operator">(</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span>TpAct<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span> <span class="uscript-keyword">Class</span><span class="uscript-name">'Actor'</span> <span class="uscript-operator">,</span> FoundTelPoint<span class="uscript-operator">,</span> <span class="uscript-name">'TP'</span> <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+             TpAct<span class="uscript-operator">.</span><span class="uscript-keyword">Insert</span><span class="uscript-operator">(</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             TpAct<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> FoundTelPoint<span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">Function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">Local</span> Actor           FoundActor<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">Local</span> <span class="uscript-type">Int</span>             Counter<span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bScanning <span class="uscript-operator">==</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> Counter<span class="uscript-operator">=</span><span class="uscript-number">0</span> <span class="uscript-operator">;</span> Counter <span class="uscript-operator">&lt;</span> Emitters<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Particles<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">;</span> Counter<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+         <span class="uscript-keyword">foreach</span> visiblecollidingActors<span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> FoundActor <span class="uscript-operator">,</span> ScanSize <span class="uscript-operator">,</span> Emitters<span class="uscript-operator">[</span>ActiveEmitterNumb<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Particles<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Location <span class="uscript-operator">)</span>
+              <span class="uscript-operator">{</span>
+               ProcessCollision<span class="uscript-operator">(</span>FoundActor<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+              <span class="uscript-operator">}</span>
+       <span class="uscript-operator">}</span>
+   <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">Function</span> <span class="uscript-type">Bool</span> TPort<span class="uscript-operator">(</span>Pawn TPPawn<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> exraheight<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">local</span> <span class="uscript-type">Int</span> Pickednumber<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">local</span> vector NewOffsetposition<span class="uscript-operator">;</span>
+
+ Pickednumber<span class="uscript-operator">=</span>FindSafeSpawnLoc<span class="uscript-operator">(</span>exraheight<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ NewOffsetposition<span class="uscript-operator">=</span>tpact<span class="uscript-operator">[</span>Pickednumber<span class="uscript-operator">]</span><span class="uscript-operator">.</span>location<span class="uscript-operator">;</span>
+ NewOffsetposition<span class="uscript-operator">.</span>z <span class="uscript-operator">=</span><span class="uscript-operator">+</span> NewOffsetposition<span class="uscript-operator">;</span>
+ TPPawn<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span> NewOffsetposition<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ TPPawn<span class="uscript-operator">.</span>SetRotation<span class="uscript-operator">(</span> TelPoint<span class="uscript-operator">.</span>Rotation <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ TPPawn<span class="uscript-operator">.</span>OldRotYaw <span class="uscript-operator">=</span> TPPawn<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> BPlaySpawnEffect <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     TPPawn<span class="uscript-operator">.</span>PlayTelePortEffect<span class="uscript-operator">(</span> <span class="uscript-keyword">False</span><span class="uscript-operator">,</span><span class="uscript-keyword">True</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Function</span> <span class="uscript-type">Int</span> FindSafeSpawnLoc<span class="uscript-operator">(</span><span class="uscript-keyword">out</span> <span class="uscript-type">float</span> Extraheight<span class="uscript-operator">)</span>                    <span class="uscript-comment">// this function checks for pawns being to close to the spawn point</span>
+<span class="uscript-operator">{</span>
+                                                                        <span class="uscript-comment">// this way no one should get telefraged. If a suitab</span>
+ <span class="uscript-keyword">Local</span> Pawn         Foundpawn<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">Local</span> <span class="uscript-type">Int</span>          Counter<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">Local</span> <span class="uscript-type">int</span>          PickedRNDNo<span class="uscript-operator">;</span>
+
+ Templist<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span>  <span class="uscript-operator">=</span> TPActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">while</span><span class="uscript-operator">(</span> Foundpawn <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+      <span class="uscript-operator">{</span>
+       <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> Counter <span class="uscript-operator">=</span> <span class="uscript-number">0</span> <span class="uscript-operator">;</span> Counter <span class="uscript-operator">&lt;</span> TPActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">;</span> Counter<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>
+           <span class="uscript-operator">{</span>
+            Templist<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">=</span>Counter<span class="uscript-operator">;</span>
+           <span class="uscript-operator">}</span>
+
+       <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> Counter<span class="uscript-operator">=</span><span class="uscript-number">0</span> <span class="uscript-operator">;</span> Counter <span class="uscript-operator">&lt;</span> TPActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">;</span> Counter<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>             <span class="uscript-comment">// Here i want to pick Numbs at Random from a list</span>
+           <span class="uscript-operator">{</span>                                                                 <span class="uscript-comment">// First west up the Numbs in sequential order and then</span>
+             PickedRNDNo <span class="uscript-operator">=</span> Rand<span class="uscript-operator">(</span>Templist<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>                       <span class="uscript-comment">// Pick a RND No based on the Length of the list.</span>
+
+             <span class="uscript-keyword">foreach</span> radiusActors<span class="uscript-operator">(</span> <span class="uscript-keyword">Class</span><span class="uscript-name">'pawn'</span> <span class="uscript-operator">,</span> Foundpawn <span class="uscript-operator">,</span> ScanRadius <span class="uscript-operator">,</span> TPActors<span class="uscript-operator">[</span>PickedRNDNo<span class="uscript-operator">]</span><span class="uscript-operator">.</span>location <span class="uscript-operator">+</span> <span class="uscript-operator">(</span><span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">*</span> Extraheight<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                                 <span class="uscript-operator">{</span>
+
+                                  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Foundpawn<span class="uscript-operator">.</span>bCollideActors <span class="uscript-operator">==</span> <span class="uscript-keyword">True</span> <span class="uscript-operator">)</span>
+                                     <span class="uscript-operator">{</span>
+                                      PickedRNDNo <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">10</span><span class="uscript-operator">;</span>
+                                     <span class="uscript-operator">}</span>
+                                   TempList<span class="uscript-operator">.</span><span class="uscript-keyword">remove</span><span class="uscript-operator">(</span> PickedRNDNo <span class="uscript-operator">,</span><span class="uscript-number">1</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                                  <span class="uscript-operator">}</span>
+           <span class="uscript-operator">}</span>
+       Extraheight <span class="uscript-operator">+=</span> <span class="uscript-number">90</span><span class="uscript-operator">;</span>
+      <span class="uscript-operator">}</span>
+<span class="uscript-keyword">return</span> PickedRNDNo<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.1"></a>Related Topics </h2>
+<ul><li><a href="vitaloverdose-sfx-painful.html">VitalOverdose/SFX Painful</a></li>
+<li><a href="vitaloverdose-sfx-vectelepo.html">VitalOverdose/SFX VecTeleporting</a></li>
+<li><a href="vitaloverdose-sfx-pawntelep.html">VitalOverdose/SFX PawnTeleporting</a></li>
+<li><a href="vitaloverdose-sfx-triggerin.html">VitalOverdose/SFX Triggering</a></li>
+<li><a href="vitaloverdose-sfx-boosting.html">VitalOverdose/SFX Boosting</a></li>
+<li>SFX_MonsterSpawning<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=SFX_MonsterSpawning&referrerid=VitalOverdose/SFX_PawnTeleporting">?</a></li>
+<li>SFX_Healing<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=SFX_Healing&referrerid=VitalOverdose/SFX_PawnTeleporting">?</a></li>
+<li><a href="vitaloverdose-sfx-ejecting.html">VitalOverdose/SFX Ejecting</a></li>
+<li><a href="vitaloverdose-inventoryflar.html">VitalOverdose/InventoryFlare</a>  </li>
+</ul>
+<h2><a name="0.2"></a>discusion</h2>
+<hr class="thin"><p><a href="category-custom-class.html">Category Custom Class</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Overview", "#0.0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Global Variables", "#0.0.1.1");
+menuItemAdd("Function PostBeginPlay()", "#0.0.2");
+menuItemAdd("Function ScanTpAct()", "#0.0.3");
+menuItemAdd("Function Timer()", "#0.0.4");
+menuItemAdd("Function Tport()", "#0.0.5");
+menuItemAdd("Function FindSafeSpawnLocs()", "#0.0.6");
+menuItemAdd("Related Topics ", "#0.1");
+menuItemAdd("discusion", "#0.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="vitaloverdose.html">VitalOverdose</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=VitalOverdose/SFX_PawnTeleporting">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=VitalOverdose/SFX_PawnTeleporting">View other revisions</a><br>Last edited June 15, 2006 14:36 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=VitalOverdose/SFX_PawnTeleporting">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/VitalOverdose/SFX_PawnTeleporting">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>My program doesn't have bugs. It just develops random features.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

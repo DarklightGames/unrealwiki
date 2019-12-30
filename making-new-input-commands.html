@@ -1,0 +1,141 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Making New Input Commands</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Making_New_Input_Commands; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Making New Input Commands">Making New Input Commands</a></h1>
+	<div class="wiki"><p>Tutorial: Making new input commands [Written for UT2004 but it should work in UT2003/UT99]</p>
+<p>Author: James Tan aka Solid Snake</p>
+<p>Last update: 27/5/2004</p>
+<h3><a name="0.0.1"></a>Introduction</h3>
+<p>Sometimes when you are making a new game/mod it is possible that you may need to add in extra keys to allow the player to do more things at once. Adding these into the Unreal engine is very easy, although the way it actually works is a little strange at first, but hopefully after this tutorial it should be no problems.</p>
+<h3><a name="0.0.2"></a>Toggle input</h3>
+<p>Togglet inputs are ones that the user simply had to push the button and Unreal will do something. There are no special conditions for these types of inputs as well as the fact that these are the most simplistic types of inputs. These keys are things such as Esc for the menu, or F4 for the first person camera view. To add these into Unreal is a two step process, the first step is to make the exec function within a player owned class and then making a physical bind between Unreal and the user through the User.ini.</p>
+<p>Step 1: Making the exec function</p>
+<pre class="uscript"><span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> OpenMenu<span class="uscript-operator">(</span><span class="uscript-keyword">optional</span> <span class="uscript-type">float</span> F<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>F <span class="uscript-operator">==</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    <span class="uscript-comment">// Run this line.</span>
+  <span class="uscript-keyword">else</span>
+    <span class="uscript-comment">// Run this line.</span>
+<span class="uscript-operator">}</span></pre><p>Step 2: Editing the user.ini.</p>
+<p>From here, you now need to assign a key to this function. Simply open up the user.ini file, and look for a free key. An example is something like 'B='. Just add in your function name, so it looks like 'B=OpenMenu'. Now when you press B, it will run your function, provided that the player is controlling the class which has this function defined in it. Note that I have added an optional float in the syntax of the function. To parse a value into the function, simple write the number like so, 'B=OpenMenu 1'. That way you can have multiple keys which all do similar things but you can differentiate between the keys. This is how weapon switching is done.</p>
+<h3><a name="0.0.3"></a>Sustained inputs</h3>
+<p>Sustained are useful when you want to know if the player is holding onto a key or not, so these would encompasses movement type keys, time dependent keys and weapon related keys. Basically, if you need a key which requires the player to hold onto the key then this is where you want it to be. However this is a little but more complicated as such, since more scripts will need to be created. This of course is just the way I do it, and there can be more than one way.</p>
+<p>Step 1: Making your input variable</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> <span class="uscript-keyword">input</span> <span class="uscript-type">byte</span> bHoldMenu<span class="uscript-operator">;</span></pre><p>This should go in a class which the player has control of, thus the immediately obvious ones are ones such as PlayerController. Now, what we need to do is to monitor this value. We don't have to do anything else other than that, since Unreal will automatically alter this variable when a key is pressed.</p>
+<p>Step 2: Monitoring your new input variable.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> PlayerTick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PlayerTick<span class="uscript-operator">(</span>DeltaTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bHoldMenu <span class="uscript-operator">==</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    <span class="uscript-comment">// Key pressed down/held down. Run this line.</span>
+  <span class="uscript-keyword">else</span>
+    <span class="uscript-comment">// Key released or not pressed. Run this line.</span>
+<span class="uscript-operator">}</span></pre><p>As you can see here, I have monitored the input variable in the PlayerTick function which is of course in my own PlayerController class.</p>
+<p>Step 3: Assigning a key to your new input variable.</p>
+<p>Now, open up your User.ini file and append to the current ... Argh I forgot this! Will update when I remember or have a user.ini in front of me. </p>
+<p>For those that kind of know what I mean, you have to make a new command and bind it to an alias. You then bind a key to the alias and not the input variable.</p>
+<p>- Still needs work!</p>
+<p><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Introduction", "#0.0.1");
+menuItemAdd("Toggle input", "#0.0.2");
+menuItemAdd("Sustained inputs", "#0.0.3");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Making_New_Input_Commands">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Making_New_Input_Commands">View other revisions</a><br>Last edited October 31, 2004 8:14 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Making_New_Input_Commands">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Making_New_Input_Commands">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>My program doesn't have bugs. It just develops random features.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

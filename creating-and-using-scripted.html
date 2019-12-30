@@ -1,0 +1,312 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Creating And Using ScriptedActions</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Creating_And_Using_ScriptedActions; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Creating And Using ScriptedActions">Creating And Using ScriptedActions</a></h1>
+	<div class="wiki"><p><a href="scriptedaction.html">ScriptedAction</a>s, and their related <a href="scriptedsequence.html">ScriptedSequence</a>s, are the premier method for getting <a href="unreal-tournament-2003.html">UT2003</a> AI to "do stuff". Back in <a href="unreal-tournament.html">UT</a>, when coders wanted to introduce new behavior into bots or <a href="scriptedpawn.html">ScriptedPawn</a>s, they would subclass whatever AI they were deriving from, and add code there.</p>
+<p>In <a href="unreal-tournament-2003.html">UT2003</a>, a similar action would be to subclass <a href="controller.html">Controller</a>. However, with the addition of <a href="scriptedsequence.html">ScriptedSequence</a>s, there is no longer the need to do this. Developers can just make a new <a href="scriptedaction.html">ScriptedAction</a>, and tell pawns to perform this action.</p>
+<p>There are two reasons for this article. First is a very simple discussion about how to create subclasses of <a href="scriptedaction.html">ScriptedAction</a>. The second is on how to actually use <a href="scriptedaction.html">ScriptedAction</a>s, from the perspective of the coder.</p>
+<h2><a name="0.1"></a>How Actions Work</h2>
+<p>Within classes derived from <a href="scriptedcontroller.html">ScriptedController</a> (This includes <a href="bot.html">Bot</a>s) there is a mechanism to perform actions. Basically, it's a <a href="state.html">state</a>: <code>state Scripting</code></p>
+<p>What happens is that it's given a <a href="scriptedsequence.html">ScriptedSequence</a>, in its variable <em class="em2">SequenceScript</em>. This ScriptedSequence contains an array of <a href="scriptedaction.html">ScriptedAction</a>s. Then, the controller runs through the actions one by one down the line until the last action. After that, if this Controller was artificially created, it destroys itself!</p>
+<p>What this means is that: you can give "unpossessed" Pawns (with no controller) orders. They will temporarily don the <a href="scriptedcontroller.html">ScriptedController</a> hat and do the actions. Afterwards, it reverts to the original controller or no controller. </p>
+<p>Since the <code>state Scripting</code> code is pretty self-explanatory, I won't run through that. Suffice to know, it's there and does your dirty work.</p>
+<h2><a name="0.2"></a>Creating ScriptedActions</h2>
+<h3><a name="0.2.1"></a>Anatomy of a ScriptedAction</h3>
+<pre class="uscript"><span class="uscript-keyword">class</span> ACTION_ChangeName <span class="uscript-keyword">extends</span> ScriptedAction<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Action<span class="uscript-operator">)</span> <span class="uscript-type">string</span> NewName<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> Count<span class="uscript-operator">;</span></pre><p>All published variables (<em class="em1">var()</em>) will be editable by the level designer at design time - in that nifty object properties box. </p>
+<h3><a name="0.2.2"></a>Basic Functions</h3>
+<pre class="uscript"><span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> InitActionFor<span class="uscript-operator">(</span>ScriptedController C<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    C<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">.</span>PlayerName <span class="uscript-operator">=</span> NewName<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>    
+<span class="uscript-operator">}</span></pre><p>InitActionFor is the <em class="em2">meat</em> of the Action. This is where the action will usually happen. The passed variable <em class="em2">C</em> is, of course, the Controller of the Pawn that you are about to manipulate. From this, you can access its C.Pawn variable if you're interested.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> <span class="uscript-type">string</span> GetActionString<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> ActionString<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>GetActionString is, I believe, for logging purposes. It tells the log or whoever wants to know, what this Pawn is doing.</p>
+<h3><a name="0.2.3"></a>Flow Control</h3>
+<pre class="uscript"><span class="uscript-keyword">function</span> ProceedToNextAction<span class="uscript-operator">(</span>ScriptedController C<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    C<span class="uscript-operator">.</span>ActionNum <span class="uscript-operator">=</span> Max<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>ActionNumber<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> ProceedToSectionEnd<span class="uscript-operator">(</span>ScriptedController C<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>ProceedToNextAction is called after your action has been executed. Therefore, if you want to (evilly) disrupt the flow, you can change this one here. A Controller's <em class="em2">ActionNum</em> property tells you which # in the ActionSequence it is currently performing</p>
+<p>ProceedToSectionEnd is pre-coded. Call it, and you will be moved to the end of the section. </p>
+<pre class="uscript"><span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> StartsSection<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> EndsSection<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>StartsSection signifies if the following Action is actually a section start. "Section" Actions are such like ACTION_IFCONDITION<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ACTION_IFCONDITION&referrerid=Creating_And_Using_ScriptedActions">?</a> - they mark off a block of other sections.</p>
+<p>EndsSection signifies if the Action is a section end.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> ScriptedSequence GetScript<span class="uscript-operator">(</span>ScriptedSequence S<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span></pre><p>GetScript - This is used if a different <a href="scriptedsequence.html">ScriptedSequence</a> is desired. The passed variable S is the current ScriptedSequence, and you return a new one if you want the Controller to perform a different ScriptedSequence. If you return NONE, then the Controller stops scripting. </p>
+<h3><a name="0.2.4"></a>Latent Functions</h3>
+<p>A <a href="latent-function.html">latent function</a> is one that doesn't happen right away. It has <em class="em1">latency</em>. In other words, when you give the action, it doesn't (shazzam) happen right away. For example, if I tell my dog to be in the bathroom, it won't be there right away. If I tell it to jump, it will jump right away. That's the long and short of it.</p>
+<p>Latent actions will subclass LatentScriptedAction<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=LatentScriptedAction&referrerid=Creating_And_Using_ScriptedActions">?</a>. If you are writing latent actions, you must subclass this too!</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> MoveToGoal<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> Actor GetMoveTargetFor<span class="uscript-operator">(</span>ScriptedController C<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> TurnToGoal<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">float</span> GetDistance<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CompleteOnAnim<span class="uscript-operator">(</span><span class="uscript-type">int</span> Num<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CompleteWhenTriggered<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CompleteWhenTimer<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> WaitForPlayer<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> TickedAction<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> StillTicking<span class="uscript-operator">(</span>ScriptedController C<span class="uscript-operator">,</span> <span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p><em class="em2">Latent Actions</em></p>
+<p>GetMoveTargetFor is where you can pass the MoveTarget, or "goal" as it is referred to. The actor you return is the target.</p>
+<p>MoveToGoal tells the pawn to move to the goal specified (above). Return of true means that it will move to the goal.</p>
+<p>TurnToGoal tells the pawn to turn towards the goal if you return true. If the Pawn is moving toward the goal, it will automatically turn.</p>
+<p><em class="em2">Latent Pauses</em></p>
+<p>GetDistance tells the pawn to wait until a Player gets within this value (you return this value) of the Controller's Pawn</p>
+<p>CompleteOnAnim - if you return TRUE, then the sequence will complete when the animation finishes (the Num is the animation channel). CompleteOnAnim is called in the Pawn's "AnimEnd" function within its State Scripting.</p>
+<p>CompleteWhenTriggered - TRUE means that the sequence will complete when the <em class="em2">controller</em> is triggered</p>
+<p>CompleteWhenTimer - TRUE means that the sequence will complete when a player's <em class="em1">Timer()</em> is called (that is, you use the <em class="em2">SetTimer</em> command</p>
+<p>TickedAction tells the Controller whether to process the StillTicking function.</p>
+<p>StillTicking acts like the Tick(float DeltaTime) for us. If you return TRUE, then this function (StillTicking) will continue to be called every Tick. A return of FALSE signifies this action is done. It stopps recieving ticks and the action sequence moves on to the next action.</p>
+<h3><a name="0.2.5"></a>Misc Functions</h3>
+<pre class="uscript"><span class="uscript-keyword">function</span> SetCurrentAnimationFor<span class="uscript-operator">(</span>ScriptedController C<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> PawnPlayBaseAnim<span class="uscript-operator">(</span>ScriptedController C<span class="uscript-operator">,</span> <span class="uscript-type">bool</span> bFirstPlay<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>These two are hard-coded into ScriptedController - they are special functions. They allow you to modify whatever animation the Pawn is playing</p>
+<h3><a name="0.2.6"></a>Default Properties</h3>
+<pre class="uscript"><span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span> ActionString<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bValidForTrigger<span class="uscript-operator">;</span></pre><p>ActionString, as talked about above, is a very short description of what the action does</p>
+<p>bValidForTrigger signals whether this action is appropriate for use with a <a href="scriptedtrigger.html">ScriptedTrigger</a> (discussed briefly below)</p>
+<h3><a name="0.2.7"></a>Summary</h3>
+<p>Hopefully, with these explanations you are well on your way to writing new Actions and extending the capabilities of the AI.</p>
+<h2><a name="0.3"></a>Using ScriptedActions and ScriptedSequences</h2>
+<h3><a name="0.3.1"></a>Writing Scripted Sequences</h3>
+<p>Typically, ScriptedActions aren't used by themselves, but used in a chain of actions called a ScriptedSequence. Since it's just an array, I won't go into the details of this. It'll suffice to give you an example.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> OPNavPoint <span class="uscript-keyword">extends</span> UnrealScriptedSequence
+    <span class="uscript-keyword">placeable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> FreeScript<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>              <span class="uscript-comment">// When this sequence is completed, destroy it.</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    EnemyAcquisitionScriptProbability<span class="uscript-operator">=</span><span class="uscript-operator">+</span><span class="uscript-number">1.0</span>
+    bRoamingScript <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span>
+    Priority <span class="uscript-operator">=</span> <span class="uscript-number">200</span>
+    bCollideWhenPlacing<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+    bStatic<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+    bNoDelete<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+    bFreeLance <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span>
+
+    Begin Object <span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>Action_MOVETOPOINT <span class="uscript-type">Name</span><span class="uscript-operator">=</span>OPACTIONMoveToLocation
+    End Object
+    Begin Object <span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>Action_CROUCH <span class="uscript-type">Name</span><span class="uscript-operator">=</span>OPACTIONCrouch
+    End Object
+    Begin Object <span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>Action_WAITFORTIMER <span class="uscript-type">Name</span><span class="uscript-operator">=</span>OPACTIONWaitShort
+        PauseTime <span class="uscript-operator">=</span> <span class="uscript-number">3.0</span>
+    End Object
+    Begin Object <span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>Action_MOVETOPLAYER <span class="uscript-type">Name</span><span class="uscript-operator">=</span>OPACTIONMoveToPlayer
+    End Object
+    Begin Object <span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>Action_SETALERTNESS <span class="uscript-type">Name</span><span class="uscript-operator">=</span>OPACTIONMakeAlert
+        Alertness <span class="uscript-operator">=</span> ALERTNESS_LeaveScriptForCombat
+    End Object
+    Begin Object <span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>Action_RUN <span class="uscript-type">Name</span><span class="uscript-operator">=</span>OPACTIONRun
+    End Object
+
+    Actions<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>ScriptedAction<span class="uscript-name">'OPACTIONRun'</span>
+    Actions<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>ScriptedAction<span class="uscript-name">'OPACTIONMoveToLocation'</span>
+    Actions<span class="uscript-operator">(</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>ScriptedAction<span class="uscript-name">'OPACTIONCrouch'</span>
+<span class="uscript-operator">}</span></pre><p>First, you see, you have to create the Action objects. You can set their variables if you wish. Then, you simply add new ScriptedActions to the array. This is much like adding buttons to a menu, if you're familiar with that. I've defined more objects than actions, for future references in classes that are subclasses of OPNavPoint. This way, I don't have to re-define everything.</p>
+<pre class="paraverbatim"> </pre><p>What this OPNavPoint does is this. It makes the pawn start running to where the OPNavPoint is located, and then makes it crouch. Simple, and fun!</p>
+<h3><a name="0.3.2"></a>Using Scripted Sequences</h3>
+<p>To use the above script, I would have to put it in the position I want my pawn to go. Here is an example function, called within a subclass of <a href="playercontroller.html">PlayerController</a>, that creats this order, and tells the pawn to execute it.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> DoMoveOut<span class="uscript-operator">(</span>Bot b<span class="uscript-operator">,</span> Vector MyLocation<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> OPNavPoint opnp<span class="uscript-operator">;</span>
+
+    MyLocation <span class="uscript-operator">=</span> Somewhere<span class="uscript-operator">;</span> <span class="uscript-comment">// something like this</span>
+
+    opnp <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'OPNavPoint'</span><span class="uscript-operator">,</span><span class="uscript-keyword">self</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span>MyLocation<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// self is the commanding officer, in this case</span>
+    OPBot<span class="uscript-operator">(</span>b<span class="uscript-operator">)</span><span class="uscript-operator">.</span>ReceiveDestination<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">,</span>opnp<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>What's ReceiveDestination? It's a small function within OPBot, my subclass of <a href="bot.html">Bot</a> that tells pawns what to do.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> RecieveDestination<span class="uscript-operator">(</span>Controller c<span class="uscript-operator">,</span> UnrealScriptedSequence s<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>s <span class="uscript-operator">==</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>               <span class="uscript-comment">// no script, no action</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    s<span class="uscript-operator">.</span>CurrentUser <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>       <span class="uscript-comment">// Me, I'm the current user of the script.</span>
+    StopCurrentScript<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>        <span class="uscript-comment">// Stop doing whatever i'm doing.</span>
+    GoalScript <span class="uscript-operator">=</span> s<span class="uscript-operator">;</span>             <span class="uscript-comment">// Assing the Script to the "GoalScript" property</span>
+    SetNewScript<span class="uscript-operator">(</span>s<span class="uscript-operator">)</span><span class="uscript-operator">;</span>            <span class="uscript-comment">// Tell myself that I have new orders</span>
+    SendMessage<span class="uscript-operator">(</span>c<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">,</span> <span class="uscript-name">'ACK'</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">5</span><span class="uscript-operator">,</span> <span class="uscript-name">'TEAM'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Tell the person who sent me the order that I heard them</span>
+    Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>Broadcast<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">,</span> <span class="uscript-string">"Order Recieved."</span><span class="uscript-operator">,</span> <span class="uscript-name">'TeamSay'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>   <span class="uscript-comment">// Same</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>c<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'PlayerController'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        MyPlayerController <span class="uscript-operator">=</span> PlayerController<span class="uscript-operator">(</span>c<span class="uscript-operator">)</span><span class="uscript-operator">;</span>       <span class="uscript-comment">// The person who sent me the order is MyPlayerController (for certain Action's, and debugging)</span>
+    GoToState<span class="uscript-operator">(</span><span class="uscript-name">'Scripting'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>     <span class="uscript-comment">// Now, go script!</span>
+<span class="uscript-operator">}</span></pre><p>There's a bit of extra code up there, but you can get the general picture. As you can see, it's not to hard to give the bot orders!</p>
+<h4><a name="0.3.2.1"></a>Broken?</h4>
+<p>Finally, there's one more thing I must mention. Occasionally, scripts "break". There could be many reasons for this, but basically, it stops working. This is quite annoying for after a script is broken, Pawn behavior is very erratic and strange. The game might crash. I leave this fragment to you:</p>
+<pre class="uscript"><span class="uscript-comment">// Broken scripted sequence - for debugging</span>
+<span class="uscript-keyword">State</span> Broken
+<span class="uscript-operator">{</span>
+Begin:
+    MyPlayerController<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>ClientMessage<span class="uscript-operator">(</span>Pawn<span class="uscript-operator">$</span><span class="uscript-string">" Scripted Sequence BROKEN "</span><span class="uscript-operator">$</span>SequenceScript<span class="uscript-operator">$</span><span class="uscript-string">" ACTION "</span><span class="uscript-operator">$</span>CurrentAction<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    WanderOrCamp<span class="uscript-operator">(</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>This will tell you if your pawn's script broke, and make sure that the pawn doesn't actually go haywire. It tells the pawn to wander around. Thus, you know which action is causing the break-age, and without a VERY annoying crash.</p>
+<h4><a name="0.3.2.2"></a>One last thing to think about</h4>
+<p>Finally, some things will compete with you when giving orders to pawns. That would be <a href="teamai.html">TeamAI</a> and <a href="squadai.html">SquadAI</a>. For example, if I told a pawn to move past a ball in a regular bombing run game, it would go for the ball, ignore all subsequent orders of mine, and score on the opposing team.</p>
+<p>The easy way to solve this problem would be to subclass these two AI classes and modify their code. It's just a consideration for you.</p>
+<h3><a name="0.3.3"></a>ScriptedTrigger</h3>
+<p><a href="scriptedtrigger.html">ScriptedTrigger</a> and ScriptedTriggerController<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ScriptedTriggerController&referrerid=Creating_And_Using_ScriptedActions">?</a> are two more classes that help you out. ScriptedTriggerController is able to perform scripted events without a Pawn. In other words, if you have certain actions like ACTION_SpawnActor<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ACTION_SpawnActor&referrerid=Creating_And_Using_ScriptedActions">?</a> that do not need a pawn to perform, you would use a ScriptedTrigger (which incidentally subclasses ScriptedSequence) to perform these. You'll notice, if you examine UT's source code that <em class="em2">actions that require a <a href="pawn.html">Pawn</a> to perform</em> are generally bValidForTrigger=false and cannot be used with ScriptedTriggers. </p>
+<p>And, if you look at ScriptedTrigger, it spawns a ScriptedTriggerController, which needs and has no Pawn attached. The funny thing is, I think Scripted<em class="em2">Trigger</em> is a misnomer, as this class has nothing to do with Triggers. You can of course add an action like the Action_WaitForEvent<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Action_WaitForEvent&referrerid=Creating_And_Using_ScriptedActions">?</a> that causes your ScriptedTrigger to activate upon being triggered. However, it doesn't seem to be directly linked to triggers.</p>
+<h2><a name="0.4"></a>Conclusion</h2>
+<p>Okay! Hopefully, with this, we are on the way to cool new things. Some possibilities for using this code:</p>
+<ul><li>New AI abilities (like finding cover)</li>
+<li>A method for ordering bots around (You! Go Here!)</li>
+<li>Movies - dynamic ingame movies dictated by code and not pre-made by level designers</li>
+</ul>
+<h2><a name="0.5"></a>Related Topics</h2>
+<ul><li><a href="trigger-systems.html">Trigger Systems</a></li>
+<li><a href="artificial-intelligence.html">Artificial Intelligence</a><ul><li><a href="bot-support.html">Bot Support</a></li>
+<li><a href="monster-support.html">Monster Support</a></li>
+<li><a href="npc-support.html">NPC Support</a></li>
+</ul>
+</li>
+</ul>
+<h2><a name="0.6"></a>Discussion</h2>
+<p><em class="em2">Soldat:</em> todo: talk about the default properties. I forgot to do that. also, I have example code if anyone's interested, I coded bot orders and such.</p>
+<p><em class="em2">Soldat:</em> okay, done all that. added scripted trigger stuff too, which i did not notice earlier.</p>
+<p><em class="em2">Tarquin:</em> Nice article! I actually feel I understand this whole scripted stuff!</p>
+<p><em class="em2">Hawkeye:</em> I strongly disagree. This is almost completely unreadable and unintelligible for people without some programming experience. </p>
+<p>A ScriptedSequence is a script that does stuff. The stuff it does are a bunch of ScriptedActions. So if you want a new type of action in your ScriptedSequence (say, for instance, move to a number of pathnodes in a certain order) that isn't already in the game, you can write a new class for it under Object&rarr;ScriptedAction (Untick both options in your classes browser to find it). The new ScriptedAction will become available to be placed in new ScriptedSequences.</p>
+<p>That's what it <em class="em1">should</em> say, but it doesn't. It's WAY too technical. Also, many things are considered to be known to the reader by the writer, and he doesn't elaborate most of the examples he gives. This article was clearly written by a programmer.</p>
+<p><em class="em2">Oboyrex:</em> Hawkeyes point is well taken, my rule of thumb is to make it useful to my grandmother, but let me just say that the content on this page is some of the most useful to me on the whole site, so keep in someplace.</p>
+<p><em class="em2">Solid Snake:</em> Ahh, I think all programming articles are meant for programmers in general. We aren't writing to the general public, we are writing for other fellow coders who haven't learnt a part of UScript yet. It's like teaching anything to anyone, you assume basic knowledge and while every tutorial can go over everything with a fine tooth comb, it's completely unneccessary. Does Soldat really need to define what a variable, object, instance and so on mean?</p>
+<p><em class="em2">SuperApe:</em> This is a tutorial, isn't it?</p>
+<p><em class="em2">Bob_The_Beheader:</em> How exactly are the sequences activated? Do bots have to come within a certain radius of them, like triggers? or are they something that is activated when triggered?</p>
+<p><em class="em2">SuperApe:</em> Technically, either.  A ScriptedSequence set with the latent action ACTION_WaitForPlayer can "grab" a bot.  But, this is meant to be either set via AI &rarr; AIScriptTag to control a Pawn from match start or via Trigger actor (something that will pass the trigger Instigator to the ScriptedSequence).  The script has to be associated with a Pawn.  Also, some GameObjects or GameInfo actors assign bots to ScriptedSequences, as in CTF DefenseScripts.</p>
+<hr class="thin"><p><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("How Actions Work", "#0.1");
+menuItemAdd("Creating ScriptedActions", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Anatomy of a ScriptedAction", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Basic Functions", "#0.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Flow Control", "#0.2.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Latent Functions", "#0.2.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Misc Functions", "#0.2.5");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Default Properties", "#0.2.6");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Summary", "#0.2.7");
+menuItemAdd("Using ScriptedActions and ScriptedSequences", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Writing Scripted Sequences", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Using Scripted Sequences", "#0.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Broken?", "#0.3.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>One last thing to think about", "#0.3.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>ScriptedTrigger", "#0.3.3");
+menuItemAdd("Conclusion", "#0.4");
+menuItemAdd("Related Topics", "#0.5");
+menuItemAdd("Discussion", "#0.6");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Creating_And_Using_ScriptedActions">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Creating_And_Using_ScriptedActions">View other revisions</a><br>Last edited September 23, 2006 23:58 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Creating_And_Using_ScriptedActions">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Creating_And_Using_ScriptedActions">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Gah - a solution with more questions. (EntropicLqd)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

@@ -1,0 +1,516 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Will/Creating A HTTP Server List Tab</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Will/Creating_A_HTTP_Server_List_Tab; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="will.html">Will</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Will/Creating+A+HTTP+Server+List+Tab">Creating A HTTP Server List Tab</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Creating A HTTP Server List Tab</h2>
+<p>This page basically explains the steps I've taken over the last day or so to create a server tab that will pull it's list of servers from a file on a webserver somewhere. It took me a fair while because I'd not looked at server tabs or how they all go together before at all.</p>
+<h3><a name="0.1.1"></a>Talking to the webserver</h3>
+<p>If you want to pull some data from a web server, you have to talk to this server. This is the part that gave me the most greif in figuring it out (mainly that my CR and LF and CRLF variables weren't set &ndash; it worked once I'd set them).</p>
+<p>This part is going to be a BufferedTCPLink<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=BufferedTCPLink&referrerid=Will/Creating_A_HTTP_Server_List_Tab">?</a> subclass.</p>
+<p>You need to declare a few variables first:</p>
+<pre class="uscript"><span class="uscript-keyword">Var</span> <span class="uscript-type">String</span> ServerAddress<span class="uscript-operator">;</span> <span class="uscript-comment">//the server address, ie: www.beyondunreal.com</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-type">String</span> ServerPath<span class="uscript-operator">;</span> <span class="uscript-comment">//The path to connect to, ie: /index.php</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-type">Int</span> ServerPort<span class="uscript-operator">;</span> <span class="uscript-comment">//The port on the server to connect to</span>
+<span class="uscript-keyword">Var</span> BYBrowser_Page BYBP<span class="uscript-operator">;</span> <span class="uscript-comment">//A link to the browser page itself. Used later, and set by the browser page. </span>
+<span class="uscript-keyword">Var</span> <span class="uscript-keyword">Array</span><span class="uscript-operator">&lt;</span><span class="uscript-type">String</span><span class="uscript-operator">&gt;</span> LinesA<span class="uscript-operator">;</span> <span class="uscript-comment">//This holds the results of your query</span></pre><p>Righto. That's sorted. Now onto the function and events.</p>
+<pre class="uscript"><span class="uscript-keyword">Function</span> RetrieveServers<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    LinesA<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    ResetBuffer<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Resolve<span class="uscript-operator">(</span>ServerAddress<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>This should be fairly self explanatory. It resets the string array, resets the buffer (which also sets the CR, LF, and CRLF variables), and tries to resolve the server address to an IP. If the resolve succeeds, event "Resolved" is fired off, which nicely brings me onto the next one...:</p>
+<pre class="uscript"><span class="uscript-keyword">Function</span> Resolved<span class="uscript-operator">(</span>IpAddr Addr<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    Addr<span class="uscript-operator">.</span>Port <span class="uscript-operator">=</span> ServerPort<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span>BindPort<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">Return</span><span class="uscript-operator">;</span>
+
+    Open<span class="uscript-operator">(</span>Addr<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Basically, this sets the port to be used, attempts to bind a port, and opens a connection to the remote server. When the connection is opened, Event "Opened" is called.</p>
+<pre class="uscript"><span class="uscript-keyword">Event</span> Opened<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Local</span> <span class="uscript-type">String</span> SendString<span class="uscript-operator">;</span>
+
+    SendString <span class="uscript-operator">=</span> <span class="uscript-string">"GET "</span> <span class="uscript-operator">$</span> <span class="uscript-string">"http://"</span> <span class="uscript-operator">$</span> ServerAddress <span class="uscript-operator">$</span> ServerPath <span class="uscript-operator">$</span> <span class="uscript-string">" HTTP/1.0"</span> <span class="uscript-operator">$</span> CRLF <span class="uscript-operator">$</span> <span class="uscript-string">"Host: "</span> <span class="uscript-operator">$</span> ServerAddress <span class="uscript-operator">$</span> CRLF <span class="uscript-operator">$</span> CRLF<span class="uscript-operator">;</span>
+
+    SendBufferedData<span class="uscript-operator">(</span>SendString<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>This function quite simply creates the string to be sent to the server (requesting the document), and then adds it to the send buffer.</p>
+<p>Now we're onto the processing of the data that is returned, all handled in these next two functions:</p>
+<pre class="uscript"><span class="uscript-keyword">event</span> ReceivedText<span class="uscript-operator">(</span><span class="uscript-type">string</span> Text<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Local</span> <span class="uscript-type">int</span> I<span class="uscript-operator">;</span>
+    SplitIntoLines<span class="uscript-operator">(</span>Text<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">For</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>linesa<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+        BYBP<span class="uscript-operator">.</span>AddToList<span class="uscript-operator">(</span>BYBP<span class="uscript-operator">.</span>IPToServer<span class="uscript-operator">(</span>linesa<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    BYBP<span class="uscript-operator">.</span>RefreshFinished<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    LinesA<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Function</span> SplitIntoLines<span class="uscript-operator">(</span><span class="uscript-type">String</span> Text<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Local</span> <span class="uscript-type">String</span> Temp<span class="uscript-operator">;</span>
+
+    Text <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> InStr<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> CRLF<span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//Split off the headers</span>
+
+    <span class="uscript-keyword">Do</span>  <span class="uscript-operator">{</span>
+        Temp <span class="uscript-operator">=</span> <span class="uscript-string">""</span><span class="uscript-operator">;</span>
+        Temp <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> InStr<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> Chr<span class="uscript-operator">(</span><span class="uscript-number">10</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Temp <span class="uscript-operator">!=</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Temp <span class="uscript-operator">!=</span> Chr<span class="uscript-operator">(</span><span class="uscript-number">10</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Temp <span class="uscript-operator">!=</span> Chr<span class="uscript-operator">(</span><span class="uscript-number">13</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+            LinesA<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">=</span> LinesA<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">+</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+            LinesA<span class="uscript-operator">[</span>LinesA<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Temp<span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        Text <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> InStr<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> Chr<span class="uscript-operator">(</span><span class="uscript-number">10</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        i<span class="uscript-operator">++</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span> <span class="uscript-keyword">Until</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>InStr<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> Chr<span class="uscript-operator">(</span><span class="uscript-number">10</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">&gt;</span> <span class="uscript-number">200</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//put in to stop a massive loop which might happen</span>
+<span class="uscript-operator">}</span></pre><p>RecievedText is called when, you guessed it, some text is received. It then calls the SplitIntoLines function, who's job it is to remove the headers (all before one CRLF), and then split the remainder into IP's (Seperarated by LF's). The IP's are all added into the dynamic array, and this is used back in the RecievedText function to add the IP's into the server tab's list. The array is then reset.</p>
+<p>And of course, you need the defaultproperties:</p>
+<pre class="uscript"><span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+    ServerAddress<span class="uscript-operator">=</span><span class="uscript-string">"byut.net"</span>
+    ServerPath<span class="uscript-operator">=</span><span class="uscript-string">"/serverlist2k3.php"</span>
+    ServerPort<span class="uscript-operator">=</span><span class="uscript-number">80</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.1.2"></a>The tab itself</h3>
+<p>This is probably one of the bits that caused me the LEAST greif. I decided to subclass it from the Favourites tab, because that is closest to what I want it to be.</p>
+<p>Only one variable here:</p>
+<pre class="uscript"><span class="uscript-keyword">Var</span> BYBrowser_HTTPLink BYB<span class="uscript-operator">;</span></pre><p>That's just a reference to the HTTPLink, which is needed to actually query the HTTP server to get the server list.</p>
+<p>InitComponent, I think this is one of the places that gave me the least greif. It's all very simple and straightforward.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> InitComponent<span class="uscript-operator">(</span>GUIController MyController<span class="uscript-operator">,</span> GUIComponent MyOwner<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">(</span>Browser_ServerListPageBase<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Initcomponent<span class="uscript-operator">(</span>MyController<span class="uscript-operator">,</span> MyOwner<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>SQC <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-comment">//needed for pingage, etc</span>
+        <span class="uscript-operator">{</span>
+        SQC <span class="uscript-operator">=</span> PlayerOwner<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Level<span class="uscript-operator">.</span>Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'ServerQueryClient'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        SQC<span class="uscript-operator">.</span>OnReceivedPingInfo <span class="uscript-operator">=</span> MyServersList<span class="uscript-operator">.</span>MyReceivedPingInfo<span class="uscript-operator">;</span>
+        SQC<span class="uscript-operator">.</span>OnPingTimeout <span class="uscript-operator">=</span> MyServersList<span class="uscript-operator">.</span>MyPingTimeout<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">//edit buttons</span>
+    GUIButton<span class="uscript-operator">(</span>GUIPanel<span class="uscript-operator">(</span>Controls<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Controls<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Caption <span class="uscript-operator">=</span> <span class="uscript-string">"RE-PING LIST"</span><span class="uscript-operator">;</span>
+    GUIButton<span class="uscript-operator">(</span>GUIPanel<span class="uscript-operator">(</span>Controls<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Controls<span class="uscript-operator">[</span><span class="uscript-number">6</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>bVisible<span class="uscript-operator">=</span><span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+    GUIButton<span class="uscript-operator">(</span>GUIPanel<span class="uscript-operator">(</span>Controls<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Controls<span class="uscript-operator">[</span><span class="uscript-number">7</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Caption <span class="uscript-operator">=</span> <span class="uscript-string">"REFRESH LIST"</span><span class="uscript-operator">;</span>
+    GUIButton<span class="uscript-operator">(</span>GUIPanel<span class="uscript-operator">(</span>Controls<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Controls<span class="uscript-operator">[</span><span class="uscript-number">7</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>OnClick <span class="uscript-operator">=</span> RefreshClick<span class="uscript-operator">;</span>
+    StatusBar<span class="uscript-operator">.</span>WinWidth<span class="uscript-operator">=</span><span class="uscript-number">0.8</span><span class="uscript-operator">;</span>
+
+    RefreshList<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Skip out the favoutites class in the Super call, else you'll be just messing around, and server query client is something I left out at first, before I realised it was needed to actually talk to the servers themselves. The rest is just altering the buttons, as the Favourites tab leaves out one, and renames another. I changed them back to what they should be.</p>
+<p>Next bit is the RefreshList function, which handles loading and using the HTTP Link class.</p>
+<pre class="uscript"><span class="uscript-keyword">Function</span> RefreshList<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">ForEach</span> PlayerOwner<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Level<span class="uscript-operator">.</span>AllActors<span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-name">'BYBrowser_HTTPLink'</span><span class="uscript-operator">,</span> BYB<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">Break</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>BYB <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        BYB <span class="uscript-operator">=</span> PlayerOwner<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Level<span class="uscript-operator">.</span>Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'BYBrowser_HTTPLink'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    BYB<span class="uscript-operator">.</span>BYBP <span class="uscript-operator">=</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">;</span>
+
+    MyServersList<span class="uscript-operator">.</span>Clear<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//Clear the current list</span>
+    BYB<span class="uscript-operator">.</span>RetrieveServers<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Basically, all that does is find (or create) the HTTP Link, set it's BYBP value (see the section above), clears the current server list, then calls RetrieveServers on the HTTP Link &ndash; which as you'll know initiates the connection, etc.</p>
+<pre class="uscript"><span class="uscript-keyword">Function</span> RefreshFinished<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    MyServersList<span class="uscript-operator">.</span>AutoPingServers<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>This diddy function is just called at the end of an update to force the servers to refresh, re-ping, etc.</p>
+<p>The following function was ripped right out of another class, and all it does is turn an IP into a ServerResponseLine which is needed to add it to the list.</p>
+<pre class="uscript"><span class="uscript-keyword">Function</span> GameInfo<span class="uscript-operator">.</span>ServerResponseLine IPToServer<span class="uscript-operator">(</span><span class="uscript-type">string</span> Address<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> GameInfo<span class="uscript-operator">.</span>ServerResponseLine S<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> ipString<span class="uscript-operator">,</span> portString<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> colonPos<span class="uscript-operator">,</span> portNum<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Parse text to find IP and possibly port number</span>
+    colonPos <span class="uscript-operator">=</span> InStr<span class="uscript-operator">(</span>address<span class="uscript-operator">,</span> <span class="uscript-string">":"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>colonPos <span class="uscript-operator">&lt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+        ipString <span class="uscript-operator">=</span> address<span class="uscript-operator">;</span>
+        portNum <span class="uscript-operator">=</span> <span class="uscript-number">7777</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+        <span class="uscript-operator">{</span>
+        ipString <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>address<span class="uscript-operator">,</span> colonPos<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        portString <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>address<span class="uscript-operator">,</span> colonPos<span class="uscript-number">+1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        portNum <span class="uscript-operator">=</span> <span class="uscript-type">int</span><span class="uscript-operator">(</span>portString<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    
+    S<span class="uscript-operator">.</span>IP <span class="uscript-operator">=</span> ipString<span class="uscript-operator">;</span>
+    S<span class="uscript-operator">.</span>Port <span class="uscript-operator">=</span> portNum<span class="uscript-operator">;</span>
+    S<span class="uscript-operator">.</span>QueryPort <span class="uscript-operator">=</span> portNum<span class="uscript-operator">;</span>
+    S<span class="uscript-operator">.</span>ServerName <span class="uscript-operator">=</span> <span class="uscript-string">"Unknown"</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">Return</span> S<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>You'll see the above function called in conjunction with the function below in the HTTP Link class.</p>
+<pre class="uscript"><span class="uscript-keyword">Function</span> AddToList<span class="uscript-operator">(</span>GameInfo<span class="uscript-operator">.</span>ServerResponseLine S<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    MyServersList<span class="uscript-operator">.</span>MyOnReceivedServer<span class="uscript-operator">(</span>S<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Quite simply, that just adds the server to the list. Nothing more to it.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> PingServer<span class="uscript-operator">(</span> <span class="uscript-type">int</span> listid<span class="uscript-operator">,</span> ServerQueryClient<span class="uscript-operator">.</span>EPingCause PingCause<span class="uscript-operator">,</span> GameInfo<span class="uscript-operator">.</span>ServerResponseLine s <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> PingCause <span class="uscript-operator">==</span> PC_Clicked <span class="uscript-operator">)</span>
+        SQC<span class="uscript-operator">.</span>PingServer<span class="uscript-operator">(</span> listid<span class="uscript-operator">,</span> PingCause<span class="uscript-operator">,</span> s<span class="uscript-operator">.</span>IP<span class="uscript-operator">,</span> s<span class="uscript-operator">.</span>QueryPort<span class="uscript-operator">,</span> QI_RulesAndPlayers<span class="uscript-operator">,</span> s <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        SQC<span class="uscript-operator">.</span>PingServer<span class="uscript-operator">(</span> listid<span class="uscript-operator">,</span> PingCause<span class="uscript-operator">,</span> s<span class="uscript-operator">.</span>IP<span class="uscript-operator">,</span> s<span class="uscript-operator">.</span>QueryPort<span class="uscript-operator">,</span> QI_Ping<span class="uscript-operator">,</span> s <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>PingServer. Pings the server. Simple huh? (this might be left over from the Favourites tab superclass, I'm not sure...).</p>
+<p>And the below functions are just set to do nothing, because that's what they should do for this tab.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> AddIPClick<span class="uscript-operator">(</span>GUIComponent Sender<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> SaveFavorites<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span></pre><p>And finally, the defaultproperties, where the caption for this tab is set.</p>
+<pre class="uscript"><span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+    PageCaption<span class="uscript-operator">=</span><span class="uscript-string">"BY Servers"</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.1.3"></a>Loading the tab</h3>
+<p>Although this bit was very simple, I'm still kinda peeved that epic/DE didn't include any way to load the tab without having to use some silly "summon" command. Ah well, since this class is basically one simple function, I'll paste it all below and explain it.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> ServerBrowser SB<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Browser_ServerListPageFavorites BYServerListPage<span class="uscript-operator">;</span>
+    
+    <span class="uscript-keyword">ForEach</span> AllObjects<span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-name">'ServerBrowser'</span><span class="uscript-operator">,</span>SB<span class="uscript-operator">)</span> <span class="uscript-comment">// Search to see if it is already added, if not, add it.</span>
+        <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span>SB <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+            BYServerListPage <span class="uscript-operator">=</span> <span class="uscript-keyword">new</span><span class="uscript-operator">(</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-keyword">class</span><span class="uscript-name">'BYBrowser_Page'</span><span class="uscript-operator">;</span>
+            SB<span class="uscript-operator">.</span>AddBrowserPage<span class="uscript-operator">(</span>BYServerListPage<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">Break</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+
+    Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-operator">}</span></pre><p>When this actor is spawned, it looks for the server browser. If it finds it, it adds my tab. It then kills itself. That simple, nothing more to it.</p>
+<h3><a name="0.1.4"></a>The whole lot</h3>
+<p>Well, for you people who just want the code so they can modify it and change it to suit their needs, I've pasted the whole three classes below.</p>
+<p><em class="em2">The HTTP Link:</em></p>
+<pre class="uscript"><span class="uscript-keyword">Class</span> BYBrowser_HTTPLink <span class="uscript-keyword">Extends</span> BufferedTCPLink<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">Var</span> <span class="uscript-type">String</span> ServerAddress<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-type">String</span> ServerPath<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-type">Int</span> ServerPort<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> BYBrowser_Page BYBP<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-keyword">Array</span><span class="uscript-operator">&lt;</span><span class="uscript-type">String</span><span class="uscript-operator">&gt;</span> LinesA<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">Function</span> RetrieveServers<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    LinesA<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    ResetBuffer<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Resolve<span class="uscript-operator">(</span>ServerAddress<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Function</span> Resolved<span class="uscript-operator">(</span>IpAddr Addr<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    Addr<span class="uscript-operator">.</span>Port <span class="uscript-operator">=</span> ServerPort<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span>BindPort<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">Return</span><span class="uscript-operator">;</span>
+
+    Open<span class="uscript-operator">(</span>Addr<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Event</span> Opened<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Local</span> <span class="uscript-type">String</span> SendString<span class="uscript-operator">;</span>
+
+    SendString <span class="uscript-operator">=</span> <span class="uscript-string">"GET "</span> <span class="uscript-operator">$</span> <span class="uscript-string">"http://"</span> <span class="uscript-operator">$</span> ServerAddress <span class="uscript-operator">$</span> ServerPath <span class="uscript-operator">$</span> <span class="uscript-string">" HTTP/1.0"</span> <span class="uscript-operator">$</span> CRLF <span class="uscript-operator">$</span> <span class="uscript-string">"Host: "</span> <span class="uscript-operator">$</span> ServerAddress <span class="uscript-operator">$</span> CRLF <span class="uscript-operator">$</span> CRLF<span class="uscript-operator">;</span>
+
+    SendBufferedData<span class="uscript-operator">(</span>SendString<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Function</span> Tick <span class="uscript-operator">(</span><span class="uscript-type">Float</span> TimeDelta<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    DoBufferQueueIO<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">event</span> ReceivedText<span class="uscript-operator">(</span><span class="uscript-type">string</span> Text<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Local</span> <span class="uscript-type">int</span> I<span class="uscript-operator">;</span>
+
+    SplitIntoLines<span class="uscript-operator">(</span>Text<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">For</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>linesa<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+        BYBP<span class="uscript-operator">.</span>AddToList<span class="uscript-operator">(</span>BYBP<span class="uscript-operator">.</span>IPToServer<span class="uscript-operator">(</span>linesa<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+    BYBP<span class="uscript-operator">.</span>RefreshFinished<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    LinesA<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Function</span> SplitIntoLines<span class="uscript-operator">(</span><span class="uscript-type">String</span> Text<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Local</span> <span class="uscript-type">String</span> Temp<span class="uscript-operator">;</span>
+
+    Text <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> InStr<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> CRLF<span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//Split off the headers</span>
+
+    <span class="uscript-keyword">Do</span>  <span class="uscript-operator">{</span>
+        Temp <span class="uscript-operator">=</span> <span class="uscript-string">""</span><span class="uscript-operator">;</span>
+        Temp <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> InStr<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> Chr<span class="uscript-operator">(</span><span class="uscript-number">10</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Temp <span class="uscript-operator">!=</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Temp <span class="uscript-operator">!=</span> Chr<span class="uscript-operator">(</span><span class="uscript-number">10</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Temp <span class="uscript-operator">!=</span> Chr<span class="uscript-operator">(</span><span class="uscript-number">13</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+            LinesA<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">=</span> LinesA<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">+</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+            LinesA<span class="uscript-operator">[</span>LinesA<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Temp<span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        Text <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> InStr<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> Chr<span class="uscript-operator">(</span><span class="uscript-number">10</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        i<span class="uscript-operator">++</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span> <span class="uscript-keyword">Until</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>InStr<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> Chr<span class="uscript-operator">(</span><span class="uscript-number">10</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">&gt;</span> <span class="uscript-number">50</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//put in to stop a massive loop which might happen</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+    ServerAddress<span class="uscript-operator">=</span><span class="uscript-string">"byut.net"</span>
+    ServerPath<span class="uscript-operator">=</span><span class="uscript-string">"/serverlist2k3.php"</span>
+    ServerPort<span class="uscript-operator">=</span><span class="uscript-number">80</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">And now, the server tab:</em></p>
+<pre class="uscript"><span class="uscript-keyword">Class</span> BYBrowser_Page <span class="uscript-keyword">extends</span> Browser_ServerListPageFavorites<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">Var</span> BYBrowser_HTTPLink BYB<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> InitComponent<span class="uscript-operator">(</span>GUIController MyController<span class="uscript-operator">,</span> GUIComponent MyOwner<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">(</span>Browser_ServerListPageBase<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Initcomponent<span class="uscript-operator">(</span>MyController<span class="uscript-operator">,</span> MyOwner<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>SQC <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-comment">//needed for pingage, etc</span>
+        <span class="uscript-operator">{</span>
+        SQC <span class="uscript-operator">=</span> PlayerOwner<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Level<span class="uscript-operator">.</span>Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'ServerQueryClient'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        SQC<span class="uscript-operator">.</span>OnReceivedPingInfo <span class="uscript-operator">=</span> MyServersList<span class="uscript-operator">.</span>MyReceivedPingInfo<span class="uscript-operator">;</span>
+        SQC<span class="uscript-operator">.</span>OnPingTimeout <span class="uscript-operator">=</span> MyServersList<span class="uscript-operator">.</span>MyPingTimeout<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">//edit buttons</span>
+    GUIButton<span class="uscript-operator">(</span>GUIPanel<span class="uscript-operator">(</span>Controls<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Controls<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Caption <span class="uscript-operator">=</span> <span class="uscript-string">"RE-PING LIST"</span><span class="uscript-operator">;</span>
+    GUIButton<span class="uscript-operator">(</span>GUIPanel<span class="uscript-operator">(</span>Controls<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Controls<span class="uscript-operator">[</span><span class="uscript-number">6</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>bVisible<span class="uscript-operator">=</span><span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+    GUIButton<span class="uscript-operator">(</span>GUIPanel<span class="uscript-operator">(</span>Controls<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Controls<span class="uscript-operator">[</span><span class="uscript-number">7</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Caption <span class="uscript-operator">=</span> <span class="uscript-string">"REFRESH LIST"</span><span class="uscript-operator">;</span>
+    GUIButton<span class="uscript-operator">(</span>GUIPanel<span class="uscript-operator">(</span>Controls<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Controls<span class="uscript-operator">[</span><span class="uscript-number">7</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>OnClick <span class="uscript-operator">=</span> RefreshClick<span class="uscript-operator">;</span>
+    StatusBar<span class="uscript-operator">.</span>WinWidth<span class="uscript-operator">=</span><span class="uscript-number">0.8</span><span class="uscript-operator">;</span>
+
+    RefreshList<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Function</span> RefreshList<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">ForEach</span> PlayerOwner<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Level<span class="uscript-operator">.</span>AllActors<span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-name">'BYBrowser_HTTPLink'</span><span class="uscript-operator">,</span> BYB<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">Break</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>BYB <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        BYB <span class="uscript-operator">=</span> PlayerOwner<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Level<span class="uscript-operator">.</span>Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'BYBrowser_HTTPLink'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    BYB<span class="uscript-operator">.</span>BYBP <span class="uscript-operator">=</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">;</span>
+
+    MyServersList<span class="uscript-operator">.</span>Clear<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//Clear the current list</span>
+    BYB<span class="uscript-operator">.</span>RetrieveServers<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Function</span> RefreshFinished<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    MyServersList<span class="uscript-operator">.</span>AutoPingServers<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Function</span> GameInfo<span class="uscript-operator">.</span>ServerResponseLine IPToServer<span class="uscript-operator">(</span><span class="uscript-type">string</span> Address<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> GameInfo<span class="uscript-operator">.</span>ServerResponseLine S<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> ipString<span class="uscript-operator">,</span> portString<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> colonPos<span class="uscript-operator">,</span> portNum<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Parse text to find IP and possibly port number</span>
+    colonPos <span class="uscript-operator">=</span> InStr<span class="uscript-operator">(</span>address<span class="uscript-operator">,</span> <span class="uscript-string">":"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>colonPos <span class="uscript-operator">&lt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+        ipString <span class="uscript-operator">=</span> address<span class="uscript-operator">;</span>
+        portNum <span class="uscript-operator">=</span> <span class="uscript-number">7777</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+        <span class="uscript-operator">{</span>
+        ipString <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>address<span class="uscript-operator">,</span> colonPos<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        portString <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>address<span class="uscript-operator">,</span> colonPos<span class="uscript-number">+1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        portNum <span class="uscript-operator">=</span> <span class="uscript-type">int</span><span class="uscript-operator">(</span>portString<span class="uscript-operator">)</span> <span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    
+    S<span class="uscript-operator">.</span>IP <span class="uscript-operator">=</span> ipString<span class="uscript-operator">;</span>
+    S<span class="uscript-operator">.</span>Port <span class="uscript-operator">=</span> portNum<span class="uscript-operator">;</span>
+    S<span class="uscript-operator">.</span>QueryPort <span class="uscript-operator">=</span> portNum<span class="uscript-operator">;</span>
+    S<span class="uscript-operator">.</span>ServerName <span class="uscript-operator">=</span> <span class="uscript-string">"Unknown"</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">Return</span> S<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Function</span> AddToList<span class="uscript-operator">(</span>GameInfo<span class="uscript-operator">.</span>ServerResponseLine S<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    MyServersList<span class="uscript-operator">.</span>MyOnReceivedServer<span class="uscript-operator">(</span>S<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> PingServer<span class="uscript-operator">(</span> <span class="uscript-type">int</span> listid<span class="uscript-operator">,</span> ServerQueryClient<span class="uscript-operator">.</span>EPingCause PingCause<span class="uscript-operator">,</span> GameInfo<span class="uscript-operator">.</span>ServerResponseLine s <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> PingCause <span class="uscript-operator">==</span> PC_Clicked <span class="uscript-operator">)</span>
+        SQC<span class="uscript-operator">.</span>PingServer<span class="uscript-operator">(</span> listid<span class="uscript-operator">,</span> PingCause<span class="uscript-operator">,</span> s<span class="uscript-operator">.</span>IP<span class="uscript-operator">,</span> s<span class="uscript-operator">.</span>QueryPort<span class="uscript-operator">,</span> QI_RulesAndPlayers<span class="uscript-operator">,</span> s <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        SQC<span class="uscript-operator">.</span>PingServer<span class="uscript-operator">(</span> listid<span class="uscript-operator">,</span> PingCause<span class="uscript-operator">,</span> s<span class="uscript-operator">.</span>IP<span class="uscript-operator">,</span> s<span class="uscript-operator">.</span>QueryPort<span class="uscript-operator">,</span> QI_Ping<span class="uscript-operator">,</span> s <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//Functions that I now want to mean nothing</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> AddIPClick<span class="uscript-operator">(</span>GUIComponent Sender<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> SaveFavorites<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+    PageCaption<span class="uscript-operator">=</span><span class="uscript-string">"BY Servers"</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">And finally, the loader:</em></p>
+<pre class="uscript"><span class="uscript-keyword">class</span> Load <span class="uscript-keyword">extends</span> Actor<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> ServerBrowser SB<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Browser_ServerListPageFavorites BYServerListPage<span class="uscript-operator">;</span>
+    
+    <span class="uscript-keyword">ForEach</span> AllObjects<span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-name">'ServerBrowser'</span><span class="uscript-operator">,</span>SB<span class="uscript-operator">)</span> <span class="uscript-comment">//add the tab.</span>
+        <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span>SB <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+            BYServerListPage <span class="uscript-operator">=</span> <span class="uscript-keyword">new</span><span class="uscript-operator">(</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-keyword">class</span><span class="uscript-name">'BYBrowser_Page'</span><span class="uscript-operator">;</span>
+            SB<span class="uscript-operator">.</span>AddBrowserPage<span class="uscript-operator">(</span>BYServerListPage<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">Break</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+
+    Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-operator">}</span></pre><p>And there it is!!</p>
+<h3><a name="0.1.5"></a>Why??!</h3>
+<p>The above was all written to create a server browser tab that will pick up servers currently running on Blueyonder games (A GSP which also happens to be part of my ISP). It took me a while to do and figure out, so I figured the wiki may like it.</p>
+<hr class="thin"><p><em class="em2">Will:</em> GEBUS CHRIST!! That's gotta be the biggest amount I've added to the wiki since I wrote the stuff on interactions. Please read through, point out code errors, logic errors, spelling errors, grammar errors, or any kind of errors you want. <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Will:</em> ARGH GODDAMNS**THEADED*****INGB*STARDS!! :|</p>
+<p>I just found out (via Wormbo), that epics latest beta patch (2179) prevents the problem of using custom server tabs as a root for a clientside hack by totally f*cking you up all together. You cant use them AT ALL. F*ck people by not including a way to add tabs automatically, f*ck people by not including a stock tab that can be used to download a server list from a wevserver, then f*ck em all again by removed the possibility for custom server tabs. GG epic. &gt;:| &gt;:| &gt;:|</p>
+<p><em class="em2">Mychaeel:</em> Chill. &ndash; So, what exactly did they change?</p>
+<p><em class="em2">Will:</em> I'm not exactly sure (I dont have the patch), but it now seems they've added those kind of packages that are loaded clientside and not preset serverside into the checks. Even the basic server tab itself will prevent you from joining a server, which is why I am hacked off - because they provide no alternative method of adding your own server tab while destroying the possibility of using one loaded yourself. Could this be a result of the email sent to DrSin about the ability to use tabs like that as a cheat?</p>
+<p><em class="em2">Mychaeel:</em> Yes, I think it could.  To be honest I had expected that the client purity check worked like that all the time.</p>
+<p>What would help might be a way to have auto-creation of server tabs or other objects when the (full-screen) menu is displayed, and giving those objects some sort of notification just before the user leaves the menu to go (back) into the game to give them a chance to auto-destruct before a purity check is done.  Or they could "freeze" all objects client-side from packages that aren't present on the server (no Tick, no PostRender, and generally no function calls possible).</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Creating A HTTP Server List Tab", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Talking to the webserver", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>The tab itself", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Loading the tab", "#0.1.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>The whole lot", "#0.1.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Why??!", "#0.1.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="will.html">Will</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Will/Creating_A_HTTP_Server_List_Tab">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Will/Creating_A_HTTP_Server_List_Tab">View other revisions</a><br>Last edited January 14, 2003 19:08 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Will/Creating_A_HTTP_Server_List_Tab">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Will/Creating_A_HTTP_Server_List_Tab">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Cogito, ergo sum
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

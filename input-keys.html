@@ -1,0 +1,338 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Input Keys</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Input_Keys; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Input Keys">Input Keys</a></h1>
+	<div class="wiki"><p>So its time to create a class that requires the user to press a key?  You've come to the right place.  I'll walk you through the steps here.</p>
+<p>For <a href="unreal-tournament-2003.html">UT2003</a> and newer, see <a href="interaction.html">interaction</a>.</p>
+<h2><a name="0.1"></a>Step 1:  Setting up the Key Binding</h2>
+<p>This is the easiest step.  Start by creating a new class, something like ExtraWordBindings (please replace Word with something descriptive, thanks!) and make it look something like this:</p>
+<pre class="uscript"><span class="uscript-keyword">Class</span> ExtraWordBindings <span class="uscript-keyword">extends</span> UTExtraKeyBindings<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+     SectionName<span class="uscript-operator">=</span><span class="uscript-string">"YourSection"</span> <span class="uscript-comment">// Enter a descriptive section name here</span>
+     LabelList<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-string">"First Binding Caption"</span> <span class="uscript-comment">// Something Descriptive, Please.</span>
+     LabelList<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-string">"Second Binding Caption"</span>
+     AliasNames<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-string">"mutate Word"</span> <span class="uscript-comment">// Change Word to something that describes the action this key will do</span>
+     AliasNames<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-string">"mutate Word"</span>
+<span class="uscript-operator">}</span></pre><p>Compile the script and create an entry in the [Public] section of your package's [int file]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Int_File&referrerid=Input_Keys">?</a>:</p>
+<p>Object=(Name=MyPackage.MyKeyBindingsClass,Class=Class,MetaClass=UTMenu.UTExtraKeyBindings)</p>
+<p>Now you should have a working option in the "Controls" option panel.</p>
+<h2><a name="0.2"></a>Step 2:  Creating the mutator to process your key input</h2>
+<p>Okay now you can use one <a href="mutator.html">mutator</a> to parse all your key bindings, or one mutator for each binding.  I like one mutator for each binding, because these mutators should be automatically added into the mutatorlist if the associated actor is present in the map.  DO NOT CREATE AN INT ENTRY FOR THESE MUTATORS!</p>
+<p>They should look something like this. (Once again, PLEASE replace "Word" with something DESCRIPTIVE!)</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> WordKeyMut <span class="uscript-keyword">extends</span> Mutator<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> AddMutator<span class="uscript-operator">(</span>Mutator M<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> M<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'WordKeyMut'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-comment">// This mutator's name!</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span> <span class="uscript-comment">//only allow one mutator</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>AddMutator<span class="uscript-operator">(</span>M<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Mutate<span class="uscript-operator">(</span><span class="uscript-type">string</span> MutateString<span class="uscript-operator">,</span> PlayerPawn Sender<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> YourClass Other<span class="uscript-operator">;</span> <span class="uscript-comment">// YourClass will be the name of the class that we</span>
+                               <span class="uscript-comment">// will create in the next step - the actual actor </span>
+                               <span class="uscript-comment">// that this mutator is processing key input for.</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>MutateString <span class="uscript-operator">~=</span> <span class="uscript-string">"SomeString"</span><span class="uscript-operator">)</span> <span class="uscript-comment">// SomeString should be equal to an AliasName set in the class above,</span>
+                                          <span class="uscript-comment">//without "mutate".  i.e., if your AliasName was "mutate Activate",</span>
+                                          <span class="uscript-comment">//SomeString should be "Activate"</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'YourClass'</span><span class="uscript-operator">,</span> Other<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'YourClass'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                log<span class="uscript-operator">(</span><span class="uscript-string">"YourClass Detected"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>BooleanValue <span class="uscript-operator">)</span> <span class="uscript-comment">// Change BooleanValue to a descriptive variable name!</span>
+                                                          <span class="uscript-comment">// It will be set in the class we will create in the next</span>
+                                                          <span class="uscript-comment">// step, to see if the actor is actually in a state that</span>
+                                                          <span class="uscript-comment">// it can be activated.</span>
+                <span class="uscript-operator">{</span>
+                    log<span class="uscript-operator">(</span><span class="uscript-string">"YourClass Active"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                    Other<span class="uscript-operator">.</span>FunctionName<span class="uscript-operator">(</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Change FunctionName to something descriptive!</span>
+                                                               <span class="uscript-comment">// It will be created in the next step as well,</span>
+                                                               <span class="uscript-comment">// and it will contain everything we want to happen</span>
+                                                               <span class="uscript-comment">//when the user presses a key.</span>
+
+                <span class="uscript-operator">}</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> NextMutator <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        NextMutator<span class="uscript-operator">.</span>Mutate<span class="uscript-operator">(</span>MutateString<span class="uscript-operator">,</span> Sender<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.3"></a>Step 3:  Creating your actor!</h2>
+<p>Create your map actor as you otherwise would create any other map actor.  How to create them is beyond the scope of this article.  Once its created, you want to add the following near the beginning of the class:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> PreBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>AddMutator<span class="uscript-operator">(</span>Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Package.Mutator'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Replace Package with your package name,</span>
+                                                                          <span class="uscript-comment">// and Mutator with the name of the mutator</span>
+                                                                          <span class="uscript-comment">// we created above.</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PreBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Right at the very beginning, define a boolean variable called whatever you replaced "BooleanValue" with in the class above.  You may also want another variable (as an Actor), to store who is allowed to actually activate the object.</p>
+<p>Now you code a function with its name set to whatever you made "FunctionName", which will be what you want to happen when a player activates the object.  You will also need to put in the code to set your boolean to true when someone is allowed to activate it.</p>
+<p>Now you're set!  Below is an example of what I've done, to create a <a href="trigger.html">trigger</a> that requires the user to activate it before use.</p>
+<h2><a name="0.4"></a>My Working (we hope) Example!</h2>
+<p>Here is the trigger class, it works like any other trigger:</p>
+<pre class="uscript"><span class="uscript-comment">//</span>
+<span class="uscript-comment">// UseTrigger:  Almost identical to Trigger except requires user to press</span>
+<span class="uscript-comment">// activate to spawn the event.</span>
+<span class="uscript-comment">// By Nick Bowler (Draconx), http://www.deadjunkie.com/~draconx/</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-keyword">class</span> UseTrigger <span class="uscript-keyword">extends</span> Trigger<span class="uscript-operator">;</span>
+
+
+<span class="uscript-comment">//-----------------------------------------------------------------------------</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> Activatable<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> Actor ActivatedBy<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> Actor OtherBkp<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//</span>
+
+<span class="uscript-keyword">function</span> PreBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>AddMutator<span class="uscript-operator">(</span>Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Package.ActivateMut'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PreBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">// Called when something touches the trigger.</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-keyword">function</span> Touch<span class="uscript-operator">(</span> actor Other <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'PlayerPawn'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        log<span class="uscript-operator">(</span><span class="uscript-string">"UseTrigger Activated"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        OtherBkp <span class="uscript-operator">=</span> Other<span class="uscript-operator">;</span>
+        Activatable <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> UsePressed<span class="uscript-operator">(</span> <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+    log<span class="uscript-operator">(</span><span class="uscript-string">"UseTrigger Used"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Touch<span class="uscript-operator">(</span> OtherBkp<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">// When something untouches the trigger.</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-keyword">function</span> UnTouch<span class="uscript-operator">(</span> actor Other <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'PlayerPawn'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        log<span class="uscript-operator">(</span><span class="uscript-string">"UseTrigger Deactivated"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Activatable <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    Activatable<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+<span class="uscript-operator">}</span></pre><p>Here is the mutator which processes the key input:</p>
+<pre class="uscript"><span class="uscript-comment">//</span>
+<span class="uscript-comment">// ActivateMut - Required for UseTrigger to function correctly.  Placing a</span>
+<span class="uscript-comment">// UseTrigger in your map automatically adds this mutator, so it should not</span>
+<span class="uscript-comment">// be added manually.</span>
+<span class="uscript-comment">// By Nick Bowler (Draconx), http://www.deadjunkie.com/~draconx/</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-keyword">class</span> ActivateMut <span class="uscript-keyword">extends</span> Mutator<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> AddMutator<span class="uscript-operator">(</span>Mutator M<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> M<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'ActivateMut'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span> <span class="uscript-comment">//only allow one mutator</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>AddMutator<span class="uscript-operator">(</span>M<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Mutate<span class="uscript-operator">(</span><span class="uscript-type">string</span> MutateString<span class="uscript-operator">,</span> PlayerPawn Sender<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> UseTrigger Other<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>MutateString <span class="uscript-operator">~=</span> <span class="uscript-string">"activate"</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'UseTrigger'</span><span class="uscript-operator">,</span> Other<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'UseTrigger'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                log<span class="uscript-operator">(</span><span class="uscript-string">"UseTrigger Detected"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>Activatable <span class="uscript-operator">)</span>
+                <span class="uscript-operator">{</span>
+                    log<span class="uscript-operator">(</span><span class="uscript-string">"UseTrigger Active"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                    Other<span class="uscript-operator">.</span>UsePressed<span class="uscript-operator">(</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+                <span class="uscript-operator">}</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> NextMutator <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        NextMutator<span class="uscript-operator">.</span>Mutate<span class="uscript-operator">(</span>MutateString<span class="uscript-operator">,</span> Sender<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>And here is the class which adds to the keybindings:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> UseTriggerBindings <span class="uscript-keyword">extends</span> UTExtraKeyBindings<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+     SectionName<span class="uscript-operator">=</span><span class="uscript-string">"Miscellaneous"</span>
+     LabelList<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-string">"Activate"</span>
+     AliasNames<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-string">"mutate activate"</span>
+<span class="uscript-operator">}</span></pre><p>And there you have it.  I hope you found this tutorial useful!</p>
+<hr class="thin"><p><em class="em2">Foxpaw:</em> This is a clever workaround, but wouldn't exec functions/input variables be more elegant and easier, too?</p>
+<p><em class="em2">Wormbo:</em> Exec functions can only be executed by the player who is the owner of the actor and I don't see how input variables would work in this case.</p>
+<p><em class="em2">Foxpaw:</em> Don't mutators have full access to exec functions and input variables for the local viewport?</p>
+<p><em class="em2">Wormbo:</em> No, mutators are serverside. They only have a Mutate function which is called by the PlayerController's exec function Mutate which in turn is always replicated to the server.</p>
+<p><em class="em2">Foxpaw:</em> Oh. I thought mutators were loaded on both the client and the server and followed the normal replication rules.</p>
+<p><em class="em2">Wormbo:</em> They follow replication rules, that's why they aren't replicated at all unless you change RemoteRole, bAlwaysRelevant, etc.</p>
+<p><em class="em2">ToJo:</em> Does anyone know if there is a simplier way to do this in UT 2003?</p>
+<p><em class="em2">Foxpaw:</em> An <a href="interaction.html">interaction</a> should work.</p>
+<p><em class="em2">Draconx:</em> UT 2003 already has a UseTrigger, it works just like mine (unfortunately, the Activate key doesnt seem to appear in the normal key bindings screen, and must be set manually.</p>
+<p><em class="em2">MythOpus:</em> Are you refering to the Activate key for the UseTrigger?  That is set to the Use key which is by default 'U'...</p>
+<p><em class="em2">Draconx:</em> Yeah but the control doesnt appear on the controls screen ingame.  I used the rawkeybindings thing to change it on my own install.</p>
+<p><em class="em2">Xian:</em> Interesting concept. But this is buggy, as if we have 2 PlayerPawns activating 2 separate Triggers, we'd have both of them activatable. This in turn would make the foreach iterator execute even the trigger which the Player running the command isn't touching. i'd say this would be a better workaround:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> Touch<span class="uscript-operator">(</span> actor Other <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'PlayerPawn'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        log<span class="uscript-operator">(</span><span class="uscript-string">"UseTrigger Activated"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        PlayerPawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>HitActor <span class="uscript-operator">=</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">;</span>
+        OtherBkp <span class="uscript-operator">=</span> Other<span class="uscript-operator">;</span>
+        Activatable <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> UnTouch<span class="uscript-operator">(</span> actor Other <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'PlayerPawn'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        log<span class="uscript-operator">(</span><span class="uscript-string">"UseTrigger Deactivated"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Activatable <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+        PlayerPawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>HitActor <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>... and...</p>
+<pre class="uscript"><span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>MutateString <span class="uscript-operator">~=</span> <span class="uscript-string">"activate"</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Sender<span class="uscript-operator">.</span>HitActor <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> Sender<span class="uscript-operator">.</span>HitActor<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'UseTrigger'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            log<span class="uscript-operator">(</span><span class="uscript-string">"UseTrigger Detected"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> UseTrigger<span class="uscript-operator">(</span>Sender<span class="uscript-operator">.</span>HitActor<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Activatable <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                log<span class="uscript-operator">(</span><span class="uscript-string">"UseTrigger Active"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                UseTrigger<span class="uscript-operator">(</span>Sender<span class="uscript-operator">.</span>HitActor<span class="uscript-operator">)</span><span class="uscript-operator">.</span>UsePressed<span class="uscript-operator">(</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span></pre><hr class="thin"><p><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Step 1:  Setting up the Key Binding", "#0.1");
+menuItemAdd("Step 2:  Creating the mutator to process your key input", "#0.2");
+menuItemAdd("Step 3:  Creating your actor!", "#0.3");
+menuItemAdd("My Working (we hope) Example!", "#0.4");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Input_Keys">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Input_Keys">View other revisions</a><br>Last edited May 7, 2007 11:15 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Input_Keys">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Input_Keys">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I search for solutions in this order: Past Code, Unreal Source, Wiki, BUF, groups.yahoo, google, screaming at monitor. (RegularX)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

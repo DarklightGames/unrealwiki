@@ -1,0 +1,350 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: TeamVehicleFactory</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=TeamVehicleFactory; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=TeamVehicleFactory">TeamVehicleFactory</a></h1>
+	<div class="wiki"><div class="classpath"><img src="shared//gameicons/icon-ut2004.png"> <a href="unreal-tournament-2004.html">UT2004</a> :: <a href="actor.html">Actor</a> &gt;&gt; <a href="svehiclefactory.html">SVehicleFactory</a> &gt;&gt; TeamVehicleFactory (custom)<br></div>
+<p>This custom actor really duplicates much of the functionality of the ONSVehicleFactory subclasses, but the big feature is that nearly any vehicle class can be spawned.  Although this actor cannot display the selected vehicle class in the editor, it does offer added controls that mappers for VCTF or other vehicle gametypes might want.</p>
+<h2><a name="0.1"></a>Features</h2>
+<ul><li>The ability to spawn random vehicles from a list of vehicle classes</li>
+<li>The ability to spawn nearly any vehicle class in gametypes that allow vehicles</li>
+<li>The ability to trigger PreSpawn and (Post)Spawn events</li>
+<li>The option to allow the vehicle to spawn over and crush other actors</li>
+<li>The option to use this as either a triggerable or an automatic (timed) vehicle factory.</li>
+<li>Greater control over spawn timing</li>
+</ul>
+<h2><a name="0.2"></a>Notes</h2>
+<ul><li>If you use a TeamVehicleFactory "as is" in your custom map, please credit me in the readme file of the map. (<em class="em2">SuperApe</em>)</li>
+<li>You have to supply spawning effects and sounds, via <a href="scriptedtrigger.html">ScriptedTrigger</a>, <a href="emitter.html">Emitter</a> and the like.  This is meant to allow flexibilty in the ways you want vehicles to spawn.  An example VCTF map posted on <a href="http://forums.unrealplayground.com/showthread.php?t=23515">[this UP Forum thread]</a> gives my suggestion for spawning particles and sound. (It appears similar to pickup spawning.)</li>
+<li>With bAutoSpawn on and without a PreSpawnTime of around 2 seconds, you run the risk of spawning a vehicle before headlights can be properly spawned at map start.  Subsequent vehicles after map start will spawn headlights normally.</li>
+<li>Turrets that are spawned automatically get an AIController.  They are auto turrets; firing at enemies, or if set to neutral (team 255), firing at any non-neutral controlled pawn it detects.</li>
+<li>The AS Spacefighters are spawned with a minimum velocity that makes them impractical to use.  However, a custom launcher for these is easy to make with a TryToDrive() function.</li>
+<li>This has a slightly larger bBlocked check radius than ONSVehicleFactory. ( 1.33 : 1.25 )</li>
+</ul>
+<h2><a name="0.3"></a>Properties</h2>
+<h3><a name="0.3.1"></a>Main</h3>
+<dl><dt>int TeamNum</dt><dd>Team Number to be set on spawn.  0= red, 1= blue, 255= neutral / none</dd><dt>bool bPlayerControl</dt><dd>Only player instigators can trigger.</dd><dt>bool bAutoSpawn</dt><dd>Will spawn at regular intervals.  The triggering ability is disabled.</dd><dt>int RespawnTime</dt><dd>Interval to wait before AutoSpawning.</dd><dt>name PreSpawnEvent</dt><dd>Event to trigger before spawn.</dd><dt>int PreSpawnTime</dt><dd>Time before spawn to trigger event.  Will begin event this many seconds before the factory is set to AutoSpawn.</dd><dt>name SpawnEvent</dt><dd>Event to trigger after spawn.  A post spawn event.</dd><dt>bool bCrushable</dt><dd>Allow spawning over colliding actors.  Note: Turrets will normally spawn in collision with other actors, spawned vehicles will generally move out of the way.</dd><dt>int RetrySpawnTime</dt><dd>Interval to wait if bBlocked.</dd><dt>bool bRandomFlip</dt><dd>Neutral vehicles may face backwards.</dd><dt>bool bRandomSpawn</dt><dd>Will spawn random vehicle class.</dd><dt>struct class&lt;<a href="vehicle.html">Vehicle</a>&gt; SpawnedVehicle</dt><dd>Selected random vehicle class.</dd><dt>array&lt;SpawnedVehicle&gt; RandomVehicles</dt><dd>List for random vehicle spawn.</dd></dl>
+<h3><a name="0.3.2"></a>Hidden</h3>
+<dl><dt>bool bWaiting</dt><dd>Waiting to spawn.</dd><dt>int FactoryTime</dt><dd>Time last spawn. (in Level.TimeSeconds)</dd><dt>bool bPreSpawn</dt><dd>Should trigger PreSpawnEvent next.</dd></dl>
+<h2><a name="0.4"></a>Code</h2>
+<pre class="uscript"><span class="uscript-comment">//==================================================================================</span>
+<span class="uscript-comment">// TeamVehicleFactory.</span>
+<span class="uscript-comment">// Spawn any Vehicle or Turret, set Team, pre &amp; post spawn Events, timing, and more.</span>
+<span class="uscript-comment">// Glenn 'SuperApe' Storm -- June 2004 -- Updated: July 2005</span>
+<span class="uscript-comment">//==================================================================================</span>
+<span class="uscript-keyword">class</span> TeamVehicleFactory <span class="uscript-keyword">extends</span> SVehicleFactory
+    <span class="uscript-keyword">placeable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span>   <span class="uscript-type">int</span>         TeamNum <span class="uscript-operator">;</span>           <span class="uscript-comment">// 0= red, 1= blue, 255= neutral / none</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span>   <span class="uscript-type">bool</span>        bPlayerControl <span class="uscript-operator">;</span>    <span class="uscript-comment">// Only player instigators can trigger</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span>   <span class="uscript-type">bool</span>        bAutoSpawn <span class="uscript-operator">;</span>        <span class="uscript-comment">// Will spawn at regular intervals</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span>   <span class="uscript-type">int</span>         RespawnTime <span class="uscript-operator">;</span>       <span class="uscript-comment">// Interval to wait before AutoSpawning</span>
+
+<span class="uscript-keyword">var</span>     <span class="uscript-type">bool</span>        bWaiting <span class="uscript-operator">;</span>          <span class="uscript-comment">// About to spawn</span>
+<span class="uscript-keyword">var</span>     <span class="uscript-type">int</span>         FactoryTime <span class="uscript-operator">;</span>       <span class="uscript-comment">// Time last spawn</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span>   <span class="uscript-type">name</span>        PreSpawnEvent <span class="uscript-operator">;</span>     <span class="uscript-comment">// Event to trigger before spawn</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span>   <span class="uscript-type">int</span>         PreSpawnTime <span class="uscript-operator">;</span>      <span class="uscript-comment">// Time before spawn to trigger event</span>
+<span class="uscript-keyword">var</span>     <span class="uscript-type">bool</span>        bPreSpawn <span class="uscript-operator">;</span>         <span class="uscript-comment">// Should trigger PreSpawnEvent next</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span>   <span class="uscript-type">name</span>        SpawnEvent <span class="uscript-operator">;</span>        <span class="uscript-comment">// Event to trigger after spawn</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span>   <span class="uscript-type">bool</span>        bCrushable <span class="uscript-operator">;</span>        <span class="uscript-comment">// Allow spawning over colliding actors</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span>   <span class="uscript-type">int</span>         RetrySpawnTime <span class="uscript-operator">;</span>    <span class="uscript-comment">// Interval to wait if bBlocked</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span>   <span class="uscript-type">bool</span>        bRandomFlip <span class="uscript-operator">;</span>       <span class="uscript-comment">// Neutral vehicles may face backwards</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span>   <span class="uscript-type">bool</span>                    bRandomSpawn <span class="uscript-operator">;</span>      <span class="uscript-comment">// Spawn random vehicle class</span>
+<span class="uscript-keyword">struct</span> SpawnedVehicle
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span>   <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Vehicle<span class="uscript-operator">&gt;</span>      SpawnVehicle<span class="uscript-operator">;</span>       <span class="uscript-comment">// Selected random vehicle class</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span>   <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>SpawnedVehicle<span class="uscript-operator">&gt;</span>   RandomVehicles <span class="uscript-operator">;</span>    <span class="uscript-comment">// List for random vehicle spawn</span>
+
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bAutoSpawn <span class="uscript-operator">)</span>
+        bWaiting <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        bPreSpawn <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> RespawnTime <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+            FactoryTime <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">-</span> RespawnTime <span class="uscript-operator">+</span> PreSpawnTime<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+            FactoryTime <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">-</span> PreSpawnTime<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> Trigger<span class="uscript-operator">(</span> Actor Other<span class="uscript-operator">,</span> Pawn EventInstigator <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bAutoSpawn <span class="uscript-operator">)</span>
+        <span class="uscript-comment">// bAutoSpawn overrides Trigger</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>EventInstigator<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'UnrealPawn'</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> bPlayerControl <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> VehicleCount <span class="uscript-operator">&gt;=</span> MaxVehicleCount <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> VehicleClass <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span> bRandomSpawn <span class="uscript-operator">&amp;&amp;</span> RandomVehicles<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"TeamVehicleFactory:"</span><span class="uscript-operator">@</span><span class="uscript-keyword">self</span><span class="uscript-operator">@</span><span class="uscript-string">"has no VehicleClass"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    bWaiting <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    bPreSpawn <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> RespawnTime <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+        FactoryTime <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">-</span> RespawnTime <span class="uscript-operator">+</span> PreSpawnTime<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        FactoryTime <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">-</span> PreSpawnTime<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> SpawnItNow<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span>   Vehicle     CreatedVehicle<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span>   <span class="uscript-type">bool</span>        bBlocked<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span>   Pawn        P<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span>   <span class="uscript-type">float</span>       SV<span class="uscript-operator">;</span>
+
+    bBlocked <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> VehicleClass <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span> bRandomSpawn <span class="uscript-operator">&amp;&amp;</span> RandomVehicles<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bRandomSpawn <span class="uscript-operator">&amp;&amp;</span> RandomVehicles<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+            VehicleClass <span class="uscript-operator">=</span> RandomVehicles<span class="uscript-operator">[</span> <span class="uscript-type">int</span><span class="uscript-operator">(</span> FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">*</span> RandomVehicles<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">)</span> <span class="uscript-operator">]</span><span class="uscript-operator">.</span>SpawnVehicle<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">foreach</span> CollidingActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Pawn'</span><span class="uscript-operator">,</span> P<span class="uscript-operator">,</span> VehicleClass<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>CollisionRadius <span class="uscript-operator">*</span> <span class="uscript-number">1.33</span><span class="uscript-operator">)</span>
+            bBlocked <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+    <span class="uscript-operator">{</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"TeamVehicleFactory:"</span><span class="uscript-operator">@</span><span class="uscript-keyword">self</span><span class="uscript-operator">@</span><span class="uscript-string">"has no VehicleClass"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bBlocked <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>bCrushable <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        bWaiting <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        bPreSpawn <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> RespawnTime <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+            FactoryTime <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">-</span> RespawnTime <span class="uscript-operator">+</span> RetrySpawnTime <span class="uscript-operator">+</span> PreSpawnTime<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+            FactoryTime <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">-</span> RetrySpawnTime <span class="uscript-operator">+</span> PreSpawnTime<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> TeamNum <span class="uscript-operator">==</span> <span class="uscript-number">255</span> <span class="uscript-operator">)</span>
+
+            <span class="uscript-operator">{</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bRandomFlip <span class="uscript-operator">&amp;&amp;</span> Rand<span class="uscript-operator">(</span><span class="uscript-number">2</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-number">1</span> <span class="uscript-operator">)</span>
+                    CreatedVehicle <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span>VehicleClass<span class="uscript-operator">,</span> <span class="uscript-operator">,</span> <span class="uscript-operator">,</span> Location<span class="uscript-operator">,</span> Rotation <span class="uscript-operator">+</span> <span class="uscript-keyword">rot</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">32768</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-keyword">else</span>
+                    CreatedVehicle <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span>VehicleClass<span class="uscript-operator">,</span> <span class="uscript-operator">,</span> <span class="uscript-operator">,</span> Location<span class="uscript-operator">,</span> Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-comment">// Unlock neutral vehicles</span>
+                CreatedVehicle<span class="uscript-operator">.</span>bTeamLocked <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+            <span class="uscript-keyword">else</span>
+                CreatedVehicle <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span>VehicleClass<span class="uscript-operator">,</span> <span class="uscript-operator">,</span> <span class="uscript-operator">,</span> Location<span class="uscript-operator">,</span> Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> CreatedVehicle <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                VehicleCount<span class="uscript-operator">++</span><span class="uscript-operator">;</span>
+                CreatedVehicle<span class="uscript-operator">.</span><span class="uscript-keyword">Event</span> <span class="uscript-operator">=</span> Tag<span class="uscript-operator">;</span>
+                CreatedVehicle<span class="uscript-operator">.</span>ParentFactory <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+                CreatedVehicle<span class="uscript-operator">.</span>SetTeamNum<span class="uscript-operator">(</span>TeamNum<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                TriggerEvent<span class="uscript-operator">(</span>SpawnEvent<span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">,</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>               
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">event</span> VehicleDestroyed<span class="uscript-operator">(</span>Vehicle V<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>VehicleDestroyed<span class="uscript-operator">(</span>V<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bAutoSpawn <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        bWaiting <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        bPreSpawn <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        FactoryTime <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>TimeSeconds<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bWaiting <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">-</span> FactoryTime <span class="uscript-operator">&lt;</span> RespawnTime <span class="uscript-operator">-</span> PreSpawnTime <span class="uscript-operator">)</span>
+            <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> VehicleCount <span class="uscript-operator">&lt;</span> MaxVehicleCount <span class="uscript-operator">)</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bPreSpawn <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>       
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">-</span> FactoryTime <span class="uscript-operator">&gt;=</span> RespawnTime <span class="uscript-operator">)</span>
+                <span class="uscript-operator">{</span>
+                    bWaiting <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+                    FactoryTime <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>TimeSeconds<span class="uscript-operator">;</span>
+                    SpawnItNow<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-operator">}</span>
+            <span class="uscript-operator">}</span>
+            <span class="uscript-keyword">else</span>
+            <span class="uscript-operator">{</span>
+                bPreSpawn <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+                TriggerEvent<span class="uscript-operator">(</span>PreSpawnEvent<span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">,</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Reset<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Vehicle V<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> VehicleCount <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">forEach</span> AllActors <span class="uscript-operator">(</span> <span class="uscript-keyword">class</span> <span class="uscript-name">'Vehicle'</span><span class="uscript-operator">,</span> V <span class="uscript-operator">)</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> V<span class="uscript-operator">.</span>ParentFactory <span class="uscript-operator">==</span> <span class="uscript-keyword">self</span> <span class="uscript-operator">)</span>
+                V<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Reset<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.5"></a>External Links</h2>
+<ul><li><a href="http://forums.unrealplayground.com/showthread.php?t=23515">[Mapping for VCTF]</a> &ndash; A thread on UnrealPlayground that includes a test map using this actor and suggested spawn EFX.</li>
+</ul>
+<h2><a name="0.6"></a>Related Topics</h2>
+<ul><li><a href="mapping-for-as-ut2004.html">Mapping for AS (UT2004)</a></li>
+<li><a href="mapping-for-ons.html">Mapping for ONS</a></li>
+<li><a href="mapping-for-vctf.html">Mapping for VCTF</a></li>
+<li><a href="superape-mapping-for-osm-ad.html">Mapping for OSM Adventure</a> <em class="em1">(Note: A version of TeamVehicleFactory is included in OSMT)</em></li>
+<li><a href="pathing-for-vehicles.html">Pathing For Vehicles</a></li>
+<li><a href="pathing-2k4-flying-vehicles.html">Pathing 2k4 Flying Vehicles</a></li>
+<li><a href="vehicles.html">Vehicles</a> &ndash; Hub for all vehicle topics<ul><li><a href="vehicle.html">Vehicle</a> &ndash; UT2004 parent class for all vehicles and turrets</li>
+<li><a href="vehicle-gameplay.html">Vehicle Gameplay</a> &ndash; Placing VehicleFactories for strong <a href="map-flow.html">Map Flow</a></li>
+</ul>
+</li>
+</ul>
+<h2><a name="0.7"></a>Discussion</h2>
+<p><em class="em2">SuperApe</em>: Originally this actor included a bForceAllow option that overrode the Level.bAllowVehicles setting.  Since the latest patch to UT2004 moved that check up to SVehicle, that will not work anymore.  Alas, that very cool option to include vehicles in any gametype would have to be  left out. <img alt=":(" src="emoticons/sad.gif" align="middle">  Now, I offer it as simply a way to get any vehicle class into gametypes which *do* allow vehicles.  Enjoy! <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">MythOpus:</em> Why couldn't you just set the bAllowVehicles property through the code?</p>
+<p><em class="em2">SuperApe:</em> You mean like this?</p>
+<pre class="uscript"><span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>bAllowVehicles <span class="uscript-operator">&amp;&amp;</span> bForceAllow <span class="uscript-operator">)</span>
+    Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>bAllowVehicles <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span></pre><p><em class="em2">MythOpus:</em> Yes, something like that <img alt=":P" src="emoticons/tongue.gif" align="middle"> <img alt=":)" src="emoticons/smile.gif" align="middle">  Good luck.</p>
+<p><em class="em2">SuperApe:</em> No luck.  I believe the new patch for 2k4 moved many of the bAllowVehicle checks either higher in the actor heirarchy, or like into SVehicle itself.</p>
+<p><em class="em2">SuperApe:</em> A request has been made by a mapper for Red Orchestra to include a Reset() function for this actor.  If you have a triggered version of this factory and the map is reset, any outstanding vehicles are still there.  Working... </p>
+<p><em class="em2">SuperApe:</em> I've added the Reset() function that should work fine.  In fact, I had difficulty duplicating the problem of a stranded vehicle after map reset.  Nevertheless, this Reset() function won't hurt and it may solve the problem for the Red Orchestra mapper.</p>
+<p><em class="em2">SuperApe:</em> Thanks to a suggestion by ZedMaestro on the BUF, I've added a feature for spawning random vehicle classes.  Just set bRandomSpawn = true and the list of possible vehicle classes in RandomVehicles.  Also, in relation to the above discussion about forcing to allow vehicles in any gametype, there is a <a href="http://forums.unrealplayground.com/showthread.php?t=34314">[SuperVehicleFactory]</a> in testing on the UnrealPlayground forums.</p>
+<p><em class="em2">VitalOverdose:</em> when i got cut offline i took a whole buch of the most difficult problems from atari forums and wiki and decided to crack each one as i was gonna be ofline for atleast 4months.your teamvehiclefactory idea was on i decided to have a go at.As far as i can see it does everything you specified in the orignal design spec. i was thinking between us we could come up with an ultimate solution but if not np.</p>
+<p><em class="em2">SuperApe:</em> I think I understand the confusion.  The TeamVehicleFactory is not a problem which I am trying to find a solution for, it is a custom actor I've posted on the wiki after testing thoroughly and developing somewhere else.  I post it here for others to use at their discretion, as a Third-Party component.  If you would like to take the code, use it in a custom map, or even expand on it and modify it for specific purposes, that's fine by me.  That's why I posted it here.  Just remember, the normal etiquette is to give credit for the source in those situations, either in the map's readme file or the code's initial comment block, or both.  If you would like help finding a solution to a problem you're having with your own code, I suggest posting (in brief) the problem's details on the <a href="help-desk.html">Help Desk</a>.  Personally, I wasn't at all clear what you wanted help with.  But at any rate, that code didn't belong here in the Discussion of this page.  Thanks for moving it. <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Moofed:</em> I noticed the first vehicle that is spawned from a TeamVehicleFactory doesn't have a HeadlightProjector, but all vehicles afterwards do.  Not sure what's causing it. <img alt=":-/" src="emoticons/hmm.gif" align="middle"></p>
+<p><em class="em2">SuperApe:</em> Hmm.  I'm not seeing that bug.  Headlights are spawned from the vehicle (ONSVehicle) during PostNetBeginPlay().  Can't think of why your first vehicle wouldn't have them when you jump in.</p>
+<p><em class="em2">Moofed:</em> Fixed by setting PreSpawnTime=2.  I think bDropDetail gets set (and the coronas and projectors not spawned) because the computer is bogged down by the level loading, which happens to be at the same time as the vehicles are spawning when using bAutoSpawn.</p>
+<p><em class="em2">SuperApe:</em> Ah, that makes more sense.  Without including a default spawn effect, that is a potential problem with this script.  I didn't see it due to the effects I include in the test map, linked to above.  Perhaps I should add the suggested spawn effects as a small block of code.  Thanks. <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">SuperApe:</em> I believe the Reset() function does absolutely nothing.  Vehicles themselves have their own Reset() functon, so it's redundant, IIRC.  I will update the code with defaultproperties and include code for a default spawning Effects class to use with this factory as an option, so that mappers can choose to use custom spawning efx or not.</p>
+<p><em class="em2">SuperApe:</em> This class is included in <a href="superape-old-skool-monsta-t.html">Old Skool Monsta Toolz</a> and adds the feature of bDefaultEFX, which spawns particles and sounds that indicate the team the vehicle is spawning for and the size of the vehicle about to spawn.  I will update the code to match OSMT.TeamVehicleFactory soon.</p>
+<hr class="thin"><p><a href="category-custom-class.html">Category Custom Class</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Features", "#0.1");
+menuItemAdd("Notes", "#0.2");
+menuItemAdd("Properties", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Main", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Hidden", "#0.3.2");
+menuItemAdd("Code", "#0.4");
+menuItemAdd("External Links", "#0.5");
+menuItemAdd("Related Topics", "#0.6");
+menuItemAdd("Discussion", "#0.7");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=TeamVehicleFactory">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=TeamVehicleFactory">View other revisions</a><br>Last edited January 12, 2007 22:37 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=TeamVehicleFactory">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/TeamVehicleFactory">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Always snap to grid
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

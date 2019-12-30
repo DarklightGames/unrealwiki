@@ -1,0 +1,410 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: EntropicLqd/Developer Journal</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=EntropicLqd/Developer_Journal; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="entropiclqd.html">EntropicLqd</a>/<a href="http://wiki.beyondunreal.com/wiki?back=EntropicLqd/Developer+Journal">Developer Journal</a></h1>
+	<div class="wiki"><p>I thought it might be interesting to be able to view my sporadic mod progress over a full year (or several) so I thought I'd re-create my developer journal.  It won't get updated regularly, but I can always hope for a monthly update.  Feel free to add comments in the appropriate sections if you so wish.  Date corrections are always welcome as it'll take me till June to remember that the years changed.</p>
+<div class="classpath">18 March 2007<br></div>
+<p>I realised that I was being particularly dense with regards to the alignment of my emitter and solved that issue.  I basically needed to calculate the length of the original vector and apply it along the right axis to get the effect I wanted.</p>
+<p>Aligning the jump pad to the ground is proving much harder.  I've caught the landing event and got the normal of the ground the pad has landed on.  I just need to work out how to apply that to the jump pad itself.  Maybe I'll sort it sometime this week.</p>
+<div class="classpath">10 March 2007<br></div>
+<p>Inspired by a recent LAN and some comments on the BuF forum I decided to dig out the UScript sources for 2K4 and have a crack at making a deployable jump pad.  It felt like it might be a fun thing to do.</p>
+<p>Initially I simply subclassed the UTJumpPad and set it up so it could be Spawn()'d easily.  I borrowed and tweaked the "throw weapon" code in order to ensure that the jump pad went in the right direction and life was good.  Life remained good right up until the point I attempted to assign a mesh (or other graphical goodness) to my subclass.  My jump pad immediately stopped working.</p>
+<p>I backtracked a bit and now have a separate class for the mesh base, the emitter(s) I want to use for the jump pad, and the jump pad itself.  I now have two problems.</p>
+<p><em class="em2">The first</em> (and smallest) is that I can't seem to match the rotation of my SpriteEmitter with the Rotation of it's parent without using a co-ordinate system of PTCS_Relative.  Which then means that the "velocity" I give the emitter is wrong.  I need to put the velocity into relative co-ordinate space but I can't remember how at the moment.</p>
+<p><em class="em2">Update:</em> I feel so old and stupid.  All I needed to do was get the magnitude of the "velocity" and assign it to the X component of the emitters velocity vector, set the Z component appropriately and it all works because the Unreal Engine does the co-ordinate space transform for me (which is nice).  Now on to the nasty big problem.</p>
+<p><em class="em2">The second</em> problem I have is that I want to align the mesh of the jump pad with the ground.  It looks OK on flat surfaces, but put it on a slope and it looks more ugly than a very ugly thing.  I must confess, I have absoloutely no idea how to go about fixing that.  I'm thinking traces from each "corner" or my mesh to attempt to derive some sort of "plane" I can align the mesh with, but that sounds like a lot of work for a bit of graphical cleanliness.</p>
+<p>Ah well.  That's life.  I'm kind of tired now (late night/early morning combo aleways gets me) so I'm taking a break.</p>
+<div class="classpath">07 January 2007<br></div>
+<p>And so we move into a shiny new year.  Normaly at this point I'd look back and mourn at how my real life commitments eroded all the resources (time, enthusiasm, and energy) I was planning on ploughing into some mod/programming project.  Since I didn't set myself any targets at all there wasn't anything to feel sad about.</p>
+<p>It's weird, even though I don't map or mod for UT2K4 at all I still visit the Wiki at least once a week.  Maybe it's because I have hope that I'll get back into modding and mapping with the release of UT2007.  Or maybe it's because the stuff that gets changed is (usually) quite interesting reading.</p>
+<p>My initial thought is that I'd quite like to create a DM map whose structure changes based upon time and the number of players.  The concept is that the map has a number of events that can occur which change the structure of the map.  E.g. An energy beam generator explodes meaning that a previously closed tunnel is now open.  Or an unreachable walk-way half collapses allowing it to be used.  The player thing is simply doors to additional rooms that open up as the player count increases.  Bot-pathing the level could get interesting.</p>
+<p>My biggest fear with the concept is that mapping in 2K7 will be so complex as to be beyond me.  Still, one can but try.</p>
+<div class="classpath">04 June 2006<br></div>
+<p>Well, 7 months has passed since my last update and I've made almost no progress on my Java game.  Basically I got to the point where I'd ironed out most of the flaws in the behaviour, implemented corners, and was ready to start introducing more map elements.  At that point I got bogged down with the graphics.  And after several hours trying to design some acceptable graphics I gave up.  I don't think I've looked at the game since.  Probably time to get some help from a more talented individual I guess.  But I'll have to wait for some free time before I ask.</p>
+<p>I did spend some time thinking about what it would take to move the game into a 3D world.  It would be possible to introduce some cunning puzzles and tricks if each of the marbles had different properties so I might sit down and develop the idea a bit more.</p>
+<p>So, apart from the family slowly sucking the life out of me, the covers band I play (bass) in has been busy and keeping me practicing for several hours as week.  We recently got a live recording done which came out better than I expected.  I'm likely to have a few copies spare so if anyone wants a copy drop me an email and I'll put one in the post.</p>
+<p>I've also been toying with a monitoring application.  Basically an application generates a UDP data packet filled with transaction information (status, performance, all that stuff) and the monitor application catches that and displays it on screen.  The application is designed to work with configurable hosts, applications, and transactions.  It's given me a real insight into Java GUI programming - and I must confess, it sucks.</p>
+<p>Oh, I also spent some time reverse engineering the map files for Flat Out (with some limited success).  You can see the results of my research at <a href="http://snout-clan.co.uk/flatout/">http://snout-clan.co.uk/flatout/</a></p>
+<p>More recently I've returned to gaming and have been playing GRAW.  I'm still trying to figure out how to get a server up that will allow me to play the co-op missions with my brother and sister-in-law.  Since they are both behind the same firewall it seems to prevent them from joining the same game (even though they are running unique copies of the game and can join separate servers).</p>
+<p>Ah well, real life calls once again.  UT2007 is on the horizon, and Flat Out 2 is imminent.  Spore seems like it'll be quite good.  And one day, my children will leave home and I'll have loads of free time.  Fantastic.</p>
+<div class="classpath">06 November 2005<br></div>
+<p>It's been an interesting week in the world of my little Java game.  At the beginning of the week I decided that I needed to refactor the movement and direction code.  I had too many constants with different values used for essentially the same thing.  This <em class="em1">duplication</em> was causing the code to get a little bulky.</p>
+<p>So I embarked on a fairly major refactor.  The result has been something that I'm much happier with.  I no longer have multiple overlapping constants for movement and position, and I also have less code.</p>
+<p>Some of the encapsulation is suspect, but I can live with that for the time being.  Basically, the game position class also understands about the movement characteristics of the map element it is associated with.  This isn't great from a design point of view but I the savings I was able to make by doing things that way currently outweigh the "uncleanliness" of the solution.  It's something that may change as I add more map elements.</p>
+<p>Anyways, I've updated the on-line version with a new version of the code (Java 1.4 compatable this time).  It seems a lot less error prone than the previous version.  I also finally managed to squash the intermittent collision bug I was having with the wheels.</p>
+<p>I'm now deciding whether to work on the game entry and level finish screens or more maps.  The former is going to be dull so I should probably do that first just to get it out of the way.</p>
+<p><em class="em2">T1:</em> BTW, you might be interested in <a href="http://gpwiki.org/">http://gpwiki.org/</a></p>
+<div class="classpath">29 October 2005<br></div>
+<p>I just got back from North Wales having spent a week in comparative exile with the family.  A good time was had by all despite the torrential downpour.  As always I took my slabtop along to play DVDs for the kids.  In the end it turned out to be a very productive week.</p>
+<p>The collision code has been completely re-written and now works in all situations.  I believe there is some scope for optimisation in the code as well should I need to shave some time off the main loop.  I've also implemented a bunch of queues for input events and object destruction and the like.  This has resolved a couple of outstanding issues with general gameplay.</p>
+<p>In fact, I've got to the point where you can play a level should you wish to complete with rudimentary sounds.  The sounds are <em class="em1">very</em> loud and I need to tone them down a bit, but they will do for now.  I shamelessly nicked them from the Windows pinball game.</p>
+<p>Out of all the things I implemented over the last week was the text-based level script.  Rather than have all of the levels "hard-coded" within the game, they are created using a simple text file.  This means that with a small readme (or something similar) anyone can create levels for the game.  This appears to have presented me with a small problem - I don't seem to be able to place the level files in the JAR file I want to use for distribution and still be able to access them.  There's probably a way around it but I'll have to do some digging to get it resolved.</p>
+<p>Anyways, if you are feeling particularly brave, you can see the current <em class="em1">not even worthy of a pre-alpha title</em> code in action at: <a href="http://www.snout-clan.co.uk/stuff/marbled/marbled.html">http://www.snout-clan.co.uk/stuff/marbled/marbled.html</a></p>
+<p>I'm still not entirely happy with the main loop code, and not all of the game rules are implemented.  But at least I'm making progress.</p>
+<p><em class="em2">MythOpus:</em> I think I found a bug...  when you shoot a 'marble' from one of the shooters, and there is already a marble in the hole where you're shooting too... if you click on the marble in the hole, it get's shot and when it collides with the other marble, it pushes it back to the hole where it was shot from.  Then when the two marbles (which re now on top of eachother) hit the hole, one of the marbles stays and the other marble keeps going to a hole on the next rotating thinger...  I hope I've described it well enough...  I'm not good at this <img alt=":P" src="emoticons/tongue.gif" align="middle"></p>
+<p><em class="em2">EntropicLqd:</em> Heh - I call the rotating things Wheels.  I didn't think that I'd implemented marble's bouncing off each other yet though.  I'm aware of the problem you describe but not in the manner you describe.  I've seen it when fooling with the "drop point" (the T-Junction that goes down to the first Wheel), but not between wheels.  However, you description is good enough for me to replicate what you did.  And I did say <em class="em1">not worthy to even be a pre-alpha</em> <img alt=":)" src="emoticons/smile.gif" align="middle">.</p>
+<p><em class="em2">T1:</em> It says:</p>
+<p>alt="Your browser understands the &lt;APPLET&gt; tag but isn't running the applet, for some reason. It does need the Java 1.4 runtime environment." Your browser is completely ignoring the &lt;APPLET&gt; tag! </p>
+<p>I have java, and I've run other applets before. I'm running Konqueror on Slackware Linux. Don't know if that'll help. I can run it using Firefox, however, I have no idea whatsoever what to do, but it's sort-of-fun-ish. I've figured out how to lose, but how do you win?</p>
+<p><em class="em2">EntropicLqd:</em> I noticed yesterday that the game tells you you have lost even when you win the level <img alt=":)" src="emoticons/smile.gif" align="middle">.  In terms of your Konqueror problem, try this:</p>
+<ul><li>Settings &rarr; Configure Konqueror &rarr; Java &amp; JavaScript</li>
+<li>Look for the box labeled "Path to Java executable or 'Java'"</li>
+<li>Try <em class="em1">/usr/lib/jre/bin/java</em> (you need to set the path to the Java executable).</li>
+<li>Restart Konqueror and you should be good to go.</li>
+</ul>
+<p><em class="em2">T1:</em> No, you misunderstand, Java is installed, set up, and works for other java stuff, just not this ONE applet. I already have that all set up. Also, how is winning supposed to work?</p>
+<p><em class="em2">EntropicLqd:</em> Ah - apologies.  Hmm, the most obvious thing is a JRE conflict or something similar.  Does Konqueror have any form of Java Console (like Firefox does)?  If so are there any clues in there?  You win the level by getting four marbles of the same colour into each of the wheels.</p>
+<div class="classpath">22 October 2005<br></div>
+<p>Pretty much giving up on everything PC related in my spare time back in July I focussed completely on playing bass.  Learnt a few songs, half-written some other stuff, and generally improved my playing a bit.  I also got some forced rest in September (pretty much all of September) due to an attack of nightmare headache/migraine type things.  And I've replayed through SCCT and NfSU2.  In the last week or so my head's been good enough to do stuff.  So I've returned to the Java game I started writing back in Feb. 2004.</p>
+<p>It's been really good to get back into it, even if it did take me a couple of days to work out how it all fitted together.  I've actually added comments this time round and by the time I've got the first level fully working I expect it will be fully java-doc'd up.</p>
+<p>Anyways, I've realised something quite interesting (I think I always knew but was unaware just how deep it went).  I'm driven by obsession.  I can only properly drive myself to do stuff if I have the time to obsess about it.  Only spending an hour on the odd evening doing something isn't enough for me to get driven about it - but is enough time for me to get frustrated at not having enough time to do it.  Thus begins the downard spiral....</p>
+<p>Quite how I solve this, or get a balance between all the things I want to do so that I don't get frustrated with any of them I'm not sure yet.</p>
+<p>Back to the game.  After looking through the code I was unhappy with the collision code.  It was slow, and incredibly inefficient.  I've replaced it all as I've used the structure of the map to optimise it significatnyl.  This required a significant overhaul of huge sections of the code and impacted on the driving loop (that controls the animations as well).  The result is a lot less code to do the same thing faster, and I'm still not <em class="em1">quite</em> happy with the collision code.  However, the basic structure feels right.</p>
+<p>The other thing I've realised I need to introduce is a queuing system for user inputs.  The game is completely mouse driven and the mouse clicks take effect immediately.  This can lead to some weird artifacts on screen (or the animation thread dying) so it's got to go.  I have a sneaky suspicion that the animation thread is dying for a different reason - but I need the input queue anyway.</p>
+<div class="classpath">20 July 2005<br></div>
+<p>I've all but stopped playing UT2004 - the social network that kept me playing it no longer exists.  I've toyed listlestly with BF2.  I've played through GTA San Andreas.  And all it has done is driven home just how pointless gaming and modding really is.  The thought of doing any kind of programming (in any language) in the evening doesn't appeal anymore.  In fact if it wasn't for my bass guitar I'd have probably resigned myself to becoming a zombified TV watching android.</p>
+<p>Maybe I've suddenly got middle-aged.  If middle-age can be defined by a feeling that everything should have a purpose, and that fun in and of itself is not a valid purpose for doing anything, then I'm there.</p>
+<p>Ah well.  Roll on UT2007, and STALKER.  And if anyone sees my <em class="em1">spark of creativity</em> lying around pop it in the post.</p>
+<p><em class="em2">MythOpus:</em> Perhaps you've just hit your peak called 'depression.'  Many people seem to be going through that lately.  I don't play UT2004 anymore.  Reason:  I don't like the game much :|  I just code for it.  Fortunately for me, I have my coding and a special someone to keep my thoughts from wandering again into what I call, "Depression Zone"  You have a wife do you not?  Anyways, the depression shall pass and you shall find your spark once more.  Maybe do up some graphics in your favorite image editing program (Yay Photoshop) and do a Photo Blog of sorts <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Graphik:</em> No, it's not about being middle-aged. I am nowhere near middle-aged (the actual distance would likely surprise you) and I've felt this way for a while. I think what is needed is to change where you look for fulfillment, as you've exhausted the current avenues. Say you found UnrealEd fun. Try making Pixar-style short films in Maya. It's a complete change in perspective, while maintaining a enough similarity to ensure you're not too far off from your original passion.</p>
+<p>I don't think UT2007 is the answer, either; it's another UT with a new coat of paint. Looks like we'll have to wait another generation of games for somthing that really brings a community together like UT did.</p>
+<p><em class="em2">MythOpus:</em> Ya with the lost of UTIRC, I think the community really broke apart.  Not to mention the actual gameplay as in team work of UT2K- was really broken.  We really do need a new UT.  Maybe all of the coders and modellers etc on the WIKI can get together and throw some ideas around ?</p>
+<p><em class="em2">T1:</em> Hmmm. I've never had an internet capable gaming PC, so I've never really played online more than 2 or 3 times. However, I've definitely noticed a decline in the funness (That's not really a word is it?) in UT2003/UT2004 compared to UT. I usually play UT with bots and for messing with code, sometimes I play with friends on my LAN, however. Hmm.. throw some ideas around? How about some more thought-oriented gameplay? I'm really getting tired of this kill-kill-kill button-pushing that is in every game almost. I wish there was an FPS were the strategies and tactics you used we're just as important as your accuracy. I'm not really talking about making it more "realistic", however "semi-realistic" gameplay might help a bit. I think I might make a mod ideas page for a gametype I thought of. If someone wishes to make a mod made by the combined efforts of the wikizens then I would help code such a gametype into a larger mod.</p>
+<p><em class="em2">Graphik:</em> I smell a Counter-Strike clone. <img alt=";)" src="emoticons/wink.gif" align="middle"></p>
+<p><em class="em2">T1:</em> I wouldn't take part in such a mod. EVER.</p>
+<p><em class="em2">EntropicLqd:</em> Thanks for the thoughts.  I shall ponder them while I'm away on holiday and "unplugged".</p>
+<p><em class="em2">Solid Snake:</em> I think we all go through that period where we simply just need time off the computer to pursue other needs/wants. This is somewhat common, with certain things as well as work for example. I often just not do anything computer related for awhile, or I play other games which are more sort of regenerative rather than destructive (Simcity type games vs blowing stuff up type games). That tends to recharge the batteries for myself.</p>
+<p><em class="em2">zugy:</em> Yeah I go through this alot. Lately, in order to prevent this, I go through a cycle of sorts-I do some mapping, then some coding and now I'm in a modeling stage. I need to constantly be doing new things and learning (I admit it, I like to learn...go ahead and sue me, teachers <img alt=":P" src="emoticons/tongue.gif" align="middle">). By rotating around I stay interested in modding, and still keep fresh on certain aspects of it. Now that I think about it, I've been neglecting my map lately <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Aphex:</em> Still goin strong I see!  I still play the original UT - can't beat the old classic IMO!  Erm except I'm recently partial to a bit of BF2 actually - took a while, but grew on me in the end. Still keeping a creative spark going here: moved to writing own game.  But yes, gotta watch for the burn-out.</p>
+<div class="classpath">07 January 2005<br></div>
+<p>While I was attempting to go to sleep last night I thought of an optimisation I could make to my Tri-Puzzle solving program.  The optimisation (replacing to bitwise ANDs with an XOR) was possible because of the way I arranged the bit masks I was using to denote the different pieces.  It's not a huge optimisation, but it does shave 300ms off the total processing time.</p>
+<p>Also of note, my eBow (www.ebow.com) arrived in the post this morning.  I'd be fiddling with it now but I'm waiting for the rain to stop before venturing out to buy a battery.</p>
+<div class="classpath">06 January 2005<br></div>
+<p>I've been sorely neglecting this journal for a long time for one simple reason.  I've pretty much halted all thoughts of modding.  This is partly due to time constraints - the family and the band keep me pretty much occupied full time.  But mainly it's because my heart isn't in it.</p>
+<p>It depresses me to think that the most interesting piece of code I wrote in Q4 2004 was a small program to solve a 16 piece jigsaw puzzle with triangular pieces.  The whole process took about 8 hours from initial code inception, testing and debugging, and the final run which found both solutions to the puzzle.</p>
+<p>I have considered whether I've just got to old for games, but I find that thought somewhat ludicrous.  I've also spent pretty much the entire last couple of weeks playing FlatOut (www.flatoutgame.com) and Need for Speed Undergrouns 2.  Both a nice enough games (I prefer FlatOut, my bro' prefers NSFU2).</p>
+<p>So, what's in store for this year?  To be honest I have no idea.  It would be nice to think that I'll get back into coding in my spare time and become as enthused with software development as I was a decade ago.  It's more likely that I'll get bullied into writing a profile editor for NFSU2.  Not stunningly interesting, but potentially amusing nonetheless.</p>
+<div class="classpath">19 August 2004<br></div>
+<p>Thanks to my previous efforts, a slightly slack day at work, a bout of insomnia last night and some help from Tarquin my "curve" track builder appears to work.</p>
+<p>You can specifiy the start and end radius, the angle of the curve, the start and end track width, and the start and end bank angle.  You can also opt for left/right/center alignment of the change in track width.  With the right parameters you could probably make it generate a section of straight track <img alt=":)" src="emoticons/smile.gif" align="middle">.</p>
+<p>Now that I've got curves and straights I'll have to do slope entry and exits next.  Once they are done I can start playing with some track ideas.</p>
+<p>One thing I have noticed is that UT2004's Unreal Ed is much more prone to BSP errors than any of the previous versions.</p>
+<div class="classpath">18 August 2004<br></div>
+<p>Thanks to the <a href="scripting-custom-brushbuild.html">Scripting Custom Brushbuilders</a> page I built my very first custom BrushBuilder last night to create a section of "racing track".  I realise that static meshes are the way to go - but what the hell <img alt=":)" src="emoticons/smile.gif" align="middle">.  It was an interesting exercise and I'm going to do another one, but this time with curves.</p>
+<div class="classpath">15 August 2004<br></div>
+<p>Since my last update I've done nothing.  Nada.  Nowt.  No modding, coding, scripting, or anything even remotely associated with creating anything of any purpose.   Maybe I'm heading for a mid-life crisis or something but I can't get enough enthusiasm to start anything even though I know I'll get into it once I've got started.</p>
+<p>I downloaded UnWheel a couple of days ago.  It plays pretty well although it suffers from "hovering car" syndrome, and the cars don't really feel like they are moving that quickly.  The camera system is a little odd.  It kind of freaked me out at first that the camera was still under mouse control.  I'm still undecided as to whether I like that approach or not.  I don't know what it is with driving games, but on the whole the cars never feel like they are actually on the ground.  Trackmania, GTA VC, and Midtown Madness are notable exceptions.</p>
+<p>Maybe I'll have a crack at building a circuit - I like racing games that don't take themselves too seriously.  Heck, having complained about the poor car handling, maybe I should see if I can do better (hah - yeah right).</p>
+<div class="classpath">25 June 2004<br></div>
+<p>I've had some bug reports from a couple of the mutators I've released.</p>
+<p><em class="em2">Power Core Volume Control</em></p>
+<ul><li>When playing a game with rounds the buzzing sound still kicks in at the end of the round.  Not a big deal as it only lasts a second or so but I'll still fix it.</li>
+</ul>
+<p><em class="em2">Adjusting Energy Sphere</em></p>
+<ul><li>I've had reports of people playing matches where one player in the game cannot see the Energy Sphere's - they are simply invsible.  This only seems to happen on the first game of a session.  The majority (2 out of 3) cases of this have been where people have joined mid-game.  The third case was someone playing an instant action game.</li>
+</ul>
+<p class="indent1">So far I've not been able to reproduce this one on my LAN at home.  It needs fixing.</p>
+<div class="classpath">15 June 2004<br></div>
+<p>I've been ruminating on what my next project should be, and while I was lying awake in bed at 4am this monring I think I've got.  The project needed to be long term enough that I can spend a lot of time thinking about it without actually doing anything (real life is in the way atm), and something that I'm most likely going to find challenging but not impossible.</p>
+<p>Anyway, my next project is going to be a mapping project.  I'm going to build a DM map called DM-EventFull.  The map is going to be based in an abandoned base built originally for the study of seismology but evacuated for safety reasons.</p>
+<p>The brief is to build the map such that earthquakes occur at random intervals throughout the game.  These earthquakes trigger randomly selected <em class="em1">events</em>.  The ideas I've had for the events so far are:</p>
+<ul><li>Dust falling from the ceiling</li>
+<li>Collapsing pipe-work in the walls</li>
+<li>Short-circuiting electrics</li>
+<li>Cracks appearing in floors</li>
+<li>Beams and girders falling from the ceiling.</li>
+<li>Collapsing brickwork.</li>
+<li>Lights flickering or shutting down completely.</li>
+<li>Others that I'll no doubt think of later.</li>
+</ul>
+<p>Because the events happen in a random order, and at random intervals no two games will be exactly alike.  I'm considering making all of the events non-gameplay effecting, but it might be fun to have different routes through the map open up as the game progresses.</p>
+<p>If I get even half-way to realising the idea I have in my head I'll be satisfied.  Traditionally my mapping is as lacking as my drawing skills.  But we shall see how things go.</p>
+<p>If it's anything like my normal mapping projects It'll never be finished.</p>
+<div class="classpath">14 June 2004<br></div>
+<p>Well, its finally done, dusted, and released.  The Adjusting Energy Sphere mutator finally got finished up and for those that want it, you can find it here: <a href="http://www.snout-clan.co.uk/p.php?p=3065">http://www.snout-clan.co.uk/p.php?p=3065</a>.  Sadly that brings to a close this brief (but enjoyable) modding spree.  Real Life and work must once again take precedence over having a bit of fun.  Bummer really.  Still, serves me right for not being an unemployed bum or a college student I guess. </p>
+<div class="classpath">05 June 2004<br></div>
+<p>Woke up this morning on the 4th June (it's gone midnight here) and realised that I was wrong about the ROLE_None statement below.  I go to correct the information on the Wiki and see that Mych. had beaten me to it (kind of).  Anyways its all sorted now.</p>
+<p>I spent this evening optimising and tuning my mutator.  I had a couple of <em class="em1">Uh-Oh what have a I done</em> moments but it's all sorted now and the code is much cleaner although possibly not as clear as it was.</p>
+<p>Anyways my mutator is done, and tested (as much as I can test it - Listen server + 1 client, dedicated server with 1 client, instant action).  It's now ready for some proper network testing once I've written the read me and commented out some of the log statements.  I'll also throw up a tutorial page on the Wiki on how it's put together.  It's another interesting one from a network/replication point of view.</p>
+<p>Sadly that's going to be it for a while as real-life work commitments are beconing urgently.  I wouldn't mind making an ONS map next - and fleshing out the <a href="mapping-for-ons.html">Mapping for ONS</a> page a little more (with how to actually put the maps together).  Whether I'll get time remains to be seen.</p>
+<p>And now .... it's bedtime.  Zzzzzz</p>
+<div class="classpath">03 June 2004<br></div>
+<p>Well, I have finally resolved my problems with the [Mod Ideas/AdjustableEnergySphereHeight]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Mod_Ideas/AdjustableEnergySphereHeight&referrerid=EntropicLqd/Developer_Journal">?</a> mutator I've been attempting to write.  It all boiled down to a misunderstanding of the way Actor's with a <a href="role.html">Role</a> of ROLE_None actually works.  This misunderstanding was causing all sorts of weird side-effects to be seen in-game and I was tearing my hair out trying to work out what was causing them.</p>
+<p>Actor's with a role of ROLE_None are created on both the server and the game client.  However, the two objects are <em class="em2">completely independant<em class="em1"> of each other.  Destroying the actor on the server will not destroy it on the client, and equally, destroying the actor on the client will not remove it from the server.</em></em></p>
+<p>The <em class="em2">real killer</em> is that destroying the Actor on the server from a mutator's IsRelevant() function doesn't prevent it from being created on the client.</p>
+<p>So anyway, the upshot of this bolt from the blue is that my mutator appears to work in all network modes now.  All I need to do is optimise the code a little (I'm doing stuff in Tick() so I want it as light as possible) and get it on my server for some hammering.</p>
+<div class="classpath">31st May 2004<br></div>
+<p>Well, I've ground to a complete halt.  I can confidently say that my [Mod Ideas/AdjustableEnergySphereHeight]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Mod_Ideas/AdjustableEnergySphereHeight&referrerid=EntropicLqd/Developer_Journal">?</a> is not going to progress any further unless I have an incredible flash of inspiration and figure out just how the hell the ONSPowerNodeEnergySphere<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ONSPowerNodeEnergySphere&referrerid=EntropicLqd/Developer_Journal">?</a> object works.</p>
+<p>I should have known today was going to be bad when it took me half an hour to spot an error in my code that was so glaringly obvious it was correct beyond all need of checking.  I've reproduced it below.  As a passer-by it should be immediately obvious to you.</p>
+<pre class="uscript"><span class="uscript-keyword">defaultproperties</span> <span class="uscript-operator">{</span>
+  RemoteRole<span class="uscript-operator">=</span>SimulatedProxy
+<span class="uscript-operator">}</span></pre><p>Anyway, I'll attempt to describe my problem.</p>
+<p>When a PowerNode is under construction a spinning circular thing appears above the node in a "ghost" style skin (it goes solid once the node has constructed).  This spinning circular thing is the ONSPowerNodeEnergySphere object.  This object is a pure client side construction - it has a remote role of ROLE_None.  The location of the spinning thing appears to be set by a couple of bones (who have their own unique co-ordinate system).</p>
+<p>I want to be able to change the height of the energy sphere based upon the health of the PowerNode it is attached to.  Sounds pretty straightforward.</p>
+<p>So I create my own energy sphere object, subclassing from the existing ONSPowerNodeEnergySphere class to avoid having to duplicate a chunk of code.  I add some code to handle the node height and things should be fluffy.  Not so.  My own energy sphere class is shown below (warning the bone location might not be right - I was fiddling with it earlier):</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> AdjustingPowerNodeEnergySphere <span class="uscript-keyword">extends</span> ONSPowerNodeEnergySphere<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> CalculatedHeight<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> counter<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">replication</span> <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span>
+    CalculatedHeight<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>PowerNode <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">.</span>PowerNode<span class="uscript-operator">.</span>EnergySphere <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>PowerNode<span class="uscript-operator">.</span>EnergySphere <span class="uscript-operator">=</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  Log<span class="uscript-operator">(</span><span class="uscript-string">"AdjustingPowerNodeEnergySphere:: PostBeingPlay() is in play"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DT<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> vector v<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Tick<span class="uscript-operator">(</span>DT<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  v<span class="uscript-operator">.</span>X <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> v<span class="uscript-operator">.</span>Y <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">*</span><span class="uscript-keyword">self</span><span class="uscript-operator">.</span>CalculatedHeight<span class="uscript-operator">;</span> v<span class="uscript-operator">.</span>Z <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+  SetBoneLocation<span class="uscript-operator">(</span> <span class="uscript-name">'EnergyInducers'</span><span class="uscript-operator">,</span> v <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">++</span><span class="uscript-keyword">self</span><span class="uscript-operator">.</span>Counter <span class="uscript-operator">&gt;</span> <span class="uscript-number">100</span> <span class="uscript-operator">)</span> Log<span class="uscript-operator">(</span><span class="uscript-string">"AdjustingPowerNodeEnergySphere:: Updating bone position"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span> <span class="uscript-operator">{</span>
+  RemoteRole<span class="uscript-operator">=</span>ROLE_SimulatedProxy
+<span class="uscript-operator">}</span></pre><p>I have the following problems:</p>
+<ul><li>The original spinning energy sphere is still created in its original position above the power node.</li>
+<li>My new energy sphere object is created in the right place and changes position with the node health, but does not have the right skin assigned to it.  I'm using bone's at the moment but setting it's absoloute position should also work.</li>
+<li>My new energy sphere also fails to "spin" in the same way that the orginal one does.</li>
+</ul>
+<p>This tells me the following things:</p>
+<ul><li>I'm not destroying the original Energy Sphere object properly.</li>
+<li>My energy sphere class isn't running any code on the client - that is, the simulated Tick() event is behaving differently for my new class than it does for the original.</li>
+</ul>
+<p>So there you have it.  This one has got me stumped.  If anyone has any thoughts on what I'm missing I'd appreciate them.  I'm going to take a break from the mutator for a bit and maybe fail to make a map for a change.</p>
+<p><em class="em2">Mychaeel:</em> ServerPackages?  <img alt=":-)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">EntropicLqd:</em> lol - definately not.  I have it added.  I think it's another one of these "this object only exists on the client" things so I might try a similar approach to my Power Core Volume Control mutator as see if that gives me any benefits. </p>
+<p class="indent1">Here's something that's weird though.  My Power Core Volume Control Mutator works fine with the bAddToServerPackages=True setting in the default properties section.  It works for all clients even though it's not in the ServerPackages list.</p>
+<p class="indent1">This mutator refuses to work in the same way.  Pretty weird huh?  I've got the 2K4 source at work so I'll see if I can dig up any <em class="em1">rules</em> that might exist with the use of the bAddToServerPackages proeprty and see if I'm excluding it somehow.</p>
+<div class="classpath">30th May 2004<br></div>
+<p>Only a week since the last update - it feels more like a hundred years.  Damn I wisah I had a beer.  Anyways .. all things UScripty have been going reasonably well.  I finished my <a href="power-core-volume-control-m.html">Power Core Volume Control Mutator</a> after coming up with what I feel is a novel solution to my client-side Emitter problem.</p>
+<p>Since writing it I've discovered that Emitter's can be spawned on the server so the information I've added to the tutorial is incorrect.  I'll go back and correct it once I think I understand what is going on.</p>
+<p>I've returned to my [Mod Ideas/AdjustableEnergySphereHeight]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Mod_Ideas/AdjustableEnergySphereHeight&referrerid=EntropicLqd/Developer_Journal">?</a> mutator to continue with that.  The power node heal effect (gold glowy thing) now behaves exactly as I want it to.  However the spinning circle thing acts as an additional target is stubbornly refusing to obey even my simplest commands.</p>
+<p>I suspect I've got another replication/network type issue although I've not tested that as I've moved to testing my code from a dedicated server by default.  Ho hum.  I guess that battle will continue tomorrow since I have the day off.  Should be able to find an hour or two somewhere.  Maybe.  Hopefully.  With luck.</p>
+<p>On a different note I got my frettless bass back after a 5 year (maybe more) loan.  Played it in church this morning.  It was as nice as I remember it although I found it changed the way I played quite substantially.  I'll still be using the fretted bass for the gigs though.  The frettless doesn't really suit rock that well.</p>
+<div class="classpath">23rd May 2004<br></div>
+<p>Work and family life have been getting the better of me recently but I dug my heels in yesterday and locked myself in my office with the PC and actually got some Unreal Script coding in.</p>
+<p>Rather than continue with my adjusting energy sphere mutator I thought I'd address something that I'm fed up with my clan-mates complaining about.  The electricity sound after an ONS Power Core is destroyed.  It's too loud, and universally hated.</p>
+<p>After a bit of digging I found the <a href="emitter.html">Emitter</a> (ooh never looked at them before) class I'd need to trap and naively thought that a simple IsA() check from the mutator's <em class="em1">CheckReplacement()</em> function would do the job.</p>
+<p>It works beautifully - as long as you are on the server.</p>
+<p>After some more digging it became evident that the vast majority of Emitters are only ever spawned on the client (which is sensible).  Unfortunately the CheckReplacement() function only ever runs on the server.  Ne'er the twain shall meet.</p>
+<p>I'm currently engrossed in trying to find a way of trapping the creation of classes on the Clients of a networked game.  With no success so far it must be said.</p>
+<p>If I fail to find anything then plan B is to replace the PowerCore objects with ones of my own construction (essentially a sub-class with a single function overidden) and my own Emitter.  This is not an attractive option - but needs must as the functionality fails.</p>
+<div class="classpath">24th April 2004<br></div>
+<p>I've been a very busy boy recently, but sadly its all been work related.  The total amount of time I've spent with 2K4 has been playing it late at night way past my bedtime.  Still, work should start calming down again in a couple of weeks time as we finally move all our services over to some shiny new machines (without any loss of service I might add).</p>
+<p>My <em class="em1">adjusting energy sphere</em> mod still doesn't work.  It feels like the value I think is the node health actually isn't - but I've had so little time to dig into it that it's all pure conjecture at the moment. </p>
+<div class="classpath">9th April 2004<br></div>
+<p>Well, work has progressed somewhat on the [Mod Ideas/AdjustableEnergySphereHeight]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Mod_Ideas/AdjustableEnergySphereHeight&referrerid=EntropicLqd/Developer_Journal">?</a> mod.  For a fixed height the code now works.  The <em class="em1">timing</em> problem I thought I had turned out to be a very simple math error.  The flare's also spawn in the correct place now.</p>
+<p>Sadly when the node height is set to dynamic adjustment the code doesn't behave as desired.  Still, its not like I've spent any consistent time on the mutator yet so I'm still hopefull I'll be able to get it to work.  At the moment it looks like I'm using the wrong values for the node health.</p>
+<div class="classpath">5th April 2004<br></div>
+<p>I actually started work on my [Mod Ideas/AdjustableEnergySphereHeight]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Mod_Ideas/AdjustableEnergySphereHeight&referrerid=EntropicLqd/Developer_Journal">?</a> mutator proper this weekend.  I didn't accomplish that much as I was squeezing it in between kids, visitors, and sleep.</p>
+<p>I would appear that I've got two issues (besides a shiny GUI setup thing to do).</p>
+<ul><li>Only some of the energy-sphere objects are moved to their correct height.  This feels like a timing issue - that is, my mutator is entering play before all of the energy-spheres which means some of them are being missed.</li>
+<li>The groovy flare thing is spawned is the wrong place when a node is re-charged.  I need to figure out a way of tieing the flare-effect to an energy sphere position.  Tricky since the flare-effect is spawned at the point the node is being built.</li>
+</ul>
+<p>As you may have guessed I'm still trying to figure out a way of creating the mod without replacing any of the existing classes (that way lies madness).  The timing issue is going to be potentially inconvenient though.  I might get away with a timer on the mutator that kicks in a second after the map has started.</p>
+<p><em class="em2">MythOpus:</em> Why don't you make the flare get spawned by the energy-spheres and then attach them to themselves?</p>
+<p><em class="em2">EntropicLqd:</em> Because I'm trying hard to avoid having to sub-class the power-nodes with my own implementation and then making all the pre-existing ones invisible and handling all the un-linking of the old nodes and re-linking of the new ones.</p>
+<p><em class="em2">Foxpaw:</em> As for not getting all the energy spheres getting picked up, that's kind of wierd. However, if it is an artifact of the order stuffs being done in, you may be able to get around that by using Tick and a boolean variable like this:</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> StillNeedsInitialization<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> InitializeSpheres<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  StillNeedsInitialization <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-comment">// Do the Init stuff here.</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span> <span class="uscript-type">float</span> Delta <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> StillNeedsInitialization <span class="uscript-operator">)</span>
+    InitializeSpheres<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Tick<span class="uscript-operator">(</span> Delta <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+  StillNeedsInitialization<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+<span class="uscript-operator">}</span></pre><p>That might work better, if indeed the issue is an order of operations one. If it doesn't, you might try changing the boolean to a byte that decrements and initializes when it hits zero. Thus allowing your mutator to step in two or three ticks into play, when everything should be set up, but before players are likely to notice.</p>
+<p><em class="em2">EntropicLqd:</em> That's more or less what I had in mind.  However, I was thinking about setting a timer to fire once after a second within the PostBeginPlay() function.  That way I'll avoid the code running within Tick() each time.</p>
+<p>Your use of simulated functions does raise something I hadn't considered .. is the "healing flare" created on the server or the client?  I suspect it's created on the server as it would need to be replicated to all the clients, and, the server is truth when determining "hits" on the energy sphere.</p>
+<p><em class="em2">Foxpaw:</em> You could use a timer if you'd like - though the code running in tick shouldn't be an issue. Reason being, that's very low impact code. (VERY low impact) It's only two (very) processor inexpensive operations. It's roughly on par with a single particle from a particle effect - less impact than a single light. So I wouldn't worry about it. <img alt=";)" src="emoticons/wink.gif" align="middle"></p>
+<p>As for the replication, I'm not sure about the flares - on the one hand, the server determines whether a shot hits or not. However, since the flare is more or less a purely visual effect, it may be client-side. For instance, rockets and the like, when they blow up, the explosion and stuff is draw client-side at the location that the rocket appears to hit on the client, so it appears to be right where the rocket appeared to hit. In fact, a rocket can appear to hit something and blow up on the client, and still continue and hit something on the server without any visual fx on the client. Of course, this is highly unlikely because rockets fly in a very predictable fashion, so they usually impact very near the same location on client and server.</p>
+<p>So, the flares may be just client side and appear whenever you appear to be hitting the node - regardless of whether or not the server thinks you are or not. </p>
+<div class="classpath">30th March 2004<br></div>
+<p>Been really busy recently with real-life stuff.  This looks set to continue for a bit so I'm probably going to have to curb my UT2004 time a little (boo hiss).  I have managed to find time to watch some of the VTMs that shipped with the SE version.  It was nice to see that they struggled to describe exactly what a <em class="em1">brush</em> was as well.</p>
+<p>Anyways, my goal for this week is to finish off my [Mod Ideas/AdjustableEnergySphereHeight]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Mod_Ideas/AdjustableEnergySphereHeight&referrerid=EntropicLqd/Developer_Journal">?</a> mutator and make sure that works.  Naturally I'll get bogged down in the config. GUI for it so it'll probably take me another 2-3 weeks to finish but that's normal.</p>
+<p>I also need to just re-check my server query code and make sure it understands all UT2004's gametypes and responses.</p>
+<div class="classpath">22nd March 2004<br></div>
+<p>All development work has halted for the time being.  I'm taing a bit of time out to play through the single player UT2004 game.  Not sure why other than it's a lot of fun.  The weapon balance is massively improved and I'm using a fair greater variety of weapons than ever I have done before.</p>
+<p>Things should be back to normal by the end of the week.  The gig on Saturday night went really well.  To use some immortal words, "It rocked!".</p>
+<p><em class="em2">Tarquin:</em> Gig? what sort of gig? music? Glad to hear you like 2k4 &ndash; seeing how much you hated 2k3, it's a very good indicator!!! <img alt=":D" src="emoticons/biggrin.gif" align="middle"></p>
+<p><em class="em2">EntropicLqd:</em> It was indeed a music gig.  I play Bass (5 String Honer if anyone cares) in a band.  We filled the pub we were in - about 40-50 people turned up.  Great fun.  In terms of 2K4, no-one was more suprised to find that I liked it than myself.  I was expecting to be leaving the Unreal Universe for the forseeable future.  I still find other players too hard to see but I'll be damned if I'll resort to using TTM (or some other brightskin style hack).  I'll just live with it.</p>
+<div class="classpath">6th March 2004<br></div>
+<p>Tonight (well, this morning now I guess since its 1am) I finished my server query code.  You can see it by clicking on the PHP script displayed in the directory at the URL below.  There's also all of the files required to run the script and an archive.</p>
+<p><a href="http://www.snout-clan.co.uk/ue_query/">http://www.snout-clan.co.uk/ue_query/</a></p>
+<p>The archive contains all the files including the README which took ages to write.  About the only obvious mistake you are likely to make with the form as it stands is selecting the incorrect game type.  Querying a XMP server with a game type of UT2004 is bad news.</p>
+<p>I'll probably build some self-protection in there for the next release of the scripts (to support the retail UT2004 build).</p>
+<p>All thoughts, comments, and feedback is welcome - especially from the code monkeys out there.  Now, I'm off to bed.  Happy playing. <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p>In case you are living under a rock, UT2004 is gold and due for release on the 15th March.</p>
+<p><em class="em2">El Muerte:</em> looks nice, be prepared for emails from people that can't get your code to work <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">EntropicLqd:</em> Thanks.  I've had to support mods and code I've released before and its generally a nightmare.  The number of people that don't even read the README never ceases to amaze me.  Still, such is life.  It's nice to know that something you've written is actually being played I guess.</p>
+<div class="classpath">4th March 2004<br></div>
+<p>Well, the XMP player status reported by the server query is fundamentally different to that of UT2K4 (not tried 2K3 yet).  There's a whole heap of artifact and class information in there that I wasn't expecting - not having ever tried U2XMP - but still.</p>
+<p>This calls for some code refactoring.  Hopefully nothing to extreme but we shall see what transpires.  The server rules and game info seem to be in the same format though.</p>
+<p><em class="em2">Bonus Update:</em></p>
+<p>Oh yeah!  Amazingly I've got U2 XMP (complete with colour support), UT2003, and UT2004 server querying all apparently working like a dream.</p>
+<p>The U2 XMP support still has some unknown values within the player data returned by the server.  Since I don't play it I don't have a client I can use to match the values up.</p>
+<p>I'm still annoyed by the fact that you don't always get a full set of data back from the server every time you query it.  I'll probably add some optional support for persisting the data-blocks to a file or something so that if a data-block is not returned by the server I've got one handy.</p>
+<p>The example display functions still need tweaking and the "how to use this stuff" documentation is also still in progress - but I'll have it done for the weekend.</p>
+<p>The only cloud on the horizon is that with this and the 2K4 demo I've got a pile of real-life stuff to deal with.  Having to sleep is so annoying.</p>
+<div class="classpath">3rd March 2004<br></div>
+<p>I'm taking a day or two out from my Java game (which is going pretty well) to write some PHP code that will allow a 2K4 server to be queried and display the server information (current game etc).  <a href="el-muerte.html">El Muerte</a> has already looked at this problem and I'm actually extending his original code.</p>
+<p>It's not been as straightforward as I had hoped as PHP 4.3.3 under Win32 doesn't have binary safe string functions.  The result of this is that I'm having to write my own string search and split functions.  Not difficult but a little tedious.</p>
+<p>One of the other things I've discoverd is that UT2004 (the demo at least) only updates the server information it sends every 5 seconds or so.  Also, either I'm seeing some packet loss on my LAN (unlikely) or not all of the information is sent every time.</p>
+<p>Having said all that it is going well, and in theory at least, the code should work for UT2003, Unreal 2, and Unreal 2004.  Whether it will or not remains to be seen.</p>
+<p>The Java game is going well.  I can now shift marbles between wheels.  I'm intending to implement the primary and secondary game rules next.</p>
+<p><em class="em2">Bonus Update:</em></p>
+<p>The server query for the UT2004 demo works a treat.  Now all I need to do is update the documentation, create an example display function, and make sure it works for UT2003, UT, and Unreal 2 XMP.  All without breaking it for UT2004.  I've got to admit, there's not much of the original code left though.  I got a bit carried away.</p>
+<p>I need an IP and port address for an Unreal 2 XMP server and a UT2003 server.  Can anyone help?</p>
+<p><em class="em2">El Muerte:</em> take your pick: <a href="http://gaming.multiplay.co.uk/?p=/serverlist.php%3Fsectionid%3D432">http://gaming.multiplay.co.uk/?p=/serverlist.php%3Fsectionid%3D432</a> <a href="http://gaming.multiplay.co.uk/?p=/serverlist.php%3Fsectionid%3D432">http://gaming.multiplay.co.uk/?p=/serverlist.php%3Fsectionid%3D432</a></p>
+<p><em class="em2">EntropicLqd:</em> Thanks - that's saved me 5 minutes of pain.  I would have found them myself - but I was just being lazy :o</p>
+<div class="classpath">26th February 2004<br></div>
+<p>I've re-written the mechanism used to connect the level peices together and added some additional functions that will (in theory at least) allow me to implement one of the primary game rules.</p>
+<p>The marbles themselves can be moved around the level in a limited fashion now although there's still something really freaky going on with the rotation of them when they are within a wheel.  Its one of those problems that look like its an obvious one to solve but in reality it isn't - at least until its been found.</p>
+<p>My new animation, movement, and collision code seems to be holding up well though, and I've got a mechanism in place to allow me to support the completion of the actual game objective.  Only the actualy checking code needs to be added.  This won't happen until I've resolved my rotation problem though.</p>
+<p>Progress has been slowed somewhat by real-life, work on the next generation SNOUT website (code clean up mostly) and the UT2004 demo.</p>
+<div class="classpath">16th February 2004<br></div>
+<p>Most of the recent work has been focused on getting the map components required for the very first level together.  I have all the graphics in place now including the animations I need.</p>
+<p>Most of my effort has been expended re-writing the animation and screen update functions.  While at it I also changed the way I'm handling collisions.  The code is now at the point where I don't think I'll be needing to change it again.  It's pretty flexible the way it is and feels like it will be able to support all my ideas for map pieces (famous last words).</p>
+<p>One of the things I realised recently was that I need to change the way my map pieces are connected in order to implement one of the fundamental game rules.  It sounds like a lit of work but the change should drop out relatively easily.</p>
+<p>Once I've resolved the map component connection issue I have I can work on getting my marbles to move around the map and start putting in the gameplay itself.</p>
+<div class="classpath">10th February, 2004<br></div>
+<p>Things are manically busy for me at the moment.  I thought I was busy before but I'm truly snowed this time.  The biggest difference being that I'm mostly having fun.</p>
+<p>My primary task in life (not counting work which is really crap at the moment) is the build of a whole chunk of code for a business I'm starting with a few partners.  The architecture is undergoing its third interation now and is pretty much in the final shape it needs to be.  However although that's quite cool, I'm up to something even more neat.</p>
+<p>I've decided to go all the way back to my roots and write a game.  The game itself is an approximate copy of one called <em class="em1">Logical</em>.  It no longer runs on my PC - not suprising since it must be over a decade old now.  Maybe even 15 years.  So far it's been an interesting experience.  I've elected to write the game as a Java Applet.  This is partly because I don't have access to Flash (which would probably suit the game better) but mainly because it's relatively device independant.  Once I've got it working as an applet I'll host it on the SNOUT site and publish the source code.</p>
+<p>Anyway, considering the small amount of time I'm actually spending on the game (given the other things I'm doing) it's actually going bery well.  I have animation and mouse input routines up and running.  I have a mechanism for holding levels that will <em class="em1">do the job for now</em>.  The biggest area of pain has been images with transparency.  You can't copy them.  I have a work around but I'm not exactly overjoyed about it.  It's not hideous or anything, just frustrating.  The only benefit to my work around is that the memory footprint of the game will be reduced as a consequence.</p>
+<p>Does anyone ever read this thing I wonder?</p>
+<p><em class="em2">Tarquin:</em> I do when I spot an update. I look forward to playing this applet thing. </p>
+<div class="classpath">2nd February, 2004<br></div>
+<p>Somewhat off-topic but what the hell.  My new Bass amp, a Marshall B150, arrived today.  It's sitting in my hall at home in a <em class="em1">big</em> box.  Unfortunately I'm sitting at my desk at work a mere 12 miles away from a new toy with lots of twiddly knobs and sliders.  And I'm bored .... but you probably already figured that out.</p>
+<p>Just in case anyone is remotely interested - the amp rocks.  It's truly awesomely fantastic.  It sounds so much better than the decade old Peavy I used to have that there really is no comparison.</p>
+<div class="classpath">28th January, 2004<br></div>
+<p>I fixed all the outstanding bugs in my UT mutator.  The weapon firing on re-spawn was the hardest one to spot.  All I'd done was place the weapon in a ready state as soon as it was given to the player.  Easily fixed but it took me a while to spot it.</p>
+<p>The other two minor problems were simple logic bugs.  If the test goes well this Friday then I'll be able to formally release the mod - and that's another one out of the door.</p>
+<p>I may do a version 2 of it that has it's own configuration page but I'll probably not bother.  I can't see the mutator being that popular.</p>
+<p>And I still haevn't set the gametype on my map.  </p>
+<div class="classpath">26th January, 2004<br></div>
+<p>Well, my latest UT mutator <a href="mod-ideas-teamweaponarena.html">Mod Ideas/TeamWeaponArena</a> is almost done.  I've got one outstanding bug to resolve and it's ready for public consumption.  Players fire immediately on spawning (unless they use jump to spawn) and I've no idea why.</p>
+<p>I completely failed to do any work whatsoever on my CTF map - CTF-GauntPiglet.  Instead I played TrackMania.  A shallow yet compelling racing game (<a href="http://www.trackmania.com/">http://www.trackmania.com/</a>).  If anyone can be bothered to drop me some feedback on the map, you can get the map here: <a href="http://www.snout-clan.co.uk/gauntpig.zip">http://www.snout-clan.co.uk/gauntpig.zip</a>.</p>
+<p>I still haven't set the gametype on the map <img alt=":/" src="emoticons/hmm.gif" align="middle"></p>
+<p>Last week was quite novel.  I had to turn down two requests to join mod teams.  Both were racing type mods and both of them would haev been pretty different.  It hurt to do but I really don't have the spare time in real life at the moment.  Maybe things will have calmed down by the end of Feb. but at the moment it's difficult to tell.</p>
+</div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="entropiclqd.html">EntropicLqd</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=EntropicLqd/Developer_Journal">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=EntropicLqd/Developer_Journal">View other revisions</a><br>Last edited March 18, 2007 9:51 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=EntropicLqd/Developer_Journal">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/EntropicLqd/Developer_Journal">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Once I get that upgrade to 36-hour days, I will tackle that. (Mychaeel)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

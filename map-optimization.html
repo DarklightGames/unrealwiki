@@ -1,0 +1,200 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Map Optimization</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Map_Optimization; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Map Optimization">Map Optimization</a></h1>
+	<div class="wiki"><p><em class="em2">Optimizing a map</em> is a balancing exercise between building a great looking map and builing a map that runs at a playable speed.</p>
+<h2><a name="0.1"></a>Occlusion</h2>
+<p>Because game engines simply draw <em class="em1">everything</em> and rely on overdrawing to actually make sure the player only sees what they ought to see, a huge amount of detail is drawn by the graphics card unnecessarily. Occlusion is the reduction of what actually gets drawn on screen. A number of different techniques allow mappers to control occlusion and keep levels playable.</p>
+<p>In <a href="unreal-tournament.html">UT</a>, level optimization was primarily about keeping the number of visible polygons to a sensible number (150 polygons was considered about the most you wanted in view in the beginning, although most PCs will handle 400 with ease these days).  In addition the number of visible objects (or meshes) needed to be kept to a minimum. For more on changes from the Unreal and UT generation of the engine, see <a href="occlusion-changes-for-unrea.html">Occlusion Changes For UnrealEngine2</a>.</p>
+<h3><a name="0.1.1"></a>Using Zones</h3>
+<p><a href="zoning.html">Zoning</a> splits the map up into separate areas called zones. These provide a way for the engine to eliminate a large proportion of the map from what it has to consider for rendering, simply because the player can't see it. Zone portals are basically the opposite of Antiportals (as the name suggests). Zones completely eliminate entire meshes (and other geometry) from the rendering queue (except for those meshes that are un-occluded by zone-portals).</p>
+<p>Only the geometry inside a zone within which a client is present will be rendered... with the exception of any other geometry that is visible through a zone portal. Zones occlude EVERYTHING outside them, which is bad since then nothing could be seen through doors and windows between zones. So EPIC created this special mechanism called a zone portal to un-occlude whatever things might be seen through them (for doors and windows between zones, etc). Zone portals are special entities that take on the shape of their defining brushes. They are NOT BSP geometry! If the player is looking through a zone portal, meshes in adjacent zones will still be rendered if they are also in the player's fustrum.</p>
+<p>Zones are calculated at map-build time from the BSP geometry that makes up a room, but since rooms generally have an opening to adjacent rooms (otherwise players would be trapped!), Epic had to come up with a special way to tell the engine where passage of players was possible (non-solid), while still maintaining the seal of the zone. [Question: are Non-solid brushes NON-BSP??? I believe they are just raw sheet polygons, especially considering that semi-solids are not even BSP]. </p>
+<p>Zone portals are not BSP. They are come from the original brushes that define them, just like Antiportals. Note however, that it is possible to use a brush to define both a zone portal surface and simulatenously visible BSP polygons. But keep in mind that it's the actual original brush shape that is used for portal calculations at runtime, so if the brush sticks into BSP walls, the part that is sticking into the walls will still allow the rendering of geometry in the adjacent zone. [Also note that all sheets are Non-solid despite that their defining brush might be set to solid or semi-solid. So for example, a single sheet brush can generate both a zone-portal and a visible non-solid polygon (neither of which is BSP??)]. It is the source geometry of the portal that is used for determining what is visible, not just the part of it that creates the BSP polygons (when its visibility surface property is set to true). Because of this you should use the 2D shape editor to make your zone portals fit the hole they're filling as closely as possible (within reason - do not use more than 6 verices or so to define the portal brush).</p>
+<p>Zones are much less flexible than <a href="antiportal.html">Antiportal</a>s as they are static within the map and can only be formed using <a href="bsp.html">BSP</a> geometry + zone portals. <a href="static-mesh.html">Static mesh</a>es and terrain cannot be used to form zones.</p>
+<p>Even though zones are not as flexible as Antiportals they are much faster to use for in-game occlusion and so should be the first line of defense against mesh rendering. </p>
+<p>Essentially, if you cannot "see" a zone then none of the geometry within that zone will be considered by the rendering engine.  The entire level segment within the zone is occluded. But zone portals can still be "seen" through even if they are opaque, so do not take this too literally. When optimizing your level, assume that players have magic glasses and can "see" through zone portals even if the texture on them is opaque. But note, there is a nifty feature to get around this. (See the ManualExcludes paragraph below).</p>
+<p>A popular optimization technique in the Epic maps is to place zone portals at either end of a hallway.  This way if you're viewing the hallway from an off angle, the portal at the far end won't be visible through the portal at the near end, and everything beyond the hallway can quickly be thrown out. Basically, try to create as many non-adjacent zones as possible. In other words, combine zoning with the players view fustrum to achieve the best occlusion.</p>
+<p>The biggest drawback to zones is that it is impossible to zone large outdoor areas. </p>
+<p>See also: <a href="zoning.html">Zoning</a></p>
+<h3><a name="0.1.2"></a>Using Antiportals</h3>
+<p>That is why Antiportals were invented. They are simple shapes that work even outdoors. Instead of telling the engine what it should render, they tell the engine what it should not render, depending on the direction the client is looking. They use the players view fustrum to figure out what to occlude.</p>
+<p>Comparing every polygon of a mesh against an Antiportal is not cheap, but it is certainly less expensive than doing so against regular BSP nodes on average (assuming the average BSP poly count is 200~500), which was the old method. Of course these days with the use of static-meshes, the BSP poly count is often much lower than that, with static-mesh polygons in their place, and static-meshes are even worse! They don't even have a binary-tree like BSP. [Instead of a Logarithmic-Complexity data-structure-oriented piece of code to process mesh occlusion, there would be an N^2-Complexity algorithm-oriented piece of code. This is, in laymen's terms, is VERY BAD.]</p>
+<p>Antiportals solve this problem because they are simple shapes (or should be!). However, since they will occlude everything "behind" them (relative to the client), they must be placed carefully. Make sure they are always hidden inside visible static geometry including BSP, terrain, and static-meshes.</p>
+<p><a href="antiportal.html">Antiportal</a>s can be any shape you want, and the specific shape does not make a big difference in the performance, as long as it is not complex (the number of vertices should be low: try to stick to simple prisms). <a href="antiportal.html">Antiportal</a>s are relatively slow but if they occlude a large number of polygons it is generally worth it. An Antiportal can, for instance, be placed inside a static mesh to basically make the static mesh occlude, or it can be made to the shape of an existing BSP brush to make that brush appear to occlude meshes. Note that Antiportals are invisible and cannot actually be used to make visible geometry. If an Antiportal is visible to a player, a <a href="hall-of-mirrors.html">HOM</a> effect can occur.</p>
+<p>Antiportals are generally used in large outdoor areas or other areas that cannot be reasonably zoned off. For example, if you had an outdoor area with a large hill, it is usually not practical to try to zone of the hill, because you are pretty well always going to be able to see into the other zones, just not into much of them. In this instance an Antiportal could be used to occlude the objects behind it.  (see CTF-Magma for a counterexample).</p>
+<p>It is worth noting that an Antiportal will only be used for occlusion if some part of it is contained within a zone visible to the player. As a result, the total number of Antiportals in a level may be high, but you should try to keep the number of Antiportals in each zone to a minimum to optimize the number of Antiportal calculations made.</p>
+<p><a href="devastation.html">Devastation</a> also adds a new type of Antiportal to the mappers arsenal.  This is the Zone-antiportal.  A Zone-Antiportal is just like a regular Antiportal, except that it has a list of zones that will not be occluded by the Antiportal, even if that zone is behind the Antiportal. One use for this might be a huge outdoor wall with little "pockets" (rooms) attach to it. The rooms would have open doorways in the wall (requiring some subtraction brushes for the doors + zone portal sheets). The entire wall shape could contain a big rectangular antiportal to block everything beyond the wall EXCEPT those rooms by adding them to the zones to exclude. A more common example would be a building in the outdoors which should occlude everything behind it but not everything inside of it (you can see through the windows for instance).</p>
+<h3><a name="0.1.3"></a>Using BSP inside of Antiportals for Online Optimization</h3>
+<p>Antiportals occlude static meshes, BSP and terrain chunks, but DO NOT occlude other players or their projectiles. If you plan on having a lot of players in a map that uses antiportals, create a slightly smaller semisolid/unlit/invisible BSP brush and put it inside of the antiportal. This will occlude any network relevant actors and will help optimize online play with many players.</p>
+<h3><a name="0.1.4"></a>Combining The Two</h3>
+<p>Antiportals can be used to occlude zone portals.  For example, lets say you have a set of large pillars in front of an area with a small doorway at the back.  Obviously you should put a zone portal in the doorway, but it would be useful to not render the zone inside the doorway if the doorway isn't visible.  The two options are to either put a zone portal between each pillar (one big zone portal won't work), or to put an Antiportal inside each pillar.  Depending on the specifics of the map the later may be the better option as it saves you a zone (you only have 63 available, which can become an issue in a large CTF/BR map).</p>
+<h3><a name="0.1.5"></a>Manually excluding Zones from rendering</h3>
+<p>Antiportals are not the only way in the UnrealEngine2 to prevent things from being rendered. Another, more general way is the ManualExcludes array in the <a href="zoneinfo.html">ZoneInfo</a>'s ZoneVisibility property group. In this array you can specify the ZoneInfos of other zones that will never be seen by a player in the zone belonging to this ZoneInfo.</p>
+<p>Imagine a room with a few pillars and a doorway on each side. The pillars might be placed in a way that blocks the view from each doorwa to the others, but it might not be possible to properly occlude those doorways' zoneportals with antiportals in the pillars. This is where the ManualExcludes take over: For each doorway zone you specify the other doorway zones in the ManualExcludes array to completely exclude them from rendering.</p>
+<p>To add ZoneInfos to the ManualExcludes list you have to put their Object &rarr; Name into the textbox. For obvious reasons you can only exclude zones that have their own ZoneInfo actor.</p>
+<h3><a name="0.1.6"></a>Using ForcedVisibilityZoneTag</h3>
+<p>Sometimes the visibility logic can't decide, which zone an actor belongs to. This often happens with larger <a href="static-mesh.html">StaticMesh</a>es that reach into BSP geometry. These actors are often rendered even if they are not visible at all.</p>
+<p>You can tell the visibility logic, which zone this actor belongs to, by matching its Display &rarr; ForcedVisibilityZoneTag property with the Events &rarr; Tag property of the ZoneInfo(s) of the zone(s) the actor is located in. This way the visibility logic knows that the actor belongs to the zone or zones with that tag and properly excludes it from rendering if the zone is not visible.</p>
+<h2><a name="0.2"></a>Reducing Channels for Online Optimization</h2>
+<p>Every pickup on a map creates a channel when played on a server. The more channels on a server, the more lag there is overall on the server. Try to use fewer pickups on larger maps, and replace clustered pickups with a weapon locker.</p>
+<h2><a name="0.3"></a>Simplify Collisions</h2>
+<p>If you have many complex <a href="static-mesh.html">static mesh</a>es in your level either make them non-collidable or use a simplified collision hull. You can do this either with a blockingvolume or by saving a brush into the static mesh using the static mesh browser. If you do the latter, the brush will be used for collision but the static mesh will be displayed. If you do not use either of these, straight triangle collision is used on every polygon in the static mesh. This can have a significant impact on the performance of your level.</p>
+<h2><a name="0.4"></a>Simplify lighting</h2>
+<p>Even static lights are costly since they are only static with respect to BSP geometry and STATIC mesh vertices. Their effect on non-static meshes (such as) players is still calculated at runtime. The bigger the radius of each light, the longer it takes the runtime system to calculate what non-static meshes should be affected by the light. The obvious solution is to minimize the radius of lights (typically 32 units are less is good), as well as the number of unique lights. [Given a choice between using smaller radii and fewer lights, it is better to use smaller radii and more lights. The volume of a sphere is 4/3*Pi*r^3! Multiply this by the number of lights (assuming that they have the same radius), and you get n*4/3*Pi*r^3, where n is the number of lights. So increasing the r on a particular light has a cubic detriment on its efficiency, whereas increasing n only has a linear detriment.]</p>
+<p>But sometimes, you need to use a bigger radius, or many lights. One method to minimize this is to use bSpecialit in the light, as well as on the BSP surface or static mesh it is intended to light. This will cause the light to be used for static map lighting, while not actually lighting players. However, be careful that this does not look weird! You still need to have lights that *do* affect the player to make sure it looks like they are really in the room.</p>
+<p>See also <a href="http://www.unrealops.com/modules.php?op=modload&name=Reviews&file=index&req=showcontent&id=84">[Rachel's map optimizing tute]</a></p>
+<h2><a name="0.5"></a>Minimize Texture Loading</h2>
+<p>Don't be afraid to use polygons. A high polycount (up to 50,000 polygons in view today!) is better than a high texture-memory usage!</p>
+<p>These days, the pushing of mesh polygons to the video card is far cheaper than the pushing of textures. In the old days, textures were used for making "virtual" 3D geometry (just like faux architecture in the real world), to save on the number of polygons. This meant that great looking levels needed a relatively large number of custom textures to implement all the 3D looking complexities. It was hoped that the user did not notice too much that what he was looking at was actually a 2D surface. This technique is still used today, and the best example of its usage is in AS-RobotFactory. It is sometimes the best way to do things. However the rules have changed quite a bit. Now polygons are generally far cheaper. Texture loading is quite expensive. The fewer unique textures you use in your level, the better. Try to reuse a relatively small set of base textures frequently, and building the vast majority of your 3D detail with *actual* 3D geometry in Maya or 3DS Max. Not only will your level run faster, but it will also look better.</p>
+<p>It is also far easier and faster to model architecture than it is to draw it. Of course, this comes with some practice in Maya or 3DSMax. Emulating 3D shapes in 2D artwork is hard. Especially since, once applied in your level, the textures tend to look flat and unrealistic.</p>
+<p>There are however somethings that must be done with textures still. Small 3D details, like the plaster on a wall, or the rust on metal, must still be implemeted with textures. It also sometimes looks better to use textures to implement details that are very nearly 2D in real life, because you can control the shadown and lighting directly using your raster editor, as opposed to hoping and praying that the Vertex Lighting of Unreal looks good.</p>
+<p>Another method for decreasing texture usage is using ColorModifier materials together with grayscale images. See <a href="http://udn.epicgames.com/Two/MaterialsModifiers">http://udn.epicgames.com/Two/MaterialsModifiers</a>. The grays determine how dark or light to make various pixels in the texture. Using this, you can optimize the compression of the texture since it has fewer colors, while also reusing the texture in various parts of your map with different hues. This works well for paint, plaster and other raw bases. It does not work well for multi-hued textures, such as moss covered rocks (where there are rock hues [brown, black, white ] and moss colors [green, aqua]). You can sometimes design your static meshes with a few extra polygons that are layered, to apply multiple ColorModifier materials and textures. Note that Combiner materials were desinged for this kind of thing, but at present do not work reliably on many conventional video cards. Plus it is more efficient on many static meshes to use a few more polygons that are layered, than it is to go through the Unreal material pipeline with Combiners.</p>
+<p>As an example of this method, you might have an old Italian villa. The houses are made of red-organgish bricks, plaster, and paint. The plaster and paint is weathered and peeling off in places. You could implement the walls of the houses using 2 or 3 polygon layers: the underneath layer for bricks, the 2nd layer for plaster, and possibly a 3rd layer for paint. You could reuse the same brick texture on all the walls of the houses, but use different colors of plaster and paint on top of it. All the houses could reuse just a handful of plaster and paint textures that are grayscale, plus a bunch of ColorModifier materials to make these few textures look like 20 or 30 different ones! And since ColorModifiers are implemented at compile time in the lightmap, you are not actually increasing  texture memory usage to the video card at runtime. The same textures are cached and reused, improving framerate, while only the lightmap values change from house to house.</p>
+<h2><a name="0.6"></a>Other Things that Slow Levels Down</h2>
+<p>Here are some things to avoid when you construct a level:</p>
+<ul><li>Spawning. Spawning objects is relatively expensive. Emitters spawn a large number of objects, and so are not practical in most serious online maps. (Avoid emitters!)</li>
+<li>Players. Having many players in an area is a bad idea most of the time. It not only causes network lag since the server must send more information to each client, but it also slows down the rendering tremendously, with the game having to animate and render all the players. Also, don't forget that local clients perform local physics calculations to estimate the location and orientation every player that relevant more frequently than the server updates this information (to minimize the appearance of network lag). Unfortunately, this leads to local CPU lag due to all the extra calculations. Avoid creating maps in which large scale battles take place in one visible area.</li>
+</ul>
+<h2><a name="0.7"></a>Discussion</h2>
+<p><em class="em2">inio:</em> Is anyone interested in a demo map with examples of the various occlusion methods?  There seems to be a lot of "here's how you do it" but no "here's how it's done" relating to this topic.</p>
+<p><em class="em2">King Mango:</em> Yes I would be interested in that. I am curious if antiportals are even used in UED2... It would be nice if there could be rooms connected to one another, with a sort of "stand here" design on the floor. Then when a player stands there a series of triggered messages explains what to put the crosshairs on and why the info displayed by "stat fps" is different for each occlusion type.</p>
+<p><em class="em2">EntropicLqd:</em> Antiportals do not exist in UED2 at all.  PS - It looks liked you are cutting and pasting from notepad with word wrap turned on - hard line breaks are generally a bad thing.</p>
+<p><em class="em2">inio:</em> Antiportals weren't needed in UnrealEd 2 because it didn't have <a href="terrain.html">terrain</a>, it didn't have <a href="static-mesh.html">static mesh</a>es, and BSP ocluded in the engine versions it worked with.</p>
+<p><em class="em2">anonymous:</em> Could anyone possibly write something about how to fix bsp bugs the editor causes? I'm talking stuff like invisible walls caused by editor rebuilder bugs. I currently fix them by remodelling part of my maps with is a rather unelegant way.</p>
+<p><em class="em2">evil_blue_dude:</em> I've found a fool proof way. I think I'll write a tutorial! <img alt=":D" src="emoticons/biggrin.gif" align="middle"></p>
+<p><em class="em2">Durandal:</em> Think it needs noting that WarpZones are still functional in UEd 3.0. (But I cant work out how to make it so you see the other side...)</p>
+<p><em class="em2">Tarquin:</em> Note to c-67-183-19-195.client.comcast.net &ndash; the new material is good, but we now seem to have the same thing twice (more or less) on this page. Things need merging.</p>
+<h2><a name="0.8"></a>Related Topics</h2>
+<ul><li><a href="zone.html">Zone</a></li>
+<li><a href="zoneinfo.html">ZoneInfo</a></li>
+<li><a href="antiportal.html">Antiportal</a></li>
+<li><a href="distance-fog.html">Distance Fog</a></li>
+</ul>
+<hr class="thin"><ul><li>Zone Your World: <a href="zoning.html">Zoning</a> , <a href="zoning-ut.html">Zoning (UT)</a></li>
+<li><a href="zoneinfo.html">ZoneInfo</a></li>
+<li><a href="warpzoneinfo.html">WarpZoneInfo</a> &ndash; also (confusingly) called portals</li>
+<li><a href="gravity-warp-tunnels.html">Gravity, Warp Tunnels</a></li>
+<li><a href="zone.html">Zone</a></li>
+<li><a href="blockall.html">BlockAll</a> and <a href="blockplayer.html">BlockPlayer</a></li>
+<li><a href="solidity.html">Solidity</a></li>
+<li><a href="invisible-collision-hull.html">Invisible Collision Hull</a></li>
+<li><a href="volume.html">Volume</a></li>
+</ul>
+<hr class="thin"><p><a href="category-mapping.html">Category Mapping</a></p>
+<p><a href="category-to-do.html">Category To Do</a> &ndash; see top.</p>
+<pre class="paraverbatim">	
+	</pre><script type="text/javascript"><!--
+ menuItemAdd("Occlusion", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Using Zones", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Using Antiportals", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Using BSP inside of Antiportals for Online Optimization", "#0.1.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Combining The Two", "#0.1.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Manually excluding Zones from rendering", "#0.1.5");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Using ForcedVisibilityZoneTag", "#0.1.6");
+menuItemAdd("Reducing Channels for Online Optimization", "#0.2");
+menuItemAdd("Simplify Collisions", "#0.3");
+menuItemAdd("Simplify lighting", "#0.4");
+menuItemAdd("Minimize Texture Loading", "#0.5");
+menuItemAdd("Other Things that Slow Levels Down", "#0.6");
+menuItemAdd("Discussion", "#0.7");
+menuItemAdd("Related Topics", "#0.8");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Map_Optimization">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Map_Optimization">View other revisions</a><br>Last edited December 20, 2005 15:14 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Map_Optimization">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Map_Optimization">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I search for solutions in this order: Past Code, Unreal Source, Wiki, BUF, groups.yahoo, google, screaming at monitor. (RegularX)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

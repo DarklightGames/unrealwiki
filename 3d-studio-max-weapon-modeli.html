@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: 3D Studio Max Weapon Modeling And Import</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=3D_Studio_Max_Weapon_Modeling_And_Import; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=3D Studio Max Weapon Modeling And Import">3D Studio Max Weapon Modeling And Import</a></h1>
+	<div class="wiki"><p><em class="em2">Note:</em> This tutorial applies mostly to Unreal Tournament. It is also very hard to do clearly so if you have any questions or corrections, please add them in as comments. I can now see why so few tuts on this subject exist <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Discaimer:</em> This is the way I animate and import weapons. There are approximately 1,000,345 different ways of doing it, with at least 1,000,000 of them being more efficient/better than mine. What I am passing on is what I learned by scouring the net for scant information on the subject and just basic trial and error. What I do know is that this way works <img alt=":)" src="emoticons/smile.gif" align="middle"> To be honest I do things a bit more efficiently, but it is easier to explain it this way and let the person reading it come up with their own better ways of doing it after they are comfortable.</p>
+<p>In this tutorial on making weapon models for Unreal Tournament using 3ds2unr, I'm assuming that you are comfortable with 3D Studio Max R3.1 or later. 2.X should be fine although you may find some features missing that I talk about (not sure). This tutorial will not explain the in's and out's of modeling and texturing your weapon, only the basics on how to animate it and export it correctly into Unreal Tournament. </p>
+<h2><a name="0.1"></a>Getting Started</h2>
+<p><em class="em2">Model Setup</em> (note that this is for a weapon with one texture, I will explain multi-textured first person view weapon models later):</p>
+<ul><li>Face the forward part of the model to the right in the top viewport. This will save having to alter the script to get the model facing the right way.</li>
+<li>Name your weapon mesh Something00 (Something being whatever name you want).</li>
+<li>It must not be bigger than a 256x256 grid extent centered on the origin. You can scale it to suit in script later so don't fret over that yet. All animations need to reside inside the 256x256 box also (i.e. if the kickback animation leaves the bounding box even by a decimal 3ds2unr will conk out on you).</li>
+<li>Place a blank material (or a multi sub-object material if it has more than one texture) on the object called "Skin".</li>
+<li>Collapse the stack or convert to an editable mesh (same outcome) and then go to <em class="em1">Utilities</em> and choose <em class="em1">Reset X-Form</em> (<em class="em1">X-form</em> stands for "transform," much like <a href="transform-permanently.html">Transform Permanently</a> works in UnrealEd). Converting to an editable mesh even if it is already one is important before hitting <em class="em1">Reset X-Form</em> to keep faces that you may have created or mirrored from flipping their normals. Hit the <em class="em1">Reset Selected</em> button and then collapse the stack again. This ensures the pivot point is nicely centered after import into Unreal Tournament.</li>
+</ul>
+<h2><a name="0.2"></a>Animating</h2>
+<h3><a name="0.2.1"></a>Quick Explanation of Vertex Animation</h3>
+<p>Vertex animation works like this: Each frame of animation is basically a copy of the mesh, just slightly different, like the little stick figure cartoons you used to draw in school on little pads of paper (you flip the pages and it animates). The .3d files (the file format vertex animation in UT uses) contains a model with these frames of animation and is basically X number of copies of the model super-imposed on one another with X being the number of frames.</p>
+<p>In Max we use the <em class="em1">Snapshot</em> tool to make these super-imposed versions of our animated model. The product of this is what gets exported from Max as the .3ds file. The <em class="em1">Snapshot</em> tool asks what frames you want super-imposed (0-15 for example), the number of copies (in our example it would be 16 since 0-15 is 16 copies), and will do all the hard work for you. All this will be explained in detail below.</p>
+<p>The beginning and ending of each animation (if the animation begins or ends with the weapon in view) needs to have the same exact postioning. For instance, a firing animation sequence starts, recoils back, and comes back to rest in the exact same postion (it's "rest" postion) it started in. If there is any difference, the gun will appear to jump around in view and look terrible. A good rule of thumb is to save a seperate copy of your .max file with a just a one frame animation of your weapon sitting in it's "rest" position. The exception to this rule are animations that start or end out of view such as a Select and Deselect animations which in these cases the weapon only needs to end in it's "rest" postion and start in it's "rest" postion, respectively.</p>
+<h3><a name="0.2.2"></a>Standard Animations</h3>
+<h4><a name="0.2.2.1"></a>Firing Animation</h4>
+<ol><li>First, setup your 3D viewport window so the gun looks as it would in first person. This can give you a semi-accurate view of what it will look like animating in game. Save the Max file as something like <code>Rest_Position.max</code> or whatever.</li>
+<li>Now move the animation slider to keyframe 1 or 2, hit the Animate button in the lower right, and move/rotate your model into a kickback postion or however it would be postioned when the weapon is fired. Turn off the Animate button, select the first Keyframe at 0 and hold down shift (to clone the key) and drag the cloned keyframe to keyframe 5. Now hit play to see it run through it's firing sequence. It will do this fairly quickly but the code can slow it down later when it's imported into the game. Jump back and forth from key 1 and 5 to make sure the model doesn't move. Save this file as <code>Firing.max</code> (or whatever as long as you know it's the firing animation file) and re-open the "rest" postion .max file you saved earlier.</li>
+</ol>
+<h4><a name="0.2.2.2"></a>Alt Firing Animation</h4>
+<p>Now we need an altfire animation. If your weapon has no alt-fire, skip this step. Pretty much just repeat the same process as above, saving the file as <code>Alt_fire.max</code> or whatever.</p>
+<h4><a name="0.2.2.3"></a>Select and Deselect Animations</h4>
+<p>Now for the Deselect and Select animations which we will include in one file since both animations don't begin <em class="em1">and</em> end in the "rest" posistion. Open your rest postion .max file, move the slider to keyframe 10, hit the Animation button, and move/rotate your model out of view below. Turn off the animation button. Now select the first keyframe at 0, hold shift and clone/drag it to keyframe 20. Play the animation and it should go out of view and then come back into view, ending at it's "rest" postion. Save this file as <code>Select_Deselect.max</code> or something.</p>
+<h3><a name="0.2.3"></a>Looping Animations</h3>
+<p>If you need any repetitious animations that loop, such as a spinning barrel, only animate one cycle. For instance, for the spinning barrel, only animate one rotation. Exceptions to this are things like vibration animations (like the Impact-Hammer charging animation) where you want some variety. </p>
+<p>We now have the minimum amount of animations needed to get a weapon into UT. Actually we still need a 1 frame "Still" animation that's played when the weapon isn't doing anything but we can get that from any other animation's "rest" frame so it doesn't need it's own file.</p>
+<h2><a name="0.3"></a>Exporting Your Animations</h2>
+<p>Export your Fire/Alt-Fire and other Standard Animations.</p>
+<ol><li>Open your <code>Firing.max</code> (or whatever) file and select your weapon. Go to Tools&gt;Snapshot. A window will pop up that looks like this:</li>
+</ol>
+<div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[3dsmax-snapshot]" src="images/3dsmax-snapshot.gif"></div>
+</td>
+</tr>
+</table>
+</div>
+<ol><li>Click the radio button labeled <em class="em1">Range</em>, enter 0 for <em class="em1">From</em> and 5 for <em class="em1">To</em> and make sure the <em class="em1">Mesh</em> radio button is selected (it usually is by default). Select <em class="em1">OK</em>. You will now see a bunch of meshes including your original mesh, each one called Something01 through Something05 (with Something00 being your original mesh you snapshotted). Press <em class="em2">H</em> (the <em class="em1">Select by Name</em> hotkey) and a window will pop up listing all the objects in your scene. Now select Something01, hold down Shift, and while still holding Shift select Something05. This will select Something01 and Something05 as well as all the ones in between. Make sure you don't include Something00 (the source mesh that was snapshotted) as 3ds2unr wants all meshes labeled from "01-0X" in the .3ds file. Notice that Something01 is a copy of Something00. See Figure B below for more info.</li>
+<li>Now, while Something01 through Something05 is selected, go to <em class="em1">File</em> &rarr; <em class="em1">Export Selected</em>. Export the meshes as a .3ds file named <code>Fire.3ds</code>. Make sure you choose <em class="em1">Export Selected</em> and not just plain old <em class="em1">Export</em>. Once finished, close the scene <em class="em2">without saving it</em>.</li>
+<li>Repeat the process for your alt-fire animation if you have one and any other animations you need. Make sure you input the correct animation frames and copies in the Snapshot tool window. For example, if your alt-fire animation starts from 0 and ends at 13, enter From=0 and To=13 with 14 copies (the 0 is inclusive!). Name your .3ds file <code>Altfire.3ds</code> or <code>Fire2.3ds</code> or anything really.</li>
+</ol>
+<h2><a name="0.4"></a>Exporting Your Select and Deselect Animations</h2>
+<ol><li>Since the Select and Deselect animations are in the same file we will do things slightly different this time. We'll basically be snapshotting the file twice since we need to export two .3ds files. Select your weapons and go to Tools&gt;Snapshot again. Select <em class="em1">Range</em>, enter 0 in <em class="em1">From</em> and 10 in <em class="em1">To</em> and enter 11 in <em class="em1">Copies</em>. Hit <em class="em1">OK</em>. Hit <em class="em2">H</em>, select Something01 through Something11, hit <em class="em1">OK</em>, choose <em class="em1">Export Selected</em> and export the files as <code>Down.3ds</code>. It is important that you name it <code>Down.3ds</code> for reasons I will explain below.</li>
+<li>Now either <em class="em1">Undo</em> until you are back to before you snapshotted the weapon, or close the file without saving and re-open it. Once back to square one, select Snapshot, make sure <em class="em1">Range</em> is selected, enter 10 in <em class="em1">From</em> and 20 in <em class="em1">To</em>. Enter 11 for <em class="em1">Copies</em> and make sure <em class="em1">Mesh</em> is selected as the output. Hit ok. Hit <em class="em2">H</em>, select Something01 through Something11, choose <em class="em1">Export Selected</em> and name the exported file <code>Select.3ds</code>. It is important to name this file <code>Select.3ds</code> for reason I will explain below.</li>
+</ol>
+<div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[3dsmax-selectobjects]" src="images/3dsmax-selectobjects.jpeg"></div>
+</td>
+</tr>
+</table>
+</div>
+<h3><a name="0.4.1"></a>Select/Deselect Naming Conventions</h3>
+<p>In UnrealScript, when an action that requires an animation is called, it gets the info from a function in the weapon's code. For instance, when a person presses the alt-fire on a Shockrifle, the code knows to play the animation "Fire2" since it's called in the Shockrifle code's alt-fire play animation function. Since every weapon has to have a Select and Deselect animation and they are never looped or anything funky like that, Epic saw fit to place those play animation functions in every weapon's parent class, TournamentWeapon, and they chose "Down" and "Select" as their animation names. So basically, if you name your Select and Deselect animations as "Select" and "Down", you don't have to write the play animation functions for them. If you must name them something else or want to change the rate at which the select or deselect animation (or both) is played, you can override the TournamentWeapon function in your weapon's code. This is starting to leave the scope of this tutorial so just make sure you name them "Down" and "Select".</p>
+<h2><a name="0.5"></a>Exporting the Still Animation</h2>
+<p>You now need a one frame animations called "Still". There are a few ways to do this with the Snapshot tool (or without) but for simplicity we'll do it the same way we did the others. Open the <code>Rest_Position.max</code> file, go to <em class="em1">Tools</em> &rarr; <em class="em1">Snapshot</em>, and enter 0 in <em class="em1">From</em> and 0 in <em class="em1">To</em>, make the number of <em class="em1">Copies</em> 1, and hit OK. Press <em class="em2">H</em>, select Something01, hit OK, go to Export Selected, and save it as <code>Still.3ds</code>.</p>
+<p>Move your .3ds files that you exported into the same directory as your 3ds2unr.exe.  On to Part2 <a href="3ds2unr.html">3ds2unr</a></p>
+<h2><a name="0.6"></a>Related Topics</h2>
+<ul><li><a href="topics-on-modeling.html">Topics on Modeling</a><ul><li><a href="weapon-modeling.html">Weapon Modeling</a><ul><li><a href="weapons-items-and-decoratio.html">Weapons, Items, And Decorations</a></li>
+<li><a href="creating-a-new-weapontype.html">Creating A New Weapontype</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2><a name="0.7"></a>Discussion</h2>
+<p><em class="em2">Unknown:</em> On my hunt to correct spelling, this page came up in a search for <em class="em1">modelling' but there is only </em>modeling' in this page.</p>
+<hr class="thin"><p><a href="category-modeling.html">Category Modeling</a></p>
+<p><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Getting Started", "#0.1");
+menuItemAdd("Animating", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Quick Explanation of Vertex Animation", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Standard Animations", "#0.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Firing Animation", "#0.2.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Alt Firing Animation", "#0.2.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Select and Deselect Animations", "#0.2.2.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Looping Animations", "#0.2.3");
+menuItemAdd("Exporting Your Animations", "#0.3");
+menuItemAdd("Exporting Your Select and Deselect Animations", "#0.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Select/Deselect Naming Conventions", "#0.4.1");
+menuItemAdd("Exporting the Still Animation", "#0.5");
+menuItemAdd("Related Topics", "#0.6");
+menuItemAdd("Discussion", "#0.7");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=3D_Studio_Max_Weapon_Modeling_And_Import">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=3D_Studio_Max_Weapon_Modeling_And_Import">View other revisions</a><br>Last edited December 17, 2005 19:30 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=3D_Studio_Max_Weapon_Modeling_And_Import">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/3D_Studio_Max_Weapon_Modeling_And_Import">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I don't need to test my programs. I have an error-correcting modem.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

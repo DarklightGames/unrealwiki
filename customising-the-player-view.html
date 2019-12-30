@@ -1,0 +1,189 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Customising The Player View</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Customising_The_Player_View; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Customising The Player View">Customising The Player View</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Customising the Player View</h2>
+<p>Before we get into the real meat of how to fix the player views we need to understand the code that is already there.  Grasping the link between the posessed pawn (stored in the Pawn attribute) and the current view target (held in the ViewTarget attribute) is essential to obtaining the desired effects.  Before we go any further lets recap on a few of the attributes of the PlayerController.</p>
+<dl><dt>Pawn</dt><dd>This is the Pawn that the player has <em class="em1">possessed</em>.  A possessed pawn is controlled by the player.  The pawn class occupied by the player makes callbacks to the PlayerController in use to determine what should happen when the player attempts to make the pawn perform an action (run forwards, change weapon etc).</dd><dt>ViewTarget</dt><dd>The view target is used to determine what the player sees.  Nominally the view target is the actor displayed at the center of the current view.  The most important thing to remember about the view target is that it does not have to be the same object at the possessed pawn.</dd><dt>Rotation</dt><dd>This is the rotation of the PlayerController class itself, as set by the SetRotation() function.  This is invariably set by the PlayerMove() functions of the PlayerController class.  This is used by the CalcBehindView() and CalcFirstPersonView() functions in the determination of the view rotation.</dd></dl>
+<p>In order to set the player view to that of your chosing you will need to perform the following steps.</p>
+<ol><li>Create a new game type class and reference your player controller within the <em class="em1">PlayerControllerClassName</em> property.</li>
+<li>Create a player controller class that will implement your shiny view.</li>
+<li>Override the <em class="em1">PlayerCalcView()</em> function in the player controller class to set the view you want.</li>
+</ol>
+<h3><a name="0.1.1"></a>Create a Game Type Class</h3>
+<p>Assuming that your new game type is going to be based on a deathmatch game, you could use the following code.  The important thing to note is the mechanism by which the custom PlayerController class is referenced.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> ViewTestGame <span class="uscript-keyword">extends</span> xDeathMatch<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">DefaultProperties</span> 
+<span class="uscript-operator">{</span>
+     PlayerControllerClassName<span class="uscript-operator">=</span><span class="uscript-string">"ViewTest.ViewTestPlayerController"</span> <span class="uscript-comment">// This is the important line</span>
+<span class="uscript-operator">}</span></pre><p>Simply save the code as /UT2003/ViewTest/Classes/ViewTestGame.uc and you should be well away.  You will also need to create a ViewTest.int file.</p>
+<h3><a name="0.1.2"></a>Creating the Player Controller Class</h3>
+<p>This is where the real work is done.  Since we have already created our game class and named the player controller class we are going to create we had better keep the same name.  The following code will allow us to play around.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> ViewTestPlayerController <span class="uscript-keyword">extends</span> xGame<span class="uscript-operator">.</span>xPlayer<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> Actor myTarget<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span>  targetIsMyTarget<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// The player view is determined by this function.</span>
+<span class="uscript-keyword">function</span> <span class="uscript-keyword">event</span> PlayerCalcView<span class="uscript-operator">(</span><span class="uscript-keyword">out</span> actor ViewActor<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> vector CameraLocation<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> rotator CameraRotation <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PlayerCalcView<span class="uscript-operator">(</span> ViewActor<span class="uscript-operator">,</span> CameraLocation<span class="uscript-operator">,</span> CameraRotation <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// Locates the dummy view target object set up on the map - in my case I used a blue flag decoration.</span>
+<span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> actor newTarget<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> newTarget<span class="uscript-operator">,</span> <span class="uscript-name">'newView'</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        myTarget <span class="uscript-operator">=</span> newTarget<span class="uscript-operator">;</span>
+        SetViewTarget<span class="uscript-operator">(</span> newTarget <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// The following function allows us to switch between a view target of the player pawn and the dummy view target.</span>
+<span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> ViewTest<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> targetIsMyTarget <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        SetViewTarget<span class="uscript-operator">(</span> myTarget <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span> <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+        SetViewTarget<span class="uscript-operator">(</span> Pawn <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    targetIsMyTarget <span class="uscript-operator">=</span> <span class="uscript-operator">!</span>targetIsMyTarget<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.1.3"></a>Overriding the PlayerCalcView() Function</h3>
+<p>I'm not going to provide any code in here (well, maybe a bit) as setting the rotation and location of the view is as easy as setting the output variables CameraRotation and CameraLocation.  I will say that the purpose of the ViewActor output variable is still a bit of a mystery - but it might be there to support setting the view the player sees when the player has died or other similar function.  The following guidelines seem to hold true.</p>
+<ul><li>In order to fix the view rotation and still allow the possessed pawn to be controlled you can set the CameraRotation to a fixed value and set the ViewTarget to the possessed pawn.</li>
+<li>It's generally better to use the Rotation property of the controller than either the Pawn.Rotation or ViewTarget.Rotation properties as this takes network issues into account.</li>
+<li>The ViewTarget can be any object of type Actor.</li>
+<li>The player can only possess Pawns </li>
+<li>Explicitly set bBehindView to true to remove the floating player weapon (if it appears in thrid person view).</li>
+</ul>
+<h2><a name="0.2"></a>Related Pages</h2>
+<ul><li><a href="playercontroller.html">PlayerController</a> &ndash; A discussion on Player Controllers and how to make them do what you want.</li>
+</ul>
+<h2><a name="0.3"></a>Questions and Discussion</h2>
+<p><em class="em2">EntropicLqd:</em> I realise that there is some duplication between this page and the <a href="playercontroller.html">PlayerController</a> page but I'll worry about that when I'm happy with the entire piece.  The information overload section isn't quite complete as I've not finished commenting the code.</p>
+<h2><a name="0.4"></a>Information Overload Section</h2>
+<p>Here's a quick run down of some of the things I did while working out how it all worked.  A lot of it is fairly redundant, but nonetheless was somewhat amusing.</p>
+<h3><a name="0.4.1"></a>A Quick Experiment</h3>
+<p>In order to explore the default behaviour of the ViewTarget and Pawn we shall created a small map with a single player start and a static decoration.  I gave the static decoration a tag of <em class="em1">newView</em> and placed it near the player start, facing it.  I then went on to create my own game type (called ViewTestGame), and my own player controller class.  The code is fairly self explanatory and shown above.</p>
+<p>OK, if you can be bothered to repeat the experiment (or even if you can) here's what you'll find.</p>
+<p>Prior to the game starting you'll see that the view is centered on the decoration.  This is because the PostBeingPlay() function sets the view target of the controller to be that of the decoration.  However, once in the game you'll be playing as normal and you'll be able to run around the map in both first person and third person (using the <em class="em1">behindview</em> console command) views.</p>
+<p>When viewing the player from the first person, position your player such that the decoration is "looking" at you.  Then enter the command <em class="em1">ViewTest</em> at the console.  You should see the view change and with luck you'll be able to see your player.  If you can't see your player use the view test to toggle the view back to the first person perspectivew of your player and reposition yourself so you can be seen.  You should notice three things.</p>
+<ul><li>You still have complete control over your player pawn, you can make him look up and down, run, jump, fire weapons, everything that you would normally be able to do.</li>
+<li>Your view into the world is completely fixed in the direction the decoration happens to be facing.  You cannot change the view at all (although altering the FOV will work).</li>
+<li>Not only can you see your player pawn, but you can also see the weapon your player currently has selected floating next to the player.  As the pawn moves around the weapon also moves around with it &ndash; sort of.</li>
+</ul>
+<p>Now switch to the third person perspective by entering <em class="em1">behindview 1</em> at the console.  You should notice the following things.</p>
+<ul><li>Your view has pulled back slightly.</li>
+<li>The floating weapon has vanished into thin air.</li>
+<li>Your view now rotates as you look around with the mouse.</li>
+<li>You still have full normal control over the player pawn.</li>
+</ul>
+<p>It's all interesting stuff as it gives us a basis for working through the code and figuring out what's going on.  The view the player sees is ultimately controlled by the <em class="em1">PlayerCalcView()</em> function.  Control this and you can make them look anywhere you want to.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Customising the Player View", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Create a Game Type Class", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Creating the Player Controller Class", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Overriding the PlayerCalcView() Function", "#0.1.3");
+menuItemAdd("Related Pages", "#0.2");
+menuItemAdd("Questions and Discussion", "#0.3");
+menuItemAdd("Information Overload Section", "#0.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>A Quick Experiment", "#0.4.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Customising_The_Player_View">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Customising_The_Player_View">View other revisions</a><br>Last edited September 18, 2006 2:02 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Customising_The_Player_View">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Customising_The_Player_View">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Cogito, ergo sum
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

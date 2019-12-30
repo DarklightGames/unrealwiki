@@ -1,0 +1,366 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: VitalOverdose/SFX Painful</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=VitalOverdose/SFX_Painful; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="vitaloverdose.html">VitalOverdose</a>/<a href="http://wiki.beyondunreal.com/wiki?back=VitalOverdose/SFX+Painful">SFX Painful</a></h1>
+	<div class="wiki"><div class="classpath"><img src="shared//gameicons/icon-ut2004.png"> <a href="unreal-tournament-2004.html">UT2004</a> :: <a href="actor.html">Actor</a> &gt;&gt; <a href="emitter.html">Emitter</a> &gt;&gt;SFX_painful (Package: custom)<br></div>
+<pre class="paraverbatim"> </pre><p>by <a href="vitaloverdose.html">VitalOverdose</a></p>
+<p>Part of  <a href="vitaloverdose-vitals-pro-ma.html">Vital'sPMT</a></p>
+<h3><a name="0.0.1"></a>Overview</h3>
+<p>This is a custom emitter actor that can track up to 20 particles from 1 of its emitters (ActiveEmitterNumb) and cause pain to any pawn they collide with. Using an iterator in this way to scan the particles locations is fairly stressful to the CPU so I've capped the particles to 20. Its totally untested as yet as to how many can be tracked without out any significant drop in game play speed. If anyone does get round to testing it please let me know.</p>
+<p>Properties</p>
+<p>Note any changes to the properties will have to be made in the default properties by the mapper. Although you could write a custom spawner that can set the properties as the emitters are spawned (you cant change MaxParticles this way its a constant)</p>
+<pre class="paraverbatim">       
+ ActiveEmitterNumb        access by DefaultProperties - The number of the emitter that is to be tracked.   
+ TimerFrequency           access by DefaultProperties - The Scanning frequency capped to 0.1 of a second max 
+                                                       (10x Scans a second);            
+ ScanSize                 access by DefaultProperties - the scan radius for each particle
+ TheDamageType            access by DefaultProperties - The damagetype to apply on contact with a pawn
+ DamageToVec              access by DefaultProperties - The damage amount for vehicles
+ DamageToPawn             access by DefaultProperties - The damage amount for xpawns
+ DamageToMonster          access by DefaultProperties - The Damage Amount for monsters
+ VecCollisionFx           access by DefaultProperties - The Collision FX for vehicles
+ PawnCollisionFx          access by DefaultProperties - The Collision FX for xpawns
+ MonsterCollisionFx       access by DefaultProperties - The Collision FX for monsters
+ VecCollisionSound        access by DefaultProperties - The collision Sound For vehicles
+ PawnCollisionSound       access by DefaultProperties - The collision Sound For xpawns
+ MonsterCollisionSound    access by DefaultProperties - The collision Sound For monsters</pre><h3><a name="0.0.2"></a>Simulated Function PostBeginPlay()</h3>
+<p>OK here is where the capping takes place any value set outside the range of the programmer has set results in the value being set at its max for the scan size and for its min on the timerfrequency.</p>
+<p>The call to destroy the actor if set wrong may seem a little harsh but its not possible to alter the maxparticle count after game-play has started as its a constant variable;</p>
+<p>The timer is started at the end of this function. Set to run continuously being called every <em class="em2">timerFrequency</em> seconds. This is of course the 'Scan Rate' for the tracked particles.</p>
+<pre class="uscript"><span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">Function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ 
+ <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> Emitters<span class="uscript-operator">[</span>ActiveEmitterNumb<span class="uscript-operator">]</span><span class="uscript-operator">.</span>MaxParticles <span class="uscript-operator">&gt;</span> <span class="uscript-number">20</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ScanSize <span class="uscript-operator">&lt;</span> <span class="uscript-number">64</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     ScanSize<span class="uscript-operator">=</span><span class="uscript-number">64</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>TimerFrequency <span class="uscript-operator">&lt;</span> <span class="uscript-number">0.1</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     TimerFrequency <span class="uscript-operator">=</span> <span class="uscript-number">0.1</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    
+ SetTimer<span class="uscript-operator">(</span> TimerFrequency <span class="uscript-operator">,</span> <span class="uscript-keyword">true</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.3"></a>Simulated Function Timer()</h3>
+<p>Every time this function is called (once every Timerfrequency Seconds)  the particles from the tracked emitter have their locations scanned with an iterator for any pawns. If one is found the valid ref for the pawn is bundled together with the velocity the particle was traveling at x 500 and set to the function <em class="em2">ProcessCollision()</em> </p>
+<pre class="uscript"><span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">Function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> Pawn           FoundPawn<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">Local</span> <span class="uscript-type">Int</span>            Counter<span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> Counter<span class="uscript-operator">=</span><span class="uscript-number">0</span> <span class="uscript-operator">;</span> Counter <span class="uscript-operator">&lt;</span> Emitters<span class="uscript-operator">[</span>ActiveEmitterNumb<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Particles<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">;</span> Counter<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>
+     <span class="uscript-operator">{</span>
+      <span class="uscript-keyword">foreach</span> visiblecollidingActors<span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-name">'Pawn'</span><span class="uscript-operator">,</span> FoundPawn <span class="uscript-operator">,</span> ScanSize <span class="uscript-operator">,</span> Emitters<span class="uscript-operator">[</span>ActiveEmitterNumb<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Particles<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Location <span class="uscript-operator">)</span>
+              <span class="uscript-operator">{</span>
+               ProcessCollision <span class="uscript-operator">(</span>FoundPawn <span class="uscript-operator">,</span>Emitters<span class="uscript-operator">[</span>ActiveEmitterNumb<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Particles<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Velocity<span class="uscript-operator">*</span><span class="uscript-number">500</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+              <span class="uscript-operator">}</span>
+     <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.4"></a>Simulated Function ProcessCollision(Pawn CollidedWith, Vector ParticleMomentum)</h3>
+<p>Here the valid ref of the pawn the particle came in contact with is received along with a slightly increased velocity which comes in the form of a vector. Here the ProcessCollision is really just dealing out the pain ,sound and FX to the unlucky pawn who came in contact with the particle. As there's 3 different possible sets of sounds ,pain amount and fx (one of each for xpawn , monster and vec) it results in 3 lots of code. Ive used local variables to store what has to be played , spawned and ..er applied for each eventuality and then just applied it to one set of actions. This is about the only thing i could come up with to make this function slightly more efficient the just writing out 3 lots of the same code. If you know of a more efficient way of doing it please let me know. CaseSwitch may be more efficient IDK i haven't got round to using it yet.</p>
+<pre class="uscript"><span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">function</span> ProcessCollision<span class="uscript-operator">(</span>Pawn CollidedWith<span class="uscript-operator">,</span> vector Particlemomentum<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-keyword">Local</span> <span class="uscript-type">Int</span>            ThePain<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> Emitter        SpawnedFX<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> Sound          CollisionSound<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-keyword">Class</span><span class="uscript-operator">&lt;</span>emitter<span class="uscript-operator">&gt;</span> Collisionfxclass<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>CollidedWith<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Vehicle'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>DamageTovec <span class="uscript-operator">!=</span><span class="uscript-number">0</span> <span class="uscript-operator">)</span><span class="uscript-operator">)</span>     
+   <span class="uscript-operator">{</span>
+    ThePain <span class="uscript-operator">=</span> DamageTovec<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>VecCollisionSound<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+       <span class="uscript-operator">{</span>
+        CollisionSound<span class="uscript-operator">=</span>VecCollisionSound<span class="uscript-operator">;</span>
+       <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> VecCollisionFx <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+       <span class="uscript-operator">{</span>
+        Collisionfxclass <span class="uscript-operator">=</span> VecCollisionFx<span class="uscript-operator">;</span>
+       <span class="uscript-operator">}</span>
+   <span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">else</span>
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>CollidedWith<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'monster'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>DamageTomonster <span class="uscript-operator">!=</span><span class="uscript-number">0</span> <span class="uscript-operator">)</span><span class="uscript-operator">)</span> 
+   <span class="uscript-operator">{</span>
+    ThePain <span class="uscript-operator">=</span> DamageTomonster<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>MonsterCollisionSound<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+       <span class="uscript-operator">{</span>
+        CollisionSound<span class="uscript-operator">=</span>MonsterCollisionSound<span class="uscript-operator">;</span>
+       <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> VecCollisionFx <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+       <span class="uscript-operator">{</span>
+        Collisionfxclass <span class="uscript-operator">=</span> MonsterCollisionFx<span class="uscript-operator">;</span>
+       <span class="uscript-operator">}</span>
+   <span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">else</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>CollidedWith<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'xPawn'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>DamageToPawn <span class="uscript-operator">!=</span><span class="uscript-number">0</span> <span class="uscript-operator">)</span><span class="uscript-operator">)</span>    
+    <span class="uscript-operator">{</span>
+     ThePain <span class="uscript-operator">=</span> DamageToPawn<span class="uscript-operator">;</span>
+     <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>VecCollisionSound<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+         CollisionSound<span class="uscript-operator">=</span>PawnCollisionSound<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+     <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PawnCollisionFx <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+         Collisionfxclass <span class="uscript-operator">=</span> PawnCollisionFx<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+   <span class="uscript-operator">}</span>
+    
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> CollisionSound <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>   <span class="uscript-comment">// dealing out the pain,the fx,and the sound</span>
+    <span class="uscript-operator">{</span>
+     CollidedWith<span class="uscript-operator">.</span>PlaySound<span class="uscript-operator">(</span> CollisionSound <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Collisionfxclass <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     SpawnedFX <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span>Collisionfxclass<span class="uscript-operator">,</span>CollidedWith<span class="uscript-operator">,</span><span class="uscript-operator">,</span>CollidedWith<span class="uscript-operator">.</span>location<span class="uscript-operator">,</span>CollidedWith<span class="uscript-operator">.</span>rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>     
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> ThePain <span class="uscript-operator">!=</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     CollidedWith<span class="uscript-operator">.</span>TakeDamage<span class="uscript-operator">(</span> DamageToPawn<span class="uscript-operator">,</span> Instigator<span class="uscript-operator">,</span> CollidedWith<span class="uscript-operator">.</span>Location <span class="uscript-operator">,</span> Particlemomentum<span class="uscript-operator">,</span> TheDamageType <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.5"></a>The Complete Script</h3>
+<p>Here is the completed script for now;-</p>
+<pre class="uscript"><span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// SFX_Painful.</span>
+<span class="uscript-comment">//=============================================================================</span>
+ <span class="uscript-keyword">class</span> SFX_Painful <span class="uscript-keyword">extends</span> emitter
+<span class="uscript-keyword">Placeable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span>    <span class="uscript-type">int</span>                    TotalParticles<span class="uscript-operator">;</span>      <span class="uscript-comment">// The mapper has no access to these</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span>                    ActiveEmitterNumb<span class="uscript-operator">;</span>   <span class="uscript-comment">// The mapper has no access to this property</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span>                    TimerFrequency<span class="uscript-operator">;</span>      <span class="uscript-comment">// The mapper has no access to this property</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span>                    DamageToPawn<span class="uscript-operator">;</span>        <span class="uscript-comment">// The mapper has no access to this property</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span>                    DamageToVec<span class="uscript-operator">;</span>         <span class="uscript-comment">// The mapper has no access to this property </span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span>                    DamageToMonster<span class="uscript-operator">;</span>     <span class="uscript-comment">// The mapper has no access to this property </span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span>                  ScanSize<span class="uscript-operator">;</span>            <span class="uscript-comment">// The mapper has no access to this property </span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">Class</span><span class="uscript-operator">&lt;</span>DamageType<span class="uscript-operator">&gt;</span>      TheDamageType<span class="uscript-operator">;</span>       <span class="uscript-comment">// The mapper has no access to this property </span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">class</span> <span class="uscript-operator">&lt;</span>emitter<span class="uscript-operator">&gt;</span>        MonsterCollisionFx<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">class</span> <span class="uscript-operator">&lt;</span>emitter<span class="uscript-operator">&gt;</span>        VecCollisionFx<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">class</span> <span class="uscript-operator">&lt;</span>emitter<span class="uscript-operator">&gt;</span>        PawnCollisionFx<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> sound                  PawnCollisionSound<span class="uscript-operator">;</span>  
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> Sound                  VecCollisionSound<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> Sound                  MonsterCollisionSound<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">Function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ 
+ <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> Emitters<span class="uscript-operator">[</span>ActiveEmitterNumb<span class="uscript-operator">]</span><span class="uscript-operator">.</span>MaxParticles <span class="uscript-operator">&gt;</span> <span class="uscript-number">20</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ScanSize <span class="uscript-operator">&lt;</span> <span class="uscript-number">64</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     ScanSize<span class="uscript-operator">=</span><span class="uscript-number">64</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>TimerFrequency <span class="uscript-operator">&lt;</span> <span class="uscript-number">0.1</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     TimerFrequency <span class="uscript-operator">=</span> <span class="uscript-number">0.1</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    
+ SetTimer<span class="uscript-operator">(</span> TimerFrequency <span class="uscript-operator">,</span> <span class="uscript-keyword">true</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">Function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> Pawn           FoundPawn<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">Local</span> <span class="uscript-type">Int</span>            Counter<span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> Counter<span class="uscript-operator">=</span><span class="uscript-number">0</span> <span class="uscript-operator">;</span> Counter <span class="uscript-operator">&lt;</span> Emitters<span class="uscript-operator">[</span>ActiveEmitterNumb<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Particles<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">;</span> Counter<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>
+     <span class="uscript-operator">{</span>
+      <span class="uscript-keyword">foreach</span> visiblecollidingActors<span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-name">'Pawn'</span><span class="uscript-operator">,</span> FoundPawn <span class="uscript-operator">,</span> ScanSize <span class="uscript-operator">,</span> Emitters<span class="uscript-operator">[</span>ActiveEmitterNumb<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Particles<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Location <span class="uscript-operator">)</span>
+              <span class="uscript-operator">{</span>
+               ProcessCollision <span class="uscript-operator">(</span>FoundPawn <span class="uscript-operator">,</span>Emitters<span class="uscript-operator">[</span>ActiveEmitterNumb<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Particles<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Velocity<span class="uscript-operator">*</span><span class="uscript-number">500</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+              <span class="uscript-operator">}</span>
+     <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">function</span> ProcessCollision<span class="uscript-operator">(</span>Pawn CollidedWith<span class="uscript-operator">,</span> vector Particlemomentum<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-keyword">Local</span> <span class="uscript-type">int</span>            ThePain<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> emitter        SpawnedFX<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> sound          CollisionSound<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>emitter<span class="uscript-operator">&gt;</span> Collisionfxclass<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>CollidedWith<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Vehicle'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>DamageTovec    <span class="uscript-operator">!=</span><span class="uscript-number">0</span> <span class="uscript-operator">)</span><span class="uscript-operator">)</span>     
+   <span class="uscript-operator">{</span>
+    ThePain <span class="uscript-operator">=</span> DamageTovec<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>VecCollisionSound<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+       <span class="uscript-operator">{</span>
+        CollisionSound<span class="uscript-operator">=</span>VecCollisionSound<span class="uscript-operator">;</span>
+       <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> VecCollisionFx <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+       <span class="uscript-operator">{</span>
+        Collisionfxclass <span class="uscript-operator">=</span> VecCollisionFx<span class="uscript-operator">;</span>
+       <span class="uscript-operator">}</span>
+   <span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">else</span>
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>CollidedWith<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'monster'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>DamageTomonster <span class="uscript-operator">!=</span><span class="uscript-number">0</span> <span class="uscript-operator">)</span><span class="uscript-operator">)</span> 
+   <span class="uscript-operator">{</span>
+    ThePain <span class="uscript-operator">=</span> DamageTomonster<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>MonsterCollisionSound<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+       <span class="uscript-operator">{</span>
+        CollisionSound<span class="uscript-operator">=</span>MonsterCollisionSound<span class="uscript-operator">;</span>
+       <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> VecCollisionFx <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+       <span class="uscript-operator">{</span>
+        Collisionfxclass <span class="uscript-operator">=</span> MonsterCollisionFx<span class="uscript-operator">;</span>
+       <span class="uscript-operator">}</span>
+   <span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">else</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>CollidedWith<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'xPawn'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>DamageToPawn <span class="uscript-operator">!=</span><span class="uscript-number">0</span> <span class="uscript-operator">)</span><span class="uscript-operator">)</span>    
+    <span class="uscript-operator">{</span>
+     ThePain <span class="uscript-operator">=</span> DamageToPawn<span class="uscript-operator">;</span>
+     <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>VecCollisionSound<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+         CollisionSound<span class="uscript-operator">=</span>PawnCollisionSound<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+     <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PawnCollisionFx <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+         Collisionfxclass <span class="uscript-operator">=</span> PawnCollisionFx<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+   <span class="uscript-operator">}</span>
+    
+                                               <span class="uscript-comment">// dealing out the pain,the fx,and the sound</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> CollisionSound <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     CollidedWith<span class="uscript-operator">.</span>PlaySound<span class="uscript-operator">(</span> CollisionSound <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Collisionfxclass <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     SpawnedFX <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span>Collisionfxclass<span class="uscript-operator">,</span>CollidedWith<span class="uscript-operator">,</span><span class="uscript-operator">,</span>CollidedWith<span class="uscript-operator">.</span>location<span class="uscript-operator">,</span>CollidedWith<span class="uscript-operator">.</span>rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>     
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> ThePain <span class="uscript-operator">!=</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     CollidedWith<span class="uscript-operator">.</span>TakeDamage<span class="uscript-operator">(</span> DamageToPawn<span class="uscript-operator">,</span> Instigator<span class="uscript-operator">,</span> CollidedWith<span class="uscript-operator">.</span>Location <span class="uscript-operator">,</span> Particlemomentum<span class="uscript-operator">,</span> TheDamageType <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>There may be some small alterations to this at a later date i have a few ideas of making it run more efficiantly so more than 20 particles can be tracked. But its all going to need some fairly detailed testing before i make any serious changes to the way it works.</p>
+<pre class="paraverbatim"> </pre><h2><a name="0.1"></a>Related Topics </h2>
+<ul><li><a href="vitaloverdose-sfx-painful.html">VitalOverdose/SFX Painful</a></li>
+<li><a href="vitaloverdose-sfx-vectelepo.html">VitalOverdose/SFX VecTeleporting</a></li>
+<li><a href="vitaloverdose-sfx-pawntelep.html">VitalOverdose/SFX PawnTeleporting</a></li>
+<li><a href="vitaloverdose-sfx-triggerin.html">VitalOverdose/SFX Triggering</a></li>
+<li><a href="vitaloverdose-sfx-boosting.html">VitalOverdose/SFX Boosting</a></li>
+<li><a href="vitaloverdose-sfx-monstersp.html">VitalOverdose/SFX MonsterSpawning</a></li>
+<li><a href="vitaloverdose-sfx-healing.html">VitalOverdose/SFX Healing</a></li>
+<li><a href="vitaloverdose-inventoryflar.html">VitalOverdose/InventoryFlare</a>   </li>
+</ul>
+<h2><a name="0.2"></a>Discussion</h2>
+<p><em class="em2">DaWrecka:</em> Have you considered making the emitter work server-side? If you could guarantee running on the server (which is required for dealing damage anyway) you can easily use Level.ControllerList. Since it's a linked list of nothing but controllers, you can vastly reduce the number of actors iterated through, since you can be sure that if Controller.Pawn != None, then the Pawn is a) a Pawn and not something else (obviously), b) Valid, and thus c) fair game. You're also not iterating through actors you wouldn't want damaged anyway like static meshes and brushes. The load will reduce vastly and consequently allow you to either use no cap or a much higher cap.</p>
+<hr class="thin"><p><a href="category-custom-class.html">Category Custom Class</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Overview", "#0.0.1");
+menuItemAdd("Simulated Function PostBeginPlay()", "#0.0.2");
+menuItemAdd("Simulated Function Timer()", "#0.0.3");
+menuItemAdd("Simulated Function ProcessCollision(Pawn CollidedWith, Vector ParticleMomentum)", "#0.0.4");
+menuItemAdd("The Complete Script", "#0.0.5");
+menuItemAdd("Related Topics ", "#0.1");
+menuItemAdd("Discussion", "#0.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="vitaloverdose.html">VitalOverdose</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=VitalOverdose/SFX_Painful">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=VitalOverdose/SFX_Painful">View other revisions</a><br>Last edited October 1, 2006 21:49 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=VitalOverdose/SFX_Painful">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/VitalOverdose/SFX_Painful">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Once I get that upgrade to 36-hour days, I will tackle that. (Mychaeel)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

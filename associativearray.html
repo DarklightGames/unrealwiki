@@ -1,0 +1,193 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: AssociativeArray</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=AssociativeArray; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=AssociativeArray">AssociativeArray</a></h1>
+	<div class="wiki"><p>When learning <a href="unrealscript.html">UnrealScript</a> I found the idea of operator overloading very enticing. These pages describe the design and implementation of an associative array, providing (I hope) some insight into how UnrealScript operators are overloaded.</p>
+<h2><a name="0.1"></a>Overview  </h2>
+<p>An <span class="interwiki"><img 
+      alt="Wikipedia logo"
+      title="Wikipedia"
+      src="shared//InterWiki-Wikipedia.png">&nbsp;<a href="http://www.wikipedia.com/wiki/associative array">associative array</a></span> is an array that is indexed by something <em class="em1">other</em> than a sequence of small integers. C++ has <tt>std::map</tt>, Perl has its <tt>hash</tt>, and JavaScript has its structures. The power of these structures is that using them is <em class="em1">just like</em> using a regular array; assuming that <tt>AA</tt> is a <tt>map</tt> from string to string, the following C++ code should make sense:</p>
+<pre class="uscript">AA<span class="uscript-operator">[</span><span class="uscript-string">"pet"</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-string">"dog"</span><span class="uscript-operator">;</span>
+AA<span class="uscript-operator">[</span><span class="uscript-string">"car"</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-string">"jaguar"</span><span class="uscript-operator">;</span>
+AA<span class="uscript-operator">[</span><span class="uscript-string">"programming language"</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-string">"UnrealScript"</span><span class="uscript-operator">;</span>
+
+cout <span class="uscript-operator">&lt;&lt;</span> AA<span class="uscript-operator">[</span><span class="uscript-string">"programming language"</span><span class="uscript-operator">]</span> <span class="uscript-operator">&lt;&lt;</span> endl<span class="uscript-operator">;</span>   <span class="uscript-comment">// C++ output statement</span></pre><pre class="paraverbatim"> </pre><p>Associative arrays are powerful data structures; much of their power stems from their "natural" notation. <a href="unrealscript.html">UnrealScript's</a> <a href="scripting-operators.html">operator overloading</a> provides a chance to implement associative arrays with a "natural" notation (for an appropriately loose definition of natural).</p>
+<p>This proof of concept focuses on implementing an associative array indexed by strings and containing strings. There are three phases of implementation:</p>
+<ul><li>Selecting a <a href="associativearray-datastruct.html">datastructure</a> to associate key/value pairs of strings.</li>
+<li>Selecting <a href="associativearray-operatorov.html">operators</a> to wrap the data structure in "natural" notation.</li>
+<li>Making <a href="associativearray-iterator.html">iterators</a> to traverse the contents of the associative array.</li>
+</ul>
+<p>The remainder of this page discusses the high-level design of the each phase; the copiously commented code for each phase is included in its own subpage.</p>
+<h2><a name="0.2"></a>Data Structure</h2>
+<p>An associtive array associates keys drawn from some domain with values drawn from some domain. Thus it is a mapping from key space to value space.</p>
+<p>Depending on speed requirements and restrictions placed on key and vlaue types, such a mapping could be implemented with a hard-coded function, a linear array of pairs, a haash table of pairs, or a tree of pairs. This is a representative rather than an exhaustive list.</p>
+<p>A function is a good, compact representation if it is easy to hard-code the relationship between key and value types. Not an option for associative arrays.</p>
+<p>A linear list of pairs could be implemented as a <a href="dynamic-array.html">UT2K3 dynamic array</a> of structs or objects. An unsorted list is easy to insert into but costly to look things up in; a sorted list is faster for lookup but more costly for insertion. The overall cost is just a little bit too high; besides, this is a chance to play with <a href="unrealscript.html">UnrealScript</a> and that seems too easy.</p>
+<p>A hash table is fast for lookup and insertion but a good hash function is difficult to design. Also, a hash table makes in-order traversal of the data difficult without another data structure.</p>
+<p>A binary search tree is a good compromise with fairly fast insertion, fairly fast lookup, and easy ordered traversal (assuming the tree is close to balanced). Other, more complex, trees can make tight guarantees on performance. This proof of concept uses a simple BST</p>
+<p>For demonstration purposes, we use strings as both keys and values. The only real restriction on the types is that key values must be comparable with <tt>&lt;</tt> and <tt>==</tt>. The ordering requirement can be relaxed with a linear list or hash table.</p>
+<p><a href="associativearray-datastruct.html">/DataStructure</a> presents the code that implements the BST nodes and BST. The decision was made that an associative array is single valued.</p>
+<h2><a name="0.3"></a>Operators </h2>
+<p>After implementing an association between keys and values, it is necessary to wrap calls to the impelemntation functions in <a href="unrealscript.html">UnrealScript</a> operators.</p>
+<h3><a name="0.3.1"></a>Diversion: Picking Operators</h3>
+<p>By preference, overloading either <tt>[]</tt> or <tt>()</tt> would make the associative array notation most natural. <a href="unrealscript.html">UnrealScript</a> does not treat either pair of symbols as an operator so they cannot be overloaded. The UT <a href="dynamic-array.html">dynamic arrays</a> implementation used the <tt>&lt;&lt;</tt> operator for assignment and paired the <tt>&lt;&gt;</tt> operators for refering to elements in the array. Treating the <tt>&lt;</tt> and <tt>&gt;</tt> operators as angle brackets produced a pleasing appearance as in</p>
+<pre class="uscript"><span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>best<span class="uscript-operator">&lt;</span><span class="uscript-string">"movie"</span><span class="uscript-operator">&gt;</span> <span class="uscript-operator">==</span> <span class="uscript-string">"Road Warrior"</span><span class="uscript-operator">)</span>
+  log<span class="uscript-operator">(</span><span class="uscript-string">"Programmer is too old."</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>The only thing missing is an assignment operator. Using the left-shift operator breaks the "naturalness" of using the associative array as an array and the assignment operator (<tt>=</tt>) is not available for redefinition. <tt>&gt;=</tt> (greater-than equals) <em class="em1">is</em> available and it can make for some very "natural" assignment statements:</p>
+<pre class="uscript">best<span class="uscript-operator">&lt;</span><span class="uscript-string">"icecream"</span><span class="uscript-operator">&gt;=</span> <span class="uscript-string">"vanilla"</span><span class="uscript-operator">;</span>
+best<span class="uscript-operator">&lt;</span><span class="uscript-string">"vegetable"</span><span class="uscript-operator">&gt;=</span> <span class="uscript-string">"califlower"</span><span class="uscript-operator">;</span>
+best<span class="uscript-operator">&lt;</span><span class="uscript-string">"stooge"</span><span class="uscript-operator">&gt;=</span> <span class="uscript-string">"moe"</span><span class="uscript-operator">;</span></pre><p>There cannot be a space between the <tt>&gt;</tt> and the <tt>=</tt> (it has to parse as a single symbol for the operator look up to trigger) but that is a small price to pay for something that looks like assignment to an element in an array.</p>
+<hr class="thin"><p>Now for the hard part: <tt>best&lt;"icecream</tt> can be the prefix to either an assignment statement <em class="em1">or</em> an evaluation of a value in the associative array. In computer science speak, we want <tt>best&lt;"icecream</tt> to represent either an <em class="em1">l-value</em> (left-hand side of an assignment) or an <em class="em1">r-value</em> (right-hand side of an assignemnt statement). Note that <a href="unrealscript.html">UnrealScript</a> has no way of knowing, parsing left-to-right, what the following context of the given prefix is.</p>
+<p>In C++ (and in Perl, under the hood) the problem is solved using <em class="em1">references</em>; the <tt>[]</tt> operator typically returns a reference to the element in the "array" and the compiler can convert a reference (really an l-value) into an r-value at need. <a href="unrealscript.html">UnrealScript</a> has no reference type so that solution is not possible.</p>
+<p>Inspired by the <a href="dynamic-array.html">Dynamic Array</a> for UT, this solution uses a <em class="em1">proxy</em> class. In <a href="dynamic-array.html">Dynamic Array</a> the author uses a special type to represent the indices for setting values; here the prefix expression (the array, the angle bracket, and the key string) will return a type that can behave as either an l-value or an r-value.</p>
+<p><tt>AAProxy</tt> serves this role by keeping track of a location inside an associative array. If it is followed by a <tt>&gt;</tt> it returns the value stored at that location. If it is followed by a <tt>&gt;=</tt> it sets the value at that location to the value of the expression following the operator. Yes, this is far, far too clever to be considered good code; in my humble opinion, it is also far, far too clever to be considered bad code.</p>
+<h3><a name="0.3.2"></a>Diversion: Operator Precedence</h3>
+<p>Both <a href="operators.html">Operators</a> and <a href="scripting-operators.html">Scripting Operators</a> cover operator precedence. <a href="scripting-operators.html">Scripting Operators</a> does leave the impression that when scripting an operator, the compiler pays attention to the precedence number you set for the operator. This may be the case when defining operators that are not already part of the system. It is most definitely <em class="em2">not</em> the case when defining (or should that be redefining) operators that already exist. So the <tt>&gt;=</tt> operator has precedence 24 as defined in <tt>Object.uc</tt> and any version I define will have that same precedence <em class="em1">no matter what number I put as its precedence</em>.</p>
+<p>This became a problem when defining the <tt>&gt;=</tt> operator. It is supposed to be an assignment operator so it should bind very loosely. In particular, it should probably bind more loosely than <tt>$</tt> so that the following line assigns "golden-delicious" to the associative array entry "apple":</p>
+<pre class="uscript">AA<span class="uscript-operator">&lt;</span><span class="uscript-string">"apple"</span><span class="uscript-operator">&gt;=</span><span class="uscript-string">"golden"</span><span class="uscript-operator">$</span><span class="uscript-string">"-delicious"</span><span class="uscript-operator">;</span></pre><p>Unfortunately, the line assigns the value "golden" to the entry, concatenates "golden" with "-delicious" and throws away the value of the expression. The following parentheses are necessary:</p>
+<pre class="uscript">AA<span class="uscript-operator">&lt;</span><span class="uscript-string">"apple"</span><span class="uscript-operator">&gt;=</span><span class="uscript-operator">(</span><span class="uscript-string">"golden"</span><span class="uscript-operator">$</span><span class="uscript-string">"-delicious"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><hr class="thin"><p><a href="associativearray-operatorov.html">/OperatorOverloading</a> presents the code for the <tt>AAProxy</tt> and the demonstration commandlet. <a href="unrealscript.html">UnrealScript</a> restricts the use of overloaded operators to the decendents of the class defining them; without access to <tt>Object</tt>, the associative array operators are defined in the commandlet. This limits the usefulness of the associative array.</p>
+<h2><a name="0.4"></a>Iterator</h2>
+<p>It is not possible to write an <a href="unrealscript.html">UnrealScript</a> <a href="iterator.html">iterator</a> in script alone. Without access to the engine source code, the <tt>AssociativeArrayIterator</tt> was designed to emulate the iterators in C++'s STL. So the iterator is a class that behaves like a pointer at a location in the associative array. The "only" way to get an iterator is through a call to an iterator generating function of an associated array: <tt>AssociativeArray::begin()</tt> or <tt>AssociativeArray::end()</tt>.</p>
+<p><tt>begin()</tt> returns an <tt>AssociativeArrayIterator</tt> that refers to the first element in the array (if there is one) and <tt>end()</tt> returns an iterator that is one <em class="em1">past</em> the last element in the associative array (this is C++'s standard asymetry). With appropriately defined <tt>++</tt> and <tt>!=</tt> operators for iterators, the following loop should visit every element in the associative array:</p>
+<pre class="uscript"><span class="uscript-keyword">local</span> AssociatveArrayIterator it<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>it <span class="uscript-operator">=</span> best<span class="uscript-operator">.</span>begin<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> it <span class="uscript-operator">!=</span> best<span class="uscript-operator">.</span>end<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-operator">++</span>i<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-comment">// visit element referred to by it here</span>
+<span class="uscript-operator">}</span></pre><p>We need some manner of "visiting" the elements. One solution is to use two functions, one to get the key and the other to get the value at the location referred to by the iterator. This is done here with <tt>first()</tt> and <tt>second()</tt> so to log the key/value pairs, the following code works:</p>
+<pre class="uscript"><span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>it <span class="uscript-operator">=</span> best<span class="uscript-operator">.</span>begin<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> it <span class="uscript-operator">!=</span> best<span class="uscript-operator">.</span>end<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-operator">++</span>i<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    log<span class="uscript-operator">(</span>it<span class="uscript-operator">.</span>first<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">$</span> <span class="uscript-string">"/"</span> <span class="uscript-operator">$</span> it<span class="uscript-operator">.</span>second<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span> <span class="uscript-name">'AssociativeArray'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>This is nice. Could we use operators? Sure. Assume you only need the value (not the key) associated with each element. Then the following notation works:</p>
+<pre class="uscript"><span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>it <span class="uscript-operator">=</span> best<span class="uscript-operator">.</span>begin<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> it <span class="uscript-operator">!=</span> best<span class="uscript-operator">.</span>end<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-operator">++</span>i<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    log<span class="uscript-operator">(</span><span class="uscript-string">"Value: "</span> <span class="uscript-operator">$</span> <span class="uscript-operator">&lt;</span>it<span class="uscript-operator">&gt;</span> <span class="uscript-operator">,</span> <span class="uscript-name">'AssociativeArray'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>But what if we wanted to append "'s" to every value. Could it be done? With the mechanics we have already developed, having <tt>&lt;it</tt> return an <tt>AAProxy</tt>, it can use the same r-value/l-value determination used for regular array access with iterators. So you can add the "'s" with the following code:</p>
+<pre class="uscript"><span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>it <span class="uscript-operator">=</span> best<span class="uscript-operator">.</span>begin<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> it <span class="uscript-operator">!=</span> best<span class="uscript-operator">.</span>end<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-operator">++</span>i<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-operator">&lt;</span>it<span class="uscript-operator">&gt;=</span> <span class="uscript-operator">&lt;</span>it<span class="uscript-operator">&gt;</span> <span class="uscript-operator">$</span> <span class="uscript-string">"'s"</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p><a href="associativearray-iterator.html">/Iterator</a> presents the code for the iterator and its supporting stack. The actual algorithm for traversing a BST is described in the embedded comments.</p>
+<h2><a name="0.5"></a>Extensions </h2>
+<p>It may be hard to believe after looking at the amount written about this silly proof of concept but there is more that could be done. The operations on the array could be extended (but notation would have to be found), iterators could be extended (forward and reverse, iterator invalidation), and it could easily be made more efficient.</p>
+<p>The BST implementation could be extended with a mechanism for removing nodes. It would be nice to come up with an obvious, natural notation for deleting a node. There is also no way to check whether a given key is in the associative array (no way to differentiate between a stored empty string and a key that is not present).</p>
+<p>The iterator could be more closely associated with the associative array in such a way that the iterator could be invalidated (or corrected, perahps) when the associative array changes. Invalidation could be accomplished with a list of active iterators (iterators on the array) that is checked when the array changes.</p>
+<p>Using <tt>new</tt> is the standard way of allocating binary search tree nodes. In <a href="unrealscript.html">UnrealScript</a> it would be more efficient to maintain a dynamic array of BST nodes; this would be even more advantageous when deletion is possible. The associative array could keep a free list threaded through the dynamic array or it could compact the array on occasion (iterators would have to be invalidated in this case, too).</p>
+<h2><a name="0.6"></a>Related Topics</h2>
+<ul><li><a href="unrealscript.html">UnrealScript</a></li>
+<li><a href="dynamic-array.html">Dynamic Array</a></li>
+<li><a href="operators.html">Operators</a></li>
+<li><a href="scripting-operators.html">Scripting Operators</a></li>
+<li><a href="iterator.html">Iterator</a></li>
+</ul>
+<h2><a name="0.7"></a>Discussion</h2>
+<p><em class="em2">El Muerte TDS:</em> Nice concept, too bad that this adds a lot of overhead. Usualy it's better to just create a Key-Value struct and a dynamic array of this struct. The engine does support associative arrays, it's called Map. But there are no unrealscript bindings for it.</p>
+<p><em class="em3">Bcladd:</em> Of course this adds a great deal of overhead; all the preparation is done so the loop for traversing the structure appears "natural". Only argument against the straight dynamic array of key/value pairs is the cost of lookup and insertion (both O(<em class="em1">n</em>)). Actually, the implementation of associative array (and iterator) could be changed very easily and the operator notation still used. Note that I wrote this implementation before I had ever seen the insides of the engine.</p>
+<p><em class="em2">El Muerte TDS:</em> The cost of lookup and insertion for a dynamic array is less than using object references and function calls in unreal script. Functions have to be lookup in each object before they are executed. </p>
+<p><em class="em3">Bcladd:</em> Point taken: the constant cost of multiple (recursive) function calls from script outweights the asymptotic performance benefits of the binary tree for any realistic number of entries. This really is just a write up of my playing with operator overloading from script. Since I got great pleasure out of the <a href="dynamic-array.html">UT dynamic array</a> code, I thought someone might find the hackery here interesting.</p>
+<p><em class="em2">Mychaeel:</em> El Muerte &ndash; Without wanting to go into details at this time (and without claiming intimate knowledge of the Unreal engine), I am rather sure that function invocations in UnrealScript are constant-time and rather efficient at that.  I expect that after loading an UnrealScript class into memory all function references in function calls are directly resolved as pointers to the C++ "UnrealScript function" objects that are stored as such in UnrealScript code packages; involving any sort of hash or array lookup in calling an UnrealScript function on engine level would strike me as needlessly inefficient.</p>
+<p>Bcladd &ndash; It's a real pity I don't have the time to look into your code right now, but from what I've seen at a first glance I'm pretty intrigued by your approach.  I'll certainly have a closer look when I've got my normal share of free time back.</p>
+<hr class="thin"><script type="text/javascript"><!--
+ menuItemAdd("Overview  ", "#0.1");
+menuItemAdd("Data Structure", "#0.2");
+menuItemAdd("Operators ", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Diversion: Picking Operators", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Diversion: Operator Precedence", "#0.3.2");
+menuItemAdd("Iterator", "#0.4");
+menuItemAdd("Extensions ", "#0.5");
+menuItemAdd("Related Topics", "#0.6");
+menuItemAdd("Discussion", "#0.7");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=AssociativeArray">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=AssociativeArray">View other revisions</a><br>Last edited November 18, 2005 15:23 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=AssociativeArray">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/AssociativeArray">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I search for solutions in this order: Past Code, Unreal Source, Wiki, BUF, groups.yahoo, google, screaming at monitor. (RegularX)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

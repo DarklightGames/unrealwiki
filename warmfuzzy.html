@@ -1,0 +1,133 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: WarmFuzzy</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=WarmFuzzy; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=WarmFuzzy">WarmFuzzy</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Intro</h2>
+<p>Hi there.  WarmFuzzy here.  I started playing with UnrealScript earlier this year using the excellent <a href="libhttp.html">LibHTTP</a> in a proof-of-concept ultra-simple-prototype sort of thingie.  The proof of concept worked, and I've been working on a mod that I intend to tie in with a tick-based strategy game, currently accessible through the web.</p>
+<h2><a name="0.2"></a>About the Mod</h2>
+<p>I ended up biting off a pretty big chunk for my first real project, but I'm coping nicely.  I wanted to take the Onslaught gameplay and add to it a bit.  One of the core concepts to my modifications is the Mobile Headquarters, or MHQ (aka Leviathan aka Mobile Assault Station).  I have made the following changes so far:</p>
+<ol><li>Generators start unlinked to any node</li>
+<li>When an MHQ deploys near a node, that node becomes capturable</li>
+<li>The main cannon of the MHQ now spawns a vehicle that the player selects, and then puts him inside it</li>
+<li>The plasma turrets are now autoturrets</li>
+<li>new players spawn in the MHQ they choose</li>
+</ol>
+<p>In order to accomplish stuff like the above, I had to replicate a function from client to server, replicate a few variables from server to client, and seriously play with the RestartPlayer code, but it is pretty solid.  I have a couple of current problems that perhaps someone could help with <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<h2><a name="0.3"></a>Problems</h2>
+<ol><li>I would like the MHQs to not fire a shot unless they are deployed.  I set all the plasma turret pawns to be !bActive, but the autoturret controllers seem to squeeze off a few shots when another actor first gets close.  Other than that, this seems to work.</li>
+<li>Pursuant to the above, I'd like MHQs to deploy automatically if they are not moved for $some_time.  At first, I thought this would be a simple task.  "All I need to do is set a timer that watches elapsed time without a Location change, and does a GotoState('Deploying') when we've waited long enough."  Boy, I couldn't have been more wrong.  I could see the MHQs logging that they were deployed, but nothing seemed to happen on the client side.</li>
+</ol>
+<p>I read a little more about <a href="replication.html">replication</a> and simulation, paying particular attention to the stuff about simulated states.  "Ahah!  The GotoState() isn't being called on the client because it's happening in a non-simulated function in a non-simulated state!  I'll fix that!"</p>
+<p>To no avail.  Then I thought "Maybe the state code in 'Deploying' needs to be simulated too." I even tried making the 'Deployed' state simulated, then the 'Deployed' state functions, etc etc.</p>
+<p>Now that I've had some time to think this through, I'm going to start from my baseline, working MHQ (that doesn't automatically deploy) and work through the above again, accurately noting what breaks, when, and how.</p>
+<h2><a name="0.4"></a>Current Project</h2>
+<p><a href="http://www.foreververse.com">[FV]</a></p>
+<p>Beware the crappy images/design/etc, we are but two coder-designers with nary a stitch of art sk33lz between us.  _But_ there is a mildly playable and fairly decently documented strategy/political game there, if you're interested in that sort of thing.</p>
+<h2><a name="0.5"></a>Guestbook</h2>
+<p><em class="em2">Tarquin:</em> Hi. Welcome <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<hr class="thin"><p><a href="category-personal-page.html">Category Personal Page</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Intro", "#0.1");
+menuItemAdd("About the Mod", "#0.2");
+menuItemAdd("Problems", "#0.3");
+menuItemAdd("Current Project", "#0.4");
+menuItemAdd("Guestbook", "#0.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=WarmFuzzy">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=WarmFuzzy">View other revisions</a><br>Last edited June 30, 2005 4:51 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=WarmFuzzy">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/WarmFuzzy">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Cogito, ergo sum
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

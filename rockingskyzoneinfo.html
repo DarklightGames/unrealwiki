@@ -1,0 +1,142 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: RockingSkyZoneInfo</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=RockingSkyZoneInfo; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=RockingSkyZoneInfo">RockingSkyZoneInfo</a></h1>
+	<div class="wiki"><div class="classpath"><a href="actor.html">Actor</a> &gt;&gt; <a href="info-ut.html">Info (UT)</a> &gt;&gt; <a href="zoneinfo.html">ZoneInfo</a> &gt;&gt; <a href="skyzoneinfo.html">SkyZoneInfo</a> &gt;&gt; RockingSkyZoneInfo<br></div>
+<p>Once you've set the <tt>bStatic</tt> property of this class to <tt>false</tt> the Sky Zone will rotate about its pitch axis.  The same effect can be achieved by setting a rotation rate on a normal SkyZone object (with a little more flexibility).</p>
+<p>This class is not used in any of the standard UT maps.</p>
+<p>Some Epic maps that use other methods to make the sky move:</p>
+<ul><li>DM-Hyperblast: filthy trick with a <a href="nonsolid.html">nonsolid</a> <a href="mover.html">mover</a> that encloses the SkyZoneInfo. It's made to tilt back and forth continually with a dispatcher looping system (see <a href="trigger-systems.html">Trigger Systems</a>). DM-KGalleon also uses a mover to get that sickening rocking motion.</li>
+<li>DM-Phobos: Sets the physics to <tt>PHYS_Rotating</tt>, bStatic = false, bFixedRoationDir = true, and gives the SkyZone a rate of rotation (RotationRate=(Pitch=37,Yaw=256,Roll=768)). It also gives the SkyZone an (arbitrary) DesiredRotation - this is essential to making the skybox move.  As far as I can tell the skybox will always keep spinning unless <tt>bRotateToDesired</tt> is set to true.  If this is the case then the SkyZone simply rotates to the desired rotation and stops.</li>
+</ul>
+<p>(I'm just putting this here for now, maybe create a page [Building a moving Skybox]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Building_A_Moving_Skybox&referrerid=RockingSkyZoneInfo">?</a> or something later  <em class="em1">Tarquin</em>  )</p>
+<p class="indent1"><i>Might be better to simply add a "making a moving skybox" section to the "how to build a sky box" page I assume we have.  Anyways - back to family misery before they notice I've sneaked in here <img alt=":)" src="emoticons/smile.gif" align="middle"> - <em class="em1">EntropicLqd</em>.</i></p>
+<p class="indent2">Depends how big the page is. Either way is good.  &ndash; <em class="em1">Tarquin</em></p>
+<h2><a name="0.1"></a>Creating a Moving Sky Zone</h2>
+<p>So, you've made a few sky zones and they have been beautiful in their own way but now you feel like a real challenge.  Yes, it's time to add a bit of movement for that "sickening floating in space" type effect.</p>
+<p>There are essentially two ways of creating a movement effect within your sky zone.  One is to make the sky zone object itself move, and the other is to make everything around the sky zone move.</p>
+<h4><a name="0.1.0.1"></a>Making the Sky Zone Rotate</h4>
+<p>In order to make your <a href="skyzoneinfo.html">SkyZoneInfo</a> roate you need to set a number of properties:</p>
+<ul><li>Advanced &rarr; bStatic = <tt>false</tt></li>
+<li>Movement &rarr; Physics = <tt>PHYS_ROTATE</tt></li>
+<li>Movement &rarr; bFixedRotationDir = <tt>true</tt></li>
+<li>Movement &rarr; DesiredRotation = <tt>(0, 0, 4096)</tt> (<i>As far as I can tell the value in here is arbitrary.</i>)</li>
+<li>Movement &rarr; RotationRate = <tt>( <i>pitch</i>, <i>roll</i>, <i>yaw</i> )</tt></li>
+</ul>
+<p>Map that use this technique are DM-Phobos, and CTF-Face.</p>
+<h4><a name="0.1.0.2"></a>Movers in Your Sky Zone</h4>
+<p>Because the area of the map you are using for your Sky Zone is simply another part of the map you are not restricted in the elements you can place in your sky zone area.  One way of adding the illusion of movement to your sky zone is to place the <a href="skyzoneinfo.html">SkyZoneInfo</a> object in the middle of a <a href="mover.html">Mover</a>.  Sheet mover's generally work best for this - but there's no hard and fast rules here.  It's best to use whatever seems appropriate.</p>
+<p>Map that use this teqnique are DM-Hyperblast, and DM-KGalleon.</p>
+<h4><a name="0.1.0.3"></a>Other Methods</h4>
+<p>Use a <a href="rockingskyzoneinfo.html">RockingSkyZoneInfo</a> object as your sky zone, and remember to set the Advanced Properties &gt;&gt; bStatic property to <tt>false</tt>.</p>
+<p>Use an InterpolatingSkyZone<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=InterpolatingSkyZone&referrerid=RockingSkyZoneInfo">?</a> object as your sky zone.  This object loops along a path defined by a number of <a href="interpolationpoint.html">InterpolationPoint</a> objects.  The results can be quite sickening.</p>
+<p><a href="http://www.snout-clan.co.uk/mapsnmods/interpolatingskyzone.zip">http://www.snout-clan.co.uk/mapsnmods/interpolatingskyzone.zip</a></p>
+<p><i><em class="em1">This stuff needs checking but is OK more or less.</em></i></p>
+<h2><a name="0.2"></a>Related Topics</h2>
+<ul><li><a href="skybox.html">SkyBox</a></li>
+</ul>
+<script type="text/javascript"><!--
+ menuItemAdd("Creating a Moving Sky Zone", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Making the Sky Zone Rotate", "#0.1.0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Movers in Your Sky Zone", "#0.1.0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Other Methods", "#0.1.0.3");
+menuItemAdd("Related Topics", "#0.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=RockingSkyZoneInfo">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=RockingSkyZoneInfo">View other revisions</a><br>Last edited July 12, 2004 0:02 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=RockingSkyZoneInfo">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/RockingSkyZoneInfo">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Describe the new page here.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

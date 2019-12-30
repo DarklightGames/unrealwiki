@@ -1,0 +1,485 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: BruteForce/Compiler</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=BruteForce/Compiler; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="bruteforce.html">BruteForce</a>/<a href="http://wiki.beyondunreal.com/wiki?back=BruteForce/Compiler">Compiler</a></h1>
+	<div class="wiki"><pre class="uscript"><span class="uscript-comment">/**
+  Analyse and compile the language (create an AST)
+*/</span>
+<span class="uscript-keyword">class</span> Compiler <span class="uscript-keyword">extends</span> Object <span class="uscript-keyword">dependsOn</span><span class="uscript-operator">(</span>Tokenizer<span class="uscript-operator">)</span> <span class="uscript-keyword">dependsOn</span><span class="uscript-operator">(</span>AST<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// terminals</span>
+<span class="uscript-keyword">const</span> __BEGIN                 <span class="uscript-operator">=</span> <span class="uscript-string">"begin"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __END                   <span class="uscript-operator">=</span> <span class="uscript-string">"end"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __SEMICOLON             <span class="uscript-operator">=</span> <span class="uscript-string">";"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __VAR                   <span class="uscript-operator">=</span> <span class="uscript-string">"var"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __INTEGER               <span class="uscript-operator">=</span> <span class="uscript-string">"int"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __STRING                <span class="uscript-operator">=</span> <span class="uscript-string">"string"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __FLOAT                 <span class="uscript-operator">=</span> <span class="uscript-string">"float"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __BOOLEAN               <span class="uscript-operator">=</span> <span class="uscript-string">"bool"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __FUNC                  <span class="uscript-operator">=</span> <span class="uscript-string">"function"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __BECOMES               <span class="uscript-operator">=</span> <span class="uscript-string">"="</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __WHILE                 <span class="uscript-operator">=</span> <span class="uscript-string">"while"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __DO                    <span class="uscript-operator">=</span> <span class="uscript-string">"do"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __IF                    <span class="uscript-operator">=</span> <span class="uscript-string">"if"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __THEN                  <span class="uscript-operator">=</span> <span class="uscript-string">"then"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __ELSE                  <span class="uscript-operator">=</span> <span class="uscript-string">"else"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __LT                    <span class="uscript-operator">=</span> <span class="uscript-string">"&lt;"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __LE                    <span class="uscript-operator">=</span> <span class="uscript-string">"&lt;="</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __GT                    <span class="uscript-operator">=</span> <span class="uscript-string">"&gt;"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __GE                    <span class="uscript-operator">=</span> <span class="uscript-string">"&gt;="</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __EQ                    <span class="uscript-operator">=</span> <span class="uscript-string">"=="</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __NE                    <span class="uscript-operator">=</span> <span class="uscript-string">"!="</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __AND                   <span class="uscript-operator">=</span> <span class="uscript-string">"&amp;&amp;"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __OR                    <span class="uscript-operator">=</span> <span class="uscript-string">"||"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __PLUS                  <span class="uscript-operator">=</span> <span class="uscript-string">"+"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __MINUS                 <span class="uscript-operator">=</span> <span class="uscript-string">"-"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __MULTIPLY              <span class="uscript-operator">=</span> <span class="uscript-string">"*"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __DIVIDE                <span class="uscript-operator">=</span> <span class="uscript-string">"/"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __MOD                   <span class="uscript-operator">=</span> <span class="uscript-string">"%"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __NOT                   <span class="uscript-operator">=</span> <span class="uscript-string">"!"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __LBRACK                <span class="uscript-operator">=</span> <span class="uscript-string">"("</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __RBRACK                <span class="uscript-operator">=</span> <span class="uscript-string">")"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __TRUE                  <span class="uscript-operator">=</span> <span class="uscript-string">"true"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __FALSE                 <span class="uscript-operator">=</span> <span class="uscript-string">"false"</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">const</span> __COMMA                 <span class="uscript-operator">=</span> <span class="uscript-string">","</span><span class="uscript-operator">;</span>
+<span class="uscript-comment">// terminals -- end</span></pre><p>All the terminals as defined in the <a href="bruteforce-ebnf.html">grammar</a>, it's best to use constant instead of inline strings because this prevents you from making typos and it will also make it easier to change terminal. For example if you want to use <em class="em2">{</em> ... <em class="em2">}</em> instead of <em class="em2">begin</em> ... <em class="em2">end</em> you can simply change the constant value.</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> <span class="uscript-keyword">private</span> Tokenizer t<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">private</span> AST a<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> Compile<span class="uscript-operator">(</span>Tokenizer tokenizer<span class="uscript-operator">,</span> AST tree<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  t <span class="uscript-operator">=</span> tokenizer<span class="uscript-operator">;</span>
+  a <span class="uscript-operator">=</span> tree<span class="uscript-operator">;</span>
+  _program<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>The main function of this class, this will start the parsing of the code.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> has<span class="uscript-operator">(</span>Tokenizer<span class="uscript-operator">.</span>tokenType token<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">string</span> text<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>text <span class="uscript-operator">==</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span> <span class="uscript-keyword">return</span> token <span class="uscript-operator">~=</span> t<span class="uscript-operator">.</span>currentToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">return</span> <span class="uscript-operator">(</span>text <span class="uscript-operator">~=</span> t<span class="uscript-operator">.</span>tokenString<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>token <span class="uscript-operator">~=</span> t<span class="uscript-operator">.</span>currentToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>The function has checks if the current token has the correct type, and optional if the token string is equal to the input. </p>
+<pre class="uscript"><span class="uscript-keyword">function</span> require<span class="uscript-operator">(</span>Tokenizer<span class="uscript-operator">.</span>tokenType token<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">string</span> text<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> res<span class="uscript-operator">;</span>
+  res <span class="uscript-operator">=</span> has<span class="uscript-operator">(</span>token<span class="uscript-operator">,</span> text<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>res<span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    Warn<span class="uscript-operator">(</span><span class="uscript-string">"Expected ("</span><span class="uscript-operator">$</span>token<span class="uscript-operator">$</span><span class="uscript-string">") \""</span><span class="uscript-operator">$</span>text<span class="uscript-operator">$</span><span class="uscript-string">"\" but has ("</span><span class="uscript-operator">$</span>t<span class="uscript-operator">.</span>currentToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">$</span><span class="uscript-string">") \""</span><span class="uscript-operator">$</span>t<span class="uscript-operator">.</span>tokenString<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">$</span><span class="uscript-string">"\" @ "</span><span class="uscript-operator">$</span>t<span class="uscript-operator">.</span>currentLine<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">$</span><span class="uscript-string">","</span><span class="uscript-operator">$</span>t<span class="uscript-operator">.</span>currentPos<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">assert</span><span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>Require does the same as <em class="em1">has()</em> except that if the result is false it will abort the whole compilation. <em class="em1">Require</em> is used to check for tokens that have to be there in order to for the language to be conform to the specification. </p>
+<p>Currently it uses <em class="em1">assert()</em> to stop the compilation, this will ofcourse stop the whole system, you may want to write a diffirent instruction here to stop compiling.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> _program<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  _declarations<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  _statements<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  require<span class="uscript-operator">(</span>TT_EOF<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>The initial rule, note that it requires an end of file at the end, this is to ensure that no more declarations are possible after the main code has been finished.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> _declarations<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __VAR<span class="uscript-operator">)</span> <span class="uscript-operator">||</span> has<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __FUNC<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __VAR<span class="uscript-operator">)</span><span class="uscript-operator">)</span> _declaration<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __FUNC<span class="uscript-operator">)</span><span class="uscript-operator">)</span> _function<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    require<span class="uscript-operator">(</span>TT_Literal<span class="uscript-operator">,</span> __SEMICOLON<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>The declaration block, a declaration is either a <em class="em2">var</em> or <em class="em2">function</em>, while this is true we keep reading declarations. When it's not true it has to be a statement.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> _declaration<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  a<span class="uscript-operator">.</span>AddRoot<span class="uscript-operator">(</span>NT_Keyword<span class="uscript-operator">,</span> __VAR<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// __VAR</span>
+  _type<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  require<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  a<span class="uscript-operator">.</span>AddChild<span class="uscript-operator">(</span>NT_Identifier<span class="uscript-operator">,</span> t<span class="uscript-operator">.</span>tokenString<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  a<span class="uscript-operator">.</span>CloseRoot<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>A variable declaration, we start by adding a new root node to the <a href="bruteforce-ast.html">/AST</a>, next we decent into the type specification where type is added to the current root node. Next we should get the variable identifier which we also add to the current root node.</p>
+<p>At the end we close the current root node, everything required for a <em class="em1">var</em> AST node is not in the root node so we can close it to start with a new one.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> _type<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __INTEGER<span class="uscript-operator">)</span><span class="uscript-operator">)</span> 
+  <span class="uscript-operator">{</span>
+    a<span class="uscript-operator">.</span>AddChild<span class="uscript-operator">(</span>NT_Keyword<span class="uscript-operator">,</span> __INTEGER<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __STRING<span class="uscript-operator">)</span><span class="uscript-operator">)</span> 
+  <span class="uscript-operator">{</span>
+    a<span class="uscript-operator">.</span>AddChild<span class="uscript-operator">(</span>NT_Keyword<span class="uscript-operator">,</span> __STRING<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __FLOAT<span class="uscript-operator">)</span><span class="uscript-operator">)</span> 
+  <span class="uscript-operator">{</span>
+    a<span class="uscript-operator">.</span>AddChild<span class="uscript-operator">(</span>NT_Keyword<span class="uscript-operator">,</span> __FLOAT<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __BOOLEAN<span class="uscript-operator">)</span><span class="uscript-operator">)</span> 
+  <span class="uscript-operator">{</span>
+    a<span class="uscript-operator">.</span>AddChild<span class="uscript-operator">(</span>NT_Keyword<span class="uscript-operator">,</span> __BOOLEAN<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+    Warn<span class="uscript-operator">(</span><span class="uscript-string">"Unrecognised type:"</span><span class="uscript-operator">@</span>t<span class="uscript-operator">.</span>tokenString<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">@</span><span class="uscript-string">"@ "</span><span class="uscript-operator">$</span>t<span class="uscript-operator">.</span>currentLine<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">$</span><span class="uscript-string">","</span><span class="uscript-operator">$</span>t<span class="uscript-operator">.</span>currentPos<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">assert</span><span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>We only support four types at the moment, if the encounter something else it's wrong and we abort the compilation.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> _function<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  a<span class="uscript-operator">.</span>AddRoot<span class="uscript-operator">(</span>NT_Keyword<span class="uscript-operator">,</span> __FUNC<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// function</span>
+  _type<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  require<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  a<span class="uscript-operator">.</span>AddRoot<span class="uscript-operator">(</span>NT_Identifier<span class="uscript-operator">,</span> t<span class="uscript-operator">.</span>tokenString<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// function name</span>
+  t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  require<span class="uscript-operator">(</span>TT_Literal<span class="uscript-operator">,</span> __LBRACK<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  _arguments<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  
+  require<span class="uscript-operator">(</span>TT_Literal<span class="uscript-operator">,</span> __RBRACK<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  a<span class="uscript-operator">.</span>CloseRoot<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  _declarations<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  require<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __BEGIN<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  _statements<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  require<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __END<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  a<span class="uscript-operator">.</span>CloseRoot<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>We received a function declarations, we start by adding a new root node of type <em class="em1">function</em>. Just like with the variable declaration we add the type of the function to the root node and the name of the function. But, unlike with the variable name we make the function name the new root node, to this root node we will add the function arguments. </p>
+<p>After we added the arguments, if any, we close the root node (the function name) and we start adding a declarations and statements block to the function root node.</p>
+<p>Note that I don't add the <em class="em2">begin</em>, <em class="em2">end</em>, etc to the AST. We don't need these things in the AST because in the AST we know how many <em class="em1">children</em> a block has.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> _arguments<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>has<span class="uscript-operator">(</span>TT_Literal<span class="uscript-operator">,</span> __RBRACK<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    a<span class="uscript-operator">.</span>AddRoot<span class="uscript-operator">(</span>NT_Keyword<span class="uscript-operator">,</span> __VAR<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    _type<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    require<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    a<span class="uscript-operator">.</span>AddChild<span class="uscript-operator">(</span>NT_Identifier<span class="uscript-operator">,</span> t<span class="uscript-operator">.</span>tokenString<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    a<span class="uscript-operator">.</span>CloseRoot<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Literal<span class="uscript-operator">,</span> __SEMICOLON<span class="uscript-operator">)</span><span class="uscript-operator">)</span> t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>The function arguments are just defined as local variable of the function, the only reason we added them as children of the function name instead of the function because it's easy to assign values to those when we call the function.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> _statements<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span><span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __END<span class="uscript-operator">)</span> <span class="uscript-operator">||</span> has<span class="uscript-operator">(</span>TT_EOF<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    _statement<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    require<span class="uscript-operator">(</span>TT_Literal<span class="uscript-operator">,</span> __SEMICOLON<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>Statements are read until the end of file.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> _statement<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __WHILE<span class="uscript-operator">)</span><span class="uscript-operator">)</span> _whiledo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __IF<span class="uscript-operator">)</span><span class="uscript-operator">)</span> _ifthenelse<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">)</span><span class="uscript-operator">)</span> _assignment<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+    Warn<span class="uscript-operator">(</span><span class="uscript-string">"Unrecognised statement:"</span><span class="uscript-operator">@</span>t<span class="uscript-operator">.</span>tokenString<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">@</span><span class="uscript-string">"@ "</span><span class="uscript-operator">$</span>t<span class="uscript-operator">.</span>currentLine<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">$</span><span class="uscript-string">","</span><span class="uscript-operator">$</span>t<span class="uscript-operator">.</span>currentPos<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">assert</span><span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>As defined in the <a href="bruteforce-ebnf.html">/EBNF</a> a statement can be a <em class="em2">while ... do</em>, an <em class="em2">if ... then ... else</em> or an assignment. When we have something else as the current token something has to be wrong and we stop with compiling.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> _whiledo<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  a<span class="uscript-operator">.</span>AddRoot<span class="uscript-operator">(</span>NT_Keyword<span class="uscript-operator">,</span> __WHILE<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// WHILE</span>
+  _expr<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  require<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __DO<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  _codeblock<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  a<span class="uscript-operator">.</span>CloseRoot<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>A while to begins with adding the new root node of type <em class="em1">while</em>, after that we add a child node with the expression, and a child node of a codeblock (these child nodes are added by the called functions)</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> _codeblock<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __BEGIN<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    a<span class="uscript-operator">.</span>AddRoot<span class="uscript-operator">(</span>NT_Keyword<span class="uscript-operator">,</span> __BEGIN<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    _statements<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    require<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __END<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    a<span class="uscript-operator">.</span>CloseRoot<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+    _statement<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>If the code block starts with a begin we open a new root node because a code block may only add one child node to the current root node. This new root node will then get more than a group of statements and an <em class="em2">end</em> which will close the root node.</p>
+<p>If the code block doesn't start with a <em class="em2">begin</em> we asume it's just a single statement.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> _ifthenelse<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  a<span class="uscript-operator">.</span>AddRoot<span class="uscript-operator">(</span>NT_Keyword<span class="uscript-operator">,</span> __IF<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// IF</span>
+  _expr<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  require<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __THEN<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  _codeblock<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __ELSE<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    _codeblock<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  a<span class="uscript-operator">.</span>CloseRoot<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>This works just like the <em class="em2">while ... do</em> except that there might be a third child to be added to the <em class="em2">if</em> root node, the <em class="em2">else</em> is optional.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> _assignment<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> tmp<span class="uscript-operator">;</span>
+  tmp <span class="uscript-operator">=</span> t<span class="uscript-operator">.</span>tokenString<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Literal<span class="uscript-operator">,</span> __LBRACK<span class="uscript-operator">)</span><span class="uscript-operator">)</span> _functioncall<span class="uscript-operator">(</span>tmp<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+    a<span class="uscript-operator">.</span>AddRoot<span class="uscript-operator">(</span>NT_Keyword<span class="uscript-operator">,</span> __BECOMES<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    a<span class="uscript-operator">.</span>AddChild<span class="uscript-operator">(</span>NT_Identifier<span class="uscript-operator">,</span> tmp<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    require<span class="uscript-operator">(</span>TT_Operator<span class="uscript-operator">,</span> __BECOMES<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    _expr<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    a<span class="uscript-operator">.</span>CloseRoot<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>An assignment starts with a identifier, however this identifier can be a variable or a function, so we have to take a look at the next token if it's either a <em class="em2">becomes</em> or a left bracket. For this we had to make the compiler look a head one token (e.g. LL(2)).</p>
+<p>If it's really an assigment we will add a new root node of type <em class="em2">becomes</em> and we assign the childs identifier and expression to that node.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> _expr<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  _boolex<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>This is an nice example of a useless looking function, but it might be usefull in the future when we want to add an operator with a lower precendance than the boolean expressions.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> _boolex<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>  
+  _accum<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Operator<span class="uscript-operator">,</span> __LT<span class="uscript-operator">)</span><span class="uscript-operator">||</span>has<span class="uscript-operator">(</span>TT_Operator<span class="uscript-operator">,</span> __LE<span class="uscript-operator">)</span><span class="uscript-operator">||</span>has<span class="uscript-operator">(</span>TT_Operator<span class="uscript-operator">,</span> __GT<span class="uscript-operator">)</span><span class="uscript-operator">||</span>has<span class="uscript-operator">(</span>TT_Operator<span class="uscript-operator">,</span> __GE<span class="uscript-operator">)</span><span class="uscript-operator">||</span>
+    has<span class="uscript-operator">(</span>TT_Operator<span class="uscript-operator">,</span> __EQ<span class="uscript-operator">)</span><span class="uscript-operator">||</span>has<span class="uscript-operator">(</span>TT_Operator<span class="uscript-operator">,</span> __NE<span class="uscript-operator">)</span><span class="uscript-operator">||</span>has<span class="uscript-operator">(</span>TT_Operator<span class="uscript-operator">,</span> __AND<span class="uscript-operator">)</span><span class="uscript-operator">||</span>has<span class="uscript-operator">(</span>TT_Operator<span class="uscript-operator">,</span> __OR<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    a<span class="uscript-operator">.</span>AddRoot<span class="uscript-operator">(</span>NT_Keyword<span class="uscript-operator">,</span> t<span class="uscript-operator">.</span>tokenString<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    a<span class="uscript-operator">.</span>SwitchNode<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    _accum<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    a<span class="uscript-operator">.</span>CloseRoot<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>Well here is where it's get difficult, we first decent into the _accum() function which will finally result into a child node that can have a complete sub tree, or just a single child node. After that we might get one or more boolean operators. This is the infix notation, but we want to make our AST prefix. So we add a new root node for the current boolean operator and switch that root node around with the last child node in the current root.</p>
+<p>Let's take the following code: <code>x = 1 + 2</code></p>
+<table class="paratable-border" border=0 cellspacing=0 cellpadding=0><tr valign=top><td align=center><em class="em1">before swap</em></td>
+<td align=center><em class="em1">after swap</em></td>
+</tr>
+<tr valign=top><td><pre class="paraverbatim"> =
+  x
+  1
+  +
+   2</pre></td>
+<td><pre class="paraverbatim"> =
+  x
+  +
+   1
+   2</pre></td>
+</tr>
+</table>
+<p>The same applies to the following few functions below</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> _accum<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  _mult<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Operator<span class="uscript-operator">,</span> __PLUS<span class="uscript-operator">)</span><span class="uscript-operator">||</span>has<span class="uscript-operator">(</span>TT_Operator<span class="uscript-operator">,</span> __MINUS<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    a<span class="uscript-operator">.</span>AddRoot<span class="uscript-operator">(</span>NT_Keyword<span class="uscript-operator">,</span> t<span class="uscript-operator">.</span>tokenString<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    a<span class="uscript-operator">.</span>SwitchNode<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    _mult<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    a<span class="uscript-operator">.</span>CloseRoot<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> _mult<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  _preop<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Operator<span class="uscript-operator">,</span> __MULTIPLY<span class="uscript-operator">)</span><span class="uscript-operator">||</span>has<span class="uscript-operator">(</span>TT_Operator<span class="uscript-operator">,</span> __DIVIDE<span class="uscript-operator">)</span><span class="uscript-operator">||</span>has<span class="uscript-operator">(</span>TT_Operator<span class="uscript-operator">,</span> __MOD<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    a<span class="uscript-operator">.</span>AddRoot<span class="uscript-operator">(</span>NT_Keyword<span class="uscript-operator">,</span> t<span class="uscript-operator">.</span>tokenString<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    a<span class="uscript-operator">.</span>SwitchNode<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    _preop<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    a<span class="uscript-operator">.</span>CloseRoot<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> _preop<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> open<span class="uscript-operator">;</span>
+  open <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Operator<span class="uscript-operator">,</span> __MINUS<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    open <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    a<span class="uscript-operator">.</span>AddRoot<span class="uscript-operator">(</span>NT_Keyword<span class="uscript-operator">,</span> __MINUS<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    a<span class="uscript-operator">.</span>AddChild<span class="uscript-operator">(</span>NT_Integer<span class="uscript-operator">,</span> <span class="uscript-string">"0"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Operator<span class="uscript-operator">,</span> __NOT<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    open <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    a<span class="uscript-operator">.</span>AddRoot<span class="uscript-operator">(</span>NT_Keyword<span class="uscript-operator">,</span> __NOT<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  _operand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>open<span class="uscript-operator">)</span> a<span class="uscript-operator">.</span>CloseRoot<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>For the <em class="em2">-</em> preoperator I've added a hack, it will be inserted into the AST as if it was <code>0 - operand</code></p>
+<pre class="uscript"><span class="uscript-keyword">function</span> _operand<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> tmp<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __TRUE<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    a<span class="uscript-operator">.</span>AddChild<span class="uscript-operator">(</span>NT_Boolean<span class="uscript-operator">,</span> t<span class="uscript-operator">.</span>tokenString<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">,</span> __FALSE<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    a<span class="uscript-operator">.</span>AddChild<span class="uscript-operator">(</span>NT_Boolean<span class="uscript-operator">,</span> t<span class="uscript-operator">.</span>tokenString<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Identifier<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>    
+    tmp <span class="uscript-operator">=</span> t<span class="uscript-operator">.</span>tokenString<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Literal<span class="uscript-operator">,</span> __LBRACK<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-comment">// is function ??</span>
+    <span class="uscript-operator">{</span>
+      _functioncall<span class="uscript-operator">(</span>tmp<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+      a<span class="uscript-operator">.</span>AddChild<span class="uscript-operator">(</span>NT_Identifier<span class="uscript-operator">,</span> tmp<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Integer<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    a<span class="uscript-operator">.</span>AddChild<span class="uscript-operator">(</span>NT_Integer<span class="uscript-operator">,</span> t<span class="uscript-operator">.</span>tokenString<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_String<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    a<span class="uscript-operator">.</span>AddChild<span class="uscript-operator">(</span>NT_String<span class="uscript-operator">,</span> t<span class="uscript-operator">.</span>tokenString<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Float<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    a<span class="uscript-operator">.</span>AddChild<span class="uscript-operator">(</span>NT_Float<span class="uscript-operator">,</span> t<span class="uscript-operator">.</span>tokenString<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Literal<span class="uscript-operator">,</span> __LBRACK<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    _expr<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    require<span class="uscript-operator">(</span>TT_Literal<span class="uscript-operator">,</span> __RBRACK<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+    Warn<span class="uscript-operator">(</span><span class="uscript-string">"Unexpected token:"</span><span class="uscript-operator">@</span>t<span class="uscript-operator">.</span>tokenString<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">@</span><span class="uscript-string">"@ "</span><span class="uscript-operator">$</span>t<span class="uscript-operator">.</span>currentLine<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">$</span><span class="uscript-string">","</span><span class="uscript-operator">$</span>t<span class="uscript-operator">.</span>currentPos<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">assert</span><span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>The operand function is the finaly stop, first we check if the the identifier is either a <em class="em2">true</em> or a <em class="em2">false</em>, if not we check if the identifier is either a variable or a function call. If it's just a variable we will add a normal child to the current root node.</p>
+<p>Next we check if it is a inline constant, or an expression between braces.</p>
+<p>If everything fails we have something wierd and stop compiling.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> _functioncall<span class="uscript-operator">(</span><span class="uscript-type">string</span> <span class="uscript-type">name</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  a<span class="uscript-operator">.</span>AddRoot<span class="uscript-operator">(</span>NT_Function<span class="uscript-operator">,</span> <span class="uscript-type">name</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>has<span class="uscript-operator">(</span>TT_Literal<span class="uscript-operator">,</span> __RBRACK<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    _expr<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>has<span class="uscript-operator">(</span>TT_Literal<span class="uscript-operator">,</span> __COMMA<span class="uscript-operator">)</span><span class="uscript-operator">)</span> t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  require<span class="uscript-operator">(</span>TT_Literal<span class="uscript-operator">,</span> __RBRACK<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  t<span class="uscript-operator">.</span>nextToken<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// __RBRACK</span>
+  a<span class="uscript-operator">.</span>CloseRoot<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>If it's a function call we will add a new root with the function name, and give it the type <em class="em1">function</em>, as child nodes we add the arguments passed to it. And finally close the function call root.</p>
+<hr class="thin"></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="bruteforce.html">BruteForce</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=BruteForce/Compiler">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=BruteForce/Compiler">View other revisions</a><br>Last edited April 23, 2003 9:16 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=BruteForce/Compiler">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/BruteForce/Compiler">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>My program doesn't have bugs. It just develops random features.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

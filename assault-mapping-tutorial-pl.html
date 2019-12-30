@@ -1,0 +1,144 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Assault Mapping Tutorial/PlayerStarts And The PlayerSpawnManager</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Assault_Mapping_Tutorial/PlayerStarts_And_The_PlayerSpawnManager; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="assault-mapping-tutorial.html">Assault Mapping Tutorial</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Assault+Mapping+Tutorial/PlayerStarts+And+The+PlayerSpawnManager">PlayerStarts And The PlayerSpawnManager</a></h1>
+	<div class="wiki"><hr class="thin"><p>This page is a section of the <a href="assault-mapping-tutorial.html">Assault Mapping Tutorial</a>.  If you have arrived here from some other place, this page will likely make more sense if you start at the above link and read the tutorial through from beginning to end.</p>
+<p><em class="em2">Previous Section: <a href="assault-mapping-tutorial-cr.html">/Creating a Destroyable Objective</a></em></p>
+<p><em class="em2">Next Section: <a href="assault-mapping-tutorial-at.html">/Attacking and Defending</a></em></p>
+<hr class="thin"><h2><a name="0.1"></a>PlayerStarts and the PlayerSpawnManager</h2>
+<p>Now it's time to set up how we're going to get players into this nice map of ours.  As you may have guessed, we're going to need two groups of PlayerStarts, one for the attackers and one for the defenders.</p>
+<p>It's important to note here that you want to have at least as many PlayerSpawns in any given spot as you will have people on one team.  If there are too few PlayerSpawns for a given team somewhere, this can cause a bottleneck in gameplay, annoying players, and potentially throwing off the balance of the game.  The game engine will also complain bitterly in the log if it can't find somewhere to spawn somebody when it needs to.</p>
+<h2><a name="0.2"></a>Attacker Spawns</h2>
+<p>Let's start by placing some PlayerStarts for the attacking team at the far end of the valley from the base.  It's always better to have too many than too few, and we've deliberately left ourselves a reasonable space for it, so let's put down around 16 or so (16 for each side, so our map can support up to 32 players in a game, which should be more than people will usually want to do).  The next thing we want to do is set the PlayerStart&rarr;TeamNumber property on all of the PlayerStarts in this group to a unique number.  In this case, they should all default to 0, which is fine for here, so we'll leave that (but it doesn't hurt to check to make sure they all actually are set to 0).</p>
+<p>That should do it, right?  Well, not quite.  Unlike for other game types, PlayerSpawn management for Assault is a bit more complicated.  Despite the name of the property, in Assault, PlayerStart&rarr;TeamNumber does not actually determine what team uses a PlayerStart.  Instead, the TeamNumber property is actually used to group PlayerStarts into groups (all PlayerStarts with the same TeamNumber are in the same group), and we use another actor to actually control how each group is used (you'll see why this is useful later).  What we need to do now is tell the game that "PlayerSpawns in group 0" (that is, all the PlayerSpawns in the game with a TeamNumber of 0) should be where the attacking team initially spawns.  To do this, <a href="add-an-actor.html">add an Actor</a>&gt;&gt;Info&gt;&gt;PlayerSpawnManager<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=PlayerSpawnManager&referrerid=Assault_Mapping_Tutorial/PlayerStarts_And_The_PlayerSpawnManager">?</a> actor to the map (it doesn't matter where, but put it close to the PlayerSpawns we just created so that it's easy to find later).  Open up the PlayerSpawnManager Properties, and <a href="set-the-following-propertie.html">set the following properties</a>:</p>
+<ul><li>PlayerSpawnManager&rarr;AssaultTeam = EPSM_Attackers</li>
+<li>PlayerSpawnManager&rarr;bEnabled = True</li>
+<li>PlayerSpawnManager&rarr;PlayerStartTeam = 0</li>
+</ul>
+<p>Setting PlayerStartTeam to 0 tells the game that this PlayerSpawnManager will affect any PlayerSpawns which have a TeamNumber of 0.  bEnabled tells it that this group of PlayerStarts will be active as soon as the game starts, and setting AssaultTeam to EPSM_Attackers, tells it that the attacking team should spawn here.</p>
+<h2><a name="0.3"></a>Defender Spawns</h2>
+<p>Next, we'll set up the PlayerSpawns for the defenders.  We'll have them spawn on top of the base roof, so go there and put down the same number of PlayerSpawn actors as we gave to the attackers (16).  Now, select all of the defender PlayerSpawns, bring up their properties, and set PlayerSpawn&rarr;TeamNumber to 1.  We now have a group of PlayerSpawns which are part of "group 1" instead of the "group 0" we created for the attackers.</p>
+<p>Now create a PlayerSpawnManager actor for the defending team, somewhere near group 1.  Open up its properties, and set the following:</p>
+<ul><li>PlayerSpawnManager&rarr;AssaultTeam = EPSM_Defenders</li>
+<li>PlayerSpawnManager&rarr;bEnabled = True</li>
+<li>PlayerSpawnManager&rarr;PlayerStartTeam = 1</li>
+</ul>
+<p>Now we have a second PlayerSpawnManager, which affects all PlayerSpawns with a TeamNumber of 1 ("group 1"), is initially active when the game starts, and tells the game that defenders should spawn here.</p>
+<h2><a name="0.4"></a>Equipment and Supplies</h2>
+<p>With a lot of other game types, obtaining the right weapons and ammo are part of the challenge, and thus they're scattered about the map in various locations where people can track down and grab what they want.  Assault is a timed challenge, however, and spending a lot of time running all over the place to stock up on weapons every time you die before you can rejoin the assault is both annoying to players and problematic to game flow, so most Assault maps make a point of placing most of the stuff players are going to need conveniently right next to where they're going to spawn, so they can load up quickly and get back into the fight.</p>
+<p>The compact way to go about this for weapons and ammo is to use a few <a href="weaponlocker.html">WeaponLocker</a>s at each spawn area with appropriate weapons for the task at hand.  You will generally want at least a couple of WeaponLockers in each spawn area, so that everybody isn't rushing to one point as soon as they spawn and causing a big traffic accident.  For each of our two spawn areas, let's <a href="add-an-actor.html">add an Actor</a>&gt;&gt;Pickup&gt;&gt;WeaponLocker or two.  For each WeaponLocker, we will now need to tell the game what type of weapons we should be supplying.  To do this, open the properties, go to the WeaponLocker&rarr;Weapons property, and <a href="extend-the-dynamic-array.html">extend the dynamic array</a> for each weapon type you want the given locker to carry.  For each new array entry, select the WeaponClass property and choose what type of weapon to use (Note: "SniperRifle" is actually the Lightning Gun.  The real sniper rifle is "ClassicSniperRifle").  That's about all there is to it!</p>
+<p>You will want to put a bit of thought into what weapons you will have in which lockers, of course.  The choice of available weapons can affect not only the enjoyability of the game for the players but how the balance works out (for example, if the defenders all get rocket launchers and shock rifles, and the attackers only get bio rifles, it can make it a lot harder for the attackers to actually get close enough to complete the objective.  This isn't necessarily a bad thing, though.  Tweaking available weapons is a good way to make adjustments if you find out that part of your map has balance issues).  You also don't want to just give everybody everything off the bat, because part of Assault is also the challenge of using what you've been given to achieve a goal.  Realism also plays a role too, of course.  What self-respecting army would go in to blow up a blast door but arm their soldiers with only flak cannons?</p>
+<p>Also, keep in mind that just because you've got WeaponLockers in place doesn't mean you can't hide a goodie or two elsewhere in the map for people to discover and pick up (such as sticking a Flak Cannon behind the crates in RobotFactory, for example).  Be creative.  Is there some weapon that would be really useful in a particular scenario?  Make people put some effort into finding or obtaining it.</p>
+<p>For the purposes of our map, we will give the attackers:</p>
+<dl><dt>Rocket Launcher</dt><dd>We are going to be blowing things up after all..</dd><dt>Lightning Gun ("SniperRifle" in the properties)</dt><dd>To pick off pesky defenders from a safe distance.</dd><dt>Flak Cannon</dt><dd>Challenging for attacking with, but might be useful to those skilled with it.</dd><dt>Link Gun</dt><dd>Good at doing damage to doors as a backup for the rocket launcher, and a decent short-to-mid range weapon for those who can use it.</dd><dt>Minigun</dt><dd>Just because it's always a fun choice for mowing down opposition.</dd></dl>
+<p>For a little variety, let's give our defenders:</p>
+<dl><dt>Lightning Gun ("SniperRifle")</dt><dd>For picking off pesky attackers as they come over the hill.</dd><dt>Bio Rifle</dt><dd>Very useful for defending things, for those who know how to use it.</dd><dt>Flak Cannon</dt><dd>For those not skilled enough for the Bio Rifle <img alt=":)" src="emoticons/smile.gif" align="middle"></dd><dt>Shock Rifle</dt><dd>Handy for keeping an oncoming horde at a distance.</dd></dl>
+<hr class="thin"><p><em class="em2">Proceed to the next section: <a href="assault-mapping-tutorial-at.html">/Attacking and Defending</a></em></p>
+<hr class="thin"><p>This tutorial was originally written and contributed to the Wiki community by <a href="foogod.html">Foogod</a>.  Questions and comments are welcome!  Please either leave them on my personal page or at the bottom of the relevant tutorial page.  If you see something which is wrong or unclear and you think needs some correction, please feel free to edit the text directly (that's what the Wiki is for!), but please try to keep the tutorial flow intact (no thread discussions in the middle of the tutorial text, please).</p>
+<p>Note: To reduce clutter, comments on the tutorial pages will be periodically moved to the <a href="assault-mapping-tutorial-di.html">/Discussion</a> page.  Look there for older comments and thread discussions.</p>
+<h2><a name="0.5"></a>Comments:</h2>
+<p><em class="em2">Kirk:</em> Not truly related to the topic at hand, but the PlayerSpawnManager<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=PlayerSpawnManager&referrerid=Assault_Mapping_Tutorial/PlayerStarts_And_The_PlayerSpawnManager">?</a> also has something called a ForcedPawnClass. Here you can enter the <a href="pawn.html">Pawn</a> you want the player to spawn as. This is particularly useful to spawn a player as/in a vehicle, most notably an ASVehicle_SpaceFighter<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ASVehicle_SpaceFighter&referrerid=Assault_Mapping_Tutorial/PlayerStarts_And_The_PlayerSpawnManager">?</a>. The spawnmanager assigns the player to a spawn group as described, so the spacefighter spawns at one of the <a href="playerstart.html">PlayerStart</a>s that have that group set as their team number. Don't forget to set OverridePawnClass to ESPM_ForcedPawnClass (or at least I think that is necessary for it to work).</p>
+<script type="text/javascript"><!--
+ menuItemAdd("PlayerStarts and the PlayerSpawnManager", "#0.1");
+menuItemAdd("Attacker Spawns", "#0.2");
+menuItemAdd("Defender Spawns", "#0.3");
+menuItemAdd("Equipment and Supplies", "#0.4");
+menuItemAdd("Comments:", "#0.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="assault-mapping-tutorial.html">Assault Mapping Tutorial</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Assault_Mapping_Tutorial/PlayerStarts_And_The_PlayerSpawnManager">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Assault_Mapping_Tutorial/PlayerStarts_And_The_PlayerSpawnManager">View other revisions</a><br>Last edited June 5, 2007 11:36 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Assault_Mapping_Tutorial/PlayerStarts_And_The_PlayerSpawnManager">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Assault_Mapping_Tutorial/PlayerStarts_And_The_PlayerSpawnManager">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I love the smell of UnrealEd crashing in the morning. (tarquin)</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

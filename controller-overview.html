@@ -1,0 +1,137 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Controller Overview</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Controller_Overview; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Controller Overview">Controller Overview</a></h1>
+	<div class="wiki"><p>A UT200x player is composed of a number of classes that all work together to accept and process input from the player and handle collision with the world.  Bots use much the same system, so processing of AI also takes place (for Bot-specific subclasses; more on that in a minute) within the same code.  What follows is an attempt to explain the different classes involved and how they interact.</p>
+<dl><dt>Controller</dt><dd>The base interface to a pawn.<ul><li>Receives events from the engine that are destined for the <a href="pawn.html">Pawn</a>,</li>
+<li>Handles AI,</li>
+<li>Acts as an animation interface,</li>
+<li>Controllers are partially implemented using native code and have native replication,</li>
+<li>Most of the time, each <a href="controller.html">Controller</a> has a <a href="pawn.html">Pawn</a> attached to it,</li>
+<li>A good way to visualise the <a href="controller.html">Controller</a>/<a href="pawn.html">Pawn</a> interface is to consider the <a href="controller.html">Controller</a> the "brain" of a <a href="pawn.html">Pawn</a> (which is the "body").</li>
+</ul>
+</dd></dl>
+<p>The class definition of <a href="controller.html">Controller</a> shows that it is an <em class="em1">abstract</em> class - this means that this isn't the class actually used in <a href="unreal-tournament-2003.html">UT2003</a>; human players use <a href="xplayer.html">xPlayer</a> while bots use <a href="xbot.html">xBot</a>.</p>
+<p>The gametype of the current <a href="levelinfo.html">Level</a> specifies the type of <a href="controller.html">Controller</a> for bots and players to use.  As bots don't cheat in <a href="unreal-tournament-2003.html">UT2003</a>, the <a href="xbot.html">xBot</a> class doesn't have a number of security-related classes that the <a href="xplayer.html">xPlayer</a> has.</p>
+<p>One of these differences is that a <a href="playerinput.html">PlayerInput</a> class is attached to each (human) player, and this processes keyboard/mouse/joystick input and (then) passes it to the <a href="controller.html">Controller</a>.</p>
+<p>The other is the <a href="cheatmanager.html">CheatManager</a> class; this is involved with handling console commands (such as cheats such as "god") and other debug functions that can only be called in <em class="em2">Instant Action</em> (or other custom non-network gametypes).</p>
+<p>Unlike The Matrix, <a href="pawn.html">Pawn</a>s can exist without <a href="controller.html">Controller</a>s and vice-versa.  Indeed, the alternate firemode of the Redeemer creates a new <a href="pawn.html">Pawn</a> that the Player's <a href="controller.html">Controller</a> possesses - this is how the Player's mouse/keyboard input is "mapped" onto the Redeemer.</p>
+<h2><a name="0.1"></a>Some Useful Properties</h2>
+<dl><dt>Engine.<a href="gameinfo.html">GameInfo</a>.PlayerControllerClass</dt><dd>This property defines the class to use to control the player.  Changing this class will allow you to alter the view the player sees in first person, behind view, and spectator mode.  It also handles lots of stuff that only execute on the client.  The default value for this is not set although Engine.<a href="playercontroller.html">PlayerController</a> (UnrealGame.<a href="deathmatch.html">DeathMatch</a> specifies xGame.<a href="xplayer.html">xPlayer</a>) will be instantiated if a subclass of GameInfo fails to provide a default value by using the PlayerControllerClassName property.</dd><dt>Engine.<a href="gameinfo.html">GameInfo</a>.DefaultPlayerClassName</dt><dd>This property allows the default player class as displayed within the 3D world to be specified.  The class specified by this property handles all the classic player pawn stuff (animation, physics, blah blah blah).  The default value for this specified in UnrealGame.<a href="deathmatch.html">DeathMatch</a> is xGame.<a href="xpawn.html">xPawn</a>.</dd><dt>Engine.<a href="playercontroller.html">PlayerController</a>.CheatManager</dt><dd>This property specifies the class to use to handle the cheat manager.  If you want to add new console commands then this is the class you need to replace.  The default value set within the PlayerController class is Engine.<a href="cheatmanager.html">CheatManager</a>.</dd><dt>Engine.<a href="playercontroller.html">PlayerController</a>.PlayerInput</dt><dd>This property specifies the class use to capture and process player input.  So if you want to change the way double-click moving works or mouse smoothing then this is the place to start.</dd></dl>
+<h2><a name="0.2"></a>Related Pages</h2>
+<ul><li><a href="controller.html">Controller</a> &ndash; Base class<ul><li><a href="aicontroller.html">AIController</a> &ndash; Artificially intelligent agents</li>
+<li><a href="playercontroller.html">PlayerController</a> &ndash; A slightly more in depth look at the relationship between player controllers and pawns.</li>
+</ul>
+</li>
+<li><a href="engine-concept.html">Engine Concept</a> &ndash; A list of definitions of terms used on this page.</li>
+</ul>
+<h2><a name="0.3"></a>Discussion</h2>
+<p><em class="em2">Tarquin:</em> Merge needed of the two intros above. Since I don't know much about it, someone else should do it. The stuff on <a href="playercontroller.html">PlayerController</a> has been moved to, well, <a href="playercontroller.html">PlayerController</a>. </p>
+<p><em class="em2">DJPaul:</em> Started doing Mr. T's merge; hopefully it's not too bad.</p>
+<p><em class="em2">scumble:</em> It's an oversimplification to say that the <a href="levelinfo.html">Level</a> determines the <a href="controller.html">Controller</a> used by Pawns. From what I found out recently, it's one of the defaultproperties in <a href="xpawn.html">xPawn</a> that specifies XGame.<a href="xbot.html">xBot</a> as the controller. The <a href="gameinfo.html">GameInfo</a> only specifies the Roster<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Roster&referrerid=Controller_Overview">?</a> class. You have to get down to xRosterEntry<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=XRosterEntry&referrerid=Controller_Overview">?</a> before you find the code that returns xPawns<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=XPawns&referrerid=Controller_Overview">?</a> for the Enemy team.</p>
+<p><em class="em2">Daid303:</em> It's says that the "gametype of the current <a href="levelinfo.html">Level</a>" not the "<a href="levelinfo.html">Level</a>" determines the controller class. And that's 100% true <img alt=":)" src="emoticons/smile.gif" align="middle"> But yes, for bots it gets it from the Roster. But that's not true for normal players.</p>
+<p><em class="em2">scumble:</em> Yes, I meant gametype! I'm really advocating a little elaboration on the difference between how Bots and Players are spawned. They seem to work in opposite directions.</p>
+<hr class="thin"><p><a href="category-to-do.html">Category To Do</a> &ndash; Make this a more complete overview of all Controllers with relevant links to <a href="controller.html">Controller</a> and its subclasses.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Some Useful Properties", "#0.1");
+menuItemAdd("Related Pages", "#0.2");
+menuItemAdd("Discussion", "#0.3");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Controller_Overview">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Controller_Overview">View other revisions</a><br>Last edited December 7, 2005 15:29 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Controller_Overview">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Controller_Overview">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I don't need to test my programs. I have an error-correcting modem.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

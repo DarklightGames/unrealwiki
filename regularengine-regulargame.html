@@ -1,0 +1,309 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: RegularEngine/RegularGame</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=RegularEngine/RegularGame; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="regularengine.html">RegularEngine</a>/<a href="http://wiki.beyondunreal.com/wiki?back=RegularEngine/RegularGame">RegularGame</a></h1>
+	<div class="wiki"><p>RegularGame is the chief Gametype class.  </p>
+<p>The RestartPlayer function handles spawning the player or bot into the appropriate class.  Much of the rest is merely handling campaign voting.  Essentialy the campaign is ignored until the end of the game, when a MapTrader (for winners) or MapViewer (for losers) is presented and votes are tabulated by the <a href="regularengine-regularrules.html">RegularRules</a> class.</p>
+<div class="classpath"><img src="shared//gameicons/icon-ut2004.png"> <a href="unreal-tournament-2004.html">UT2004</a> ::  <a href="xteamgame.html">xTeamGame</a> &gt;&gt; RegularGame<br></div>
+<pre class="uscript"><span class="uscript-keyword">class</span> RegularGame <span class="uscript-keyword">extends</span> xTeamGame
+      <span class="uscript-keyword">config</span><span class="uscript-operator">(</span>RegularEngineData<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Controller<span class="uscript-operator">&gt;</span> BotControllerClass<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bGameVoted<span class="uscript-operator">,</span>bMapVoting<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> RegularRules RegularRules<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> PlayerReplicationInfo FinalWinner<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">string</span> FinalReason<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">config</span> <span class="uscript-type">bool</span> bCampaignGame<span class="uscript-operator">;</span>
+
+
+
+<span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ RegularRules <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'RegularRules'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>GameRulesModifiers <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+     Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>GameRulesModifiers <span class="uscript-operator">=</span> RegularRules<span class="uscript-operator">;</span>
+     <span class="uscript-operator">}</span><span class="uscript-keyword">else</span><span class="uscript-operator">{</span>
+     Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>GameRulesModifiers<span class="uscript-operator">.</span>AddGameRules<span class="uscript-operator">(</span>RegularRules<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+     <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Bot SpawnBot<span class="uscript-operator">(</span><span class="uscript-keyword">optional</span> <span class="uscript-type">string</span> botName<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Bot NewBot<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> RosterEntry Chosen<span class="uscript-operator">;</span>
+       <span class="uscript-keyword">local</span> UnrealTeamInfo BotTeam<span class="uscript-operator">;</span>
+
+       BotTeam <span class="uscript-operator">=</span> GetBotTeam<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Chosen <span class="uscript-operator">=</span> BotTeam<span class="uscript-operator">.</span>ChooseBotClass<span class="uscript-operator">(</span>botName<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Chosen<span class="uscript-operator">.</span>PawnClass <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        Chosen<span class="uscript-operator">.</span>Init<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//amb</span>
+    <span class="uscript-comment">//log("Chose pawn class "$Chosen.PawnClass);</span>
+
+    NewBot <span class="uscript-operator">=</span> Bot<span class="uscript-operator">(</span>Spawn<span class="uscript-operator">(</span>BotControllerClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> NewBot <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        InitializeBot<span class="uscript-operator">(</span>NewBot<span class="uscript-operator">,</span>BotTeam<span class="uscript-operator">,</span>Chosen<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> NewBot<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> RestartPlayer<span class="uscript-operator">(</span>Controller aPlayer<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>RegularPlayer<span class="uscript-operator">(</span>aPlayer<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+       <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>RegularPRI<span class="uscript-operator">(</span>aPlayer<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">&amp;&amp;</span>
+                   RegularPRI<span class="uscript-operator">(</span>aPlayer<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">)</span><span class="uscript-operator">.</span>PlayerClassName <span class="uscript-operator">~=</span> <span class="uscript-string">""</span> <span class="uscript-operator">||</span> <span class="uscript-operator">!</span>RegularPRI<span class="uscript-operator">(</span>aPlayer<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">)</span><span class="uscript-operator">.</span>ValidPlayerClassChoice<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+                            <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+                   RegularPlayer<span class="uscript-operator">(</span>aPlayer<span class="uscript-operator">)</span><span class="uscript-operator">.</span>OpenClassTrader<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                   <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+                   <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>RegularBot<span class="uscript-operator">(</span>aPlayer<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+       RegularBot<span class="uscript-operator">(</span>aPlayer<span class="uscript-operator">)</span><span class="uscript-operator">.</span>ChoosePlayerClass<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>RestartPlayer<span class="uscript-operator">(</span>aPlayer<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-comment">//  Log("Spawned a "$aPlayer.Pawn$" for "$aPlayer);</span>
+<span class="uscript-operator">}</span>
+
+
+
+
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CheckEndGame<span class="uscript-operator">(</span>PlayerReplicationInfo Winner<span class="uscript-operator">,</span> <span class="uscript-type">string</span> Reason<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>bCampaignGame<span class="uscript-operator">)</span> <span class="uscript-operator">{</span> <span class="uscript-keyword">return</span> <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>CheckEndGame<span class="uscript-operator">(</span>Winner<span class="uscript-operator">,</span>Reason<span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-operator">}</span>  <span class="uscript-comment">//  no campaign? end as normal</span>
+
+ <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bGameVoted<span class="uscript-operator">)</span> <span class="uscript-operator">{</span><span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span><span class="uscript-operator">}</span>
+    <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>CheckEndGame<span class="uscript-operator">(</span>Winner<span class="uscript-operator">,</span>Reason<span class="uscript-operator">)</span><span class="uscript-operator">;</span>          <span class="uscript-comment">//get a winner</span>
+
+    <span class="uscript-comment">//allow voting</span>
+    RegularGRI<span class="uscript-operator">(</span>GameReplicationInfo<span class="uscript-operator">)</span><span class="uscript-operator">.</span>RewardMap<span class="uscript-operator">(</span>Winner<span class="uscript-operator">.</span>Team<span class="uscript-operator">.</span>TeamIndex<span class="uscript-operator">,</span>GetURLMap<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    PromptMapVote<span class="uscript-operator">(</span>TeamInfo<span class="uscript-operator">(</span>GameReplicationInfo<span class="uscript-operator">.</span>Winner<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    FinalWinner <span class="uscript-operator">=</span> Winner<span class="uscript-operator">;</span>
+    FinalReason <span class="uscript-operator">=</span> Reason<span class="uscript-operator">;</span>
+ GotoState<span class="uscript-operator">(</span><span class="uscript-name">'WaitingForVote'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">string</span> CheckEndCampaign<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+
+<span class="uscript-comment">//  if( RegularGRI(GameReplicationInfo).CampaignWon() ) {</span>
+        RegularGRI<span class="uscript-operator">(</span>GameReplicationInfo<span class="uscript-operator">)</span><span class="uscript-operator">.</span>ResetCampaign<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-comment">//  }</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FinalWinner<span class="uscript-operator">.</span>Team<span class="uscript-operator">.</span>TeamIndex <span class="uscript-operator">==</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span> <span class="uscript-keyword">return</span> RegularGRI<span class="uscript-operator">(</span>GameReplicationInfo<span class="uscript-operator">)</span><span class="uscript-operator">.</span>TeamAMaps<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>MapName<span class="uscript-operator">;</span> <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span><span class="uscript-keyword">return</span> RegularGRI<span class="uscript-operator">(</span>GameReplicationInfo<span class="uscript-operator">)</span><span class="uscript-operator">.</span>TeamBMaps<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>MapName<span class="uscript-operator">;</span> <span class="uscript-operator">}</span>
+
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> PromptMapVote<span class="uscript-operator">(</span>TeamInfo Winner<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> Controller P<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> RegularPlayer RgPlayer<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Winner <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>Log<span class="uscript-operator">(</span><span class="uscript-string">"What the hell??"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-keyword">return</span><span class="uscript-operator">;</span><span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bMapVoting<span class="uscript-operator">)</span> <span class="uscript-operator">{</span><span class="uscript-keyword">return</span><span class="uscript-operator">;</span><span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> P<span class="uscript-operator">=</span>Level<span class="uscript-operator">.</span>ControllerList<span class="uscript-operator">;</span> P<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">;</span> P<span class="uscript-operator">=</span>P<span class="uscript-operator">.</span>nextController <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        RgPlayer <span class="uscript-operator">=</span> RegularPlayer<span class="uscript-operator">(</span>P<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> RgPlayer <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span>  <span class="uscript-operator">&amp;&amp;</span> RegularPRI<span class="uscript-operator">(</span>P<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">)</span><span class="uscript-operator">.</span>ChosenMap <span class="uscript-operator">==</span> <span class="uscript-string">""</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+         <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>RgPlayer<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">.</span>Team <span class="uscript-operator">==</span> Winner<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+            RgPlayer<span class="uscript-operator">.</span>OpenMapTrader<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span> <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+            RgPlayer<span class="uscript-operator">.</span>OpenMapViewer<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+
+    <span class="uscript-operator">}</span>
+    bMapVoting <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">state</span> WaitingForVote <span class="uscript-keyword">extends</span> MatchInProgress <span class="uscript-operator">{</span>
+
+<span class="uscript-keyword">function</span> BeginState<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    SetTimer<span class="uscript-operator">(</span><span class="uscript-number">10.0</span><span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-comment">//  Log("In WaitingForVote");</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> Controller P<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> RegularPlayer RgPlayer<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// Log("Hit WaitingForVote Timer");</span>
+  bGameVoted <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>FinalWinner <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>Log<span class="uscript-operator">(</span><span class="uscript-string">"What the hell?!!?"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-keyword">return</span><span class="uscript-operator">;</span><span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> P<span class="uscript-operator">=</span>Level<span class="uscript-operator">.</span>ControllerList<span class="uscript-operator">;</span> P<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">;</span> P<span class="uscript-operator">=</span>P<span class="uscript-operator">.</span>nextController <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        RgPlayer <span class="uscript-operator">=</span> RegularPlayer<span class="uscript-operator">(</span>P<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> RgPlayer <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> RgPlayer<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">.</span>Team <span class="uscript-operator">==</span> FinalWinner<span class="uscript-operator">.</span>Team <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+           RegularRules<span class="uscript-operator">.</span>CastVote<span class="uscript-operator">(</span>RegularPRI<span class="uscript-operator">(</span>RgPlayer<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">)</span><span class="uscript-operator">.</span>ChosenMap<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-comment">//   LOG("Cast vote for "$RegularPRI(RgPlayer.PlayerReplicationInfo).ChosenMap);</span>
+        <span class="uscript-operator">}</span>
+
+    <span class="uscript-operator">}</span>
+  RegularRules<span class="uscript-operator">.</span>HandleRestartGame<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-comment">/* Restart the game.
+*/</span>
+<span class="uscript-keyword">function</span> RestartGame<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> NextMap<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> MapList MyList<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//campaign check</span>
+   <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bCampaignGame<span class="uscript-operator">)</span> <span class="uscript-operator">{</span><span class="uscript-keyword">return</span><span class="uscript-operator">;</span><span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">// allow voting handler to stop travel to next map</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> VotingHandler <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>VotingHandler<span class="uscript-operator">.</span>HandleRestartGame<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// these server travels should all be relative to the current URL</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bChangeLevels <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>bAlreadyChanged <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>MapListType <span class="uscript-operator">!=</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-comment">// open a the nextmap actor for this game type and get the next map</span>
+        bAlreadyChanged <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        MyList <span class="uscript-operator">=</span> GetMapList<span class="uscript-operator">(</span>MapListType<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>MyList <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            NextMap <span class="uscript-operator">=</span> MyList<span class="uscript-operator">.</span>GetNextMap<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            MyList<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> NextMap <span class="uscript-operator">==</span> <span class="uscript-string">""</span> <span class="uscript-operator">)</span>
+            NextMap <span class="uscript-operator">=</span> GetMapName<span class="uscript-operator">(</span>MapPrefix<span class="uscript-operator">,</span> NextMap<span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> NextMap <span class="uscript-operator">!=</span> <span class="uscript-string">""</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            Level<span class="uscript-operator">.</span>ServerTravel<span class="uscript-operator">(</span>NextMap<span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+
+    Level<span class="uscript-operator">.</span>ServerTravel<span class="uscript-operator">(</span> <span class="uscript-string">"?Restart"</span><span class="uscript-operator">,</span> <span class="uscript-keyword">false</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+
+<span class="uscript-keyword">defaultproperties</span> <span class="uscript-operator">{</span>
+ GameName<span class="uscript-operator">=</span><span class="uscript-string">"RegularEngine Example"</span>
+ PlayerControllerClassName<span class="uscript-operator">=</span><span class="uscript-string">"RegularEngine.RegularPlayer"</span>
+ BotControllerClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'RegularBot'</span>
+ DefaultPlayerClassName<span class="uscript-operator">=</span><span class="uscript-string">"RegularEngine.RegularPawn"</span>
+ GameReplicationInfoClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'RegularGRI'</span>
+ ScoreboardType<span class="uscript-operator">=</span><span class="uscript-string">"RegularEngine.RegularScoreboard"</span>
+ HUDType<span class="uscript-operator">=</span><span class="uscript-string">"RegularEngine.RegularHUD"</span>
+ bCampaignGame<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+
+ Description<span class="uscript-operator">=</span><span class="uscript-string">"Example game on the RgEngine with optional campaign mode."</span>
+<span class="uscript-operator">}</span></pre></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="regularengine.html">RegularEngine</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=RegularEngine/RegularGame">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=RegularEngine/RegularGame">View other revisions</a><br>Last edited December 22, 2004 10:06 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=RegularEngine/RegularGame">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/RegularEngine/RegularGame">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Once I get that upgrade to 36-hour days, I will tackle that. (Mychaeel)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

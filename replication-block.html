@@ -1,0 +1,181 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Replication Block</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Replication_Block; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Replication Block">Replication Block</a></h1>
+	<div class="wiki"><p>In <a href="unrealscript.html">UnrealScript</a> <a href="class-syntax.html">Class Syntax</a>, the <a href="replication.html">replication</a> block specifies which of the variables and/or functions declared in a class are replicated. It is optional and only variables and functions mentioned in this block are actually replicated. Variables of a class that aren't mentined are initialized with their default values on clients.</p>
+<h2><a name="0.1"></a>Syntax</h2>
+<pre class="paraverbatim"> <em class="em2">replication</em>
+ <em class="em2">{</em>
+   <em class="em1">reliable/unreliable</em> <em class="em2">if (</em> <em class="em1">replication condition</em> <em class="em2">)</em>
+     <em class="em1">identifiers</em>;
+ <em class="em2">}</em></pre><h3><a name="0.1.1"></a>Replication condition</h3>
+<p>The replication condition is a boolean expression which tells the engine when something should be replicated to a remote machine. You can use functions in this expression, but it really isn't recommended because it will slow things down and can cause undesireable results.  Usually the expressions are simple and based around the replication properties listed below.</p>
+<h3><a name="0.1.2"></a>Identifiers</h3>
+<p>The <em class="em1">identifiers</em> part is a comma-separated list of variables or functions for replication.  An identifier can appear only once in the whole replication block, so cannot have different replication properties based on some condition.  You cannot override replication conditions like you can functions and states.  This also applies to functions and properties that don't appear in the replication block and thus have an empty replication condition.</p>
+<h3><a name="0.1.3"></a>Reliable and Unreliable</h3>
+<p>Understanding this lets you optimize your network usage.  </p>
+<p>All replicated <em class="em1">variables</em> are reliable: They are all guaranteed to reach the client, even if they may arrive in the wrong order.  </p>
+<p><em class="em2">Note:</em> Pawns have code that prevent them from appearing jumpy, although the effects of this can still be seen at times when the player bounces back and forth in a somewhat laggy game.....location updates are being received out of order.</p>
+<p>Replicated <em class="em1">functions</em> exist in both reliable and unreliable forms:</p>
+<p>A reliable function is guaranteed to reach the client.  A reliable function is repeatedly sent over the network until the client acknowledges it. This can lead to a one second delay or more if it has to resend the message.  Functions that are not called very frequently, and which will cause the user's experience to be unsatisfactory if missed, should be replicated reliably.  BroadcastMessage and BroadcastLocalizedMessage, for example, are reliable to ensure that the user gets the message.  </p>
+<p>An unreliable function simply results in a network message being sent, then the server is done.  This is a lot lighter on network and server resources but if the network is heavily loaded the call might not take place on the client.  The client's update to the server about its position is replicated unreliably: Since the client sends these updates to the server every single tick (in ServerMove, if you're wondering), it does not matter if some of them never reach the server.  Since each update is timestamped, the server knows which ones to discard if they are out of order due to lag.  In this scenario, the server can be assured of getting updates from the client, while not requiring that they ALL be sent. </p>
+<p>Since you don't want to bog down the network connection with reliable updates about where the client is looking or moving, unreliable is best in this situation.  The server only needs to get <em class="em1">most</em> of them to work great.</p>
+<h2><a name="0.2"></a>Examples</h2>
+<p>Let's have a look at a typical replication block:</p>
+<pre class="uscript"><span class="uscript-keyword">replication</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Role <span class="uscript-operator">==</span> ROLE_Authority <span class="uscript-operator">)</span>
+    RemainingMinute<span class="uscript-operator">,</span> bStopCountDown<span class="uscript-operator">,</span> GameEndedComments<span class="uscript-operator">,</span>
+    NumPlayers<span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bNetInitial <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Role<span class="uscript-operator">==</span>ROLE_Authority<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    GameName<span class="uscript-operator">,</span> GameClass<span class="uscript-operator">,</span> bTeamGame<span class="uscript-operator">,</span> ServerName<span class="uscript-operator">,</span> ShortName<span class="uscript-operator">,</span> AdminName<span class="uscript-operator">,</span>
+    AdminEmail<span class="uscript-operator">,</span> Region<span class="uscript-operator">,</span> MOTDLine1<span class="uscript-operator">,</span> MOTDLine2<span class="uscript-operator">,</span> 
+    MOTDLine3<span class="uscript-operator">,</span> MOTDLine4<span class="uscript-operator">,</span>RemainingTime<span class="uscript-operator">,</span> ElapsedTime<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>This one defines two groups of replicated variables in the <a href="gamereplicationinfo-ut.html">GameReplicationInfo (UT)</a> class. Here you can already see the most important part of a replication condition, the actor's <a href="role.html">Role</a>. Either the Role or the RemoteRole is always present in a replication condition.</p>
+<p>Variables can only be replicated from the authorative version of an actor (i.e. from the server) to the clients. These replication conditions can become quite complex if it helps saving bandwidth, as this example from the <a href="actor.html">Actor</a> (UT2003) class shows:</p>
+<pre class="uscript">  <span class="uscript-keyword">unreliable</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>bSkipActorPropertyReplication <span class="uscript-operator">||</span> bNetInitial<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> bReplicateMovement
+      <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>RemoteRole <span class="uscript-operator">==</span> ROLE_AutonomousProxy<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> bNetInitial<span class="uscript-operator">)</span>
+          <span class="uscript-operator">||</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>RemoteRole <span class="uscript-operator">==</span> ROLE_SimulatedProxy<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>bNetInitial <span class="uscript-operator">||</span> bUpdateSimulatedPosition<span class="uscript-operator">)</span>
+              <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Base <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> Base<span class="uscript-operator">.</span>bWorldGeometry<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+          <span class="uscript-operator">||</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>RemoteRole <span class="uscript-operator">==</span> ROLE_DumbProxy<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Base <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> Base<span class="uscript-operator">.</span>bWorldGeometry<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    Location<span class="uscript-operator">;</span></pre><p>So whether the location of an actor is replicated depends on the actor's <a href="role.html">RemoteRole</a> and whether bReplicateMovement is True. The bSkipActorPropertyReplication can be used to cut down replication of actor class variables to only the initial replication.</p>
+<h2><a name="0.3"></a>Useful Replication Properties</h2>
+<h3><a name="0.3.1"></a>Variables only valid during replication</h3>
+<dl><dt>bClientDemoNetFunc</dt><dd>True if we're client-side demo recording and this call originated from the remote.</dd><dt>bClientDemoRecording</dt><dd>This machine is currently recording a clientside demo.</dd><dt>bDemoRecording</dt><dd>This machine is currently recording a demo.</dd><dt>bNetInitial</dt><dd>True during the first time all variables are replicated for this actor.</dd><dt>bNetOwner</dt><dd>True when the replication target is this actor's Owner.</dd></dl>
+<h4><a name="0.3.1.1"></a>Only UT</h4>
+<dl><dt>bNetFeel</dt><dd>Player collides with/feels it in network play.</dd><dt>bNetHear</dt><dd>Player hears it in network play.</dd><dt>bNetSee</dt><dd>Player sees it in network play.</dd><dt>bSimulatedPawn</dt><dd>True if this is a <a href="pawn-ut.html">Pawn (UT)</a> and simulated proxy.</dd></dl>
+<h4><a name="0.3.1.2"></a>Only UT2003</h4>
+<dl><dt>bDemoOwner</dt><dd>Demo recording driver owns this actor.</dd><dt>bNetDirty</dt><dd>True when a property was changes since the last time it was replicated.</dd><dt>bNetRelevant</dt><dd>Actor is currently relevant. Only valid server side and only when replicating variables.</dd><dt>bRepClientDemo</dt><dd>The remote machine is currently recording a demo.</dd><dt>Level.ReplicationViewer</dt><dd>during replication, set to the playercontroller to which actors are currently being replicated</dd><dt>Level.ReplicationViewTarget</dt><dd>during replication, set to the viewtarget to which actors are currently being replicated</dd></dl>
+<h3><a name="0.3.2"></a>Other Useful Variables</h3>
+<h4><a name="0.3.2.1"></a>In UT</h4>
+<dl><dt>bClientAnim</dt><dd>If True, AmbientSound and animations are replicated also to the owning client.</dd></dl>
+<h4><a name="0.3.2.2"></a>In UT2003</h4>
+<p>These properties are used in the Actor class replication block.</p>
+<dl><dt>bNoRepMesh</dt><dd>Don't replicate the Mesh.</dd><dt>bReplicateAnimations</dt><dd>Whether SimAnim should be replicated.</dd><dt>bReplicateInstigator</dt><dd>Whether the Instigator should be replicated.</dd><dt>bReplicateMovement</dt><dd>Whether properties relevant for movement like Location, Rotation, Velocity, etc. should be replicated. Unlike bSkipActorPropertyReplication this also affects the initial replication.</dd><dt>bSkipActorPropertyReplication</dt><dd>Used by <a href="replicationinfo.html">ReplicationInfo</a> classes that don't need to know all the Actor class properties on the clients. When set to True only the initial replication replicates the Actor class properties.</dd><dt>bUpdateSimulatedPosition</dt><dd>Whether the actor's Location, Rotation and Velocity should be updated for Simulated Proxies.</dd></dl>
+<h2><a name="0.4"></a>Related Topics</h2>
+<ul><li><a href="introduction-to-replication.html">Introduction to Replication</a></li>
+<li><a href="replication.html">Replication</a></li>
+<li><a href="role.html">Role</a> and RemoteRole, and <a href="netmode.html">NetMode</a>.</li>
+<li><a href="netcode-idioms.html">Netcode Idioms</a></li>
+<li><a href="replicated-function.html">Replicated Function</a></li>
+</ul>
+<h2><a name="0.5"></a>Discussion</h2>
+<p><em class="em2">VitalOverdose</em> So are the first set of variables in the list only valid for ut2004?</p>
+<p><em class="em2">EricBlade:</em> I think lack of specific version means that they are valid for all versions..</p>
+<p><em class="em2">Wormbo:</em> You could have answered that question with a short search through the source code.</p>
+<hr class="thin"><p><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Syntax", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Replication condition", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Identifiers", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Reliable and Unreliable", "#0.1.3");
+menuItemAdd("Examples", "#0.2");
+menuItemAdd("Useful Replication Properties", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Variables only valid during replication", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Only UT", "#0.3.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Only UT2003", "#0.3.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Other Useful Variables", "#0.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>In UT", "#0.3.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>In UT2003", "#0.3.2.2");
+menuItemAdd("Related Topics", "#0.4");
+menuItemAdd("Discussion", "#0.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Replication_Block">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Replication_Block">View other revisions</a><br>Last edited May 27, 2006 4:47 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Replication_Block">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Replication_Block">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Gah - a solution with more questions. (EntropicLqd)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

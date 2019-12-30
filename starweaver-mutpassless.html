@@ -1,0 +1,350 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: StarWeaver/MutPassLess</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=StarWeaver/MutPassLess; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="starweaver.html">StarWeaver</a>/<a href="http://wiki.beyondunreal.com/wiki?back=StarWeaver/MutPassLess">MutPassLess</a></h1>
+	<div class="wiki"><p>Maybe this is too much code; and it could probably use more other text, but I thought i'd put it up this way and see how it looks . . . </p>
+<pre class="uscript"><span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-comment">//  Star Weaver; 2005</span>
+<span class="uscript-comment">//  A mutator to enable AI tweaks for bombing run that attempt</span>
+<span class="uscript-comment">//  to keep the ball in the hands of the bots as much as possible,</span>
+<span class="uscript-comment">//  for those of us who prefer to *support* rather than fling</span>
+<span class="uscript-comment">//  ourselves into the maw of destruction.</span>
+<span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-keyword">class</span> MutPassLess <span class="uscript-keyword">extends</span> Mutator<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">/*
+This was my first attempt at making this work . . . and it worked, but
+for some reason doing it this way disassociates the actors created
+from the return of the spawn() function that creates them, so
+the code that spawns the TeamAIs spewed a bunch of null references
+when I did it this way. And TeamAIs aren't sent through CheckReplacement! So...
+*/</span>
+
+<span class="uscript-comment">/*
+function bool CheckReplacement (Actor Other, out byte bSuperRelevant)
+{
+    bSuperRelevant = 1; // Still don't know what this does
+    if ( Other.IsA('BombingRunSquadAI') &amp;&amp; ! Other.IsA('DA_PassLessSquadAI') )
+    {
+        ReplaceWith(Other,"DA_MutPassLess.DA_PassLessSquadAI");
+        Log(" --- DA DEBUG --- Replacement Made");
+        return False;
+    }
+    return True;
+}
+*/</span>
+
+<span class="uscript-keyword">function</span> PreBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PreBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">/*  This seems to be the right place to do this; the game object exists but
+        the subobjects haven't been created yet as far as I can tell. I wish
+        there was a bit more documentation on this . . . . */</span>
+    TeamGame<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">)</span><span class="uscript-operator">.</span>TeamAIType<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">Class</span><span class="uscript-name">'DA_MutPassLess.DA_PassLessTeamAI'</span><span class="uscript-operator">;</span>
+    TeamGame<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">)</span><span class="uscript-operator">.</span>TeamAIType<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">Class</span><span class="uscript-name">'DA_MutPassLess.DA_PassLessTeamAI'</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> MutatorIsAllowed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'xBombingRun'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        log<span class="uscript-operator">(</span><span class="uscript-string">" --- DA DEBUG --- Is Bombingrun"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+
+<span class="uscript-operator">}</span></pre><pre class="uscript"><span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-comment">//  Star Weaver; 2005</span>
+<span class="uscript-comment">//  A simple tweak to the default properties, really.</span>
+<span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-keyword">class</span> DA_PassLessTeamAI <span class="uscript-keyword">extends</span> BombingRunTeamAI<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">Event</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    log<span class="uscript-operator">(</span><span class="uscript-string">"--- DA DEBUG --- PassLessTeamAI Extant"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+     SquadType<span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-name">'DA_MutPassLess.DA_PassLessSquadAI'</span>
+<span class="uscript-operator">}</span></pre><pre class="uscript"><span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-comment">//  Star Weaver; 2005</span>
+<span class="uscript-comment">//  Changes to bombing run squad AI to favor bots over humans</span>
+<span class="uscript-comment">//  for passing and to require either grevious from the bot </span>
+<span class="uscript-comment">//  or lots of extra health on the human.</span>
+<span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-keyword">class</span> DA_PassLessSquadAI <span class="uscript-keyword">extends</span> BombingRunSquadAI<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> Initialize<span class="uscript-operator">(</span>UnrealTeamInfo T<span class="uscript-operator">,</span> GameObjective O<span class="uscript-operator">,</span> Controller C<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Initialize<span class="uscript-operator">(</span>T<span class="uscript-operator">,</span>O<span class="uscript-operator">,</span>C<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Log<span class="uscript-operator">(</span><span class="uscript-string">" --- DA Debug --- PassLessSquadAI Initialized"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> TryPassTo<span class="uscript-operator">(</span>vector V<span class="uscript-operator">,</span> Bot CarrierBot<span class="uscript-operator">,</span> Pawn Recipient<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Pawn Carrier<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> CarrierDurability<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> RecipientDurability<span class="uscript-operator">;</span>
+
+    Carrier <span class="uscript-operator">=</span> CarrierBot<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">;</span>
+    CarrierDurability <span class="uscript-operator">=</span> Carrier<span class="uscript-operator">.</span>Health <span class="uscript-operator">+</span> Carrier<span class="uscript-operator">.</span>ShieldStrength<span class="uscript-operator">;</span>
+    RecipientDurability <span class="uscript-operator">=</span> Recipient<span class="uscript-operator">.</span>Health <span class="uscript-operator">+</span> Recipient<span class="uscript-operator">.</span>ShieldStrength<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>
+        <span class="uscript-operator">(</span>       <span class="uscript-comment">// Rules for passing to humans</span>
+               <span class="uscript-operator">(</span>Recipient<span class="uscript-operator">.</span>IsHumanControlled<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+            <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>
+                    <span class="uscript-operator">(</span>  <span class="uscript-operator">(</span>CarrierDurability <span class="uscript-operator">&lt;=</span><span class="uscript-number">20</span><span class="uscript-operator">)</span>
+                    <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>RecipientDurability <span class="uscript-operator">&gt;</span> <span class="uscript-number">150</span> <span class="uscript-operator">&amp;&amp;</span> RecipientDurability <span class="uscript-operator">&gt;</span> CarrierDurability <span class="uscript-operator">*</span> <span class="uscript-number">2.2</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+            <span class="uscript-operator">)</span>
+
+            <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Recipient<span class="uscript-operator">.</span>Health <span class="uscript-operator">+</span> Recipient<span class="uscript-operator">.</span>ShieldStrength <span class="uscript-operator">&gt;=</span> <span class="uscript-number">110</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">)</span>
+        <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>    <span class="uscript-comment">// Rules for passing to bots</span>
+                <span class="uscript-operator">(</span>  <span class="uscript-operator">(</span>CarrierBot<span class="uscript-operator">.</span>Focus <span class="uscript-operator">==</span> CarrierBot<span class="uscript-operator">.</span>MoveTarget<span class="uscript-operator">)</span>
+                <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>Recipient<span class="uscript-operator">.</span>Controller<span class="uscript-operator">.</span>MoveTarget <span class="uscript-operator">==</span> CarrierBot<span class="uscript-operator">.</span>RouteCache<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span>
+                <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>Recipient<span class="uscript-operator">.</span>Controller<span class="uscript-operator">.</span>MoveTarget <span class="uscript-operator">==</span> CarrierBot<span class="uscript-operator">.</span>RouteCache<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span>
+                <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>Recipient<span class="uscript-operator">.</span>Controller<span class="uscript-operator">.</span>MoveTarget <span class="uscript-operator">==</span> CarrierBot<span class="uscript-operator">.</span>RouteCache<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+            <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Recipient<span class="uscript-operator">.</span>Health <span class="uscript-operator">+</span> Recipient<span class="uscript-operator">.</span>ShieldStrength <span class="uscript-operator">&gt;=</span> FMin<span class="uscript-operator">(</span><span class="uscript-number">60</span><span class="uscript-operator">,</span> Carrier<span class="uscript-operator">.</span>Health<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">)</span>
+        <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>    <span class="uscript-comment">// Rules that apply in both cases</span>
+               <span class="uscript-operator">(</span>VSize<span class="uscript-operator">(</span>Recipient<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> Carrier<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span> <span class="uscript-operator">&lt;</span> <span class="uscript-number">3500</span><span class="uscript-operator">)</span>
+            <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>V <span class="uscript-operator">Dot</span> Normal<span class="uscript-operator">(</span>Recipient<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> Carrier<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">0.5</span><span class="uscript-operator">)</span>
+            <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Carrier<span class="uscript-operator">.</span>LineOfSightTo<span class="uscript-operator">(</span>Recipient<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">)</span>
+    <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        PassTarget <span class="uscript-operator">=</span> Bot<span class="uscript-operator">(</span>Recipient<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Carrier<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span>SetAITarget<span class="uscript-operator">(</span>Recipient<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        CarrierBot<span class="uscript-operator">.</span>bPlannedShot <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        CarrierBot<span class="uscript-operator">.</span>Target <span class="uscript-operator">=</span> Recipient<span class="uscript-operator">;</span>
+        Carrier<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span>BotFire<span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/* OrdersForBombCarrier()
+Tell bot what to do if he's carrying the flag
+*/</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> OrdersForBombCarrier<span class="uscript-operator">(</span>Bot B<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> bot S<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> vector V<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> controller C<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> PlayerController PC<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> bPassing<span class="uscript-operator">,</span> bCanPass<span class="uscript-operator">,</span> bSelfPass<span class="uscript-operator">;</span>
+
+    B<span class="uscript-operator">.</span>TryCombo<span class="uscript-operator">(</span><span class="uscript-string">"xGame.ComboSpeed"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Enemy <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>Health <span class="uscript-operator">&lt;</span> <span class="uscript-number">60</span> <span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        B<span class="uscript-operator">.</span>SendMessage<span class="uscript-operator">(</span><span class="uscript-keyword">None</span><span class="uscript-operator">,</span> <span class="uscript-name">'OTHER'</span><span class="uscript-operator">,</span> B<span class="uscript-operator">.</span>GetMessageIndex<span class="uscript-operator">(</span><span class="uscript-name">'NEEDBACKUP'</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span> <span class="uscript-number">25</span><span class="uscript-operator">,</span> <span class="uscript-name">'TEAM'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    B<span class="uscript-operator">.</span>bPlannedShot <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    SelfPasser <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    PassTarget <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// decide whether to pass ball</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>VSize<span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> EnemyBase<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">3000</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>VSize<span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> HomeBase<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">3000</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>B<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>InCurrentCombo<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            bCanPass <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+    bSelfPass <span class="uscript-operator">=</span> GameObject<span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">.</span>HasFlag<span class="uscript-operator">)</span><span class="uscript-operator">.</span>CanBeThrownBy<span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">)</span>
+                <span class="uscript-operator">&amp;&amp;</span> bCanPass <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>TranslocFreq <span class="uscript-operator">&lt;</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">+</span> <span class="uscript-number">12</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Skill <span class="uscript-operator">+</span> B<span class="uscript-operator">.</span>Tactics <span class="uscript-operator">&gt;</span> <span class="uscript-number">3</span> <span class="uscript-operator">+</span> <span class="uscript-number">4</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+                <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Enemy <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>VSize<span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> HomeBase<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">5000</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bCanPass <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-comment">// check for nearby teammate to pass to</span>
+        <span class="uscript-comment">// first check for human player</span>
+
+        <span class="uscript-comment">// -- Begin changed section of this function --</span>
+        <span class="uscript-comment">// -- Check for BOTS first -- Star</span>
+
+        V <span class="uscript-operator">=</span> vector<span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> S<span class="uscript-operator">=</span>SquadMembers<span class="uscript-operator">;</span> S<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">;</span> S<span class="uscript-operator">=</span>S<span class="uscript-operator">.</span>NextSquadMember <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>S<span class="uscript-operator">.</span>Pawn <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+                <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>S<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>Physics <span class="uscript-operator">!=</span> PHYS_Falling<span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>S<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>PhysicsVolume<span class="uscript-operator">.</span>Gravity<span class="uscript-operator">.</span>Z <span class="uscript-operator">&lt;</span> <span class="uscript-operator">-</span><span class="uscript-number">900</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+                <span class="uscript-operator">&amp;&amp;</span> TryPassTo<span class="uscript-operator">(</span>V<span class="uscript-operator">,</span>B<span class="uscript-operator">,</span>S<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                bPassing <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+                bCanPass <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+                <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+
+
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bCanPass <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> C<span class="uscript-operator">=</span>Level<span class="uscript-operator">.</span>ControllerList<span class="uscript-operator">;</span> C<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">;</span> C<span class="uscript-operator">=</span>C<span class="uscript-operator">.</span>NextController <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                PC <span class="uscript-operator">=</span> PlayerController<span class="uscript-operator">(</span>C<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>PC <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> B<span class="uscript-operator">.</span>SameTeamAs<span class="uscript-operator">(</span>PC<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>PC<span class="uscript-operator">.</span>Pawn <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> TryPassTo<span class="uscript-operator">(</span>V<span class="uscript-operator">,</span>B<span class="uscript-operator">,</span>PC<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+                <span class="uscript-operator">{</span>
+                    bPassing <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+                    <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+                <span class="uscript-operator">}</span>
+                <span class="uscript-keyword">else</span>
+                    PC <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+        
+        <span class="uscript-comment">// -- End changed section -- </span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bPassing <span class="uscript-operator">&amp;&amp;</span> PreferShootScore<span class="uscript-operator">(</span>B<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>ShootSpot<span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>Anchor<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> B<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>ReachedDestination<span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>Anchor<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            B<span class="uscript-operator">.</span>bPlannedShot <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+            B<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span>SetAITarget<span class="uscript-operator">(</span>EnemyBase<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            B<span class="uscript-operator">.</span>DoRangedAttackOn<span class="uscript-operator">(</span>EnemyBase<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> AlternatePath <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            B<span class="uscript-operator">.</span>MoveTarget <span class="uscript-operator">=</span> B<span class="uscript-operator">.</span>FindPathTowardNearest<span class="uscript-operator">(</span>ShootSpotClass<span class="uscript-operator">[</span>Team<span class="uscript-operator">.</span>TeamIndex<span class="uscript-operator">]</span><span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> B<span class="uscript-operator">.</span>MoveTarget <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bSelfPass <span class="uscript-operator">)</span>
+                    PassToSelf<span class="uscript-operator">(</span>B<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                B<span class="uscript-operator">.</span>GoalString <span class="uscript-operator">=</span> <span class="uscript-string">"Move to shoot spot "</span><span class="uscript-operator">$</span>B<span class="uscript-operator">.</span>RouteGoal<span class="uscript-operator">;</span>
+                B<span class="uscript-operator">.</span>SetAttractionState<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> B<span class="uscript-operator">.</span>bSoaking <span class="uscript-operator">)</span>
+                B<span class="uscript-operator">.</span>SoakStop<span class="uscript-operator">(</span><span class="uscript-string">"NO PATH TO SHOOTSPOT"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>FindPathToObjective<span class="uscript-operator">(</span>B<span class="uscript-operator">,</span>EnemyBase<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        B<span class="uscript-operator">.</span>GoalString <span class="uscript-operator">=</span> <span class="uscript-string">"No path to enemy base for bomb carrier"</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> B<span class="uscript-operator">.</span>MoveTarget <span class="uscript-operator">==</span> EnemyBase <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        B<span class="uscript-operator">.</span>GoalString <span class="uscript-operator">=</span> <span class="uscript-string">"Near enemy Base with bomb!"</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> B<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>ReachedDestination<span class="uscript-operator">(</span>EnemyBase<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            EnemyBase<span class="uscript-operator">.</span>Touch<span class="uscript-operator">(</span>B<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bPassing <span class="uscript-operator">)</span>
+        B<span class="uscript-operator">.</span>bRecommendFastMove <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bSelfPass <span class="uscript-operator">)</span>
+        PassToSelf<span class="uscript-operator">(</span>B<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+
+<span class="uscript-operator">}</span></pre><p><em class="em2">Question...</em></p>
+<p><em class="em2">lizardman6:</em>Are you using this code for UT2k4?</p>
+<p><em class="em2">StarWeaver:</em> Yeah, that's what I was building it with, but I kinda fell out of the game and never got around to testing it much so I don't even know how well it works. I seem to recall that it needed a gametype check because it was crashing if left in a DM game, but I don't remember if that's in the code I posted or if I even fixed it at all.</p>
+<p>I'm getting back into editing again now (for real, I think), so I'll probably be taking another look at this sooner or later ^_^.</p>
+</div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="starweaver.html">StarWeaver</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=StarWeaver/MutPassLess">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=StarWeaver/MutPassLess">View other revisions</a><br>Last edited September 5, 2006 22:50 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=StarWeaver/MutPassLess">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/StarWeaver/MutPassLess">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Gah - a solution with more questions. (EntropicLqd)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

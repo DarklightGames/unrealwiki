@@ -1,0 +1,204 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Mod Authoring/A Few Things To Watch Out For</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Mod_Authoring/A_Few_Things_To_Watch_Out_For; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="mod-authoring.html">Mod Authoring</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Mod+Authoring/A+Few+Things+To+Watch+Out+For">A Few Things To Watch Out For</a></h1>
+	<div class="wiki"><p>This is where I'm going to put all the information that I wish someone had told me when I started writing mods for Unreal. A lot of this information may not be relevant to you until you have more experience with the engine. I spent a lot of time out on my front porch with a buddy (Sel Tremble) talking about things like <a href="replication.html">replication</a> trying to figure out exactly how it all worked. That was definitely one of the most satisfying things I have ever done. Cracking open a new game can be a very cool experience, but also a very frustrating one. Here I'll give you a couple pointers to ease your exploration.</p>
+<h3><a name="0.0.1"></a>Accessed Nones</h3>
+<p>Sooner or later these will start showing up in your log files. UnrealScript treats <em class="em1">Accessed None</em>s as warnings but you should treat them as errors. <em class="em1">Accessed None</em>s are easy to fix and always signal that something is wrong with your code. If you are familiar with C++ or Java, it's easy to figure out what an Accessed None is. I'll briefly explain them to people who aren't so familiar.</p>
+<p>UnrealScript is an object oriented programming language. When you write a program in UnrealScript, you define a set of behavior for these objects to obey and how they will interact. An object has a set of properties: member variables and member functions. In order to access an object property, you need a reference to that object. Let's look at some sample code:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MyObject <span class="uscript-keyword">extends</span> Info<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> PlayerReplicationInfo PlayerInfo<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> PlayerReplicationInfo TestFunction<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> PlayerInfo<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Here we have a simple object called <code>MyObject</code> that is a subclass of <a href="info-ut.html">Info (UT)</a>. It has two properties: a variable called PlayerInfo and a function called TestFunction. You might want to interact with this object from inside your mod. Let's say you have a reference to a MyObject inside your mod and you want to get some information from inside the PlayerInfo property. You might write code that looks like this:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MyMod <span class="uscript-keyword">extends</span> TournamentGameInfo<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">string</span> GetPlayerName<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> MyObject Object1<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> PlayerName<span class="uscript-operator">;</span>
+
+    Object1 <span class="uscript-operator">=</span> GetMyObject<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    PlayerName <span class="uscript-operator">=</span> Object1<span class="uscript-operator">.</span>PlayerInfo<span class="uscript-operator">.</span>PlayerName<span class="uscript-operator">;</span>
+    Log<span class="uscript-operator">(</span><span class="uscript-string">"The player's name is"</span><span class="uscript-operator">@</span>PlayerName<span class="uscript-operator">)</span><span class="uscript-operator">;</span> 
+<span class="uscript-operator">}</span></pre><p>In this example we call a function called <code>GetMyObject()</code> to get a reference to a MyObject. We then access that reference to resolve PlayerInfo (<code>Object1.PlayerInfo</code>) and then access the PlayerInfo reference to resolve PlayerName (<code>PlayerInfo.PlayerName</code>). But what if there isn't a MyObject available, or a bug in <code>GetMyObject()</code> causes it to fail to return a MyObject? In that case, the function would return <em class="em1">None</em>. <em class="em1">None</em> is an empty reference... a lot like a NULL pointer in C++.</p>
+<p>If, in our example, <code>GetMyObject()</code> returns None, then the variable Object1 is assigned None. In the next line, we try and access Object1 to resolve the PlayerInfo reference. Uh oh... Object1 is <em class="em1">None</em>... it doesn't refer to anything. We can't access it, so the Unreal engine logs a warning saying the code broke: "Accessed None in MyMod.GetPlayerName!"</p>
+<p>Its very easy to avoid buggy code like this. Just add a couple checks to your code and define special behavior in the case of a mistake:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MyMod <span class="uscript-keyword">extends</span> TournamentGameInfo<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">string</span> GetPlayerName<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> MyObject Object1<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> PlayerName<span class="uscript-operator">;</span>
+
+    Object1 <span class="uscript-operator">=</span> GetMyObject<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Object1 <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Object1<span class="uscript-operator">.</span>PlayerInfo <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        PlayerName <span class="uscript-operator">=</span> Object1<span class="uscript-operator">.</span>PlayerInfo<span class="uscript-operator">.</span>PlayerName<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        PlayerName <span class="uscript-operator">=</span> <span class="uscript-string">"Unknown"</span><span class="uscript-operator">;</span>
+    Log<span class="uscript-operator">(</span><span class="uscript-string">"The player's name is"</span><span class="uscript-operator">@</span>PlayerName<span class="uscript-operator">)</span><span class="uscript-operator">;</span> 
+<span class="uscript-operator">}</span></pre><p>Now we are checking to see if Object1 is none and then checking to see if the PlayerInfo reference is none. <code>if</code> statements in UnrealScript use short circuit logic. That is, <code>if</code> statements are evaluated from left to right. As soon as the code encounters a statement that negates the <code>if</code>, it stops evaluating. That means that if Object1 is <em class="em1">None</em>, the code will never evaluate the <code>(Object1.PlayerInfo != None)</code> statement. It knows that it doesn't matter what the rest of the statement says, the first part is false so the entire statement is false. </p>
+<p><em class="em1">Accessed None</em>s can be especially dangerous in time critical functions like Timer and Tick. It takes a lot of time to write out an error message to the log and if your code is dumping 3000 error messages a second it can really kill performance (not to mention disk space). </p>
+<h3><a name="0.0.2"></a>Dangerous Iterators</h3>
+<p>UnrealScript implements a very useful programming tool called <a href="unrealscript-language-refe1.html">iterators</a>. An iterator is a datatype that encapsulates a list. (UnrealScript only supports list iterators, our next language will support user defined iterators). You can get an iterator and loop on it, performing an operation on every object inside the iterator. Here is an example:</p>
+<pre class="uscript"><span class="uscript-keyword">local</span> Ammo A<span class="uscript-operator">;</span>
+<span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Ammo'</span><span class="uscript-operator">,</span> A<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    A<span class="uscript-operator">.</span>AmmoAmount <span class="uscript-operator">=</span> <span class="uscript-number">999</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>In this example we are using the AllActors function to get an actor list iterator. We then use the foreach iterator loop to perform some behavior on every object the AllActors function returns. AllActors takes the class of the type of actor you want and a variable to put it in. AllActors will search through <em class="em2">every actor in the current game</em> for the objects you want. Here we are saying "Set the AmmoAmount of every actor in the game to 999." Sounds pretty cool, but lets think about it. We are searching through a list of hundreds of Actors for a small few. This isn't exactly a fast operation.</p>
+<p>Iterators can be extremely useful if used carefully. Because they tend to be slow, you'll want to avoid performing iterations faster than a couple times a second. Never perform an AllActors iteration inside of Tick() and never perform AllActors iterations inside of other loops. (Okay, so saying <em class="em1">never</em> is a little strict. Let's say... <em class="em1">use your best judgement</em>...)</p>
+<p>The most common type of AllActors search you'll work with will probably be a search for all of the <a href="playerreplicationinfo.html">PlayerReplicationInfo</a> actors. PlayerReplicationInfo contains important information about Players that the server sends to each client. It allows each client to have an idea of the status of other players without sending too much information. Its used to show the scores on the scoreboard and other common things.</p>
+<p>Usually, there will only be a handful of PlayerReplicationInfo actors in the global actor list. It doesn't really make sense to do a time consuming search for so few results. In order to simplify this common iteration, we've added a PRI array to GameReplicationInfo. Every tenth of a second, the PRIArray is updated to contain the current set of PlayerReplicationInfos. You can then do your operation of the PRIArray without having to do an AllActors call.</p>
+<p>Other iterators are also available. Look in the <a href="actor.html">Actor</a> class definition for information. They do exactly what they sound like: TouchingActors returns touching actors, RadiusActors returns all the actors in the given radius, etc. Intelligent use of these iterators will help you keep your code fast.</p>
+<h3><a name="0.0.3"></a>The Foibles of Tracing</h3>
+<p>Wahaha. I just wanted to use the word foible.</p>
+<p>Because the Unreal engine does not use a potentially visible set, if you want to find something in the world in a spacial sense, you'll need to perform a trace. Most of the time you'll have a good idea of where you are tracing, you just want to know whats on the other end of the line. Other times, you'll use a series of traces to get an idea of what surrounds the object in question.</p>
+<p>My first advice is to avoid traces wherever possible. Think very hard about what you are using the trace for and try to come up with an alternate way of doing it. Traces are expensive operations that can introduce subtle slowdowns into your mod. You might have a player doing a couple traces every tick and during your testing everything is fine. What you don't realize, is that as soon as you are playing online with 15 of your buddies, those traces start to add up. </p>
+<p>If you have to perform traces, limit their size. Shorter traces are faster than long traces. If you are designing a new Shotgun weapon for UT, for example, you might want to perform 12 traces when the weapon is fired to figure out the scatter of the gun. 12 traces is perfectly reasonable.... it's not like the player is going to be firing his shotgun 30 times a second. However, those 12 traces could get expensive if your mod uses large open levels. Its highly unlikely your shotgun is going to be very useful as a long-range weapon, so you might as well cut off its range at a certain point. It saves the engine from having to trace from one end of the map to the other in the worst case.</p>
+<p>Using traces is ultimately a judgment call. It really only becomes a big problem when you perform a lot of traces in a single frame. Nonetheless, it's definitely something to keep your eyes on. <em class="em1">Always think about the performance implications of code you write.</em></p>
+<h3><a name="0.0.4"></a>Decrypting Replication</h3>
+<p>Understanding <a href="replication.html">replication</a> is one of the most difficult aspects of writing a mod, but its utterly necessary if you plan on doing any netplay at all. Unfortunately, Tim's replication docs are not easy to understand and make some assumptions about the reader's knowledge that you may not possess. I'll try to point out the things that I learned only through trial and error.</p>
+<p><em class="em2">Simulated</em> functions are called on both the client and the server. <em class="em2">But only if called from a simulated function.</em> As soon as a function call breaks the simulation chain, the simulation stops. Be very aware of what you are simulating and what you are doing in simulated functions. <em class="em2">Never add a function modifier like simulated just because you saw it in the Unreal source code somewhere else.</em> Understand why you are adding it, know what it does. You can't possibly expect to write quality mods if you don't know what your code is doing.</p>
+<p>Because a simulated function is called on both the client and the server you have to be particularly aware of what data you are accessing. Some object references that are available on the server might not be available on the client. For example, every <a href="actor.html">Actor</a> has a reference to the current level. Inside the level reference is a reference to the current game. You might write code that looks like this:</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CheckTeamGame<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>bTeamGame
+<span class="uscript-operator">}</span></pre><p>This is a simple simulated function that returns true or false depending on whether or not the current game is a team game. It does this by checking the bTeamGame property of the current level's <a href="gameinfo-ut.html">GameInfo (UT)</a> reference. What's wrong with this picture?</p>
+<p>The Game property of the Level reference is only valid on the server. The client doesn't know anything about the server's game object so the client will log an <em class="em1">Accessed None</em>. Yuck!</p>
+<p>If you open up the script for <a href="levelinfo.html">LevelInfo</a>, you can find a section that looks like this:</p>
+<pre class="uscript"><span class="uscript-comment">//-----------------------------------------------------------------------------</span>
+<span class="uscript-comment">// Network replication.</span>
+
+<span class="uscript-keyword">replication</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Role<span class="uscript-operator">==</span>ROLE_Authority <span class="uscript-operator">)</span>
+        Pauser<span class="uscript-operator">,</span> TimeDilation<span class="uscript-operator">,</span> bNoCheating<span class="uscript-operator">,</span> bAllowFOV<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>The replication block is a special statement that tells the Unreal engine how to deal with the properties of this object. Lets look at it closely.</p>
+<p>First, we have a replication condition: <code>reliable if( Role == ROLE_Authority)</code>. The first part of the condition will either be reliable or unreliable. If it says reliable, that means the engine will make sure the replicated information gets to each client safely. Because of the way the UDP protocol works, its possible for packets to get lost in transmission. Unreliable replication won't check to see if the packet arrived safely. Reliable replication has a slightly higher network overhead than unreliable replication.</p>
+<p>The second part of the condition <code>(Role == ROLE_Authority)</code> tells the engine when to send the data. In this situation we are going to send the data whenever the current LevelInfo object is an Authority. To really decypher what this means you have to understand the specific role of the object in question. With a LevelInfo, the server is going to maintain the authoritative version of the object. The server tells the clients how the level is behaving, not the other way around. For our example replication block, this means that the data will be sent from the server to each client. </p>
+<p>The other common type of condition is <code>(Role &lt; ROLE_Authority)</code>. This means that the engine should send the data when the current object is not an authority. Or rather, that the client should tell the server the correct information.</p>
+<p>Finally, we see four variables listed beneath the condition. These are the variables that the statement applies to. In this situation, we have a statement saying, "If we are the server and the client has an outdated copy of these variables, then send to the client new information about Pauser, TimeDilation, bNoCheating, and bAllowFOV. Always make sure the data arrives safely."</p>
+<p>The replication statement doesn't cover the rest of the variables in the LevelInfo. This can mean two things. Either the information is filled in by the client in C++ (in the case of TimeSeconds) or the information is never updated on the client and is completely unreliable (in the case of Game).</p>
+<p>You don't have access to the C++ code, but you can make a couple inferences about an object's properties to help you determine whether or not a class has non-replicated properties that are filled in my C++. Look at the class declaration for LevelInfo:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> LevelInfo <span class="uscript-keyword">extends</span> ZoneInfo
+  <span class="uscript-keyword">native</span><span class="uscript-operator">;</span></pre><p>Native means "This object is declared in C++ and in UnrealScript." Native classes probably have behavior in C++ that you can't see. Only a few special classes are native.</p>
+<p>Finally, watch out for classes that say <code>nativereplication</code> in the class declaration. This means that the <code>replication</code> block inside UnrealScript doesn't do anything and that replication is entirely defined in C++. Some network heavy objects use native replication to help with network performance. </p>
+<p>So now you have an idea of how to avoid problems with simulated functions. Now lets look at replicated functions. </p>
+<p>A replicated function is a function that is called from the client or the server but executed on the other side. An example of a replicated function is the <code>Say</code> function. When you hit the T key to talk to everyone in a game, you are actually executing the Say function along with whatever you said. The client takes the function and its parameters and sends it to the server for execution. The server then broadcasts your message to all the other clients. </p>
+<p>Replicated functions are very easy to use if you remember one thing: They can't return a value. A replicated function is transmitted over the network to the other side... that takes time (approximately equal to your ping). If replicated functions were blocking (i.e.: they waited for a return value) network communication would halt.</p>
+<p>This is obvious for anyone who thinks about it, but when you are working on your mod you might not think about it. Replicated functions return immediately. Use them to trigger behavior on the client (like special effects) or send a message (a weapon fire message to the server). </p>
+<p>Finally, replicated functions are restricted to only a few classes. A function call on an actor can only be replicated to the player who owns that actor. A function call can only be replicated to one actor (the player who owns it); they cannot be multicast. You might use them with weapons or inventory items you make (where the function is replicated to the player who owns the item).</p>
+<p>Okay, so that should help you get into replication... let's move on. </p>
+<h3><a name="0.0.5"></a>Don't use UnrealEd</h3>
+<p>UnrealEd is a great editor for developing levels, but probably not the best place to work on code. This is a judgment call. I use Microsoft Developer Studio as my editor and <code>ucc make</code> to compile the package files. I find the Find In Files option in Dev Studio to be very useful and the editor to be very powerful.</p>
+<p>In addition, UnrealEd hides the default properties blocks of source files, making them only accessible through the Show Defaults option. This just sucks! To export the script files to disk, go to the script browser and hit the "Export All" button. The files will be exported to their package directories ready for you to browse.</p>
+<p>If UnrealEd crashes with a DLL or OCX error of some sort, go to unreal.epicgames.com and click on Downloads. Download the latest Unreal Editor Fix. The current fix level is 4.</p>
+<hr class="thin"><p>Prev Page: <a href="mod-authoring-the-three-mod.html">/The Three Mod Types</a> &ndash; <em class="em2">Section 4 of 12</em> &ndash; Next Page: <a href="mod-authoring-setting-up-yo.html">/Setting Up Your Project</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Accessed Nones", "#0.0.1");
+menuItemAdd("Dangerous Iterators", "#0.0.2");
+menuItemAdd("The Foibles of Tracing", "#0.0.3");
+menuItemAdd("Decrypting Replication", "#0.0.4");
+menuItemAdd("Don't use UnrealEd", "#0.0.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="mod-authoring.html">Mod Authoring</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Mod_Authoring/A_Few_Things_To_Watch_Out_For">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Mod_Authoring/A_Few_Things_To_Watch_Out_For">View other revisions</a><br>Last edited May 19, 2003 22:44 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Mod_Authoring/A_Few_Things_To_Watch_Out_For">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Mod_Authoring/A_Few_Things_To_Watch_Out_For">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I'm a doctor, not a mechanic
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

@@ -1,0 +1,342 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: VitalOverdose/DamageCounter</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=VitalOverdose/DamageCounter; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="vitaloverdose.html">VitalOverdose</a>/<a href="http://wiki.beyondunreal.com/wiki?back=VitalOverdose/DamageCounter">DamageCounter</a></h1>
+	<div class="wiki"><div class="classpath"><img src="shared//gameicons/icon-ut2004.png"> <a href="unreal-tournament-2004.html">UT2004</a> :: <a href="actor.html">Actor</a> &gt;&gt; <a href="trigger.html">Trigger</a> &gt;&gt;DamageCounter(Package: custom)<br></div>
+<pre class="paraverbatim"> </pre><p>by <a href="vitaloverdose.html">VitalOverdose</a></p>
+<p>Part of  <a href="vitaloverdose-vitals-pro-ma.html">Vital'sPMT</a></p>
+<h3><a name="0.0.1"></a>Overview</h3>
+<pre class="uscript"><span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-comment">//      FxDamageCounter a Counter thats Triggered by Damage</span>
+<span class="uscript-comment">//      can Trigger SoundFx,EmitterFx and an event on rEaching The Damage threshold</span>
+
+<span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-keyword">class</span> DamageCounter <span class="uscript-keyword">Extends</span> VitalPMToolBox
+<span class="uscript-keyword">Placeable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span>TheCount<span class="uscript-operator">)</span> <span class="uscript-type">float</span>                           ResetDelay<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span>TheCount<span class="uscript-operator">)</span> <span class="uscript-type">Bool</span>                            bCarryDamage<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span>TheCount<span class="uscript-operator">)</span> <span class="uscript-type">int</span>                             TargetNum<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span>TheCount<span class="uscript-operator">)</span> <span class="uscript-type">float</span>                           DamThresh<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span>TheCount<span class="uscript-operator">)</span> <span class="uscript-type">float</span>                           CounterResetDelay<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span>AmbiantFx<span class="uscript-operator">)</span> <span class="uscript-keyword">Array</span><span class="uscript-operator">&lt;</span> <span class="uscript-keyword">Class</span><span class="uscript-operator">&lt;</span> Emitter <span class="uscript-operator">&gt;</span> <span class="uscript-operator">&gt;</span>      AmbiantFxPool<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span>AmbiantFx<span class="uscript-operator">)</span> <span class="uscript-type">bool</span>                           bTransferMomentumToFxWhenShot<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span>CountInc<span class="uscript-operator">)</span> sound                           CountIncSound<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span>CountInc<span class="uscript-operator">)</span> <span class="uscript-type">bool</span>                            bResetCounter<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span>CountInc<span class="uscript-operator">)</span> <span class="uscript-keyword">Array</span><span class="uscript-operator">&lt;</span> <span class="uscript-keyword">Class</span><span class="uscript-operator">&lt;</span> Emitter <span class="uscript-operator">&gt;</span> <span class="uscript-operator">&gt;</span>       CountIncFxpool<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span>Payload<span class="uscript-operator">)</span>  <span class="uscript-keyword">Array</span><span class="uscript-operator">&lt;</span> <span class="uscript-keyword">Class</span><span class="uscript-operator">&lt;</span> Emitter <span class="uscript-operator">&gt;</span> <span class="uscript-operator">&gt;</span>       PayloadFxpool<span class="uscript-operator">;</span>        <span class="uscript-comment">// PayloadFx . if more than one they</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span>Payload<span class="uscript-operator">)</span>  <span class="uscript-type">float</span>                           DeliverPayloadDelay<span class="uscript-operator">;</span>  <span class="uscript-comment">// get picked at random for spawning</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span>Payload<span class="uscript-operator">)</span>  <span class="uscript-type">name</span>                            PayloadEvent<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span>Payload<span class="uscript-operator">)</span>  sound                           PayloadSoundFx<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span>Payload<span class="uscript-operator">)</span>  <span class="uscript-type">float</span>                           ShakeRadius<span class="uscript-operator">;</span>     <span class="uscript-comment">// radius within which to shake Player views</span>
+
+<span class="uscript-keyword">var</span> emitter                                    SpawnedAmbiant<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-type">float</span>                                      DamageTotal<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-type">int</span>                                        TheCounter<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span>                                       bAffectingParticles<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span>                                       bDeliveringPayload<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span>                                       bResetting<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-type">float</span>                                      RotTime<span class="uscript-operator">;</span>         <span class="uscript-comment">// how much Time to rot The instigator's view</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-type">float</span>                                      OffsetTime<span class="uscript-operator">;</span>      <span class="uscript-comment">// how much Time to offset view</span>
+<span class="uscript-keyword">var</span> vector                                     RotMag<span class="uscript-operator">;</span>          <span class="uscript-comment">// how far to rot view</span>
+<span class="uscript-keyword">var</span> vector                                     RotRate<span class="uscript-operator">;</span>         <span class="uscript-comment">// how fast to rot view</span>
+<span class="uscript-keyword">var</span> vector                                     OffsetMag<span class="uscript-operator">;</span>       <span class="uscript-comment">// Max view offset vertically</span>
+<span class="uscript-keyword">var</span> vector                                     OffsetRate<span class="uscript-operator">;</span>      <span class="uscript-comment">// how fast to offset view vertically</span>
+
+
+<span class="uscript-keyword">function</span> PostBegineplay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>AmbiantFxPool<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+    SpawnFx<span class="uscript-operator">(</span>AmbiantFxPool<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ShakeRadius <span class="uscript-operator">&lt;</span> <span class="uscript-number">64</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+                                                       <span class="uscript-comment">// Taken away the option to</span>
+ OffsetMag  <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">10.000000</span><span class="uscript-operator">,</span><span class="uscript-number">10.000000</span><span class="uscript-operator">,</span><span class="uscript-number">10.000000</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>             <span class="uscript-comment">// let the mapper mess with the</span>
+ OffsetRate <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1000.000000</span><span class="uscript-operator">,</span><span class="uscript-number">1000.000000</span><span class="uscript-operator">,</span><span class="uscript-number">1000.000000</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>      <span class="uscript-comment">// viewshake prorties just to</span>
+ OffsetTime<span class="uscript-operator">=</span><span class="uscript-number">3.000000</span><span class="uscript-operator">;</span>                                         <span class="uscript-comment">//make thing simpler</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> takeDamage<span class="uscript-operator">(</span><span class="uscript-type">Int</span> Damage<span class="uscript-operator">,</span>Pawn EventInstigator<span class="uscript-operator">,</span>Vector HitLocation <span class="uscript-operator">,</span>Vector Momentum<span class="uscript-operator">,</span><span class="uscript-keyword">Class</span><span class="uscript-operator">&lt;</span>damagEType<span class="uscript-operator">&gt;</span> damagEType<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+ <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bDeliveringPayload <span class="uscript-operator">==</span> <span class="uscript-keyword">true</span> <span class="uscript-operator">)</span>
+   <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+   <span class="uscript-operator">}</span>
+
+ DamageTotal <span class="uscript-operator">=</span> DamageTotal <span class="uscript-operator">+</span> Damage<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bTransferMomentumToFxWhenShot <span class="uscript-operator">==</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+    bAffectingParticles <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    setTimer<span class="uscript-operator">(</span><span class="uscript-number">0.5</span><span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span> DamageTotal <span class="uscript-operator">&gt;</span> DamThresh <span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span> IncCounter<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     bDeliveringPayload <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+     settimer<span class="uscript-operator">(</span> DeliverPayloadDelay <span class="uscript-operator">,</span> <span class="uscript-keyword">false</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> SpawnFX<span class="uscript-operator">(</span><span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span> emitter <span class="uscript-operator">&gt;</span> <span class="uscript-operator">&gt;</span> FXPool<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>emitter<span class="uscript-operator">&gt;</span>   PickedFxClass<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">local</span> Emitter          SpawnedFx<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">local</span> <span class="uscript-type">int</span>              PickedNumb<span class="uscript-operator">;</span>
+
+ PickedNumb    <span class="uscript-operator">=</span> Rand<span class="uscript-operator">(</span>FXPool<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-number">-1</span><span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+ PickedFxClass <span class="uscript-operator">=</span> FXPool<span class="uscript-operator">[</span> PickedNumb <span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+ SpawnedFx     <span class="uscript-operator">=</span> Spawn <span class="uscript-operator">(</span> PickedFxClass <span class="uscript-operator">,</span> <span class="uscript-keyword">self</span> <span class="uscript-operator">,</span><span class="uscript-operator">,</span> Location <span class="uscript-operator">,</span> Rotation <span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// delivering payload</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> SpawnedAmbiant <span class="uscript-operator">==</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     SpawnedAmbiant <span class="uscript-operator">=</span> SpawnedFx<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Function</span> <span class="uscript-type">bool</span> IncCounter<span class="uscript-operator">(</span><span class="uscript-operator">)</span>     <span class="uscript-comment">// adds 1 to Counter and checks to see If it</span>
+<span class="uscript-operator">{</span>                              <span class="uscript-comment">// has rEached The Target amount. if so Returns True</span>
+ TheCounter<span class="uscript-operator">++</span><span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> CountIncFxpool<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">!=</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     spawnFX<span class="uscript-operator">(</span>CountIncFxpool<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> CountIncSound  <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     PlaySound<span class="uscript-operator">(</span> CountIncSound <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> TheCounter <span class="uscript-operator">==</span> TargetNum <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     <span class="uscript-keyword">return</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+ <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-keyword">Local</span> <span class="uscript-type">int</span> Counter<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">int</span> ModifySlot<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bAffectingParticles <span class="uscript-operator">==</span> <span class="uscript-keyword">true</span> <span class="uscript-operator">)</span>
+   <span class="uscript-operator">{</span>
+   <span class="uscript-keyword">For</span><span class="uscript-operator">(</span> Counter<span class="uscript-operator">=</span><span class="uscript-number">0</span> <span class="uscript-operator">;</span> Counter <span class="uscript-operator">&lt;</span>SpawnedAmbiant<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> Counter<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>
+      <span class="uscript-operator">{</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span> SpawnedAmbiant<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>UseVelocityScale <span class="uscript-operator">==</span> <span class="uscript-keyword">true</span> <span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> 
+         <span class="uscript-operator">(</span>SpawnedAmbiant<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>VelocityScale<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>RelativeTime <span class="uscript-operator">==</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+         <span class="uscript-operator">{</span>
+          ModifySlot<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+         <span class="uscript-operator">}</span>
+      SpawnedAmbiant<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>VelocityScale<span class="uscript-operator">[</span>ModifySlot<span class="uscript-operator">]</span><span class="uscript-operator">.</span>RelativeVelocity<span class="uscript-operator">.</span>X <span class="uscript-operator">=</span> 
+      SpawnedAmbiant<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>VelocityScale<span class="uscript-operator">[</span>ModifySlot<span class="uscript-operator">]</span><span class="uscript-operator">.</span>RelativeVelocity<span class="uscript-operator">.</span>X<span class="uscript-operator">;</span>
+      SpawnedAmbiant<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>VelocityScale<span class="uscript-operator">[</span>ModifySlot<span class="uscript-operator">]</span><span class="uscript-operator">.</span>RelativeVelocity<span class="uscript-operator">.</span>y <span class="uscript-operator">=</span> 
+      SpawnedAmbiant<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>VelocityScale<span class="uscript-operator">[</span>ModifySlot<span class="uscript-operator">]</span><span class="uscript-operator">.</span>RelativeVelocity<span class="uscript-operator">.</span>y<span class="uscript-operator">;</span>
+      SpawnedAmbiant<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>VelocityScale<span class="uscript-operator">[</span>ModifySlot<span class="uscript-operator">]</span><span class="uscript-operator">.</span>RelativeVelocity<span class="uscript-operator">.</span>z <span class="uscript-operator">=</span> 
+      SpawnedAmbiant<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>VelocityScale<span class="uscript-operator">[</span>ModifySlot<span class="uscript-operator">]</span><span class="uscript-operator">.</span>RelativeVelocity<span class="uscript-operator">.</span>z<span class="uscript-operator">;</span>
+      <span class="uscript-operator">}</span>
+    bAffectingParticles <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+   <span class="uscript-operator">}</span>
+<span class="uscript-keyword">else</span>
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bDeliveringPayload <span class="uscript-operator">==</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span>
+   <span class="uscript-operator">{</span>
+    DeliverPay_load<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+   <span class="uscript-operator">}</span>
+<span class="uscript-keyword">else</span>
+Reset<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Reset<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ SpawnedAmbiant<span class="uscript-operator">.</span>destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ bAffectingParticles <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+ Thecounter          <span class="uscript-operator">=</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>Thecounter<span class="uscript-operator">;</span>
+ DamageTotal         <span class="uscript-operator">=</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>DamageTotal<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Reset<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                             <span class="uscript-comment">// for level reset</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">function</span> PartMorph<span class="uscript-operator">(</span> Vector TranferedMomentum <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">Local</span> <span class="uscript-type">int</span> Counter<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> ModifySlot<span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">For</span><span class="uscript-operator">(</span> Counter<span class="uscript-operator">=</span><span class="uscript-number">0</span> <span class="uscript-operator">;</span> Counter <span class="uscript-operator">&lt;</span> SpawnedAmbiant<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> Counter<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span> SpawnedAmbiant<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>UseVelocityScale <span class="uscript-operator">==</span> <span class="uscript-keyword">true</span> <span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> 
+        <span class="uscript-operator">(</span>SpawnedAmbiant<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>VelocityScale<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>RelativeTime <span class="uscript-operator">==</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+         ModifySlot<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+     SpawnedAmbiant<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>VelocityScale<span class="uscript-operator">[</span>ModifySlot<span class="uscript-operator">]</span><span class="uscript-operator">.</span>RelativeVelocity<span class="uscript-operator">.</span>X <span class="uscript-operator">=</span> TranferedMomentum<span class="uscript-operator">.</span>x<span class="uscript-operator">;</span>
+     SpawnedAmbiant<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>VelocityScale<span class="uscript-operator">[</span>ModifySlot<span class="uscript-operator">]</span><span class="uscript-operator">.</span>RelativeVelocity<span class="uscript-operator">.</span>y <span class="uscript-operator">=</span> TranferedMomentum<span class="uscript-operator">.</span>y<span class="uscript-operator">;</span>
+     SpawnedAmbiant<span class="uscript-operator">.</span>Emitters<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>VelocityScale<span class="uscript-operator">[</span>ModifySlot<span class="uscript-operator">]</span><span class="uscript-operator">.</span>RelativeVelocity<span class="uscript-operator">.</span>z <span class="uscript-operator">=</span> TranferedMomentum<span class="uscript-operator">.</span>z<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> DeliverPay_load<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> PlayerController LocalPlayer<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">local</span> Controller       C<span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PayloadFxpool<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     SpawnFx<span class="uscript-operator">(</span>PayloadFxpool<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PayloadEvent  <span class="uscript-operator">!=</span> <span class="uscript-name">''</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     Triggerevent<span class="uscript-operator">(</span> PayloadEvent <span class="uscript-operator">,</span> <span class="uscript-keyword">self</span> <span class="uscript-operator">,</span> instigator <span class="uscript-operator">)</span><span class="uscript-operator">;</span>            <span class="uscript-comment">// delivering payload</span>
+    <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PayloadSoundFx <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     PlaySound<span class="uscript-operator">(</span> PayloadSoundFx <span class="uscript-operator">)</span><span class="uscript-operator">;</span>                               <span class="uscript-comment">// delivering payload</span>
+    <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> ShakeRadius <span class="uscript-operator">&gt;</span> <span class="uscript-number">64</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     LocalPlayer <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>GetLocalPlayerController<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+     <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>LocalPlayer <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span> VSize<span class="uscript-operator">(</span> Location <span class="uscript-operator">-</span> LocalPlayer<span class="uscript-operator">.</span>ViewTarget<span class="uscript-operator">.</span>Location <span class="uscript-operator">)</span> <span class="uscript-operator">&lt;</span> ShakeRadius <span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+         LocalPlayer<span class="uscript-operator">.</span>ShakeView<span class="uscript-operator">(</span> RotMag <span class="uscript-operator">,</span> RotRate <span class="uscript-operator">,</span> RotTime <span class="uscript-operator">,</span> OffsetMag <span class="uscript-operator">,</span> OffsetRate <span class="uscript-operator">,</span> OffsetTime <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+     <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> C <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>ControllerList <span class="uscript-operator">;</span> C <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">;</span> C <span class="uscript-operator">=</span> C<span class="uscript-operator">.</span>NextController <span class="uscript-operator">)</span>
+         <span class="uscript-operator">{</span>
+          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>PlayerController<span class="uscript-operator">(</span> C <span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> 
+                 <span class="uscript-operator">(</span>C <span class="uscript-operator">!=</span> LocalPlayer<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> 
+                 <span class="uscript-operator">(</span>VSize<span class="uscript-operator">(</span>Location <span class="uscript-operator">-</span> PlayerController<span class="uscript-operator">(</span>C<span class="uscript-operator">)</span><span class="uscript-operator">.</span>ViewTarget<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span> <span class="uscript-operator">&lt;</span> ShakeRadius<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+             <span class="uscript-operator">{</span>
+              C<span class="uscript-operator">.</span>ShakeView<span class="uscript-operator">(</span> RotMag<span class="uscript-operator">,</span> RotRate <span class="uscript-operator">,</span> RotTime <span class="uscript-operator">,</span> OffsetMag <span class="uscript-operator">,</span> OffsetRate <span class="uscript-operator">,</span> OffsetTime <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+             <span class="uscript-operator">}</span>
+         <span class="uscript-operator">}</span>
+      <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bResetCounter <span class="uscript-operator">==</span> <span class="uscript-keyword">true</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     bDeliveringPayload <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+     SetTimer<span class="uscript-operator">(</span> ReSetDelay<span class="uscript-operator">,</span><span class="uscript-keyword">false</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.2"></a>Related</h3>
+<pre class="paraverbatim"> </pre><ul><li><a href="vitaloverdose-speed-trap.html">VitalOverdose/Speed Trap</a> </li>
+<li><a href="vitaloverdose-vecbooster.html">VitalOverdose/VecBooster</a> </li>
+<li><a href="vitaloverdose-vectagger.html">VitalOverdose/VecTagger</a></li>
+<li><a href="vitaloverdose-ejection-trig.html">VitalOverdose/Ejection Trigger</a></li>
+<li><a href="vitaloverdose-vehicletelepo.html">VitalOverdose/VehicleTeleporter</a></li>
+</ul>
+<pre class="paraverbatim"> </pre><h2><a name="0.1"></a>discusion</h2>
+<hr class="thin"><p><a href="category-custom-class.html">Category Custom Class</a></p>
+<pre class="paraverbatim"> </pre><p><a href="category-custom-class.html">Category Custom Class</a> </p>
+<script type="text/javascript"><!--
+ menuItemAdd("Overview", "#0.0.1");
+menuItemAdd("Related", "#0.0.2");
+menuItemAdd("discusion", "#0.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="vitaloverdose.html">VitalOverdose</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=VitalOverdose/DamageCounter">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=VitalOverdose/DamageCounter">View other revisions</a><br>Last edited February 28, 2006 13:51 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=VitalOverdose/DamageCounter">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/VitalOverdose/DamageCounter">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>The three virtues of a programmer: Laziness, Impatience, and Hubris. (Larry Wall)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

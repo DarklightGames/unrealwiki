@@ -1,0 +1,305 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: VitalOverdose/BotLock</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=VitalOverdose/BotLock; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="vitaloverdose.html">VitalOverdose</a>/<a href="http://wiki.beyondunreal.com/wiki?back=VitalOverdose/BotLock">BotLock</a></h1>
+	<div class="wiki"><div class="classpath"><img src="shared//gameicons/icon-ut2004.png"> <a href="unreal-tournament-2004.html">UT2004</a> :: <a href="actor.html">Actor</a> &gt;&gt; <a href="emitter.html">Emitter</a> &gt;&gt;BotLock (Package: custom)<br></div>
+<p>This actor is designed to be attacked to a vehicle. When its attached it also locks in the bots for the total length of time the emnitterfx is alive. This was needed for the <a href="vecbooster.html">VecBooster</a> to stop the bot from bailing the moment they got the boost and later the more advanced <a href="vitaloverdose-sfx-ultraligh.html">VitalOverdose/SFX Ultralight</a> emitter system.</p>
+<p>this emitter not only make nice fx it acts a sort of vec controller to any vehicle it is Tagged to.</p>
+<p>As for the most part i wanted only to have the trail fx while the vehicle was airborne so the timer function has been overwritten and will scan the vehicle its attached to to see if all four wheels are touching the ground or not. The scan rate or <em class="em2">TimerFrequency</em> can be set by the mapper in unrealEd.</p>
+<p>The is also a safe time for the doors to stay locked after the vehicle has made contact whith the ground again. This is quite simply because most landings still manage to freak the bots out enough to bail. So the solution is to hold them captive for about 2 seconds until the vehicle has decelerated to a speed they can cope with. </p>
+<pre class="paraverbatim"> <em class="em2">bScanningTargetVec</em> - Is a flag to help us use the timer function for 2 different jobs.
+                       - This use internally and cannot be set by the mapper as it has not got
+                         <em class="em2">()</em> after the <em class="em2">var</em> statement.
+ <em class="em2">bLockAllPawns</em>      - Can Be true or false. set by the mapper in unrealed. If set to true
+                         All players will be locked in not just the bots.
+ <em class="em2">BeginScanVec</em>       - Is the delaytime for the scanning that checks if the vehicle has been
+                         grounded or not as the whole scanning process is a bit CPU intensive 
+                         and should be kept to an absolute minimum if possible. IE boosting 
+                         off a high cliff you are not going to have to begin checking for 
+                         maybe a few seconds. It doesn't seem much but in a game which is 
+                         highly dependant of bandwidth speed like ut2004 we have to optimise 
+                         anywhere we can.
+ <em class="em2">LandedLockTime</em>          The amount of time to keep the driver locked in after the vehicle has landed.
+ <em class="em2">TimerFrequency</em>     - The Scan Rate. The timer function get called repeatedly and the timer
+                         frequency specifies the amount of time between each scan.</pre><pre class="uscript"><span class="uscript-keyword">Var</span>    <span class="uscript-type">bool</span>           bScanningTargetVec<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">Bool</span>           bLockAllPawns<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">Float</span>          BeginScanVec<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">Float</span>          LandedLockTime<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">Float</span>          TimerFrequency<span class="uscript-operator">;</span></pre><h3><a name="0.0.1"></a>PostBeginPlay()</h3>
+<p>The function <em class="em2">postbeginplay</em> gets called directly after the emitter is spawned and is a good place to check a few of the values the mapper may or may not have set in Unrealed.</p>
+<h4><a name="0.0.1.1"></a>First argument reads;</h4>
+<ul><li>if our base is not a vehicle &amp; our owner IS a vehicle..<ul><li>If the argument is true then the emitter hard attaches itself to its owner.</li>
+</ul>
+</li>
+</ul>
+<h4><a name="0.0.1.2"></a>The next argument reads;</h4>
+<ul><li>If our owner (typecasted to vehicle) doesnt have xbot for driver and <em class="em2">BlockAllPawns =True..</em><ul><li>call function <em class="em2">ToggleLock()</em>.</li>
+<li>set timer to go of every <em class="em2">TimerFrequency</em> Seconds.</li>
+</ul>
+</li>
+<li>Any code related to this function from the parent class is copied in here by using the <em class="em2">.super</em> function.</li>
+</ul>
+<pre class="uscript"><span class="uscript-keyword">Function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span> <span class="uscript-operator">!</span>base<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'onsvehicle'</span> <span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span>  <span class="uscript-operator">(</span>owner<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'onsvehicle'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span> 
+    <span class="uscript-operator">{</span>
+     setbase<span class="uscript-operator">(</span>owner<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>OnsVehicle<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Driver<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'xBot'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>bLockAllPawns<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     Togglelock<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+     SetTimer<span class="uscript-operator">(</span>BeginScanVec<span class="uscript-operator">,</span><span class="uscript-keyword">False</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-keyword">super</span><span class="uscript-operator">.</span>postbeginplay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.2"></a>Timer()</h3>
+<p>Here the <em class="em2">timer()</em> function is being used for two different jobs. </p>
+<p>Its first job is to call <em class="em2">checkGrounded()</em> every <em class="em2">timerfrequency</em> seconds then after the scanning has stopped it acts as the Safe time for the bots to be kept locked in the vehicle after it has landed.</p>
+<h4><a name="0.0.2.1"></a>First argument</h4>
+<ul><li>is <em class="em2">bScanningTargetVec</em>  set to <em class="em2">true</em>?<ul><li><em class="em2">true:</em></li>
+<li>is the result sent back by the function <em class="em2">checkgrounded()</em> equal to <em class="em2">true</em>?<ul><li><em class="em2">True:</em> </li>
+<li><em class="em2">Timerfrequency</em> is set to 0 as a flag as its no longer needed.</li>
+<li>The <em class="em2">timer()</em> is reset to go off just once in <em class="em2">LandedLockTime</em> seconds.</li>
+<li>The code quits the function at this point.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h4><a name="0.0.2.2"></a>Next argument;</h4>
+<ul><li>Is <em class="em2">bScanningTargetVec</em> equal to <em class="em2">false</em>;-<ul><li><em class="em2">True:</em> </li>
+<li>set <em class="em2">BscanningtargetVec</em> to true;</li>
+<li>Set the timer to be called repeatedly every <em class="em2">TimerFrequency</em> Seconds.</li>
+<li>Lock the bots it.</li>
+<li>The code exits the function here.</li>
+</ul>
+</li>
+</ul>
+<p>So at this from now on as <em class="em2">bScanningTargetVec</em> is set to true wee will only get as far as the first argument before hitting a return function and we wont be using the second argument again in this actors lifetime.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bScanningTargetVec <span class="uscript-operator">==</span> <span class="uscript-keyword">true</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+
+     <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> checkGrounded<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-keyword">True</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+         TimerFrequency <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+         SetTimer<span class="uscript-operator">(</span>LandedLockTime<span class="uscript-operator">,</span><span class="uscript-keyword">False</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+     <span class="uscript-keyword">Return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> bScanningTargetVec <span class="uscript-operator">==</span> <span class="uscript-keyword">False</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     bScanningTargetVec <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+     SetTimer<span class="uscript-operator">(</span>TimerFrequency<span class="uscript-operator">,</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+     ToggleLock<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+     <span class="uscript-keyword">Return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>  
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.3"></a>Togglelock()</h3>
+<p>This is a very simple function to toggle the property <em class="em2">bDriverCannotLeaveVehicle</em> on the vehicle the emitter is attached to.As  there are only to arguments involved ant they both include the same Boolean variable then we raly only have to ask 1 question as if the first is not true then we know the second will be. so by putting a <em class="em2">return</em> in After the <em class="em2">bDriverCannotLeaveVehicle</em> variable has been set to <em class="em2">true</em> we don have to worry about the focus of the code dropping through into the next lot of code.</p>
+<p>So the next line which simply set <em class="em2">bDriverCannotLeaveVehicle</em> to <em class="em2">false</em> will always be run by default if the first argument is <em class="em2">false</em>.</p>
+<pre class="uscript"><span class="uscript-keyword">Function</span> Togglelock<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+<span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> ONSVehicle<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>bDriverCannotLeaveVehicle <span class="uscript-operator">==</span> <span class="uscript-keyword">False</span> <span class="uscript-operator">)</span>
+   <span class="uscript-operator">{</span>
+    OnsVehicle<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>bDriverCannotLeaveVehicle <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Return</span><span class="uscript-operator">;</span>
+   <span class="uscript-operator">}</span>
+
+OnsVehicle<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>bDriverCannotLeaveVehicle <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.4"></a>CheckGrounded()</h3>
+<p>The function <em class="em2">Checkgrounded()</em> gets called from <em class="em2">timer</em> every <em class="em2">timerFrequency</em> seconds to check if all 4 wheels are in contact with the ground or not. The <em class="em2">BOOL</em> after the word function means that a Boolean variable will be passed back to the point the function was called when a <em class="em2">return BooleanVariable</em>is called.</p>
+<p>The way we check all 4 wheels is with a 'for-loop' and for this we need to set up a local integer variable to do the counting of the wheels.</p>
+<p>Quite simply we don't need to check all four wheels if 1 of them is not touching the ground. so as soon as on is found that isn't we exit the function by returning <em class="em2">FALSE</em>.</p>
+<p>So by default if the focus of the code hasn't exited by the end of the for next loop all 4 wheels have to be on the ground so we return a <em class="em2">TRUE</em> instead.</p>
+<pre class="uscript"><span class="uscript-keyword">Function</span> <span class="uscript-type">Bool</span> checkGrounded<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">Local</span> <span class="uscript-type">Int</span> i<span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> i<span class="uscript-operator">=</span><span class="uscript-number">0</span> <span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span>OnsVehicle<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>wheels<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">;</span> I<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>
+     <span class="uscript-operator">{</span>
+     <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> OnsVehicle<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Wheels<span class="uscript-operator">[</span>I<span class="uscript-operator">]</span><span class="uscript-operator">.</span>bWheelOnGround <span class="uscript-operator">==</span> <span class="uscript-keyword">false</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+         <span class="uscript-keyword">return</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+     <span class="uscript-operator">}</span>
+ <span class="uscript-keyword">Return</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.5"></a>Full Script</h3>
+<p>The completed script looks like this;-</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> BotLock <span class="uscript-keyword">extends</span> <span class="uscript-keyword">class</span> emitter
+<span class="uscript-keyword">placeable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">Var</span>    <span class="uscript-type">bool</span>           bScanningTargetVec<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">Bool</span>           bLockAllPawns<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">Float</span>          BeginScanVec<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">Float</span>          LandedLockTime<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">Float</span>          TimerFrequency<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">Function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>postbeginplay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>base<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'onsvehicle'</span> <span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span>  <span class="uscript-operator">(</span>owner<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'onsvehicle'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    setbase<span class="uscript-operator">(</span>owner<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>OnsVehicle<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Driver<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'xBot'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>bLockAllPawns<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     Togglelock<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+     SetTimer<span class="uscript-operator">(</span>BeginScanVec<span class="uscript-operator">,</span><span class="uscript-keyword">False</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ 
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bScanningTargetVec <span class="uscript-operator">==</span> <span class="uscript-keyword">true</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> checkGrounded<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-keyword">True</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+         TimerFrequency <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+         SetTimer<span class="uscript-operator">(</span>LandedLockTime<span class="uscript-operator">,</span><span class="uscript-keyword">False</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+     <span class="uscript-keyword">Return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+ <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> bScanningTargetVec <span class="uscript-operator">==</span> <span class="uscript-keyword">False</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+     bScanningTargetVec <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+     SetTimer<span class="uscript-operator">(</span>TimerFrequency<span class="uscript-operator">,</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+     ToggleLock<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>  
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Function</span> Togglelock<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> ONSVehicle<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>bDriverCannotLeaveVehicle <span class="uscript-operator">==</span> <span class="uscript-keyword">false</span> <span class="uscript-operator">)</span>
+   OnsVehicle<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>bDriverCannotLeaveVehicle <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">else</span>
+   OnsVehicle<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>bDriverCannotLeaveVehicle <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Function</span> <span class="uscript-type">Bool</span> checkGrounded<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">Local</span> <span class="uscript-type">Int</span> i<span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> i<span class="uscript-operator">=</span><span class="uscript-number">0</span> <span class="uscript-operator">;</span> i<span class="uscript-operator">&lt;</span>OnsVehicle<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>wheels<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">;</span> I<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>
+     <span class="uscript-operator">{</span>
+     <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> OnsVehicle<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Wheels<span class="uscript-operator">[</span>I<span class="uscript-operator">]</span><span class="uscript-operator">.</span>bWheelOnGround <span class="uscript-operator">==</span> <span class="uscript-keyword">false</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+     <span class="uscript-operator">}</span>
+ <span class="uscript-keyword">Return</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.6"></a>Disscussion</h3>
+<pre class="paraverbatim"> </pre><hr class="thin"><p><a href="category-custom-class.html">Category Custom Class</a> </p>
+<script type="text/javascript"><!--
+ menuItemAdd("PostBeginPlay()", "#0.0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>First argument reads;", "#0.0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>The next argument reads;", "#0.0.1.2");
+menuItemAdd("Timer()", "#0.0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>First argument", "#0.0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Next argument;", "#0.0.2.2");
+menuItemAdd("Togglelock()", "#0.0.3");
+menuItemAdd("CheckGrounded()", "#0.0.4");
+menuItemAdd("Full Script", "#0.0.5");
+menuItemAdd("Disscussion", "#0.0.6");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="vitaloverdose.html">VitalOverdose</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=VitalOverdose/BotLock">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=VitalOverdose/BotLock">View other revisions</a><br>Last edited June 15, 2006 14:16 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=VitalOverdose/BotLock">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/VitalOverdose/BotLock">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>My program doesn't have bugs. It just develops random features.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

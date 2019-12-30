@@ -1,0 +1,218 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Wormbo/Developer Journal</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Wormbo/Developer_Journal; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="wormbo.html">Wormbo</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Wormbo/Developer+Journal">Developer Journal</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a><a href="mod-ideas-reversed-ctf.html">Reversed CTF</a></h2>
+<p><em class="em1">This mod started out quite nicely, but then came to halt due to a lack of interest in messing with bot AI and the existance of other, more interesting projects.</em></p>
+<p>Status of this project: Canceled. You can get the unfinished but basically working mod without bot support from <a href="http://www.koehler-homepage.de/Wormbo/spareparts.html">[my spare parts page]</a>.</p>
+<h3><a name="0.1.1"></a>How Do I Start?</h3>
+<p>I think this mod should be quite simple to do since it's only a small change. (I'll see about that after understanding the CTF code.)</p>
+<h4><a name="0.1.1.1"></a>The Rules</h4>
+<p>The first step obviously is to specify the new gametype's rules:</p>
+<ul><li>The gametype will use CTF maps.</li>
+<li>Each team starts in its base. (the base with the flag of the same color)</li>
+<li>Players can pick up and carry their team's flag.</li>
+<li>Touching the enemy flag sends it back to its base.</li>
+<li>Points are scored by a player who touches the enemy flag at its base while holding his/her team's flag.</li>
+<li>The Translocator is enabled by default, but if a player translocates while carrying the flag causes him/her to drop the flag.</li>
+</ul>
+<p>I'll examine the relevant UScript classes now, before I start scripting at all. This will allow me to think up a possible class tree for the mod. (Which classes need to be subclassed at all and which classes can I extend from?)</p>
+<h4><a name="0.1.1.2"></a>A Look At Existing Classes</h4>
+<p>The mod might be more difficult than I though in the first place. There are lots of classes for CTF and I'm sure most of them need to be subclassed.</p>
+<p>Some Info subclasses:</p>
+<dl><dt>GameInfo &gt;&gt; UnrealMPGameInfo &gt;&gt; DeathMatch &gt;&gt; TeamGame &gt;&gt; CTFGame &gt;&gt; xCTFGame</dt><dd>CTFGame obviously is the base class for CTF gametypes and xCTFGame is the gametype used in UT 2003. I'm not yet sure which of them should be subclassed.</dd><dt>TeamAI &gt;&gt; CTFTeamAI</dt><dt>ReplicationInfo &gt;&gt; SquadAI &gt;&gt; CTFSquadAI</dt><dd>I don't know, what exactly these are used for, but they seem to handle the bot AI. Need to look into those classes.</dd><dt>LocalMessage &gt;&gt; CTFHUDMessage</dt><dt>LocalMessage &gt;&gt; CriticalEventPlus &gt;&gt; CTFMessage</dt><dd>The message classes. CTFMessage is ok, but CTFHUDMessage needs to be subclassed.</dd></dl>
+<p>Other <a href="actor.html">Actor</a> classes:</p>
+<dl><dt>Decoration &gt;&gt; GameObject &gt;&gt; CTFFlag</dt><dd>The flag itself. Needs to be subclassed.</dd><dt>NavigationPoint &gt;&gt; JumpDest &gt;&gt; JumpSpot &gt;&gt; GameObjectives &gt;&gt; CTFBase</dt><dd>The flag base. I can't replace it because it's bNoDelete=True, but I'm sure I can handle all the important stuff from the flags. It's not bStatic, so I might be able to change the FlagType to my own CTFFlag subclass before the flags are spawned.</dd><dt>HUD &gt;&gt; HudBase &gt;&gt; HudBDeathMatch &gt;&gt; HudBTeamDeathMatch &gt;&gt; HudBCaptureTheFlag</dt><dd>The HUD class. I'm not sure whether I need to subclass it.</dd></dl>
+<h3><a name="0.1.2"></a>Starting The Real Work</h3>
+<h4><a name="0.1.2.1"></a>Easy Start</h4>
+<p>I decided to subclass xCTFGame and not CTFGame and also found out that I need to subclass HudBCaptureTheFlag to replace the CTFHUDMessage with my own class.</p>
+<p>Currently I have these:</p>
+<dl><dt>ReversedCTFGame (extends xCTFGame)</dt><dd>The <a href="gameinfo.html">GameInfo</a> class. Currently only replaces the HUD.</dd><dt>HudReversedCTF (extends HudBCaptureTheFlag)</dt><dd>The HUD class. Currently only replaces the CTFHUDMessage.</dd><dt>ReversedCTFHUDMessage (extends CTFHUDMessage)</dt><dd>Displays the warn messages when a player of the enemy team or the local player has the flag.</dd><dt>ReversedCTF.int</dt><dd>Adds the new game type to the list of game types.</dd></dl>
+<p>Up to this point I didn't have to do any real coding work: The GameInfo and the message class only change some default properties and the HUD class has two small changes in its <tt>Timer</tt> function. Tomorrow I'll start with the real work, i.e. the changes in the CTFFlag and CTFGame code to allow the flag's team to pick it up, score points, etc.</p>
+<h4><a name="0.1.2.2"></a>Helpful Tools</h4>
+<p>Before continuing with the actual coding work I set up a batch file for recompiling the package:</p>
+<p><em class="em2">UCCMakeReversedCTF.bat</em></p>
+<pre>
+@echo off
+d:
+cd\ut2003\system
+:start
+del reversedctf.u
+ucc make
+echo.
+pause
+goto start
+</pre><p>This little script automatically deletes ReversedCTF.u and runs UCC Make to recompile it. It might be even better if I creaded a special INI file for UCC to use, but with only one project this almost seems too much work...</p>
+<p>Hmm, gotta get used to the new look of the Make commandlet. <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p class="indent1"><em class="em2">Mychaeel:</em> Note to self:  I <em class="em1">need</em> to get (a new version of) UMake out to the public.</p>
+<h4><a name="0.1.2.3"></a>Gameplay and Scoring</h4>
+<p>First I'm going to change what happens when a player touches a flag and how scored are awarded, i.e. which flag must be carried by whom. The ReversedCTFFlag script only contains this function:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> SameTeam<span class="uscript-operator">(</span>Controller c<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>c <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">||</span> c<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">.</span>Team <span class="uscript-operator">==</span> Team<span class="uscript-operator">)</span> <span class="uscript-comment">// changed from "!= Team"</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>This tiny change of a single character effectively switches around the teams from the flag's view. Now the blue flag can only be picked up by the blue team and will be returned to its (blue) base by the red team.</p>
+<p>The scoring required a bit more work. Exactly two changes in the ScoreFlag function, to be precice: <img alt=":rolleyes:" src="emoticons/rolleyes.gif" align="middle"></p>
+<pre class="uscript"><span class="uscript-keyword">function</span> ScoreFlag<span class="uscript-operator">(</span>Controller Scorer<span class="uscript-operator">,</span> CTFFlag theFlag<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> Dist<span class="uscript-operator">,</span>oppDist<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> ppp<span class="uscript-operator">,</span>numtouch<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> vector FlagLoc<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Scorer<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">.</span>Team <span class="uscript-operator">!=</span> theFlag<span class="uscript-operator">.</span>Team <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>  <span class="uscript-comment">// was "== theFlag.Team"</span>
+        Scorer<span class="uscript-operator">.</span>AwardAdrenaline<span class="uscript-operator">(</span>ADR_Return<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        FlagLoc <span class="uscript-operator">=</span> TheFlag<span class="uscript-operator">.</span>Position<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Location<span class="uscript-operator">;</span>
+        Dist <span class="uscript-operator">=</span> vsize<span class="uscript-operator">(</span>FlagLoc <span class="uscript-operator">-</span> TheFlag<span class="uscript-operator">.</span>HomeBase<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> TheFlag<span class="uscript-operator">.</span>TeamNum <span class="uscript-operator">!=</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span> <span class="uscript-comment">// was "== 0"</span>
+            oppDist <span class="uscript-operator">=</span> vsize<span class="uscript-operator">(</span>FlagLoc <span class="uscript-operator">-</span> Teams<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>HomeBase<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+            oppDist <span class="uscript-operator">=</span> vsize<span class="uscript-operator">(</span>FlagLoc <span class="uscript-operator">-</span> Teams<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>HomeBase<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span> 
+<span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span></pre><p>The gametype almost works as intended and could even be played online already. The only problem now is the AI: The bots gather around their team's flag carrier and keep saying "enemy flag carrier is here" while the bot that has the flag doesn't move at all.</p>
+<p>This will be the next problem to solve.</p>
+<h4><a name="0.1.2.4"></a>AI &mdash; Explaining The Rules To The Bots</h4>
+<p>AI is the most difficult part in creating a new gametype. (not counting tweaking and bug-fixing)</p>
+<p>Luckily in <a href="unreal-tournament-2003.html">UT2003</a> gametype-specific bot AI is stored in seperate classes: SquadAI and (for team games) TeamAI.</p>
+<p>But first:</p>
+<h5><a name="0.1.2.4.1"></a>The First Major Bug! <img alt=":(" src="emoticons/sad.gif" align="middle"></h5>
+<p>The flags are invisible while they are not at their bases.</p>
+<p>It turned out that my class analysis was incomplete, the CTFFlag class has some subclasses:</p>
+<p><em class="em2">CTFFlag &gt;&gt; xBlueFlag/xRedFlag</em></p>
+<p>I copied the xRedFlag and xBlueFlag classes and made them subclasses of my ReversedCTFFlag class.</p>
+<h5><a name="0.1.2.4.2"></a>Back To AI</h5>
+<p>I need to create completely new code for at least one of the larger CTFSquadAI functions. It might take some time to get the basic structure and I will do that on paper first.</p>
+<h5><a name="0.1.2.4.3"></a>Months pass...</h5>
+<p>Meanwhile I switched from batch file compiling to <a href="umake.html">UMake</a> and finished the Mercury Missile InstaGib mutator but instead of continuing with Reversed CTF I started playing Diablo 2 again &ndash; bad thing. <img alt=":P" src="emoticons/tongue.gif" align="middle"></p>
+<p>Reversed CTF is now in the "Overload v100 state", i.e. it works online perfectly and you could try to play it offline with bots, but don't expect too much from them. They just grab the flag and run towards the enemy base.</p>
+<hr class="thin"><h2><a name="0.2"></a>Comments</h2>
+<p><em class="em2">EntropicLqd:</em> Jolly good, it might be finished by the time I get back on-line.</p>
+<p><em class="em2">Wormbo:</em> I didn't look at the details of the AI classes, but I guess in this case it will be mostly swapping EnemyFlag and FriendlyFlag or the teams.</p>
+<p><em class="em2">Wormbo:</em> Urgh, I take back everything I said. This gametype requires a completely different strategy, since you have to prevent the enemies from breaking into <em class="em2">your</em> base instead of reaching their base after escaping from yours. I need to completely rewrite that part of the SquadAI class. Also I just noticed, why the flags are invisible when they are carried or otherwise not at their base: CTFFlag has two subclasses xRedFlag and xBlueFlag. <img alt=":/" src="emoticons/hmm.gif" align="middle"></p>
+<p><em class="em2">Wormbo:</em> Oh well, I'll have to take a break from this mod. Not because I needed it, but because I forgot to copy it to my notebook. <img alt=":/" src="emoticons/hmm.gif" align="middle"> Actual coding work will be delayed till Monday, but in the meantime I could try to create the main structure for the bot behavior.</p>
+<p><em class="em2">Aphelion:</em>  Thought I'd wish you luck...  Looks like you're going well... </p>
+<p><em class="em2">Nuclear Fuzz Grunge:</em> This is an interesting exploratory type of tutorial. Perfect for Retro characters. Excellent. Complete clarity. An Exposition of Your Thinking Process. Thanks.</p>
+<p class="indent1">Weeks pass...</p>
+<p><em class="em2">Wormbo:</em> I should really continue this sometimes... <img alt="o_O" src="emoticons/ohoh.gif" align="middle"></p>
+<p><em class="em2">Trystan:</em> hehehe.  I've said that myself <em class="em2">so</em> many times. <img alt="=)" src="emoticons/smile.gif" align="middle"></p>
+<p class="indent1">More week pass...</p>
+<p><em class="em2">GRAF!K:</em> Are you going to continue this?</p>
+<p><em class="em2">Wormbo:</em> Yes, I planned to... sometimes at least... <img alt=":rolleyes:" src="emoticons/rolleyes.gif" align="middle"></p>
+<p class="indent1">Even more weeks (or better: months) pass...</p>
+<p><em class="em2">Wormbo:</em> Enough is enough. This project got stuck at the bot AI and I hereby officially cancel development. You can get the mod and its source code at <a href="http://www.koehler-homepage.de/Wormbo/spareparts.html">[my spare parts page]</a>. If you want you can continue it, the only thing really missing is the bot AI. Reversed CTF itself is in "Overload v100 state", i.e. it works online without any problems as long as no bots are involved.</p>
+<hr class="thin"><p><a href="category-journal.html">Category Journal</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("<a href=\"mod-ideas-reversed-ctf.html\">Reversed CTF</a>", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>How Do I Start?", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>The Rules", "#0.1.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>A Look At Existing Classes", "#0.1.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Starting The Real Work", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Easy Start", "#0.1.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Helpful Tools", "#0.1.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Gameplay and Scoring", "#0.1.2.3");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>AI &mdash; Explaining The Rules To The Bots", "#0.1.2.4");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt>The First Major Bug! <img alt=\":(\" src=\"emoticons/sad.gif\" align=\"middle\">", "#0.1.2.4.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt>Back To AI", "#0.1.2.4.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt>Months pass...", "#0.1.2.4.3");
+menuItemAdd("Comments", "#0.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="wormbo.html">Wormbo</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Wormbo/Developer_Journal">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Wormbo/Developer_Journal">View other revisions</a><br>Last edited October 4, 2003 17:47 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Wormbo/Developer_Journal">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Wormbo/Developer_Journal">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Worst-case scenario: the UEd Goblin wipes the map and burns down your house.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

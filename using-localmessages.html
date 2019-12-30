@@ -1,0 +1,247 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Using LocalMessages</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Using_LocalMessages; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Using LocalMessages">Using LocalMessages</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>What Are LocalMessages?</h2>
+<p>The short description would be: All the messages in the game (e.g. "You have the flag, return to base!") are LocalMessage classes. LocalMessages have two important advantages over string messages: They use less network bandwidth and they can be displayed in different languages, regardless of the language the server uses. The classes can dynamically create the displayed strings from the parameters that were passed to them.</p>
+<h2><a name="0.2"></a>Getting to know LocalMessages</h2>
+<h3><a name="0.2.1"></a>Setting up a testing environment</h3>
+<p>To get into LocalMessages we'll try using some of the existing message classes from a simple <a href="mutator.html">mutator</a> first. Make a new mutator like the one below and <a href="create-an-int-file.html">create an INT File</a> for it, so it shows up in the game.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MutLocalMessageTest <span class="uscript-keyword">extends</span> Mutator<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> ModifyPlayer<span class="uscript-operator">(</span>Pawn Other<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-comment">// call next mutator's ModifyPlayer, so we don't break other mutators</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>ModifyPlayer<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  
+  <span class="uscript-comment">// we'll put our code here soon</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// Default properties neccessary for UT2003 mutators.</span>
+<span class="uscript-comment">// Don't add this section if you're coding for earlier engine versions,</span>
+<span class="uscript-comment">// it'll only cause compiler warnings.</span>
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+  FriendlyName<span class="uscript-operator">=</span><span class="uscript-string">"LocalMessage Test"</span>
+  Description<span class="uscript-operator">=</span><span class="uscript-string">"Test mutator for LocalMessage classes."</span>
+  GroupName<span class="uscript-operator">=</span><span class="uscript-string">"LocalMessage Test"</span>
+<span class="uscript-operator">}</span></pre><p>Now we have a testing environment we can use to play with the features of LocalMessage classes.</p>
+<h3><a name="0.2.2"></a>Broadcasting a LocalMessage</h3>
+<p>The first method to send LocalMessages we'll try is broadcasting them to all players. This sounds much more difficult than it is, because every <a href="actor.html">Actor</a> (e.g. our mutator) has a function which does exactly that.</p>
+<dl><dt>BroadcastLocalizedMessage (class&lt;<a href="localmessage.html">LocalMessage</a>&gt; MessageClass, optional int Switch, optional <a href="playerreplicationinfo.html">PlayerReplicationInfo</a> RelatedPRI_1, optional <a href="playerreplicationinfo.html">PlayerReplicationInfo</a> RelatedPRI_2, optional <a href="object.html">Object</a> OptionalObject)</dt></dl>
+<p>The MessageClass parameter specifies the LocalMessage class that should be broadcasted and is the only required parameter. We'll get back to the optional parameters later.</p>
+<p>Let's broadcast a simple message whenever a player respawns by adding the following code to the mutator's ModifyPlayer function:</p>
+<pre class="uscript">BroadcastLocalizedMessage<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'CTFHUDMessage'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// in UT use CTFMessage2 instead</span></pre><p>Compile the mutator, start a Practice Session/Instant Action game and add the LocalMessage Test mutator. Now every time a player or bot respawns you get the "You have the flag, return to base!" message. If you open the UnrealGame.CTFHUDMessage (or Botpack.CTFMessage2) class you'll notice that this string isn't hard-coded, but instead stored in a localized variable. Localization happens client-side, so on a client with the German version the message would appear as "Sie haben die Flagge! Zurück zur Basis!", while the French version displays "Vous avez le drapeau, regagnez la base !" even though both may be connected to a server that runs the Spanish version. (which in case of a listen server would see "Tienes la bandera, ¡regresa a la base!") <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<h4><a name="0.2.2.1"></a>The Switch Parameter</h4>
+<p>The CTFHUDMessage class also contains the "The enemy has your flag, recover it!" message. To display it we have to use the first optional parameter of the BroadcastLocalizedMessage function, the Switch parameter. This is an integer value and by not specifying it the value 0 is used. Change the BroadcastLocalizedMessage call to this:</p>
+<pre class="uscript">BroadcastLocalizedMessage<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'CTFHUDMessage'</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// in UT use CTFMessage2 instead</span></pre><p>After recompiling you now see the new message each time somebody respawns.</p>
+<p>Most LocalMessage classes use the Switch parameter for displaying completely different messages. Some examples are the CTF messages ("Player x picked up/dropped/captures/etc. the flag") or the game status messages. ("Press FIRE to start!", "The match is about to begin...3/2/1", etc.) You could say the Switch parameter specifies the type of message that should be displayed from a given class of LocalMessages.</p>
+<h4><a name="0.2.2.2"></a>The Related PRIs</h4>
+<p>PRI is short for <a href="playerreplicationinfo.html">PlayerReplicationInfo</a>. PRIs are actors holding information about a player. LocalMessages build their display strings client-side. However, due to optimization in the <a href="replication.html">replication</a> code not every bit of information about the players is sent to the clients in a network game. The things a client might want to know about even if the player isn't visible are saved in a PRI which is always available on all clients. (unlike the player's <a href="pawn.html">Pawn</a> or <a href="controller.html">Controller</a> actors)</p>
+<p>Some messages require information about one or two players. This could be a player's name (think "A's killing spree was ended by B."), a player's team or other player-specific information. The LocalMessages use their RelatedPRI_1 and RelatedPRI_2 parameters to specify up to two PRIs.</p>
+<p>Let's try the "You were killed by ..." message. This message uses the RelatedPRI_1 parameter to get the killer's name. We will just let the respawned player be the "killer" here. Every Pawn and Controller actor has a PlayerReplicationInfo property which can be used to access the player's PRI. Change the broadcast line to this:</p>
+<pre class="uscript">BroadcastLocalizedMessage<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'xVictimMessage'</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span> Other<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// use class'VictimMessage' in UT</span></pre><p>The victim message doesn't use the Switch parameter, that's why it isn't specified here.</p>
+<h4><a name="0.2.2.3"></a>The Optional Object</h4>
+<p>The fourth optional parameter when broadcasting LocalMessages is of type Object. You can specify every kind of object here (Classes, Actors, Textures, Sounds, etc.), but you have to make sure that the object exists on all clients. This might only be a problem with Actors, since they have to be replicated before they can be used as the optional object parameter of a LocalMessage. In CTF and Bombing Run messages the optional object is either the flag/ball or a <a href="teaminfo.html">TeamInfo</a>.</p>
+<p>For this tutorial we will use the item pickup message. The pickup message is stored in the PickupMessagePlus class (same name for UT and UT2003) and only checks the <a href="pickup.html">Pickup</a> class or <a href="inventory-ut.html">Inventory (UT)</a> class passed as the optional object. To get the Sniper Rifle's/Lightning Gun's pickup message we use the following line:</p>
+<pre class="uscript">BroadcastLocalizedMessage<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'PickupMessagePlus'</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-name">'SniperRiflePickup'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// use just class'SniperRifle' in UT</span></pre><p>This will display the message "You got the Lightning Gun." in UT2003 or "You got a Sniper Rifle." in UT.</p>
+<h3><a name="0.2.3"></a>Sending Messages To Individual Players</h3>
+<p>Sending messages to individual players is a little more complicated (but not much) than broadcasting it. All we need is a reference to a <a href="playerpawn.html">PlayerPawn</a> in UT or a <a href="playercontroller.html">PlayerController</a> in UT2003. The PlayerPawn and PlayerController classes have a ReceiveLocalizedMessage function which is also used by the BroadcastMessage function. BroadcastMessage calls all players' ReceiveLocalizedMessage functions to broadcast the message, we'll only call it for one player for now.</p>
+<dl><dt>ReceiveLocalizedMessage (class&lt;<a href="localmessage.html">LocalMessage</a>&gt; Message, optional int Switch, optional <a href="playerreplicationinfo.html">PlayerReplicationInfo</a> RelatedPRI_1, optional <a href="playerreplicationinfo.html">PlayerReplicationInfo</a> RelatedPRI_2, optional <a href="object.html">Object</a> OptionalObject)</dt></dl>
+<p>As you can see ReceiveLocalizedMessage has the same parameters as BroadcastLocalizedMessage. There's no need to explain scomething fundamentally new here, so let's jump right into an example.</p>
+<p>For this example we will use the Mutate function of our test mutator because it already gives us a reference to a player and we don't have to go look for one. First we'll extend out testing environment. Add the following code below the ModifyPlayer function or replace that function with it.</p>
+<pre class="uscript"><span class="uscript-comment">// in UT write PlayerPawn Sender instead</span>
+<span class="uscript-keyword">function</span> Mutate<span class="uscript-operator">(</span><span class="uscript-type">string</span> MutateString<span class="uscript-operator">,</span> PlayerController Sender<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-comment">// call next mutator's Mutate, so we don't break other mutators</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Mutate<span class="uscript-operator">(</span>MutateString<span class="uscript-operator">,</span> Sender<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  
+  <span class="uscript-comment">// our code will go here</span>
+<span class="uscript-operator">}</span></pre><p>Let's send a headshot announcement to everyone who types "mutate headshot" at the console. Add the following lines in the Mutate function:</p>
+<pre class="uscript">  <span class="uscript-comment">// case-insensitive</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> MutateString <span class="uscript-operator">~=</span> <span class="uscript-string">"headshot"</span> <span class="uscript-operator">)</span>
+    Sender<span class="uscript-operator">.</span>ReceiveLocalizedMessage<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'SpecialKillMessage'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// use class'DecapitationMessage' in UT</span></pre><p>The headshot message doesn't need any parameters, it's always the same regardless of switch, related PRIs or optional object.</p>
+<p>Now compile the mutator and start a game with it. Whenever you type "mutate headshot" you will see (and hear) "Headshot!", and in network games <em class="em1">only</em> the player who types it can see and hear it.</p>
+<h2><a name="0.3"></a>Creating New LocalMessages</h2>
+<p>For scripters, an easy way to get into creating your own localmessages is simply to steal an existing one.  I wanted some onscreen debug messages so I copied <a href="ctfhudmessage.html">CTFHUDMessage</a>, saved it into a file called MyScratchMessage.uc, and tweaked it to return my required messages.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MyScratchMessage <span class="uscript-keyword">extends</span> LocalMessage<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// Switch 0: Checkreset said Die</span>
+<span class="uscript-comment">// Switch 1: Checkreset said vehicle not empty</span>
+<span class="uscript-comment">// Switch 2: Checkreset found a collidingactor required ten more seconds</span>
+<span class="uscript-comment">// Switch 3: Checkreset Destroyed!</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Message<span class="uscript-operator">)</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span> string0<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Message<span class="uscript-operator">)</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span> string1<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Message<span class="uscript-operator">)</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span> string2<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Message<span class="uscript-operator">)</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span> string3<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Message<span class="uscript-operator">)</span> color YellowColor<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">function</span> color GetColor<span class="uscript-operator">(</span>
+    <span class="uscript-keyword">optional</span> <span class="uscript-type">int</span> <span class="uscript-keyword">Switch</span><span class="uscript-operator">,</span>
+    <span class="uscript-keyword">optional</span> PlayerReplicationInfo RelatedPRI_1<span class="uscript-operator">,</span> 
+    <span class="uscript-keyword">optional</span> PlayerReplicationInfo RelatedPRI_2
+    <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>YellowColor<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> GetString<span class="uscript-operator">(</span>
+    <span class="uscript-keyword">optional</span> <span class="uscript-type">int</span> <span class="uscript-keyword">Switch</span><span class="uscript-operator">,</span>
+    <span class="uscript-keyword">optional</span> PlayerReplicationInfo RelatedPRI_1<span class="uscript-operator">,</span> 
+    <span class="uscript-keyword">optional</span> PlayerReplicationInfo RelatedPRI_2<span class="uscript-operator">,</span>
+    <span class="uscript-keyword">optional</span> Object OptionalObject
+    <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-keyword">Switch</span> <span class="uscript-operator">==</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>string0<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-keyword">Switch</span> <span class="uscript-operator">==</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>string1<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-keyword">Switch</span> <span class="uscript-operator">==</span> <span class="uscript-number">2</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>string2<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span> 
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>string3<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+     string0<span class="uscript-operator">=</span><span class="uscript-string">"Checkreset said Die"</span>
+     string1<span class="uscript-operator">=</span><span class="uscript-string">"Checkreset said vehicle not empty"</span>
+     string2<span class="uscript-operator">=</span><span class="uscript-string">"Checkreset found a collidingactor required ten more seconds"</span>
+     string3<span class="uscript-operator">=</span><span class="uscript-string">"Checkreset Destroyed!"</span>
+
+     YellowColor<span class="uscript-operator">=</span><span class="uscript-operator">(</span>G<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>R<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>A<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">)</span>
+
+     bIsPartiallyUnique<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     bIsConsoleMessage<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+     bFadeMessage<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     bBeep<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     Lifetime<span class="uscript-operator">=</span><span class="uscript-number">2</span>
+     DrawColor<span class="uscript-operator">=</span><span class="uscript-operator">(</span>G<span class="uscript-operator">=</span><span class="uscript-number">160</span><span class="uscript-operator">,</span>R<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span>
+     StackMode<span class="uscript-operator">=</span>SM_Down
+     PosY<span class="uscript-operator">=</span><span class="uscript-number">0.100000</span>
+     FontSize<span class="uscript-operator">=</span><span class="uscript-number">1</span>
+<span class="uscript-operator">}</span></pre><p>As a scripter, I found I could just compile that into my package and it was available using <code>BroadcastLocalizedMessage(class'MyScratchMessage',1);</code></p>
+<p><em class="em2">Sweavo:</em> I don't know how to then localize this for different regions, though.  I guess you need to have separate source codes that compile into classes of the same name.</p>
+<p><em class="em2">Tarquin:</em> Suppose I create and embed a LocalMessage class in <a href="mylevel.html">MyLevel</a>... now how do I refer to it somewhere in the map so it's saved properly? Making it placeable seems to work. <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<h2><a name="0.4"></a>Related Topics</h2>
+<ul><li><a href="localization.html">Localization</a></li>
+<li><a href="int-file.html">INT File</a></li>
+</ul>
+<h2><a name="0.5"></a>Related Classes</h2>
+<ul><li><a href="localmessage.html">LocalMessage</a>, <a href="localmessage-ut.html">LocalMessage (UT)</a></li>
+<li><a href="hud.html">HUD</a>, <a href="hud-ut.html">HUD (UT)</a></li>
+<li><a href="canvas.html">Canvas</a>, <a href="canvas-ut.html">Canvas (UT)</a></li>
+</ul>
+<hr class="thin"><p><a href="category-tutorial.html">Category Tutorial</a><br><a href="category-to-do.html">Category To Do</a> &mdash; Add info about creating new LocalMessage classes.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("What Are LocalMessages?", "#0.1");
+menuItemAdd("Getting to know LocalMessages", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Setting up a testing environment", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Broadcasting a LocalMessage", "#0.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>The Switch Parameter", "#0.2.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>The Related PRIs", "#0.2.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>The Optional Object", "#0.2.2.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Sending Messages To Individual Players", "#0.2.3");
+menuItemAdd("Creating New LocalMessages", "#0.3");
+menuItemAdd("Related Topics", "#0.4");
+menuItemAdd("Related Classes", "#0.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Using_LocalMessages">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Using_LocalMessages">View other revisions</a><br>Last edited September 3, 2005 2:24 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Using_LocalMessages">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Using_LocalMessages">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>My program doesn't have bugs. It just develops random features.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

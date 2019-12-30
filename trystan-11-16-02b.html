@@ -1,0 +1,221 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Trystan/11 16 02b</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Trystan/11_16_02b; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="trystan.html">Trystan</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Trystan/11+16+02b">11 16 02b</a></h1>
+	<div class="wiki"><h3><a name="0.0.1"></a>11/16/02 Breaking down Object.uc.</h3>
+<p><em class="em2">EDIT:</em> Most of the information herein is referenced in <a href="global-function.html">Global Function</a>.  If you think I'm wrong about something or misinformed, let me know. <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p>Object.uc is the base class for everything within UnrealScript.  I'm going to attempt to break it down and see what parts of it do what.  This won't be comprehensive as I'm sure I won't understand it completely right now, but it'll be a good start.  Wiki's <a href="object.html">Object</a> listing is of course available, but it doesn't go into specifics.  (Is it supposed to?)  Why explain it here?  Why not.  Putting my thoughts into words has always been the best way for me to ensure I understand something; it forces you to swallow knowledge and regurgitate in your own vocabulary.  Unless you repeat the definition word for word understanding the subject becomes very important.  The point of this exercise is, ultimately, to become familiar with how weapons are added and/or modified in Unreal Tournament 2003.</p>
+<p>Object is the base of everything.  It has variables defined to allow for server side or client side use only (RF_NotForClient and RF_NotForServer) of objects; flags to keep objects from being loaded in the editor (RF_NotForEdit); flags to indicate whether an object is private or public (RF_Public); and flags to indicate that the object supports undo and redo in the editor (RF_Transactional) and whether or not the object should be saved and loaded (RF_Transient).  These flags are applied to Object.ObjectFlags to take effect.  From an UnrealEd dump of the classes (not the Epic source) these flags are located on lines 22 - 30.</p>
+<pre class="uscript"><span class="uscript-comment">// Object flags.</span>
+<span class="uscript-keyword">const</span> RF_Transactional  <span class="uscript-operator">=</span> <span class="uscript-number">0x00000001</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Supports editor undo/redo.</span>
+<span class="uscript-keyword">const</span> RF_Public         <span class="uscript-operator">=</span> <span class="uscript-number">0x00000004</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Can be referenced by external package files.</span>
+<span class="uscript-keyword">const</span> RF_Transient      <span class="uscript-operator">=</span> <span class="uscript-number">0x00004000</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Can't be saved or loaded.</span>
+<span class="uscript-keyword">const</span> RF_Standalone     <span class="uscript-operator">=</span> <span class="uscript-number">0x00080000</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Keep object around for editing even if unreferenced.</span>
+<span class="uscript-keyword">const</span> RF_NotForClient   <span class="uscript-operator">=</span> <span class="uscript-number">0x00100000</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Don't load for game client.</span>
+<span class="uscript-keyword">const</span> RF_NotForServer   <span class="uscript-operator">=</span> <span class="uscript-number">0x00200000</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Don't load for game server.</span>
+<span class="uscript-keyword">const</span> RF_NotForEdit     <span class="uscript-operator">=</span> <span class="uscript-number">0x00400000</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Don't load for editor.</span></pre><p>Most of the information I gathered was quite literally taken from the comments.  This is the way almost every Epic created uc file is.  If you read it, you'll generally find your way around it.</p>
+<p>Object is the home of the Guid struct.  A Guid is used by many pieces of software (Windows, Mac OSX, and Linux all use them in one way or another) to help indicate a unique version of an object.  They are usually randomly generated, 64 bit or larger numbers that make absolutely no sense to a human but can be used by a computer to ensure that it is using the correct version of your object.  This struct is defined as</p>
+<pre class="uscript"><span class="uscript-comment">// A globally unique identifier.</span>
+<span class="uscript-keyword">struct</span> <span class="uscript-keyword">Guid</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">var</span> <span class="uscript-type">int</span> A<span class="uscript-operator">,</span> B<span class="uscript-operator">,</span> C<span class="uscript-operator">,</span> D<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span></pre><p>There's support for a quite large GUID built into the base class.  It is my understanding that Unreal literally uses the GUID inside an object to ensure that the correct object is being used; that is, someone didn't go in and change your code and replace it with a trojan or cheat and then rebuild it.  I haven't researched the full usage of the GUID as of yet; when I do I'll ensure I update this page to reflect it.</p>
+<p>The Object class includes support for many of the basic variable types and functions.  Vector, Plane, Rotator, Coords, Quat, Range, RangeVector, Scale, Color, Box, IntBox, FloatBox, BoundingVolume, Matrix, InterpCurvePoint, InterpCurve, EDrawPivot, and Compressed Position are all defined inside Object.  The maximum integer value and value of Pi are also defined herein as constants.</p>
+<p>Now we get to the heart of the Object class.</p>
+<pre class="uscript"><span class="uscript-comment">// Bool operators.</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">129</span><span class="uscript-operator">)</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">preoperator</span>  <span class="uscript-type">bool</span>  <span class="uscript-operator">!</span>  <span class="uscript-operator">(</span> <span class="uscript-type">bool</span> A <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">242</span><span class="uscript-operator">)</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">operator</span><span class="uscript-operator">(</span><span class="uscript-number">24</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span>  <span class="uscript-operator">==</span> <span class="uscript-operator">(</span> <span class="uscript-type">bool</span> A<span class="uscript-operator">,</span> <span class="uscript-type">bool</span> B <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">243</span><span class="uscript-operator">)</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">operator</span><span class="uscript-operator">(</span><span class="uscript-number">26</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span>  <span class="uscript-operator">!=</span> <span class="uscript-operator">(</span> <span class="uscript-type">bool</span> A<span class="uscript-operator">,</span> <span class="uscript-type">bool</span> B <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">130</span><span class="uscript-operator">)</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">operator</span><span class="uscript-operator">(</span><span class="uscript-number">30</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span>  <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span> <span class="uscript-type">bool</span> A<span class="uscript-operator">,</span> <span class="uscript-keyword">skip</span> <span class="uscript-type">bool</span> B <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">131</span><span class="uscript-operator">)</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">operator</span><span class="uscript-operator">(</span><span class="uscript-number">30</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span>  <span class="uscript-operator">^^</span> <span class="uscript-operator">(</span> <span class="uscript-type">bool</span> A<span class="uscript-operator">,</span> <span class="uscript-type">bool</span> B <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">132</span><span class="uscript-operator">)</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">operator</span><span class="uscript-operator">(</span><span class="uscript-number">32</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span>  <span class="uscript-operator">||</span> <span class="uscript-operator">(</span> <span class="uscript-type">bool</span> A<span class="uscript-operator">,</span> <span class="uscript-keyword">skip</span> <span class="uscript-type">bool</span> B <span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>That's a small sampling of what you'll find within the class.  I won't reproduce it in whole here because it would be pointless.  To understand what's going on inside Object at this point in time you have to understand a bit about C++.</p>
+<p>First off, <em class="em2">native</em> means that the code is actually defined within C++ and not UnrealScript.  Considering how crucial speed would be for the base class of Object this makes great sense.  The anticipated code execution difference between C++ and UnrealScript is that C++ will execute roughly 20 times faster than the equivalent UnrealScript code.  The above lines are defining what function should be called when the operator is used against the variables.  Let's take one line apart and explain what I mean.</p>
+<pre class="uscript"><span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">242</span><span class="uscript-operator">)</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">operator</span><span class="uscript-operator">(</span><span class="uscript-number">24</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span>  <span class="uscript-operator">==</span> <span class="uscript-operator">(</span> <span class="uscript-type">bool</span> A<span class="uscript-operator">,</span> <span class="uscript-type">bool</span> B <span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p><em class="em2">Native</em> is explained above.  I'm not exactly sure what (242) is although I wager it's an array reference of some sort.  Static means that the class that implements this function only implements it once; it does not require an instantiation of the class in order to be called.  (This is in C++, not UnrealScript.)  <em class="em2">Final</em> means that classes that derive from this object cannot override this method with their own.  (Compare it to a "sealed" class in C++.)  My best guess at what <em class="em2">operator</em> means is that it is telling the compiler that this function defines exactly that:  a logical operator of some sort.  <em class="em2">bool</em> is the return value.  <em class="em2">==</em> is the operator being defined.  <em class="em2">( bool A, bool B )</em> defines the arguments that this operator takes.</p>
+<p>To understand how this all works you'll have to understand operator overloading in C++.  If you write the following code:</p>
+<pre class="uscript"><span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span> A<span class="uscript-operator">,</span> B<span class="uscript-operator">;</span>
+A <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+B <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">return</span> A <span class="uscript-operator">==</span> B<span class="uscript-operator">;</span></pre><p>as compared to</p>
+<pre class="uscript"><span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> A<span class="uscript-operator">,</span> B<span class="uscript-operator">;</span>
+A <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+B <span class="uscript-operator">=</span> <span class="uscript-number">2</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">return</span> A <span class="uscript-operator">==</span> B<span class="uscript-operator">;</span></pre><p>how does the compiler know which function to properly call?  It looks at what's called <em class="em2">function signatures</em>.  Compilers have gotten much smarter through the years and C++ takes full advantage of that.  In the case of the first section of code the compiler sees == (bool, bool) and calls the appropriate function.  In the second case it sees == (int, int) and will call the appropriate integer comparison function rather than the boolean comparison function.</p>
+<p>I doubt that many of us will ever feel a need to write our own operators.  The operators built into UnrealScript are quite complete - simply open Object.uc and take a look.  However it's nice to understand how these operators are defined because if you're curious whether or not something can be bit shifted, or tested for equality, a quick peek into Object.uc should give you the answer you're looking for.</p>
+<p>Now that we've defined all of the operators that UnrealScript supports we move on.</p>
+<pre class="uscript"><span class="uscript-comment">// Logging.</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">231</span><span class="uscript-operator">)</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">function</span> Log<span class="uscript-operator">(</span> <span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> S<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">name</span> Tag <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">232</span><span class="uscript-operator">)</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">function</span> Warn<span class="uscript-operator">(</span> <span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> S <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> Localize<span class="uscript-operator">(</span> <span class="uscript-type">string</span> SectionName<span class="uscript-operator">,</span> <span class="uscript-type">string</span> KeyName<span class="uscript-operator">,</span> <span class="uscript-type">string</span> PackageName <span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>Log writes an entry to the log and is useful for debugging purposes.  Interested in whether or not your bullet is actually slowing down?  Have it log messages.  Although this is a native function it does require (I believe) drive access and thus is fairly costly.  You should only log during development IMHO, and only where necessary.  I believe Warn is identical to log except for the severity level of it; I could not find any information on how Warn and Log differed.  (Possibly Warn prints to console a warning?  Or perhaps to screen?  I'll have to play with this later and see what the exact difference is.)  Localization isn't supported as of yet inside Unreal 2K3 so I wager the last function is a placeholder for when it is.  (From Wiki <a href="global-function.html">Global Function</a> warn is the same as log, it simply prefixes what it writes to the log with "ScriptWarning:" and contains various information about the object that it was called with.  Handy!)</p>
+<pre class="uscript"><span class="uscript-comment">// Goto state and label.</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">113</span><span class="uscript-operator">)</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> GotoState<span class="uscript-operator">(</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">name</span> NewState<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">name</span> Label <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">281</span><span class="uscript-operator">)</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> IsInState<span class="uscript-operator">(</span> <span class="uscript-type">name</span> TestState <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">284</span><span class="uscript-operator">)</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">name</span> GetStateName<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>Next up!  State management!  This is an entire subject and I've got a lot to learn about it.  For now check out the Wiki page at <a href="state.html">State</a>.  State management is incredibly important to any total conversion and I know I've got to master it. <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<pre class="uscript"><span class="uscript-comment">// Objects.</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">258</span><span class="uscript-operator">)</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> ClassIsChildOf<span class="uscript-operator">(</span> <span class="uscript-keyword">class</span> TestClass<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span> ParentClass <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">303</span><span class="uscript-operator">)</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> IsA<span class="uscript-operator">(</span> <span class="uscript-type">name</span> ClassName <span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>These are interesting functions.  IsA() doesn't require an object of the class to be tested; it only requires the string name of the class.  They can be used to determine effects if and only if the objects being referenced are of the right class.  Perhaps you wish grenades to explode harmlessly in water; you could use the IsA() test to see if an exploding object is of the class you wish to disable underwater.  Etc., etc.  These two functions are usually quite popular and used a lot in the sample code I've seen.  ClassIsChildOf requires objects of the classes to be tested.  (More information is at <a href="global-function.html">Global Function</a>.)</p>
+<pre class="uscript"><span class="uscript-comment">// Probe messages.</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">117</span><span class="uscript-operator">)</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> Enable<span class="uscript-operator">(</span> <span class="uscript-type">name</span> ProbeFunc <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">118</span><span class="uscript-operator">)</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> Disable<span class="uscript-operator">(</span> <span class="uscript-type">name</span> ProbeFunc <span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>These reference Probe<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Probe&referrerid=Trystan/11_16_02b">?</a>.  Basically a ProbeFunc is one that you can enable or disable based on the state of an object.  This is awesomely useful if you only wish ExplodeOnImpact to be enabled if AltFire was used to fire the projectile, or any other conditional functions.  IsA('Grenade') and in water can be used to disable GrenadeExplode; etc.  These functions are what are used to enable and disable said probe functions.</p>
+<pre class="uscript"><span class="uscript-comment">// Properties.</span>
+<span class="uscript-keyword">native</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> GetPropertyText<span class="uscript-operator">(</span> <span class="uscript-type">string</span> PropName <span class="uscript-operator">)</span><span class="uscript-operator">;</span> 
+<span class="uscript-keyword">native</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span>   SetPropertyText<span class="uscript-operator">(</span> <span class="uscript-type">string</span> PropName<span class="uscript-operator">,</span> <span class="uscript-type">string</span> PropValue <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">name</span> GetEnum<span class="uscript-operator">(</span> object E<span class="uscript-operator">,</span> <span class="uscript-type">int</span> i <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> object DynamicLoadObject<span class="uscript-operator">(</span> <span class="uscript-type">string</span> ObjectName<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span> ObjectClass<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">bool</span> MayFail <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> object FindObject<span class="uscript-operator">(</span> <span class="uscript-type">string</span> ObjectName<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span> ObjectClass <span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>Properties are used on an object to track information.  GetPropertyText can be used to retrieve a previously SetPropertyText.  They're generic functions used to, again, simply track information.  This property information can then be referenced by any function that has a reference to the object itself:  there's no need to pass variables about.</p>
+<p>The last three I'm not sure what they do.  GetEnum sounds like it retrieves an enumeration of some sort.  How, or why, I don't know.  Let's do a search through the existing code and see what we come up with.  GetEnum doesn't seem to exist or be called outside of the Object.uc class.  Interesting.. What does Wiki say about GetEnum?  See <a href="global-function.html">Global Function</a>, or..</p>
+<dl><dt>name GetEnum (Object E, int i) [static]</dt><dd>Returns the i-th element of the given enumeration, as in GetEnum(enum'MyEnum', 2) or an empty name of the specified index exceeds the number of elements in the enumeration.</dd></dl>
+<p>So you could use GetEnum as an indexer to a list of enumerations so you could possibly attach states or other information to a generic indicator.</p>
+<p>DynamicLoadObject does what it says.  If MayFail is set to true no logging will occur if the object load fails.  In our mod we'll probably end up using this to summon items like sandbags, etc.  I imagine FindObject finds an instance of an object but no information is currently available in Wiki and context determination has failed in UT2K3 source.  Another one to play with..</p>
+<pre class="uscript"><span class="uscript-comment">// Configuration.</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">536</span><span class="uscript-operator">)</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> SaveConfig<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> StaticSaveConfig<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> ResetConfig<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>These are used to retain information about an object's state.  Not a lot of information is available about these either.  SaveConfig() and StaticSaveConfig() have examples spread throughout the code; ResetConfig() is only defined but never used.</p>
+<pre class="uscript"><span class="uscript-comment">// Return a random number within the given range.</span>
+<span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">float</span> RandRange<span class="uscript-operator">(</span> <span class="uscript-type">float</span> Min<span class="uscript-operator">,</span> <span class="uscript-type">float</span> Max <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> Min <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>Max <span class="uscript-operator">-</span> Min<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Returns a random number between min and max.  Self explanatory to me.</p>
+<pre class="uscript"><span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">535</span><span class="uscript-operator">)</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> StopWatch<span class="uscript-operator">(</span><span class="uscript-keyword">optional</span> <span class="uscript-type">bool</span> bStop<span class="uscript-operator">)</span><span class="uscript-operator">;</span>   <span class="uscript-comment">//amb: for script timing</span>
+<span class="uscript-keyword">native</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> IsOnConsole<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>   <span class="uscript-comment">// for console specific stuff</span>
+<span class="uscript-keyword">native</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> IsSoaking<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>     </pre><p>StopWatch is used for timing script code and seems to be available in UT2K3 only.  IsOnConsole() is used to determine whether or not the mod is running on the XBox (or future) consoles.  Since I don't know of a way to get a mod onto the XBox at this point in time I think it's fairly safe to ignore this.  The only reference to IsOnConsole() in code is the following code fragment from PlayerController.uc:</p>
+<pre class="uscript"><span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> InvertLook<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> result<span class="uscript-operator">;</span>
+
+    result <span class="uscript-operator">=</span> PlayerInput<span class="uscript-operator">.</span>InvertLook<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>IsOnConsole<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">class</span><span class="uscript-name">'XBoxPlayerInput'</span><span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>bInvertVLook <span class="uscript-operator">=</span> result<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">class</span><span class="uscript-name">'XBoxPlayerInput'</span><span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>StaticSaveConfig<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>IsSoaking() also seems to be console specific.  It's referenced in Console.KeyEvent as</p>
+<pre class="uscript">    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Action <span class="uscript-operator">==</span> IST_Press <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        TimeIdle <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bRunningDemo <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>IsSoaking<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            StopRollingDemo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">return</span><span class="uscript-operator">(</span> <span class="uscript-keyword">true</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span> </pre><p>and in Console.Initialized as</p>
+<pre class="uscript"><span class="uscript-keyword">event</span> Initialized<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> IsSoaking<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        TimePerTitle <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+        TimePerDemo <span class="uscript-operator">=</span> TimePerSoak<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>Again it seems fairly safe to ignore IsSoaking() unless you're doing console programming.</p>
+<pre class="uscript"><span class="uscript-keyword">event</span> BeginState<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">event</span> EndState<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">event</span> Created<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//amb: notifiction for object based classes only (not actors)</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">197</span><span class="uscript-operator">)</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">iterator</span> <span class="uscript-keyword">function</span> AllObjects<span class="uscript-operator">(</span><span class="uscript-keyword">class</span> baseClass<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> Object obj<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//amb</span></pre><p>BeginState() is called when a state change is initiated, but prefer the state change is initiated.  EndState() is called prior to exiting the current state.  Both of these functions are meant to be overriden and made custom for your class.  The default definition in Object does nothing.</p>
+<p>Created() is another function that can be overridden to perform custom tasks when an object is created.  The default definition does nothing.</p>
+<p>AllObjects() is an iterator written that can be used to cycle through each and every object in game.  A costly, but in some rare cases absolutely necessary, function.  Although this isn't the best idea, consider if you had to find and remove every bullet in the game (perhaps a special power was used).  You could call AllObjects and check each object returned against IsA('Bullet') and perform actions appropriately.</p>
+<p>I understand that a great deal of this information is a simple rehash of <a href="global-function.html">Global Function</a> and <a href="object.html">Object</a> but it helps me to understand things when I'm forced to evaluate them myself.  As well others may find the little extra I added enough for them to understand.  Dunno.</p>
+<p>Next up is Actor.uc, then Inventory.uc, and finally Weapon.uc, the heart of the matter.  Once I reach Weapon.uc I'll be examining the best way I've found to add weapons and change things.  It's going to be a fun ride.</p>
+<pre class="paraverbatim"><br><br>Return to <a href="trystan-developer-journal.html">Trystan/Developer Journal</a>.</pre><script type="text/javascript"><!--
+ menuItemAdd("11/16/02 Breaking down Object.uc.", "#0.0.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="trystan.html">Trystan</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Trystan/11_16_02b">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Trystan/11_16_02b">View other revisions</a><br>Last edited November 17, 2002 2:03 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Trystan/11_16_02b">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Trystan/11_16_02b">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Gah - a solution with more questions. (EntropicLqd)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

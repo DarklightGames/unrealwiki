@@ -1,0 +1,198 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Rotator</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Rotator; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Rotator">Rotator</a></h1>
+	<div class="wiki"><p class="indent1"><em class="em1">Copied and modified from a <a href="http://chimeric.beyondunreal.com/">[CHiMERiC]</a> tutorial (<a href="http://chimeric.beyondunreal.com/tutorials/rotators.html">http://chimeric.beyondunreal.com/tutorials/rotators.html</a> .)</em></p>
+<p class="indent1"><em class="em1">Includes <a href="http://www.sorcerydesign.com/jeremyt/quicksand/ut%20engine%20experience.htm">[Jeremy T's info]</a> about loss of roll when converting to a vector.</em></p>
+<p><em class="em2">Rotator</em>s are one of the <a href="built-in-struct.html">Built-In Struct</a>. But what the hell are they? Think angles. But instead of 360 degrees, a full circle is 65536 R<a href="unreal-unit.html">UU</a>s (Rotational Unreal Units). Every <a href="actor.html">Actor</a> has a Movement &rarr; Rotation variable that determines (gasp) what direction the actor is pointing. Here's exactly what a rotator is: </p>
+<pre class="uscript"> <span class="uscript-keyword">struct</span> Rotator
+ <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">config</span> <span class="uscript-type">int</span> Pitch<span class="uscript-operator">,</span> Yaw<span class="uscript-operator">,</span> Roll<span class="uscript-operator">;</span>
+ <span class="uscript-operator">}</span><span class="uscript-operator">;</span></pre><p>Rotators have 3 parts:</p>
+<ul><li>Pitch (think up/down... like nodding your head "yes")</li>
+<li>Yaw (think left/right... like shaking your head "no")</li>
+<li>Roll (tilt your head to one side, so you're still looking the same direction, but one ear is pointing up and the other down).</li>
+</ul>
+<p>You can modify the angles just by changing each of the values, but you can not modify an actor's rotation directly, you must use the SetRotation(newRotation) function, as shown below. </p>
+<pre class="uscript"> <span class="uscript-keyword">function</span> ChangeRotation<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+ <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Rotator newRot<span class="uscript-operator">;</span>    <span class="uscript-comment">// This will be our new Rotation</span>
+    newRot <span class="uscript-operator">=</span> Rotation<span class="uscript-operator">;</span>       <span class="uscript-comment">// Set newRot to our current Rotation</span>
+    newRot<span class="uscript-operator">.</span>Pitch <span class="uscript-operator">+=</span> <span class="uscript-number">32768</span><span class="uscript-operator">;</span>   <span class="uscript-comment">// Since 65536 = 0 = 360, half of that equals 180, right?</span>
+    newRot<span class="uscript-operator">.</span>Yaw <span class="uscript-operator">-=</span> <span class="uscript-number">16384</span><span class="uscript-operator">;</span>     <span class="uscript-comment">// And half of that equals 90 and so on...</span>
+    SetRotation<span class="uscript-operator">(</span>newRot<span class="uscript-operator">)</span><span class="uscript-operator">;</span>     <span class="uscript-comment">// After we've done our tweaking go ahead and set the new rotation</span>
+ <span class="uscript-operator">}</span></pre><p>So what did we just do? We made something pitch 32768 RUU (180 degrees), and then turn 16384 RUU (90 degrees). Make sense? To get a vector of length one that points in the direction of the rotator: </p>
+<pre class="uscript">   <span class="uscript-keyword">local</span> rotator myRot<span class="uscript-operator">;</span>
+   <span class="uscript-keyword">local</span> vector myVec<span class="uscript-operator">;</span>
+   <span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span>
+   myVec <span class="uscript-operator">=</span> vector<span class="uscript-operator">(</span>myRot<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+   <span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span></pre><p>Always remember: the "roll" angle would rotate a vector about its own axis. But a vector is a mathematical line, if you do that it doesn't change at all. Therefore, myVec in the example above doesn't have any roll information. There's no way to figure out the roll component of myRot by looking at myVec. See also <a href="typecasting.html">Typecasting</a>.</p>
+<p>To get a rotator that corresponds to a vector, type: </p>
+<pre class="uscript">   <span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span>
+   myRot <span class="uscript-operator">=</span> rotator<span class="uscript-operator">(</span>myVec<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+   <span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span></pre><p>Since vectors don't have roll information, the "roll" of myRot will be zero, but the other parts will be correct. </p>
+<p>Say you wanted myRot to point 90 degrees to the left...lets add another line: </p>
+<pre class="uscript">   <span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span>
+   myRot<span class="uscript-operator">.</span>Yaw <span class="uscript-operator">+=</span> <span class="uscript-number">16384</span><span class="uscript-operator">;</span>      <span class="uscript-comment">// Now myRot points 90 degrees to the left of before</span>
+   <span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span></pre><p>Easy stuff no? Just remember 65536 = 360 degrees, and to use SetRotation, and you'll do good. Rotators are useful for using angle based math, in many cases can be used in place of vector math to make some tasks much simpler. Thankfully Unreal already handles converting back and forth... </p>
+<p><em class="em2">Musicalglass:</em> OK, that will make it so when you open your map, it will be rotated in a new static position. Now how do you introduce the element of time into the equation? Like have your object start at zero and rotate to the new settings over a period of say, 10 seconds?</p>
+<p>I know there are several different interpolation functions available as well, like linear and smooth. Could somebody please add a couple of simple equations to this page which show you how to do this? Thanks</p>
+<p><em class="em2">Foxpaw:</em> I think this page is more about rotators themselves, not about actor rotation but I suppose some iterpolation stuff could go here. You should be able to accomplish what you want by setting bRotateToDesired true, then setting a desiredrotation and a rotationrate, as well as a physics type that supports this type of rotation. Then the object will start rotating toward the angle in desiredrotation at the rate specified in rotationrate.</p>
+<h2><a name="0.1"></a>Functions</h2>
+<p>The following <a href="global-function.html">Global Function</a> apply to rotators.</p>
+<dl><dt>GetAxes (rotator A, out vector X, out vector Y, out vector Z) [static]</dt><dd>Assigns the axis vectors of <tt>A</tt> to <tt>X</tt>, <tt>Y</tt> and <tt>Z</tt>, in terms of Absolute Rotation, where <tt>X</tt> points forward, <tt>Y</tt> points right and <tt>Z</tt> points upwards. <em class="em2">The UnrealEngine2 implementation of GetAxes gives invalid results when applied to the rotator 0,0,0. In this case three zero vectors will be returned.</em></dd><dt>GetUnAxes (rotator A, out vector X, out vector Y, out vector Z) [static]</dt><dd>Assigns the axis vectors of Rot(0,0,0) to <tt>X</tt>, <tt>Y</tt> and <tt>Z</tt>, in terms of <tt>A</tt>'s Local Rotation. The same result as <tt>GetAxes(A,X,Y,Z)</tt> followed by <tt>Invert(X,Y,Z)</tt>.  If you think of <tt>X</tt>, <tt>Y</tt> and <tt>Z</tt> as 3x3 matrix, <tt>GetUnAxes</tt> returns the <span class="interwiki"><img 
+      alt="Wikipedia logo"
+      title="Wikipedia"
+      src="shared//InterWiki-Wikipedia.png">&nbsp;<a href="http://www.wikipedia.com/wiki/transposed">transposed</a></span> matrix relative to what <tt>GetAxes</tt> would return with the same rotator.</dd><dt>rotator RotRand (optional bool bRoll) [static]</dt><dd>Returns a random rotator. If bRoll is <tt>False</tt> the <tt>Roll</tt> component of the rotator is 0.</dd><dt>rotator OrthoRotation (vector X, vector Y, vector Z) [static]</dt><dd>Returns a rotator from three <span class="interwiki"><img 
+      alt="Wikipedia logo"
+      title="Wikipedia"
+      src="shared//InterWiki-Wikipedia.png">&nbsp;<a href="http://www.wikipedia.com/wiki/orthogonal">orthogonal</a></span> vectors.</dd><dt>rotator Normalize (rotator Rot) [static]</dt><dd>Returns the corresponding rotator with components between -32768 and 32767. (See <em class="em1">A note on logging rotators</em> below to find out why <code>log(Normalize(someRotator));</code> seems to disagree with this description.)</dd></dl>
+<h2><a name="0.2"></a>Operators</h2>
+<p>See <a href="operators.html">Operators</a> for the operators than can be used with a Rotator.</p>
+<h2><a name="0.3"></a>A note on logging rotators</h2>
+<p>When rotators are typecasted to string, e.g. when logging them, their Pitch/Yaw/Roll values are cramped into the range of 0 to 65535 by reducing them to 16bit unsigned integers. This does not mean the rotator has changed, just that e.g. log() is not giving you their true value! To get the true value write your own rotator to string function.</p>
+<p>Example:</p>
+<pre class="uscript"><span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> RotatorToString<span class="uscript-operator">(</span>rotator <span class="uscript-keyword">rot</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">return</span> <span class="uscript-string">"("</span> <span class="uscript-operator">$</span> <span class="uscript-keyword">rot</span><span class="uscript-operator">.</span>Pitch <span class="uscript-operator">$</span> <span class="uscript-string">","</span> <span class="uscript-operator">$</span> <span class="uscript-keyword">rot</span><span class="uscript-operator">.</span>Yaw <span class="uscript-operator">$</span> <span class="uscript-string">","</span> <span class="uscript-operator">$</span> <span class="uscript-keyword">rot</span><span class="uscript-operator">.</span>Roll <span class="uscript-operator">$</span> <span class="uscript-string">")"</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>This example function will return a string replesentation of the rotator that is similar to the built-in typecast, but uses the full 32bit integer precision of the rotator's components.</p>
+<h2><a name="0.4"></a>Rotator Replication</h2>
+<p>Before a rotator is replicated, its component values are compressed into the range of a byte through the function ((value &gt;&gt; 8) &amp; 0xFF). This has the advantage that a rotator only takes up 3 bytes of bandwidth for its value, but also limits the precision to 256 possible values per component. That's why a player's view rotation is generally not replicated as a rotator. The reduced Yaw and Pitch precision would hurt aiming accuracy.</p>
+<h2><a name="0.5"></a>Related Topics</h2>
+<ul><li><a href="general-scale-and-dimension.html">General Scale and Dimensions</a></li>
+<li><a href="brush-rotate.html">Brush Rotate</a></li>
+</ul>
+<p>(there's a table of URU to degrees on both those pages)</p>
+<ul><li><a href="vector.html">Vector</a></li>
+<li><a href="quaternion.html">Quaternion</a></li>
+<li><a href="typecasting.html">Typecasting</a></li>
+</ul>
+<h2><a name="0.6"></a>Discussion</h2>
+<p><em class="em2">Parallax:</em> I just wanted to take this oppurtunity to mention that in 16 bit maths, 65535 (as an unsigned 16 bit number) and -1 (as a signed 16 bit number) both have the binary representation 0xFFFF. This means that if you add -1 to 1 (65535 to 1) you get zero (65535 + 1 = 65536 &rarr; 0). In hex this looks like (0xFFFF + 0x0001 = 0x10000, then the leading 1 is truncated).</p>
+<p>Furthermore, this means that as long as the numbers are constanly mapped to the values 0 to 65535 (as they seem to be) then -1 and 65535 act like the same number. If it helps you visualise it, if you turn around 359 degrees, you have effectively turned 1 degree in the opposite direction.</p>
+<p>Of course, this whole argument no longer holds if you aren't talking about numbers that map from 0..65535. Fortunately in the case of rotators we are, whereas in the case of vectors or other representations of movement rather than rotation there is no such of logical wrap-around. </p>
+<p>I would be highly suprised if Rotators are <em class="em2">not</em> normalised upon network replication, as transmitting three 16 bit numbers when that is all the information that is needed is much more logical than transmitting three 32 bit numbers. It is not really relevant wheither these numbers are signed or unsigned in the case of rotators for the reasons I just explained.</p>
+<p>Bear in mind that when you subtract 1 from 50 (say) the computer (internally in the microprocessor) just calculates -1 (65535) and then adds it to 50, getting a result of 49 (after the inevitable overflow).</p>
+<p><em class="em2">Foxpaw:</em> One minor point of contention: UnrealScript rotators are a struct composed of three variables of type "int." An "int" appears to be represented natively with a 32 bit signed integer, not a 16 bit unsigned integer.</p>
+<p>However, the part about replication may be true, as it would save some bandwidth.</p>
+<p><em class="em2">Random150:</em> Rotators cause an interesting problem when you want to position a one vector relative to another. When the first vector is rotated, this means that the second requires rotation. Here is an example on how to do this:</p>
+<pre class="uscript"><span class="uscript-keyword">local</span> vector Loc<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> rotator <span class="uscript-keyword">Rot</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> diff<span class="uscript-operator">;</span>
+
+diff <span class="uscript-operator">=</span> <span class="uscript-number">256</span><span class="uscript-operator">;</span> <span class="uscript-comment">//The distance you need between the two</span>
+
+Loc <span class="uscript-operator">=</span> Location<span class="uscript-operator">;</span> <span class="uscript-comment">//Loction of the Orginal Vector</span>
+<span class="uscript-keyword">Rot</span> <span class="uscript-operator">=</span> Rotation<span class="uscript-operator">;</span> <span class="uscript-comment">//Rotation of the Orginal Rotator</span>
+
+<span class="uscript-comment">//This is the movement of the X/Y plane. You will have to change </span>
+<span class="uscript-comment">//  sin/cos/tan to your required axis of movement</span>
+Loc<span class="uscript-operator">.</span>X <span class="uscript-operator">+=</span> diff <span class="uscript-operator">*</span> cos<span class="uscript-operator">(</span><span class="uscript-keyword">Rot</span><span class="uscript-operator">.</span>Yaw   <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>pi <span class="uscript-operator">/</span> <span class="uscript-number">32768</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+Loc<span class="uscript-operator">.</span>Y <span class="uscript-operator">+=</span> diff <span class="uscript-operator">*</span> sin<span class="uscript-operator">(</span><span class="uscript-keyword">Rot</span><span class="uscript-operator">.</span>Yaw   <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>pi <span class="uscript-operator">/</span> <span class="uscript-number">32768</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+Loc<span class="uscript-operator">.</span>Z <span class="uscript-operator">+=</span> diff <span class="uscript-operator">*</span> sin<span class="uscript-operator">(</span><span class="uscript-keyword">Rot</span><span class="uscript-operator">.</span>Pitch <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>pi <span class="uscript-operator">/</span> <span class="uscript-number">32768</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><hr class="thin"><p><a href="refactor-me.html">Refactor Me</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Functions", "#0.1");
+menuItemAdd("Operators", "#0.2");
+menuItemAdd("A note on logging rotators", "#0.3");
+menuItemAdd("Rotator Replication", "#0.4");
+menuItemAdd("Related Topics", "#0.5");
+menuItemAdd("Discussion", "#0.6");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Rotator">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Rotator">View other revisions</a><br>Last edited April 19, 2007 12:41 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Rotator">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Rotator">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Cogito, ergo sum
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

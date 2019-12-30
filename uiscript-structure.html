@@ -1,0 +1,176 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: UIScript Structure</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=UIScript_Structure; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=UIScript Structure">UIScript Structure</a></h1>
+	<div class="wiki"><p><a href="user-interface.html">User Interface</a> scripts appear to be quite complicated at first, but they have quite a simple hierarchical structure. It appears to be quite straightforward to define any kind of interface function, but the work is in figuring out what all the commands mean!</p>
+<p>The whole of the <a href="unreal-2.html">Unreal 2</a> UI seems to derive from a single root object, defined like this:</p>
+<pre class="paraverbatim"> [Root]
+ Class=FixedSizeContainer
+ Component=SomeComponent</pre><p>and so on. At this level, the "Component" is something like the main menu, the objectives screen, or the main HUD.</p>
+<p>I shall pick a relatively simple component to illustrate the main points of the UIScript functionality.</p>
+<hr class="thin"><p>I've been working on UIScripts for a while, and thought I'd write out how to create your own HUD element in <a href="unreal-2.html">Unreal 2</a>.  This is my first try at editing a Wiki, so bear with me.  With that said, let's get to it.  </p>
+<p>First, let me say one thing;  The UIScript interface isn't as illogical as it may seem at first...it's nature is just really counter-intuitive.  This is because UIScripts, while robust and logical, are a quite separate entity from the UnrealScript hierarchy.  Indeed, it appears Legend had some problems with the HUD, and the UIScript is a hacked-out system that happened to stay in for the final version...</p>
+<p>Quoth HUD.uc from U2's source...</p>
+<blockquote><p>//NEW: disabled because it doesn't compile.  Currently using UIConsole, etc to do all drawing so we really don't need this anyway.</p>
+</blockquote><p>Ugh.  Okay, anyway, let's make a UI component.  We'll create a health bar, so that we don't have to tangle with extra functionality, and focus on the intricacies of UIScripting.  </p>
+<p>Our UIScript will define two textures: one to serve as the background for our component, and one to serve as a visual meter of the remaining health.  We'll use two different "subcomponents" to accomplish this: one to hold the textures, and one to be the actual health bar.  </p>
+<p>Open up Notepad (or WOTgreal, etc.) and create a file in the UIScripts subdirectory called "PVNNinjaHUD.ui" (if you want to follow the nomenclature of my mod, Pirates versus Ninjas):</p>
+<pre class="uscript"><span class="uscript-operator">[</span>Root<span class="uscript-operator">]</span>
+<span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>FixedSizeContainer
+Component<span class="uscript-operator">=</span>NinjaHUDTextures
+Component<span class="uscript-operator">=</span>NinjaHealth
+
+<span class="uscript-operator">[</span>NinjaHUDTextures<span class="uscript-operator">]</span>
+<span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>Image
+Material<span class="uscript-operator">=</span>khakiPVN<span class="uscript-operator">.</span>HUD<span class="uscript-operator">.</span>PVNNinjaHUD
+Image2<span class="uscript-operator">=</span>HealthMeter<span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">32</span><span class="uscript-operator">,</span><span class="uscript-number">134</span><span class="uscript-operator">,</span><span class="uscript-number">37</span>
+Image2<span class="uscript-operator">=</span>NinjaHealthTex<span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">81</span><span class="uscript-operator">,</span><span class="uscript-number">27</span>
+
+<span class="uscript-operator">[</span>NinjaHealth<span class="uscript-operator">]</span>
+<span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>FixedSizeContainer
+Component<span class="uscript-operator">=</span>ImageComponent
+    Image<span class="uscript-operator">=</span>NinjaHealthTex
+Component<span class="uscript-operator">=</span>ImageWipe
+    TopImage<span class="uscript-operator">=</span>HealthMeter
+    Access<span class="uscript-operator">=</span>Player<span class="uscript-operator">,</span>GetHealthPct
+    AutoSize<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    Location<span class="uscript-operator">=</span><span class="uscript-number">30</span><span class="uscript-operator">,</span><span class="uscript-number">5</span>
+Component<span class="uscript-operator">=</span>LabelShadow
+    Access<span class="uscript-operator">=</span>Player<span class="uscript-operator">,</span>GetHealthString
+    Font<span class="uscript-operator">=</span>HUD_Fonts<span class="uscript-operator">.</span>Micro12
+    Location<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">5</span><span class="uscript-operator">,</span><span class="uscript-number">6</span>
+Align<span class="uscript-operator">=</span>HardLeft<span class="uscript-operator">,</span>HardTop
+Location<span class="uscript-operator">=</span><span class="uscript-number">100</span><span class="uscript-operator">,</span><span class="uscript-number">100</span></pre><p>UIScripts consist of a bunch of "component" definitions.  At the very least, the component must be named (accomplished in the first line), and given a type (accomplished in the second line, "Class=").  Following that, what attributes are assigned depends on the component's nature.  </p>
+<p>So, let's deconstruct what's going on here, section by section.  </p>
+<p>[Root] defines, well, the "root" component, which is actually named after the text file.  Thus, [Root] defines the UI component named "PVNNinjaHUD", whose prototype is the filename of the very UIScript we're editing.  [Root]'s type is always FixedSizeContainer...it appears to be pointless to use any other types here.  Now you provide "prototypes," as it were, for each of your subcomponents, just to let Unreal 2 know what's going to be built.  In this file, we declare the two aforementioned components for textures and a health bar.  </p>
+<p>Now, you create a subsection that is named after each one of your subcomponents, and define them.  NinjaHUDTextures's type is image, to signify that it holds images for your other components.  The source of your textures, defined in the "Material=" line, must be a texture that exists in an Unreal package.  For mine, the HUD images for this particular HUD are stored in khakiPVN.HUD.PVNNinjaHUD.  After that, you simply have to split the image into pieces, using "Image2=" lines to declare individual components.  First, you name the subcomponent, then give the Cartesian coordinates of the object's upper-leftmost pixel, then the Cartesian coordinates of the object's lower-rightmost pixel.  Simple, eh?  Yeah, I thought so too.  </p>
+<p>Now we're getting to the most important part; the subcomponent definition of the actual health bar.  "Class=FixedSizeContainer" defines the health bar's type.  The health bar consists of three different "sub-subcomponents."  The "Component=" lines are not names that you invent here, as they were in the [Root] definition&ndash;instead, they are predefined types that you instanciate and modify.  We'll have three parts:  The background, the health meter, and the numeric health value.  The background is defined by the "ImageComponent" section.  The "ImageWipe" line declares an image whose size changes depending on a value of some sort.  First, you define the image that will be used, then how the object will be accessed.  "GetHealthPct" is a member function of Player's class (which is U2Controller).  Next, AutoSize will do just that; automatically resize itself whenever the GetHealthPct value changes.  The "Location=" line establishes Cartesian coordinates relative to the upper-leftmost pixel of the entire object.  Finally, LabelShadow is an object that displays text.  To get its text, it calls Player's GetHealthString function, and renders using the Micro12 font that is part of a HUD_Fonts package.  The Location represents, again, relative Cartesian coordinates.  </p>
+<p>After that, you establish absolute screen coordinates for the object, and you're set!</p>
+<p>...But, how do you use it?  Well, here's the approach I used.  Create a custom gametype...</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> PVNGameInfo <span class="uscript-keyword">extends</span> U2GameInfo<span class="uscript-operator">;</span>
+
+<span class="uscript-exec">#exec texture Import File=Textures\khakiPVN.UIMisc.Common.tga Group=UIMisc name=Common</span>
+<span class="uscript-exec">#exec texture Import File=Textures\khakiPVN.HUD.PVNNinjaHUD.tga Group=HUD name=PVNNinjaHUD</span>
+<span class="uscript-comment">//#exec OBJ LOAD FILE=Textures\khakiPVN.utx</span>
+
+<span class="uscript-keyword">var</span> ComponentHandle NinjaHealth<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">event</span> NotifyHack<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    NinjaHealth <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'UIConsole'</span><span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>LoadComponent<span class="uscript-operator">(</span> <span class="uscript-string">"PVNNinjaHUD"</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">class</span><span class="uscript-name">'UIConsole'</span><span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>AddComponent<span class="uscript-operator">(</span>NinjaHealth<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>NotifyHack<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    bDisplayHud<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    GameName<span class="uscript-operator">=</span><span class="uscript-string">"Pirates Versus Ninjas"</span>
+    AirControl<span class="uscript-operator">=</span><span class="uscript-number">0.850000</span>
+<span class="uscript-operator">}</span></pre><p>The NotifyHack() function is what matters here.  You make a ComponentHandle variable, and that variable holds a loaded instance of your UI.  To instanciate your UI, use the LoadComponent() function, as shown.  The argument is a string that represents the name of your UIScript file (without the ".ui" on the end).  If you want, you can use an optional second argument that only loads a subcomponent out of that script.  That wouldn't work here, as we have to load both the textures AND the health bar.  After that, you pass the newly-loaded NinjaHealth object into the AddComponent() function, and you have yourself a working UI!  Just create a map in UnrealEd that specifies your new GameType in its LevelInfo.  </p>
+<hr class="thin"><p><em class="em2">scumble:</em> working on it. I'm just trying to put some stuff down and build it up...</p>
+<p>please provide backlinks!</p>
+<p>I don't know what else I can link that's relevant at the moment.</p>
+<p>Well... <a href="user-interface.html">User Interface</a>, the page that comes here.</p>
+<p><em class="em2">Khakionion:</em> Decided to contribute what I've learned thus far.  What'd be really useful is a listing of all possible class/component types...</p>
+<p><em class="em2">Foxpaw:</em> Eek. I made a system like this for my UT2003 mod. And here I thought I was being original. <img alt=":P" src="emoticons/tongue.gif" align="middle"> Uhmmm, welll.... Mines better! Fahahahaha! <img alt=":P" src="emoticons/tongue.gif" align="middle"></p>
+<hr class="thin"><p><a href="category-to-do.html">category to do</a></p>
+</div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=UIScript_Structure">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=UIScript_Structure">View other revisions</a><br>Last edited December 25, 2003 0:39 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=UIScript_Structure">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/UIScript_Structure">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I don't need to test my programs. I have an error-correcting modem.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

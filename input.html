@@ -1,0 +1,523 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Input</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Input; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Input">Input</a></h1>
+	<div class="wiki"><div class="classpath"><a href="object.html">Object</a> &gt;&gt; <a href="subsystem.html">Subsystem</a> &gt;&gt; Input (Package: Engine)<br></div>
+<p>This is the native Engine.Input class, which holds the aliases and keybinds configured in the User.ini file.</p>
+<h2><a name="0.1"></a>Structure - as defined in C++</h2>
+<pre class="uscript"><span class="uscript-keyword">enum</span> <span class="uscript-operator">{</span>ALIAS_MAX<span class="uscript-operator">=</span><span class="uscript-number">40</span><span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">struct</span> FAlias
+<span class="uscript-operator">{</span>
+    FName Alias<span class="uscript-operator">;</span>
+    FString Command<span class="uscript-operator">;</span>
+    FAlias<span class="uscript-operator">(</span><span class="uscript-operator">)</span> : Alias<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span> Command<span class="uscript-operator">(</span>E_NoInit<span class="uscript-operator">)</span> <span class="uscript-operator">{</span><span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">class</span> ENGINE_API UInput : public USubsystem
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">static</span> <span class="uscript-keyword">const</span> TCHAR<span class="uscript-operator">*</span> StaticConfigName<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">return</span> TEXT<span class="uscript-operator">(</span><span class="uscript-string">"User"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    DECLARE_CLASS<span class="uscript-operator">(</span>UInput<span class="uscript-operator">,</span>USubsystem<span class="uscript-operator">,</span>CLASS_Transient<span class="uscript-operator">|</span>CLASS_Config<span class="uscript-operator">,</span>Engine<span class="uscript-operator">)</span>
+
+    <span class="uscript-comment">// Variables.</span>
+    FAlias        Aliases<span class="uscript-operator">[</span>ALIAS_MAX<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+    FStringNoInit     Bindings<span class="uscript-operator">[</span>IK_MAX<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+    UViewport<span class="uscript-operator">*</span>    Viewport<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Constructors.</span>
+    UInput<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    void StaticConstructor<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// UObject interface.</span>
+    void Serialize<span class="uscript-operator">(</span> FArchive<span class="uscript-operator">&amp;</span> Ar <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// UInput interface.</span>
+    <span class="uscript-keyword">static</span> void StaticInitInput<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    virtual void Init <span class="uscript-operator">(</span>UViewport<span class="uscript-operator">*</span> Viewport<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    virtual UBOOL <span class="uscript-keyword">Exec</span> <span class="uscript-operator">(</span><span class="uscript-keyword">const</span> TCHAR<span class="uscript-operator">*</span> Cmd<span class="uscript-operator">,</span> FOutputDevice<span class="uscript-operator">&amp;</span> Ar<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    virtual UBOOL PreProcess <span class="uscript-operator">(</span>EInputKey iKey<span class="uscript-operator">,</span> EInputAction <span class="uscript-keyword">State</span><span class="uscript-operator">,</span> <span class="uscript-type">FLOAT</span> Delta <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">.</span>f<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    virtual UBOOL Process <span class="uscript-operator">(</span>FOutputDevice<span class="uscript-operator">&amp;</span> Ar<span class="uscript-operator">,</span> EInputKey iKey<span class="uscript-operator">,</span> EInputAction <span class="uscript-keyword">State</span><span class="uscript-operator">,</span> <span class="uscript-type">FLOAT</span> Delta <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">.</span>f<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    virtual void DirectAxis <span class="uscript-operator">(</span>EInputKey Key<span class="uscript-operator">,</span> <span class="uscript-type">FLOAT</span> <span class="uscript-keyword">Length</span><span class="uscript-operator">,</span> <span class="uscript-type">FLOAT</span> Delta<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    virtual void ReadInput <span class="uscript-operator">(</span><span class="uscript-type">FLOAT</span> DeltaSeconds<span class="uscript-operator">,</span> FOutputDevice<span class="uscript-operator">&amp;</span> Ar<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    virtual void ResetInput <span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    virtual <span class="uscript-keyword">const</span> TCHAR<span class="uscript-operator">*</span> GetKeyName <span class="uscript-operator">(</span>EInputKey Key<span class="uscript-operator">)</span> <span class="uscript-keyword">const</span><span class="uscript-operator">;</span>
+    virtual <span class="uscript-type">int</span> FindKeyName <span class="uscript-operator">(</span><span class="uscript-keyword">const</span> TCHAR<span class="uscript-operator">*</span> KeyName<span class="uscript-operator">,</span> EInputKey<span class="uscript-operator">&amp;</span> iKey<span class="uscript-operator">)</span> <span class="uscript-keyword">const</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Accessors.</span>
+    void SetInputAction <span class="uscript-operator">(</span>EInputAction NewAction<span class="uscript-operator">,</span> <span class="uscript-type">FLOAT</span> NewDelta <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">.</span>f<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+            Action <span class="uscript-operator">=</span> NewAction<span class="uscript-operator">;</span>
+            Delta <span class="uscript-operator">=</span> NewDelta<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    EInputAction GetInputAction <span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">return</span> Action<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-type">FLOAT</span> GetInputDelta <span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">return</span> Delta<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-type">BYTE</span> KeyDown <span class="uscript-operator">(</span><span class="uscript-type">int</span> i<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">return</span> KeyDownTable<span class="uscript-operator">[</span>Clamp<span class="uscript-operator">(</span>i<span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>IK_MAX<span class="uscript-number">-1</span><span class="uscript-operator">)</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">protected</span>:
+    UEnum<span class="uscript-operator">*</span> InputKeys<span class="uscript-operator">;</span>
+    EInputAction Action<span class="uscript-operator">;</span>
+    <span class="uscript-type">FLOAT</span> Delta<span class="uscript-operator">;</span>
+    <span class="uscript-type">BYTE</span> KeyDownTable<span class="uscript-operator">[</span>IK_MAX<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+    virtual <span class="uscript-type">BYTE</span><span class="uscript-operator">*</span> FindButtonName <span class="uscript-operator">(</span>AActor<span class="uscript-operator">*</span> Actor<span class="uscript-operator">,</span> <span class="uscript-keyword">const</span> TCHAR<span class="uscript-operator">*</span> ButtonName<span class="uscript-operator">)</span> <span class="uscript-keyword">const</span><span class="uscript-operator">;</span>
+    virtual <span class="uscript-type">FLOAT</span><span class="uscript-operator">*</span> FindAxisName <span class="uscript-operator">(</span>AActor<span class="uscript-operator">*</span> Actor<span class="uscript-operator">,</span> <span class="uscript-keyword">const</span> TCHAR<span class="uscript-operator">*</span> ButtonName<span class="uscript-operator">)</span> <span class="uscript-keyword">const</span><span class="uscript-operator">;</span>
+    virtual void ExecInputCommands <span class="uscript-operator">(</span><span class="uscript-keyword">const</span> TCHAR<span class="uscript-operator">*</span> Cmd<span class="uscript-operator">,</span> FOutputDevice<span class="uscript-operator">&amp;</span> Ar<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span></pre><h2><a name="0.2"></a>Hypothetical Code</h2>
+<pre class="uscript">void UInput :: Init <span class="uscript-operator">(</span>UViewport<span class="uscript-operator">*</span> InViewport<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    guard<span class="uscript-operator">(</span>UInput::Init<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    Viewport <span class="uscript-operator">=</span> InViewport<span class="uscript-operator">;</span>
+    debugf<span class="uscript-operator">(</span>NAME_Init<span class="uscript-operator">,</span> TEXT<span class="uscript-operator">(</span><span class="uscript-string">"Input system initialized for %s"</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span>Viewport<span class="uscript-operator">-</span><span class="uscript-operator">&gt;</span>GetName<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    unguard<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">const</span> TCHAR<span class="uscript-operator">*</span> UInput :: GetKeyName <span class="uscript-operator">(</span>EInputKey Key<span class="uscript-operator">)</span> <span class="uscript-keyword">const</span>
+<span class="uscript-operator">{</span>
+    guard<span class="uscript-operator">(</span>UInput::GetKeyName<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    FString KeyName<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Key <span class="uscript-operator">&gt;=</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Key <span class="uscript-operator">&lt;</span> IK_MAX<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        KeyName <span class="uscript-operator">=</span> <span class="uscript-operator">*</span><span class="uscript-operator">(</span>FString<span class="uscript-operator">*</span><span class="uscript-operator">)</span>EInputKey<span class="uscript-operator">-</span><span class="uscript-operator">&gt;</span>Names<span class="uscript-operator">(</span>Key<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span> KeyName<span class="uscript-operator">.</span>Mid<span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">return</span> TEXT<span class="uscript-operator">(</span><span class="uscript-string">""</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    unguard<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+UBOOL UInput :: FindKeyName <span class="uscript-operator">(</span><span class="uscript-keyword">const</span> TCHAR<span class="uscript-operator">*</span> KeyName<span class="uscript-operator">,</span> EInputKey<span class="uscript-operator">&amp;</span> iKey<span class="uscript-operator">)</span> <span class="uscript-keyword">const</span>
+<span class="uscript-operator">{</span>
+    guard<span class="uscript-operator">(</span>UInput::FindKeyName<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-type">INT</span> i<span class="uscript-operator">,</span> j<span class="uscript-operator">;</span>
+    FString Key<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> IK_MAX<span class="uscript-operator">;</span> <span class="uscript-operator">++</span> i<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Key <span class="uscript-operator">=</span> <span class="uscript-operator">*</span><span class="uscript-operator">(</span>FString<span class="uscript-operator">*</span><span class="uscript-operator">)</span>EInputKey<span class="uscript-operator">-</span><span class="uscript-operator">&gt;</span>Names<span class="uscript-operator">(</span>i<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Key <span class="uscript-operator">=</span> Key<span class="uscript-operator">.</span>Mid<span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>        
+
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>KeyName<span class="uscript-operator">.</span>Caps<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> Key<span class="uscript-operator">.</span>Caps<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            j <span class="uscript-operator">=</span> i<span class="uscript-operator">;</span>
+            <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">return</span> j<span class="uscript-operator">;</span>
+
+    unguard<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.3"></a>Variable Interpretation</h2>
+<dl><dt>UEnum* InputKeys;</dt></dl>
+<pre class="uscript"><span class="uscript-keyword">enum</span> EInputKey
+<span class="uscript-operator">{</span>
+    IK_None<span class="uscript-operator">,</span>
+    IK_LeftMouse<span class="uscript-operator">,</span>      <span class="uscript-comment">// This is IK_Mouse on Mac</span>
+    IK_RightMouse<span class="uscript-operator">,</span>     <span class="uscript-comment">// This is IK_AltMouse on Mac</span>
+    IK_Cancel<span class="uscript-operator">,</span>
+    IK_MiddleMouse<span class="uscript-operator">,</span>    <span class="uscript-comment">// This is IK_Unknown04 on Mac</span>
+    IK_Unknown05<span class="uscript-operator">,</span>
+    IK_Unknown06<span class="uscript-operator">,</span>
+    IK_Unknown07<span class="uscript-operator">,</span>
+    IK_Backspace<span class="uscript-operator">,</span>
+    IK_Tab<span class="uscript-operator">,</span>
+    IK_Unknown0A<span class="uscript-operator">,</span>
+    IK_Unknown0B<span class="uscript-operator">,</span>
+    IK_Unknown0C<span class="uscript-operator">,</span>
+    IK_Enter<span class="uscript-operator">,</span>
+    IK_Unknown0E<span class="uscript-operator">,</span>
+    IK_Unknown0F<span class="uscript-operator">,</span>
+    IK_Shift<span class="uscript-operator">,</span>
+    IK_Ctrl<span class="uscript-operator">,</span>
+    IK_Alt<span class="uscript-operator">,</span>            <span class="uscript-comment">// This is IK_Option on Mac</span>
+    IK_Pause<span class="uscript-operator">,</span>
+    IK_CapsLock<span class="uscript-operator">,</span>
+    IK_Unknown15<span class="uscript-operator">,</span>
+    IK_Unknown16<span class="uscript-operator">,</span>
+    IK_Unknown17<span class="uscript-operator">,</span>
+    IK_Unknown18<span class="uscript-operator">,</span>
+    IK_Unknown19<span class="uscript-operator">,</span>
+    IK_Unknown1A<span class="uscript-operator">,</span>
+    IK_Escape<span class="uscript-operator">,</span>
+    IK_Unknown1C<span class="uscript-operator">,</span>
+    IK_Unknown1D<span class="uscript-operator">,</span>
+    IK_Unknown1E<span class="uscript-operator">,</span>
+    IK_Unknown1F<span class="uscript-operator">,</span>
+    IK_Space<span class="uscript-operator">,</span>
+    IK_PageUp<span class="uscript-operator">,</span>
+    IK_PageDown<span class="uscript-operator">,</span>
+    IK_End<span class="uscript-operator">,</span>
+    IK_Home<span class="uscript-operator">,</span>
+    IK_Left<span class="uscript-operator">,</span>
+    IK_Up<span class="uscript-operator">,</span>
+    IK_Right<span class="uscript-operator">,</span>
+    IK_Down<span class="uscript-operator">,</span>
+    IK_Select<span class="uscript-operator">,</span>
+    IK_Print<span class="uscript-operator">,</span>
+    IK_Execute<span class="uscript-operator">,</span>
+    IK_PrintScrn<span class="uscript-operator">,</span>
+    IK_Insert<span class="uscript-operator">,</span>
+    IK_Delete<span class="uscript-operator">,</span>
+    IK_Help<span class="uscript-operator">,</span>
+    IK_0<span class="uscript-operator">,</span>
+    IK_1<span class="uscript-operator">,</span>
+    IK_2<span class="uscript-operator">,</span>
+    IK_3<span class="uscript-operator">,</span>
+    IK_4<span class="uscript-operator">,</span>
+    IK_5<span class="uscript-operator">,</span>
+    IK_6<span class="uscript-operator">,</span>
+    IK_7<span class="uscript-operator">,</span>
+    IK_8<span class="uscript-operator">,</span>
+    IK_9<span class="uscript-operator">,</span>
+    IK_Unknown3A<span class="uscript-operator">,</span>
+    IK_Unknown3B<span class="uscript-operator">,</span>
+    IK_Unknown3C<span class="uscript-operator">,</span>
+    IK_Unknown3D<span class="uscript-operator">,</span>
+    IK_Unknown3E<span class="uscript-operator">,</span>
+    IK_Unknown3F<span class="uscript-operator">,</span>
+    IK_Unknown40<span class="uscript-operator">,</span>
+    IK_A<span class="uscript-operator">,</span>
+    IK_B<span class="uscript-operator">,</span>
+    IK_C<span class="uscript-operator">,</span>
+    IK_D<span class="uscript-operator">,</span>
+    IK_E<span class="uscript-operator">,</span>
+    IK_F<span class="uscript-operator">,</span>
+    IK_G<span class="uscript-operator">,</span>
+    IK_H<span class="uscript-operator">,</span>
+    IK_I<span class="uscript-operator">,</span>
+    IK_J<span class="uscript-operator">,</span>
+    IK_K<span class="uscript-operator">,</span>
+    IK_L<span class="uscript-operator">,</span>
+    IK_M<span class="uscript-operator">,</span>
+    IK_N<span class="uscript-operator">,</span>
+    IK_O<span class="uscript-operator">,</span>
+    IK_P<span class="uscript-operator">,</span>
+    IK_Q<span class="uscript-operator">,</span>
+    IK_R<span class="uscript-operator">,</span>
+    IK_S<span class="uscript-operator">,</span>
+    IK_T<span class="uscript-operator">,</span>
+    IK_U<span class="uscript-operator">,</span>
+    IK_V<span class="uscript-operator">,</span>
+    IK_W<span class="uscript-operator">,</span>
+    IK_X<span class="uscript-operator">,</span>
+    IK_Y<span class="uscript-operator">,</span>
+    IK_Z<span class="uscript-operator">,</span>
+    IK_Unknown5B<span class="uscript-operator">,</span>      <span class="uscript-comment">// This is the start menu key in every OS</span>
+    IK_Unknown5C<span class="uscript-operator">,</span>      <span class="uscript-comment">// This is the start menu key in every OS (the one on the right)</span>
+    IK_Unknown5D<span class="uscript-operator">,</span>      <span class="uscript-comment">// This is the MouseMenu in Windows (the one next to the right start menu key)</span>
+    IK_Unknown5E<span class="uscript-operator">,</span>
+    IK_Unknown5F<span class="uscript-operator">,</span>
+    IK_NumPad0<span class="uscript-operator">,</span>
+    IK_NumPad1<span class="uscript-operator">,</span>
+    IK_NumPad2<span class="uscript-operator">,</span>
+    IK_NumPad3<span class="uscript-operator">,</span>
+    IK_NumPad4<span class="uscript-operator">,</span>
+    IK_NumPad5<span class="uscript-operator">,</span>
+    IK_NumPad6<span class="uscript-operator">,</span>
+    IK_NumPad7<span class="uscript-operator">,</span>
+    IK_NumPad8<span class="uscript-operator">,</span>
+    IK_NumPad9<span class="uscript-operator">,</span>
+    IK_GreyStar<span class="uscript-operator">,</span>       <span class="uscript-comment">// This is IK_NumPadStar on Mac</span>
+    IK_GreyPlus<span class="uscript-operator">,</span>       <span class="uscript-comment">// This is IK_NumPadPlus on Mac</span>
+    IK_Separator<span class="uscript-operator">,</span>
+    IK_GreyMinus<span class="uscript-operator">,</span>      <span class="uscript-comment">// This is IK_NumPadMinus on Mac</span>
+    IK_NumPadPeriod<span class="uscript-operator">,</span>
+    IK_GreySlash<span class="uscript-operator">,</span>      <span class="uscript-comment">// This is IK_NumPadSlash on Mac</span>
+    IK_F1<span class="uscript-operator">,</span>
+    IK_F2<span class="uscript-operator">,</span>
+    IK_F3<span class="uscript-operator">,</span>
+    IK_F4<span class="uscript-operator">,</span>
+    IK_F5<span class="uscript-operator">,</span>
+    IK_F6<span class="uscript-operator">,</span>
+    IK_F7<span class="uscript-operator">,</span>
+    IK_F8<span class="uscript-operator">,</span>
+    IK_F9<span class="uscript-operator">,</span>
+    IK_F10<span class="uscript-operator">,</span>
+    IK_F11<span class="uscript-operator">,</span>
+    IK_F12<span class="uscript-operator">,</span>
+    IK_F13<span class="uscript-operator">,</span>
+    IK_F14<span class="uscript-operator">,</span>
+    IK_F15<span class="uscript-operator">,</span>
+    IK_F16<span class="uscript-operator">,</span>
+    IK_F17<span class="uscript-operator">,</span>
+    IK_F18<span class="uscript-operator">,</span>
+    IK_F19<span class="uscript-operator">,</span>
+    IK_F20<span class="uscript-operator">,</span>
+    IK_F21<span class="uscript-operator">,</span>
+    IK_F22<span class="uscript-operator">,</span>
+    IK_F23<span class="uscript-operator">,</span>
+    IK_F24<span class="uscript-operator">,</span>
+    IK_Unknown88<span class="uscript-operator">,</span>      <span class="uscript-comment">// This is IK_NumPadEquals on Mac</span>
+    IK_Unknown89<span class="uscript-operator">,</span>      <span class="uscript-comment">// This is IK_Command on Mac</span>
+    IK_Unknown8A<span class="uscript-operator">,</span>
+    IK_Unknown8B<span class="uscript-operator">,</span>
+    IK_Unknown8C<span class="uscript-operator">,</span>
+    IK_Unknown8D<span class="uscript-operator">,</span>
+    IK_Unknown8E<span class="uscript-operator">,</span>
+    IK_Unknown8F<span class="uscript-operator">,</span>
+    IK_NumLock<span class="uscript-operator">,</span>
+    IK_ScrollLock<span class="uscript-operator">,</span>
+    IK_Unknown92<span class="uscript-operator">,</span>
+    IK_Unknown93<span class="uscript-operator">,</span>
+    IK_Unknown94<span class="uscript-operator">,</span>
+    IK_Unknown95<span class="uscript-operator">,</span>
+    IK_Unknown96<span class="uscript-operator">,</span>
+    IK_Unknown97<span class="uscript-operator">,</span>
+    IK_Unknown98<span class="uscript-operator">,</span>
+    IK_Unknown99<span class="uscript-operator">,</span>
+    IK_Unknown9A<span class="uscript-operator">,</span>
+    IK_Unknown9B<span class="uscript-operator">,</span>
+    IK_Unknown9C<span class="uscript-operator">,</span>
+    IK_Unknown9D<span class="uscript-operator">,</span>
+    IK_Unknown9E<span class="uscript-operator">,</span>
+    IK_Unknown9F<span class="uscript-operator">,</span>
+    IK_LShift<span class="uscript-operator">,</span>
+    IK_RShift<span class="uscript-operator">,</span>
+    IK_LControl<span class="uscript-operator">,</span>
+    IK_RControl<span class="uscript-operator">,</span>
+    IK_UnknownA4<span class="uscript-operator">,</span>
+    IK_UnknownA5<span class="uscript-operator">,</span>
+    IK_UnknownA6<span class="uscript-operator">,</span>
+    IK_UnknownA7<span class="uscript-operator">,</span>
+    IK_UnknownA8<span class="uscript-operator">,</span>
+    IK_UnknownA9<span class="uscript-operator">,</span>
+    IK_UnknownAA<span class="uscript-operator">,</span>
+    IK_UnknownAB<span class="uscript-operator">,</span>
+    IK_UnknownAC<span class="uscript-operator">,</span>
+    IK_UnknownAD<span class="uscript-operator">,</span>
+    IK_UnknownAE<span class="uscript-operator">,</span>
+    IK_UnknownAF<span class="uscript-operator">,</span>
+    IK_UnknownB0<span class="uscript-operator">,</span>
+    IK_UnknownB1<span class="uscript-operator">,</span>
+    IK_UnknownB2<span class="uscript-operator">,</span>
+    IK_UnknownB3<span class="uscript-operator">,</span>
+    IK_UnknownB4<span class="uscript-operator">,</span>
+    IK_UnknownB5<span class="uscript-operator">,</span>
+    IK_UnknownB6<span class="uscript-operator">,</span>
+    IK_UnknownB7<span class="uscript-operator">,</span>
+    IK_UnknownB8<span class="uscript-operator">,</span>
+    IK_UnknownB9<span class="uscript-operator">,</span>
+    IK_Semicolon<span class="uscript-operator">,</span>
+    IK_Equals<span class="uscript-operator">,</span>
+    IK_Comma<span class="uscript-operator">,</span>
+    IK_Minus<span class="uscript-operator">,</span>
+    IK_Period<span class="uscript-operator">,</span>
+    IK_Slash<span class="uscript-operator">,</span>
+    IK_Tilde<span class="uscript-operator">,</span>
+    IK_UnknownC1<span class="uscript-operator">,</span>
+    IK_UnknownC2<span class="uscript-operator">,</span>
+    IK_UnknownC3<span class="uscript-operator">,</span>
+    IK_UnknownC4<span class="uscript-operator">,</span>
+    IK_UnknownC5<span class="uscript-operator">,</span>
+    IK_UnknownC6<span class="uscript-operator">,</span>
+    IK_UnknownC7<span class="uscript-operator">,</span>
+    IK_Joy1<span class="uscript-operator">,</span>
+    IK_Joy2<span class="uscript-operator">,</span>
+    IK_Joy3<span class="uscript-operator">,</span>
+    IK_Joy4<span class="uscript-operator">,</span>
+    IK_Joy5<span class="uscript-operator">,</span>
+    IK_Joy6<span class="uscript-operator">,</span>
+    IK_Joy7<span class="uscript-operator">,</span>
+    IK_Joy8<span class="uscript-operator">,</span>
+    IK_Joy9<span class="uscript-operator">,</span>
+    IK_Joy10<span class="uscript-operator">,</span>
+    IK_Joy11<span class="uscript-operator">,</span>
+    IK_Joy12<span class="uscript-operator">,</span>
+    IK_Joy13<span class="uscript-operator">,</span>
+    IK_Joy14<span class="uscript-operator">,</span>
+    IK_Joy15<span class="uscript-operator">,</span>
+    IK_Joy16<span class="uscript-operator">,</span>
+    IK_UnknownD8<span class="uscript-operator">,</span>
+    IK_UnknownD9<span class="uscript-operator">,</span>
+    IK_UnknownDA<span class="uscript-operator">,</span>
+    IK_LeftBracket<span class="uscript-operator">,</span>
+    IK_Backslash<span class="uscript-operator">,</span>
+    IK_RightBracket<span class="uscript-operator">,</span>
+    IK_SingleQuote<span class="uscript-operator">,</span>
+    IK_UnknownDF<span class="uscript-operator">,</span>
+    IK_JoyX<span class="uscript-operator">,</span>
+    IK_JoyY<span class="uscript-operator">,</span>
+    IK_JoyZ<span class="uscript-operator">,</span>
+    IK_JoyR<span class="uscript-operator">,</span>
+    IK_MouseX<span class="uscript-operator">,</span>
+    IK_MouseY<span class="uscript-operator">,</span>
+    IK_MouseZ<span class="uscript-operator">,</span>
+    IK_MouseW<span class="uscript-operator">,</span>
+    IK_JoyU<span class="uscript-operator">,</span>
+    IK_JoyV<span class="uscript-operator">,</span>
+    IK_UnknownEA<span class="uscript-operator">,</span>
+    IK_UnknownEB<span class="uscript-operator">,</span>
+    IK_MouseWheelUp<span class="uscript-operator">,</span>
+    IK_MouseWheelDown<span class="uscript-operator">,</span>
+    IK_UnknownEE<span class="uscript-operator">,</span>            <span class="uscript-comment">// Typo: IK_Unknown10E</span>
+    IK_UnknownEF<span class="uscript-operator">,</span>            <span class="uscript-comment">// Typo: UK_Unknown10F</span>
+    IK_JoyPovUp<span class="uscript-operator">,</span>
+    IK_JoyPovDown<span class="uscript-operator">,</span>
+    IK_JoyPovLeft<span class="uscript-operator">,</span>
+    IK_JoyPovRight<span class="uscript-operator">,</span>
+    IK_UnknownF4<span class="uscript-operator">,</span>
+    IK_UnknownF5<span class="uscript-operator">,</span>
+    IK_Attn<span class="uscript-operator">,</span>
+    IK_CrSel<span class="uscript-operator">,</span>
+    IK_ExSel<span class="uscript-operator">,</span>
+    IK_ErEof<span class="uscript-operator">,</span>
+    IK_Play<span class="uscript-operator">,</span>
+    IK_Zoom<span class="uscript-operator">,</span>
+    IK_NoName<span class="uscript-operator">,</span>
+    IK_PA1<span class="uscript-operator">,</span>
+    IK_OEMClear
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span></pre><p><em class="em2">Note:</em> There is a typo IK_Unknown10E and another of UK_Unknown10F in the UScript and C++ versions of the EInput enum; The correct ones are IK_UnknownEE and IK_UnknownEF.</p>
+<dl><dt>EInputAction Action</dt><dd></dd></dl>
+<pre class="uscript"><span class="uscript-keyword">enum</span> EInputAction
+<span class="uscript-operator">{</span>
+    IST_None<span class="uscript-operator">,</span>    <span class="uscript-comment">// Not performing special input processing.</span>
+    IST_Press<span class="uscript-operator">,</span>   <span class="uscript-comment">// Handling a keypress or button press.</span>
+    IST_Hold<span class="uscript-operator">,</span>    <span class="uscript-comment">// Handling holding a key or button.</span>
+    IST_Release<span class="uscript-operator">,</span> <span class="uscript-comment">// Handling a key or button release.</span>
+    IST_Axis<span class="uscript-operator">,</span>    <span class="uscript-comment">// Handling analog axis movement.</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span></pre><dl><dt>FLOAT Delta</dt><dd>possibly used for the Axis movement (?)</dd><dt>BYTE KeyDownTable[IK_MAX]</dt><dd>monitors which keys are pressed</dd></dl>
+<h2><a name="0.4"></a>Code Interpretation</h2>
+<dl><dt>StaticInitInput()</dt><dd>This most likely assembles the InputKeys, that is, convert the 255-arrayed string <em class="em1">Bindings</em> to the normal EInput version of itself we see in the INI.</dd><dt>Init()</dt><dd>basic initialization function; assigns the viewport and writes the debug output... might call StaticInitInput()</dd><dt>Exec()</dt><dd>handles native console commands; in this case, it might handle the INI commands such as Button, Toggle, keyname etc.</dd><dt>DirectAxis()</dt><dd>controls the axis movement of "special" keys, such as the Mouse or Joystick axis</dd><dt>ResetInput()</dt><dd>can be called from PlayerPawn.ResetKeyboard() (UT) or PlayerController.ResetKeyboard() (UT2k3 and UT2k4) </dd></dl>
+<p>Assuming the KeyDownTable[] is constantly monitored, the order might be this:</p>
+<dl><dt>PreProcess()</dt><dd>checks whether a key is pressed or not, similar to the Console handling of keys using IST_Press and IST_Release</dd><dt>ReadInput()</dt><dd>hypothesized to be the Tick() equivalent of the Input which might constantly check which key is currently used, possibly even call PlayerPawn.PlayerInput() (UT); in UT2k3 and UT2k4 PlayerInput() is handled by PlayerTick() and is in a separate class</dd><dt>Process()</dt><dd>possibly controls the exec-ing of console commands from each key in the INI if active in the KeyDownTable[] array</dd></dl>
+<h2><a name="0.5"></a>Accessing The Input Configuration</h2>
+<p>While it is possible to compile code that references class'Input' or Input objects, it's not possible to access properties of purely native classes directly in UnrealScript. (compiles fine, but crashes the game)</p>
+<p>To work around this problem you first need a reference to an Input object. Under UT200x you can easily get such a reference with the following code:</p>
+<pre class="uscript"><span class="uscript-keyword">local</span> <span class="uscript-keyword">Input</span> MyInput<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">foreach</span> AllObjects<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Input'</span><span class="uscript-operator">,</span> MyInput<span class="uscript-operator">)</span>
+  <span class="uscript-keyword">break</span><span class="uscript-operator">;</span></pre><p>The variable <tt>MyInput</tt> will then contain the currently used Input object.</p>
+<p>In UT there is no AllObjects iterator, so you have to resort to a little trick with the SetPropertyText() function:</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> <span class="uscript-keyword">Input</span> MyInput<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> GetInput<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  SetPropertyText<span class="uscript-operator">(</span><span class="uscript-string">"MyInput"</span><span class="uscript-operator">,</span> <span class="uscript-string">"Input'Input0'"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>The Input object should always have this name, so SetPropertyText() assigns it to the MyInput class variable. You could use this unter UT200x as well, but depending on whether the game was started with the <tt>-makenames</tt> parameter you have to use either "Input'Input'" (without) or "Input'Input0'" (with) to get the desired effect.</p>
+<p>Either way you can now access the Input object with the GetPropertyText function:</p>
+<pre class="uscript"><span class="uscript-comment">// log the command bound to the left mouse button</span>
+log<span class="uscript-operator">(</span>MyInput<span class="uscript-operator">.</span>GetPropertyText<span class="uscript-operator">(</span><span class="uscript-string">"LeftMouse"</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>Under UT2004 you can also access the Aliases array this way, but you will probably have to parse the array string first.</p>
+<p>Beginning with UT2004 v3270 there's also an easier method of accessing aliases and keybinds using the <a href="security.html">Security</a> class LocalPerform() function with a SecType of 100 and 101 respectively. See the <a href="unrealscript-source.html">UnrealScript Source</a> of the XGame.<a href="xplayer.html">XPlayer</a> class for an implementation example. It's a good idea to spawn a new Security actor there, because the custom Security actors of Anti TCC and probably also SafeGame won't allow others to access their LocalPerform() function.</p>
+<hr class="thin"><p><a href="category-class-ut.html">Category Class (UT)</a><br><a href="category-class-ut2003.html">Category Class (UT2003)</a><br><a href="category-class-ut2004.html">Category Class (UT2004)</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Structure - as defined in C++", "#0.1");
+menuItemAdd("Hypothetical Code", "#0.2");
+menuItemAdd("Variable Interpretation", "#0.3");
+menuItemAdd("Code Interpretation", "#0.4");
+menuItemAdd("Accessing The Input Configuration", "#0.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Input">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Input">View other revisions</a><br>Last edited May 7, 2007 5:16 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Input">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Input">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Cogito, ergo sum
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

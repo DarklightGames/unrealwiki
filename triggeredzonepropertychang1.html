@@ -1,0 +1,224 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: TriggeredZonePropertyChanger/Code</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=TriggeredZonePropertyChanger/Code; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="triggeredzonepropertychange.html">TriggeredZonePropertyChanger</a>/<a href="http://wiki.beyondunreal.com/wiki?back=TriggeredZonePropertyChanger/Code">Code</a></h1>
+	<div class="wiki"><div class="classpath"><a href="actor.html">Actor</a> &gt;&gt; TriggeredZonePropertyChanger<br></div>
+<pre class="uscript"><span class="uscript-comment">//   This trigger allows mappers to change some of the zone properties using a trigger.</span>
+<span class="uscript-comment">//   The specific case this class was written for was to enable a switchable "escalator"</span>
+<span class="uscript-comment">//   zone to be created, where the escalator could move in two directions at once.</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">//   The Zone property changer is a one way assignment of values.  It will change the</span>
+<span class="uscript-comment">//   properties of its target zone once.  In order to revert them back to their original</span>
+<span class="uscript-comment">//   values an additional Zone property changer object would be required (possibly triggered</span>
+<span class="uscript-comment">//   by a round robin trigger).</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">//   Version By  Description</span>
+<span class="uscript-comment">//   ------- --- -------------------------------------------------------------------------</span>
+<span class="uscript-comment">//   1.00    DML Created for Pitboy from the UT Editing fourm.</span>
+<span class="uscript-keyword">class</span> TriggeredZonePropertyChanger <span class="uscript-keyword">extends</span> Actor<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> ZoneInfo     zoneObject<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">name</span>   TargetZoneTag<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneData<span class="uscript-operator">)</span> vector zZoneGravity<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneData<span class="uscript-operator">)</span> vector zZoneVelocity<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneData<span class="uscript-operator">)</span> <span class="uscript-type">float</span>  zZoneGroundFriction<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneData<span class="uscript-operator">)</span> <span class="uscript-type">float</span>  zZoneFluidFriction<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneData<span class="uscript-operator">)</span> <span class="uscript-type">float</span>  zZoneTerminalVelocity<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneData<span class="uscript-operator">)</span> <span class="uscript-type">name</span>   zZonePlayerEvent<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneData<span class="uscript-operator">)</span> <span class="uscript-type">int</span>    zDamagePerSec<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneData<span class="uscript-operator">)</span> <span class="uscript-type">name</span>   zDamageType<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneData<span class="uscript-operator">)</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span> zDamageString<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneData<span class="uscript-operator">)</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span> zZoneName<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//var(ZoneFlags) bool   zbWaterZone;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneFlags<span class="uscript-operator">)</span> <span class="uscript-type">bool</span>   zbNeutralZone<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneFlags<span class="uscript-operator">)</span> <span class="uscript-type">bool</span>   zbGravityZone<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneFlags<span class="uscript-operator">)</span> <span class="uscript-type">bool</span>   zbPainZone<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneFlags<span class="uscript-operator">)</span> <span class="uscript-type">bool</span>   zbDestructive<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneFlags<span class="uscript-operator">)</span> <span class="uscript-type">bool</span>   zbNoInventory<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneFlags<span class="uscript-operator">)</span> <span class="uscript-type">bool</span>   zbMoveProjectiles<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneFlags<span class="uscript-operator">)</span> <span class="uscript-type">bool</span>   zbBounceVelocity<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneLight<span class="uscript-operator">)</span> <span class="uscript-type">byte</span> zAmbientBrightness<span class="uscript-operator">,</span> zAmbientHue<span class="uscript-operator">,</span> zAmbientSaturation<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneLight<span class="uscript-operator">)</span> color zFogColor<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneLight<span class="uscript-operator">)</span> <span class="uscript-type">float</span> zFogDistance<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneLight<span class="uscript-operator">)</span> <span class="uscript-type">float</span> zTexUPanSpeed<span class="uscript-operator">,</span> zTexVPanSpeed<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ZoneLight<span class="uscript-operator">)</span> vector zViewFlash<span class="uscript-operator">,</span> zViewFog<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">/*
+   This function is called when the event used to trigger the zone property change occurs.
+   It is responsible for setting the zone properties of the target zone to the values itself
+   holds.
+   The Tag property of the target ZoneInfo object to update must be specified within the
+   TargetZoneTag property of this object.
+*/</span>
+<span class="uscript-keyword">function</span> ZoneInfo getTargetZone<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> ZoneInfo zone<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>zoneObject <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span> <span class="uscript-keyword">class</span> <span class="uscript-name">'ZoneInfo'</span><span class="uscript-operator">,</span> zone<span class="uscript-operator">,</span> TargetZoneTag <span class="uscript-operator">)</span>
+            zoneObject <span class="uscript-operator">=</span> zone<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">return</span> zoneObject<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/*
+   This is the main Trigger function - it is called whenever the actor is triggered by an
+   event.  It simply assigns the properties associated with this object directly to the
+   ZoneInfo it points at.
+*/</span>
+<span class="uscript-keyword">event</span> Trigger<span class="uscript-operator">(</span> Actor Other<span class="uscript-operator">,</span> Pawn EventInstigator <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> ZoneInfo zone<span class="uscript-operator">;</span>
+    zone <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>getTargetZone<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> zone <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        zone<span class="uscript-operator">.</span>ZoneGravity <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zZoneGravity<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>ZoneVelocity <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zZoneVelocity<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>ZoneGroundFriction <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zZoneGroundFriction<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>ZoneFluidFriction <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zZoneFluidFriction<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>ZoneTerminalVelocity <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zZoneTerminalVelocity<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>ZonePlayerEvent <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zZonePlayerEvent<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>DamagePerSec <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zDamagePerSec<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>DamageType <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zDamageType<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>DamageString <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zDamageString<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>ZoneName <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zZoneName<span class="uscript-operator">;</span>
+
+          <span class="uscript-comment">//zone.bWaterZone = self.zbWaterzone;</span>
+        zone<span class="uscript-operator">.</span>bNeutralZone <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zbNeutralZone<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>bGravityZone <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zbGravityZone<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>bPainZone <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zbPainZone<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>bDestructive <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zbDestructive<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>bNoInventory <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zbNoInventory<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>bMoveProjectiles <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zbMoveProjectiles<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>bBounceVelocity <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zbBounceVelocity<span class="uscript-operator">;</span>
+
+        zone<span class="uscript-operator">.</span>AmbientBrightness <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zAmbientBrightness<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>AmbientHue <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zAmbientHue<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>AmbientSaturation <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zAmbientSaturation<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>FogColor <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zFogColor<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>FogDistance <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zFogDistance<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>TexUPanSpeed <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zTexUPanSpeed<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>TexVPanSpeed <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zTexVPanSpeed<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>ViewFlash <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zViewFlash<span class="uscript-operator">;</span>
+        zone<span class="uscript-operator">.</span>ViewFog <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">.</span>zViewFog<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+     zZoneGravity<span class="uscript-operator">=</span><span class="uscript-operator">(</span>Z<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">950.000000</span><span class="uscript-operator">)</span>
+     zZoneGroundFriction<span class="uscript-operator">=</span><span class="uscript-number">8.000000</span>
+     zZoneFluidFriction<span class="uscript-operator">=</span><span class="uscript-number">1.200000</span>
+     zZoneTerminalVelocity<span class="uscript-operator">=</span><span class="uscript-number">2500.000000</span>
+     zbMoveProjectiles<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     zAmbientSaturation<span class="uscript-operator">=</span><span class="uscript-number">255</span>
+     zTexUPanSpeed<span class="uscript-operator">=</span><span class="uscript-number">1.000000</span>
+     zTexVPanSpeed<span class="uscript-operator">=</span><span class="uscript-number">1.000000</span>
+     bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">Naked Monster:</em> You can add another zone flag to make it work for water zones as well. However there is a limitation on doing that, you cannot trigger water zone to TRUE while you are in that zone, otherwise you get that "spawned in water zone" bug.</p>
+<p><em class="em2">MythOpus:</em> Hold an array of all the current players in the zone at change time and stop them from getting the bug/?</p>
+<p><em class="em2">Naked Monster:</em> <a href="http://wiki.beyondunreal.com/wiki/Rising_Water_(UT">http://wiki.beyondunreal.com/wiki/Rising_Water_(UT</a>) It seems that to make it work wih water zones you need to add some more code to set up the physics of all actors inside that zone.</p>
+</div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="triggeredzonepropertychange.html">TriggeredZonePropertyChanger</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=TriggeredZonePropertyChanger/Code">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=TriggeredZonePropertyChanger/Code">View other revisions</a><br>Last edited January 28, 2006 11:06 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=TriggeredZonePropertyChanger/Code">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/TriggeredZonePropertyChanger/Code">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I'm a doctor, not a mechanic
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

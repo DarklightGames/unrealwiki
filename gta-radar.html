@@ -1,0 +1,219 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: GTA Radar</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=GTA_Radar; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=GTA Radar">GTA Radar</a></h1>
+	<div class="wiki"><p>This is a GTA-like radar that I made for a small mod.  The GameInfo class holds a list of all of the Objectives in the map.  Objectives are Actor classes that trigger missions.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MyCustomHUD <span class="uscript-keyword">extends</span> HudBase<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> Shader MyShader<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> TexScaler MyScaler<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> TexRotator MyRotator<span class="uscript-operator">,</span> PlayerIconRotator<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> texture MapRadarTexture<span class="uscript-operator">,</span> HUDMapOpacity<span class="uscript-operator">,</span> HUDMapBorder<span class="uscript-operator">,</span> PlayerIcon<span class="uscript-operator">,</span> WaypointIcon<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> material TargetPawnIcon<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> RadarScale<span class="uscript-operator">,</span> MapScale<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> MyCustomGame TheGame<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> MapScaleActor MSA<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Set up all of the textures.</span>
+    TheGame <span class="uscript-operator">=</span> MyCustomGame<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    MyShader <span class="uscript-operator">=</span> <span class="uscript-keyword">New</span><span class="uscript-operator">(</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Shader'</span><span class="uscript-operator">;</span>
+    MyScaler <span class="uscript-operator">=</span> <span class="uscript-keyword">New</span><span class="uscript-operator">(</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-keyword">class</span><span class="uscript-name">'TexScaler'</span><span class="uscript-operator">;</span>
+    MyRotator <span class="uscript-operator">=</span> <span class="uscript-keyword">New</span><span class="uscript-operator">(</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-keyword">class</span><span class="uscript-name">'TexRotator'</span><span class="uscript-operator">;</span>
+    PlayerIconRotator <span class="uscript-operator">=</span> <span class="uscript-keyword">New</span><span class="uscript-operator">(</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-keyword">class</span><span class="uscript-name">'TexRotator'</span><span class="uscript-operator">;</span>
+    PlayerIconRotator<span class="uscript-operator">.</span>Material <span class="uscript-operator">=</span> PlayerIcon<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Half of the PlayerIcon's texture size.</span>
+    PlayerIconRotator<span class="uscript-operator">.</span>UOffset <span class="uscript-operator">=</span> <span class="uscript-number">32</span><span class="uscript-operator">;</span>
+    PlayerIconRotator<span class="uscript-operator">.</span>VOffset <span class="uscript-operator">=</span> <span class="uscript-number">32</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Set up the Radar image, set the rotation point to the middle.</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>RadarMapImage <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        RadarScale <span class="uscript-operator">=</span> texture<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>RadarMapImage<span class="uscript-operator">)</span><span class="uscript-operator">.</span>UClamp<span class="uscript-operator">/</span><span class="uscript-number">256</span><span class="uscript-operator">;</span>
+        MyScaler<span class="uscript-operator">.</span>Material <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>RadarMapImage<span class="uscript-operator">;</span>
+        MyScaler<span class="uscript-operator">.</span>UScale <span class="uscript-operator">=</span> <span class="uscript-number">2</span><span class="uscript-operator">;</span>
+        MyScaler<span class="uscript-operator">.</span>VScale <span class="uscript-operator">=</span> <span class="uscript-number">2</span><span class="uscript-operator">;</span>
+        MyScaler<span class="uscript-operator">.</span>UOffset <span class="uscript-operator">=</span> <span class="uscript-number">64</span><span class="uscript-operator">*</span>RadarScale<span class="uscript-operator">;</span>
+        MyScaler<span class="uscript-operator">.</span>VOffset <span class="uscript-operator">=</span> <span class="uscript-number">64</span><span class="uscript-operator">*</span>RadarScale<span class="uscript-operator">;</span>
+        MyRotator<span class="uscript-operator">.</span>Material <span class="uscript-operator">=</span> MyScaler<span class="uscript-operator">;</span>
+        MyRotator<span class="uscript-operator">.</span>UOffset <span class="uscript-operator">=</span> <span class="uscript-number">128</span><span class="uscript-operator">*</span>RadarScale<span class="uscript-operator">;</span>
+        MyRotator<span class="uscript-operator">.</span>VOffset <span class="uscript-operator">=</span> <span class="uscript-number">128</span><span class="uscript-operator">*</span>RadarScale<span class="uscript-operator">;</span>
+        MyShader<span class="uscript-operator">.</span>Diffuse <span class="uscript-operator">=</span> MyRotator<span class="uscript-operator">;</span>
+        MyShader<span class="uscript-operator">.</span>Opacity <span class="uscript-operator">=</span> HUDMapOpacity<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">// MapScaleActor tells the game the ratio between the RadarMap and the actual level.</span>
+    <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'MapScaleActor'</span><span class="uscript-operator">,</span>MSA<span class="uscript-operator">)</span>
+        MapScale <span class="uscript-operator">=</span> MSA<span class="uscript-operator">.</span>MapScale<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> DrawHudPassA<span class="uscript-operator">(</span>Canvas C<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> rotator Dir<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> Angle<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> vector PlayerLocZeroed<span class="uscript-operator">,</span> ObjectiveLocZeroed<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Get the player's rotation and position on the map.</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>PawnOwner <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        MyScaler<span class="uscript-operator">.</span>UOffset <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>PawnOwner<span class="uscript-operator">.</span>Location<span class="uscript-operator">.</span>X<span class="uscript-operator">/</span><span class="uscript-operator">(</span>MapScale<span class="uscript-operator">/</span><span class="uscript-operator">(</span><span class="uscript-number">256</span><span class="uscript-operator">*</span>RadarScale<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-operator">(</span><span class="uscript-number">64</span><span class="uscript-operator">*</span>RadarScale<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        MyScaler<span class="uscript-operator">.</span>VOffset <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>PawnOwner<span class="uscript-operator">.</span>Location<span class="uscript-operator">.</span>Y<span class="uscript-operator">/</span><span class="uscript-operator">(</span>MapScale<span class="uscript-operator">/</span><span class="uscript-operator">(</span><span class="uscript-number">256</span><span class="uscript-operator">*</span>RadarScale<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-operator">(</span><span class="uscript-number">64</span><span class="uscript-operator">*</span>RadarScale<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        MyRotator<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">.</span>Yaw <span class="uscript-operator">=</span> PlayerOwner<span class="uscript-operator">.</span>CalcViewRotation<span class="uscript-operator">.</span>Yaw <span class="uscript-operator">+</span> <span class="uscript-number">16384</span><span class="uscript-operator">;</span>
+        PlayerIconRotator<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">.</span>Yaw <span class="uscript-operator">=</span> PlayerOwner<span class="uscript-operator">.</span>CalcViewRotation<span class="uscript-operator">.</span>Yaw <span class="uscript-operator">-</span> PawnOwner<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">// Draw the Radar Image</span>
+    C<span class="uscript-operator">.</span>SetDrawColor<span class="uscript-operator">(</span><span class="uscript-number">150</span><span class="uscript-operator">,</span><span class="uscript-number">150</span><span class="uscript-operator">,</span><span class="uscript-number">150</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    C<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span><span class="uscript-number">32</span><span class="uscript-operator">*</span>C<span class="uscript-operator">.</span>ClipX<span class="uscript-operator">/</span><span class="uscript-number">1280</span><span class="uscript-operator">,</span>C<span class="uscript-operator">.</span>ClipY <span class="uscript-operator">-</span> <span class="uscript-operator">(</span><span class="uscript-number">288</span><span class="uscript-operator">*</span>C<span class="uscript-operator">.</span>ClipY<span class="uscript-operator">/</span><span class="uscript-number">1024</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    C<span class="uscript-operator">.</span>DrawTileScaled<span class="uscript-operator">(</span>MyShader<span class="uscript-operator">,</span><span class="uscript-operator">(</span>C<span class="uscript-operator">.</span>ClipX<span class="uscript-operator">/</span><span class="uscript-number">1280</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span>RadarScale<span class="uscript-operator">,</span><span class="uscript-operator">(</span>C<span class="uscript-operator">.</span>ClipY<span class="uscript-operator">/</span><span class="uscript-number">1024</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span>RadarScale<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    C<span class="uscript-operator">.</span>SetDrawColor<span class="uscript-operator">(</span><span class="uscript-number">200</span><span class="uscript-operator">,</span><span class="uscript-number">200</span><span class="uscript-operator">,</span><span class="uscript-number">200</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    C<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span><span class="uscript-number">32</span><span class="uscript-operator">*</span>C<span class="uscript-operator">.</span>ClipX<span class="uscript-operator">/</span><span class="uscript-number">1280</span><span class="uscript-operator">,</span>C<span class="uscript-operator">.</span>ClipY <span class="uscript-operator">-</span> <span class="uscript-operator">(</span><span class="uscript-number">288</span><span class="uscript-operator">*</span>C<span class="uscript-operator">.</span>ClipY<span class="uscript-operator">/</span><span class="uscript-number">1024</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    C<span class="uscript-operator">.</span>DrawTileScaled<span class="uscript-operator">(</span>HUDMapBorder<span class="uscript-operator">,</span><span class="uscript-operator">(</span>C<span class="uscript-operator">.</span>ClipX<span class="uscript-operator">/</span><span class="uscript-number">1280</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span>RadarScale<span class="uscript-operator">,</span><span class="uscript-operator">(</span>C<span class="uscript-operator">.</span>ClipY<span class="uscript-operator">/</span><span class="uscript-number">1024</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span>RadarScale<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Draw the Player Icon</span>
+    C<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span><span class="uscript-number">144</span><span class="uscript-operator">*</span>C<span class="uscript-operator">.</span>ClipX<span class="uscript-operator">/</span><span class="uscript-number">1280</span><span class="uscript-operator">,</span>C<span class="uscript-operator">.</span>ClipY <span class="uscript-operator">-</span> <span class="uscript-operator">(</span><span class="uscript-number">176</span><span class="uscript-operator">*</span>C<span class="uscript-operator">.</span>ClipY<span class="uscript-operator">/</span><span class="uscript-number">1024</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    C<span class="uscript-operator">.</span>SetDrawColor<span class="uscript-operator">(</span><span class="uscript-number">255</span><span class="uscript-operator">,</span><span class="uscript-number">75</span><span class="uscript-operator">,</span><span class="uscript-number">255</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    C<span class="uscript-operator">.</span>DrawTileScaled<span class="uscript-operator">(</span>PlayerIconRotator<span class="uscript-operator">,</span><span class="uscript-number">0.5</span><span class="uscript-operator">*</span>C<span class="uscript-operator">.</span>ClipX<span class="uscript-operator">/</span><span class="uscript-number">1280</span><span class="uscript-operator">,</span><span class="uscript-number">0.5</span><span class="uscript-operator">*</span>C<span class="uscript-operator">.</span>ClipY<span class="uscript-operator">/</span><span class="uscript-number">1024</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Objective icons</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>TheGame <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>TheGame<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Objectives<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>TheGame<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Objectives<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>bEnabled <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>TheGame<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Objectives<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>bHidden<span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                Dir <span class="uscript-operator">=</span> rotator<span class="uscript-operator">(</span>TheGame<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Objectives<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> PawnOwner<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                Angle <span class="uscript-operator">=</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Dir<span class="uscript-operator">.</span>Yaw <span class="uscript-operator">-</span> PlayerOwner<span class="uscript-operator">.</span>CalcViewRotation<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;</span> <span class="uscript-number">65535</span><span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-number">6.2832</span><span class="uscript-operator">/</span><span class="uscript-number">65536</span><span class="uscript-operator">;</span>
+
+                PlayerLocZeroed <span class="uscript-operator">=</span> PawnOwner<span class="uscript-operator">.</span>Location<span class="uscript-operator">;</span>
+                PlayerLocZeroed<span class="uscript-operator">.</span>Z <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+                ObjectiveLocZeroed <span class="uscript-operator">=</span> TheGame<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Objectives<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Location<span class="uscript-operator">;</span>
+                ObjectiveLocZeroed<span class="uscript-operator">.</span>Z <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+
+                C<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-number">144</span><span class="uscript-operator">*</span>C<span class="uscript-operator">.</span>ClipX<span class="uscript-operator">/</span><span class="uscript-number">1280</span><span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-operator">(</span><span class="uscript-number">128</span> <span class="uscript-operator">*</span> FMin<span class="uscript-operator">(</span>VSize<span class="uscript-operator">(</span>PlayerLocZeroed<span class="uscript-operator">-</span>ObjectiveLocZeroed<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-operator">(</span>MapScale<span class="uscript-operator">/</span><span class="uscript-number">4</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">*</span> sin<span class="uscript-operator">(</span>Angle<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> C<span class="uscript-operator">.</span>ClipX<span class="uscript-operator">/</span><span class="uscript-number">1280</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span>
+                        <span class="uscript-operator">(</span>C<span class="uscript-operator">.</span>ClipY<span class="uscript-operator">-</span><span class="uscript-operator">(</span><span class="uscript-number">176</span><span class="uscript-operator">*</span>C<span class="uscript-operator">.</span>ClipY<span class="uscript-operator">/</span><span class="uscript-number">1024</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">-</span> <span class="uscript-operator">(</span><span class="uscript-number">128</span><span class="uscript-operator">*</span>FMin<span class="uscript-operator">(</span>VSize<span class="uscript-operator">(</span>PlayerLocZeroed<span class="uscript-operator">-</span>ObjectiveLocZeroed<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-operator">(</span>MapScale<span class="uscript-operator">/</span><span class="uscript-number">4</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">*</span> cos<span class="uscript-operator">(</span>Angle<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> C <span class="uscript-operator">.</span>ClipY<span class="uscript-operator">/</span><span class="uscript-number">1024</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                C<span class="uscript-operator">.</span>SetDrawColor<span class="uscript-operator">(</span>TheGame<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Objectives<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ObjectiveIconColor<span class="uscript-operator">.</span>R<span class="uscript-operator">,</span>
+                               TheGame<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Objectives<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ObjectiveIconColor<span class="uscript-operator">.</span>G<span class="uscript-operator">,</span>
+                               TheGame<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Objectives<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ObjectiveIconColor<span class="uscript-operator">.</span>B<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                C<span class="uscript-operator">.</span>DrawTileScaled<span class="uscript-operator">(</span>TheGame<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Objectives<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ObjectiveIcon<span class="uscript-operator">,</span><span class="uscript-number">0.5</span><span class="uscript-operator">*</span>C<span class="uscript-operator">.</span>ClipX<span class="uscript-operator">/</span><span class="uscript-number">1280</span><span class="uscript-operator">,</span><span class="uscript-number">0.5</span><span class="uscript-operator">*</span>C<span class="uscript-operator">.</span>ClipY<span class="uscript-operator">/</span><span class="uscript-number">1024</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+
+    DrawCrosshair<span class="uscript-operator">(</span>C<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    HUDMapOpacity<span class="uscript-operator">=</span>Texture<span class="uscript-name">'MyTextures.HUDMapOpacity'</span>
+    HUDMapBorder<span class="uscript-operator">=</span>Texture<span class="uscript-name">'MyTextures.HUDMapBorder'</span>
+    PlayerIcon<span class="uscript-operator">=</span>Texture<span class="uscript-name">'ONSInterface-TX.CurrentPlayerIcon'</span>
+    WaypointIcon<span class="uscript-operator">=</span>texture<span class="uscript-name">'MyTextures.ObjectiveWaypointTex'</span>
+    TargetPawnIcon<span class="uscript-operator">=</span>material<span class="uscript-name">'MyTextures.ObjectivePawnFinal'</span>
+<span class="uscript-operator">}</span></pre><p>The HUDMapOpacity is a texture with a white circle in the alpha, so that the map is displayed as a circle and not a square.</p>
+</div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=GTA_Radar">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=GTA_Radar">View other revisions</a><br>Last edited August 18, 2005 20:47 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=GTA_Radar">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/GTA_Radar">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I don't need to test my programs. I have an error-correcting modem.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

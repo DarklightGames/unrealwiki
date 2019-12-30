@@ -1,0 +1,188 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Rich Zap</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Rich_Zap; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Rich Zap">Rich Zap</a></h1>
+	<div class="wiki"><p>Right so after several years of using this place i finally get round to putting something back. Im currently a member of a barely known mod team called Anomalous Mods, we are currently producing the Third Contingent mod (<a href="http://3c.moddb.com">http://3c.moddb.com</a>). But i am also working on several other projects...</p>
+<p>Although i am now a relatively skilled coder i did find it hard to learn Uscript at first through the wikis tutorials. It wasnt until i found Tuco's tutorial page (<a href="http://www.student.oulu.fi/~tkorva/ut2004devtips.html">http://www.student.oulu.fi/~tkorva/ut2004devtips.html</a>) that i was able to really start doing stuff with Uscript that wasnt merely changing values within existing code or making minor changes. So im going to put down some steps to making a reasonably simple custom actor that should give some returns to anyone who is learning while simultaneously been easy to understand.</p>
+<h3><a name="0.0.1"></a>Eagle-Bee Actor Part One</h3>
+<h2><a name="0.1"></a>Before You Start</h2>
+<p>As with the <a href="unrealscript-hello-world.html">UnrealScript Hello World</a> tutorial we need to create a directory to hold our mutator code.  The name of the directory determines the name of the package into which your code will be compiled.  To that end you need to <a href="set-up-package-folders.html">Set Up Package Folders</a>:</p>
+<ol><li>Create a directory <code>EagleBeeActor</code> within your UT2004 directory</li>
+<li>Create a directory <code>Classes</code> within the <code>EagleBeeActor</code> you just created.</li>
+</ol>
+<p>You should have the following folder tree:</p>
+<PRE class="tree">UT2004 
+  +- EagleBeeActor
+       +- Classes</PRE><h4><a name="0.1.0.1"></a>Aims</h4>
+<p>The aim of this tutorial will be to take the basic Actor code from which most classes in UT2004 are extended and create an actor which will follow players around a map. We will simply be using the Eagle head icon which is default so that the code is self contained within one class however the code could easily be modified to include a static mesh or a different icon.</p>
+<h4><a name="0.1.0.2"></a>Introduction</h4>
+<p>So lets get started, first off theres an important resource that you need to be aware of if you arent already... <a href="http://unreal.student.utwente.nl/">http://unreal.student.utwente.nl/</a> contains source code for all unreal games sorted so that functions and classes are easy to locate and use. UScript development is much more difficult without this resource. One page of particular importance for this tutorial is the actor page (<a href="http://unreal.student.utwente.nl/uncodex-ut2004/engine/actor.html.gz">http://unreal.student.utwente.nl/uncodex-ut2004/engine/actor.html.gz</a>) which conatins a list of functions and variables which <a href="actor.html">Actor</a> provides.</p>
+<p>For now were going to keep the actor very simple, we will build more complexity in later. So this is the first code we need to get down, most of it is simply settings which we will need in order to develop the actor further:</p>
+<h4><a name="0.1.0.3"></a>Getting the actor moving</h4>
+<pre class="uscript"><span class="uscript-comment">//-------------------------------------------------------------</span>
+<span class="uscript-comment">// Eagle-Bee Actor - Designed to follow the player around a map</span>
+<span class="uscript-comment">//-------------------------------------------------------------</span>
+
+<span class="uscript-keyword">Class</span> EagleBeeActor <span class="uscript-keyword">extends</span> Actor <span class="uscript-keyword">Placeable</span><span class="uscript-operator">;</span>   <span class="uscript-comment">//The placeable comment means that our actor can be placed in a map within Ued.</span>
+
+<span class="uscript-keyword">Function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+      <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+      Velocity<span class="uscript-operator">.</span>z <span class="uscript-operator">=</span> <span class="uscript-number">100</span><span class="uscript-operator">;</span>         <span class="uscript-comment">//Sets our actor to move at a steady speed of 100 upwards</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+    bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>                       <span class="uscript-comment">//Allows the actor to be seen.</span>
+
+    DrawType<span class="uscript-operator">=</span>DT_Sprite                  <span class="uscript-comment">//Sets our actor to use sprite drawtype, as no sprite has been specified it will use </span>
+                                        <span class="uscript-comment">//the default Eagle Head image.</span>
+
+    RemoteRole<span class="uscript-operator">=</span>ROLE_None                <span class="uscript-comment">//Networking, we wont worry about this till later so for now we will just leave it as None.</span>
+
+    bUseCylinderCollision<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>          <span class="uscript-comment">//Sets the collision on our actor to be an invisible cylinder of height 30UU by radius 30UU.</span>
+    CollisionHeight<span class="uscript-operator">=</span><span class="uscript-number">30.0</span>
+    CollisionRadius<span class="uscript-operator">=</span><span class="uscript-number">30.0</span>
+
+     bCollideActors<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>                <span class="uscript-comment">//Collision Properties, basically tells our actor to collide with everything.</span>
+     bBlockActors<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     bBlockKarma<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bBlockNonZeroExtentTraces<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bBlockZeroExtentTraces<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bCollideWorld<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    
+    bStatic<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>                   <span class="uscript-comment">//Allows our actor to move.</span>
+    bStasis<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+
+    Physics<span class="uscript-operator">=</span>PHYS_Flying             <span class="uscript-comment">//Tells our actor to use 'Flying' physics where velocity, acceleration etc... are applied.</span>
+<span class="uscript-operator">}</span></pre><div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 width="100%"><tr valign=top><td class="floatimages-left" align=left width=1><div><img alt="[RichZapTutPic2]" src="images/richzaptutpic2.jpeg"><p>Movement of actor</p>
+</div>
+</td>
+<td class="floatimages-text" width="100%"><p>So now that youve coded and compiled this we need to test it. Run UT2004 and start an Instant Action DeathMatch game, make the bot count zero so they dont interfere while you're testing. Once playing type in the console <em class="em2">Summon EagleBeeActor.EagleBeeActor</em>, our new actor should appear and start floating gently upwards. Unfortunately it will float straight out of the level and die because although we have instructed it that it can collide with everything, we havent told it what to do when it does collide.</p>
+</td>
+</tr>
+</table>
+</div>
+<h4><a name="0.1.0.4"></a>Adding Collision Effect</h4>
+<div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 width="100%"><tr valign=top><td class="floatimages-text" width="100%"><p>Now obviously at the moment the actor is pretty dull as it will just float up and die, we need to make it a bit more interesting so thats what were going to do now. We are going to add a simple function which will tell our actor to bounce off of objects. The function given below should be added into the code without modification to anything else. All collisions that occur will be perfectly elastic in other words if you are travelling at a speed of 5 MpH when you hit an object, you will bounce off at 5 MpH as well.</p>
+<p>Understanding the maths involved is not within the scope of this tutorial, however you may want a look at the <a href="vector.html">Vector</a> page if you want to learn them or just refresh yourself on their workings. it is enough for now simply to know that this will simply cause the velocity to change so that it makes the object rebound off anything it collides with.</p>
+<pre class="uscript"><span class="uscript-keyword">Function</span> Hitwall<span class="uscript-operator">(</span>vector HitNormal<span class="uscript-operator">,</span> actor Wall<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+        <span class="uscript-comment">//If the actor collides with anything, rebound.</span>
+
+    Velocity <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>Velocity <span class="uscript-operator">-</span> <span class="uscript-number">2.0</span><span class="uscript-operator">*</span>HitNormal<span class="uscript-operator">*</span><span class="uscript-operator">(</span>Velocity <span class="uscript-operator">dot</span> HitNormal<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Now you've added that code in, recompile and test out the same way as you did before (<em class="em2">summon EagleBeeActor.EagleBeeActor</em>). HitWall is a native function which is called whenever the actor collides with anything that it is set to collide with.</p>
+</td>
+<td class="floatimages-right" align=right width=1><div><img alt="[RichZapTutPic1]" src="images/richzaptutpic1.jpeg"></div>
+</td>
+</tr>
+</table>
+</div>
+<hr class="thin"><p><a href="category-personal-page.html">Category Personal Page</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Eagle-Bee Actor Part One", "#0.0.1");
+menuItemAdd("Before You Start", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Aims", "#0.1.0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Introduction", "#0.1.0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Getting the actor moving", "#0.1.0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Adding Collision Effect", "#0.1.0.4");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Rich_Zap">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Rich_Zap">View other revisions</a><br>Last edited July 18, 2006 2:50 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Rich_Zap">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Rich_Zap">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I'm a doctor, not a mechanic
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

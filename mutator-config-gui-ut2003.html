@@ -1,0 +1,351 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Mutator Config GUI (UT2003)</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Mutator_Config_GUI_(UT2003); path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Mutator Config GUI (UT2003)">Mutator Config GUI (UT2003)</a></h1>
+	<div class="wiki"><p>Making a configuration window for your <a href="mutator-topics.html">mutator</a> in <a href="unreal-tournament-2003.html">UT2003</a>. Written By LedZep</p>
+<p><em class="em2">NOTE:</em> If you want the <a href="unreal-tournament-2004.html">UT2004</a> version then please see <a href="mutator-config-gui-ut2004.html">Mutator Config GUI (UT2004)</a>.</p>
+<p>This tutorial will guide you through creating a simple mutator and a configuration window for it. This tutorial assumes that you have basic knowledge in <a href="unrealscript.html">UnrealScript</a> and that you know how to create <a href="uc-file.html">UC file</a>s and how to setup and compile them: see <a href="setting-up-unrealscript.html">Setting Up UnrealScript</a>.</p>
+<p>As an example, this tutorial will show you how to create a MultiJumping mutator and how to create a configuration window to setup it. You are not going to need any external files other than the ones you will create yourself.</p>
+<p>For a class tree of the GUI components see <a href="gui-class-hierarchy.html">GUI Class Hierarchy</a>.</p>
+<h2><a name="0.1"></a>Creating the Mutator Class</h2>
+<p>First we will create the mutator, basically it is going to have three components: the configurable variables, the ModifyPlayer function and the <a href="default-properties.html">Default Properties</a>. Here is how it is going to look like:</p>
+<pre class="uscript"><span class="uscript-keyword">Class</span> MultiJumpMut <span class="uscript-keyword">extends</span> Mutator <span class="uscript-keyword">Config</span><span class="uscript-operator">(</span>User<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">config</span> <span class="uscript-type">int</span> MJMax<span class="uscript-operator">,</span> MJBoost<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> ModifyPlayer<span class="uscript-operator">(</span>Pawn Other<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> xPawn x<span class="uscript-operator">;</span>
+    x <span class="uscript-operator">=</span> xPawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>   <span class="uscript-comment">// Check if pawn is xPawn</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>x <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>       <span class="uscript-comment">// If it is, assign the new variables to it</span>
+    <span class="uscript-operator">{</span>
+        x<span class="uscript-operator">.</span>MaxMultiJump <span class="uscript-operator">=</span> MJMax<span class="uscript-operator">;</span>
+        x<span class="uscript-operator">.</span>MultiJumpBoost <span class="uscript-operator">=</span> MJBoost<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    IconMaterialName<span class="uscript-operator">=</span><span class="uscript-string">"MutatorArt.nosym"</span>
+    ConfigMenuClassName<span class="uscript-operator">=</span><span class="uscript-string">"MultiJumpMutator.MJMutConfig"</span>        <span class="uscript-comment">// Note that this assumes that your package's name is MultiJumpMutator</span>
+    GroupName<span class="uscript-operator">=</span><span class="uscript-string">"Jumping"</span>
+    FriendlyName<span class="uscript-operator">=</span><span class="uscript-string">"MultiJumpMutator"</span>
+    Description<span class="uscript-operator">=</span><span class="uscript-string">"Configure Your Multi Jumping Ability."</span>
+    MJMax<span class="uscript-operator">=</span><span class="uscript-number">1</span>
+    MJBoost<span class="uscript-operator">=</span><span class="uscript-number">25</span>
+<span class="uscript-operator">}</span></pre><p>Note that I added "Config(User)" to the class declaration so it will know where to store its variables.  When declaring Configurable variables, always put the word "config" after the "var" to let the compiler know that they are configurable. If you want those varibles to have default properties incase the user wont specify any, make your "var" look like this: "var()", and in the default properties section give those variable a value (dont forget that you dont use semi colons in the default properties section).  See also <a href="variable-syntax.html">Variable Syntax</a>.</p>
+<p>In this mutator's case, MJMax is the maximum number of extra jumps the player can make, and MJBoost is the boost each extra jump gives him.  The ModifyPlayer function is really simple, it recieves a Pawn in its parameters, checks if it is an xPawn and then assigns our mutator's variables to the xPawn's variables.  Now default props, basically what they do is give the mutator its name and its description, assign values to our configurable variable and specify our mutator's config class (which we will make in a second)</p>
+<h2><a name="0.2"></a>Creating the Configuration Window for the Mutator</h2>
+<p>The ConfigWindow is a little more tricky, it has four parts to it; declaring the two edit boxes we are going to be using, the InitComponent and InternalOnClick functions and the DefaultProperties.  First I'll give you the code, then I'll explain. Dont freak out when you see the Default Properties, it will all become clear to you very soon.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MJMutConfig <span class="uscript-keyword">extends</span> GUIPage<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> moEditBox MJCountBox<span class="uscript-operator">,</span> MJBoostBox<span class="uscript-operator">;</span>       <span class="uscript-comment">// Declare two EditBox type Variables</span>
+
+<span class="uscript-comment">// Called when our GUI component is initiated (in this case our config window)</span>
+<span class="uscript-keyword">function</span> InitComponent<span class="uscript-operator">(</span>GUIController MyController<span class="uscript-operator">,</span> GUIComponent MyOwner<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>InitComponent<span class="uscript-operator">(</span>MyController<span class="uscript-operator">,</span> MyOwner<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Call Parent's InitComponent</span>
+
+    <span class="uscript-comment">// Assign variables to EditBoxes that were created in the default properties</span>
+    MJCountBox <span class="uscript-operator">=</span> moEditBox<span class="uscript-operator">(</span>Controls<span class="uscript-operator">[</span><span class="uscript-number">4</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    MJBoostBox <span class="uscript-operator">=</span> moEditBox<span class="uscript-operator">(</span>Controls<span class="uscript-operator">[</span><span class="uscript-number">5</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Set the EditBoxes to be integer only because we are only dealing with numbers</span>
+    MJCountBox<span class="uscript-operator">.</span>IntOnly<span class="uscript-operator">(</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    MJBoostBox<span class="uscript-operator">.</span>IntOnly<span class="uscript-operator">(</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+    <span class="uscript-comment">// Set the EditBoxes' text to our mutator's config variables' values</span>
+    MJCountBox<span class="uscript-operator">.</span>SetText<span class="uscript-operator">(</span><span class="uscript-type">string</span><span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'MultiJumpMut'</span><span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>MJMax<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    MJBoostBox<span class="uscript-operator">.</span>SetText<span class="uscript-operator">(</span><span class="uscript-type">string</span><span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'MultiJumpMut'</span><span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>MJBoost<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// Called when the OK button is clicked</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> InternalOnClick<span class="uscript-operator">(</span>GUIComponent Sender<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// Set our Mutator's variables to the new variables that were set by the user</span>
+    <span class="uscript-keyword">class</span><span class="uscript-name">'MultiJumpMut'</span><span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>MJMax <span class="uscript-operator">=</span> <span class="uscript-type">int</span><span class="uscript-operator">(</span>MJCountBox<span class="uscript-operator">.</span>GetText<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">class</span><span class="uscript-name">'MultiJumpMut'</span><span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>MJBoost <span class="uscript-operator">=</span> <span class="uscript-type">int</span><span class="uscript-operator">(</span>MJBoostBox<span class="uscript-operator">.</span>GetText<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+    <span class="uscript-keyword">class</span><span class="uscript-name">'MultiJumpMut'</span><span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>StaticSaveConfig<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Save all the Mutator's config variables</span>
+
+    Controller<span class="uscript-operator">.</span>CloseMenu<span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>    <span class="uscript-comment">// Close the window</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>    <span class="uscript-comment">// Return True (hard to figure out eh?) ;)</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    Begin Object <span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>GUIButton <span class="uscript-type">name</span><span class="uscript-operator">=</span>DialogBackground  <span class="uscript-comment">// The window's background</span>
+        WinWidth<span class="uscript-operator">=</span><span class="uscript-number">1.0</span>            <span class="uscript-comment">// Set Window's width</span>
+        WinHeight<span class="uscript-operator">=</span><span class="uscript-number">1.0</span>           <span class="uscript-comment">// Set Window's height</span>
+        WinTop<span class="uscript-operator">=</span><span class="uscript-number">0</span>            <span class="uscript-comment">// Set the windows location on the Y axis</span>
+        WinLeft<span class="uscript-operator">=</span><span class="uscript-number">0</span>           <span class="uscript-comment">// Set the windows location on the X axis</span>
+        bAcceptsInput<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>     <span class="uscript-comment">// Since its just a background it wont accept input</span>
+        bNeverFocus<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>        <span class="uscript-comment">// Just a background, no need for focus</span>
+        StyleName<span class="uscript-operator">=</span><span class="uscript-string">"ComboListBox"</span>    <span class="uscript-comment">// The style of the background</span>
+        bBoundToParent<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>     <span class="uscript-comment">// is it bound to its parent window?</span>
+        bScaleToParent<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>     <span class="uscript-comment">// is it in scale to its parent window?</span>
+    End Object
+    Controls<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>GUIButton<span class="uscript-name">'DialogBackground'</span> <span class="uscript-comment">// Sets Controls[0] to the DialogBackround</span>
+
+    Begin Object <span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>GUIButton <span class="uscript-type">Name</span><span class="uscript-operator">=</span>OkButton  <span class="uscript-comment">// An "OK" Button</span>
+        Caption<span class="uscript-operator">=</span><span class="uscript-string">"OK"</span>                <span class="uscript-comment">// The button's caption</span>
+        WinWidth<span class="uscript-operator">=</span><span class="uscript-number">0.2</span>
+        WinHeight<span class="uscript-operator">=</span><span class="uscript-number">0.04</span>
+        WinLeft<span class="uscript-operator">=</span><span class="uscript-number">0.4</span>
+        WinTop<span class="uscript-operator">=</span><span class="uscript-number">0.63</span>
+        OnClick<span class="uscript-operator">=</span>InternalOnClick         <span class="uscript-comment">// Assigns the button's OnClick to our InternalOnClick function</span>
+    End Object
+    Controls<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>GUIButton<span class="uscript-name">'OkButton'</span>         <span class="uscript-comment">// Sets Controls[1] to the OkButton</span>
+
+    Begin Object <span class="uscript-keyword">class</span><span class="uscript-operator">=</span>GUILabel <span class="uscript-type">Name</span><span class="uscript-operator">=</span>DialogText <span class="uscript-comment">// A text label</span>
+        Caption<span class="uscript-operator">=</span><span class="uscript-string">"MultiJump Configuration"</span>
+        TextALign<span class="uscript-operator">=</span>TXTA_Center           <span class="uscript-comment">// Text allignment</span>
+        TextColor<span class="uscript-operator">=</span><span class="uscript-operator">(</span>R<span class="uscript-operator">=</span><span class="uscript-number">220</span><span class="uscript-operator">,</span>G<span class="uscript-operator">=</span><span class="uscript-number">180</span><span class="uscript-operator">,</span>B<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>A<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">)</span>   <span class="uscript-comment">// Text color</span>
+        TextFont<span class="uscript-operator">=</span><span class="uscript-string">"UT2HeaderFont"</span>        <span class="uscript-comment">// Text font</span>
+        WinWidth<span class="uscript-operator">=</span><span class="uscript-number">1.000000</span>
+        WinHeight<span class="uscript-operator">=</span><span class="uscript-number">32.000000</span>
+        WinLeft<span class="uscript-operator">=</span><span class="uscript-number">0.000000</span>
+        WinTop<span class="uscript-operator">=</span><span class="uscript-number">0.325000</span>
+    End Object
+    Controls<span class="uscript-operator">(</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>GUILabel<span class="uscript-name">'DialogText'</span>
+
+    Begin Object <span class="uscript-keyword">class</span><span class="uscript-operator">=</span>GUILabel <span class="uscript-type">Name</span><span class="uscript-operator">=</span>DialogText2    <span class="uscript-comment">// Another text label</span>
+        Caption<span class="uscript-operator">=</span><span class="uscript-string">"Configure your MultiJump Options (default JumpBoost is 25)"</span>
+        TextALign<span class="uscript-operator">=</span>TXTA_Center
+        TextColor<span class="uscript-operator">=</span><span class="uscript-operator">(</span>R<span class="uscript-operator">=</span><span class="uscript-number">220</span><span class="uscript-operator">,</span>G<span class="uscript-operator">=</span><span class="uscript-number">180</span><span class="uscript-operator">,</span>B<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>A<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">)</span>
+        TextFont<span class="uscript-operator">=</span><span class="uscript-string">"UT2MenuFont"</span>
+        WinWidth<span class="uscript-operator">=</span><span class="uscript-number">1.000000</span>
+        WinHeight<span class="uscript-operator">=</span><span class="uscript-number">32.000000</span>
+        WinLeft<span class="uscript-operator">=</span><span class="uscript-number">0.000000</span>
+        WinTop<span class="uscript-operator">=</span><span class="uscript-number">0.390626</span>
+    End Object
+    Controls<span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>GUILabel<span class="uscript-name">'DialogText2'</span>
+
+    Begin Object <span class="uscript-keyword">class</span><span class="uscript-operator">=</span>moEditBox <span class="uscript-type">Name</span><span class="uscript-operator">=</span>MJCounter <span class="uscript-comment">// An edit box (for our MJMax)</span>
+        WinWidth<span class="uscript-operator">=</span><span class="uscript-number">0.431641</span>
+        WinHeight<span class="uscript-operator">=</span><span class="uscript-number">0.04</span>
+        WinLeft<span class="uscript-operator">=</span><span class="uscript-number">0.293750</span>
+        WinTop<span class="uscript-operator">=</span><span class="uscript-number">0.467448</span>
+        Caption<span class="uscript-operator">=</span><span class="uscript-string">"Number of MultiJumps"</span>
+        bReadOnly<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>             <span class="uscript-comment">// Will take Input, therefor isn't readonly</span>
+    End Object
+    Controls<span class="uscript-operator">(</span><span class="uscript-number">4</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>moEditBox<span class="uscript-name">'MJCounter'</span>        <span class="uscript-comment">// Set Controls[4] to the MJCounter</span>
+    
+    Begin Object <span class="uscript-keyword">class</span><span class="uscript-operator">=</span>moEditBox <span class="uscript-type">Name</span><span class="uscript-operator">=</span>MJBooster <span class="uscript-comment">// Another edit box (for our MJBoost)</span>
+        WinWidth<span class="uscript-operator">=</span><span class="uscript-number">0.431641</span>
+        WinHeight<span class="uscript-operator">=</span><span class="uscript-number">0.04</span>
+        WinLeft<span class="uscript-operator">=</span><span class="uscript-number">0.293750</span>
+        WinTop<span class="uscript-operator">=</span><span class="uscript-number">0.517448</span>
+        Caption<span class="uscript-operator">=</span><span class="uscript-string">"MultiJump Boost"</span>
+        bReadOnly<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+    End Object
+    Controls<span class="uscript-operator">(</span><span class="uscript-number">5</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>moEditBox<span class="uscript-name">'MJBooster'</span>        <span class="uscript-comment">// Set Controls[5] to the MJBooster</span>
+    
+    <span class="uscript-comment">// The Window's own properties (MJMutConfig)</span>
+    WinLeft<span class="uscript-operator">=</span><span class="uscript-number">0</span>
+    WinTop<span class="uscript-operator">=</span><span class="uscript-number">0.3</span>
+    WinWidth<span class="uscript-operator">=</span><span class="uscript-number">1</span>
+    WinHeight<span class="uscript-operator">=</span><span class="uscript-number">0.4</span>
+    bRequire640x480<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>        <span class="uscript-comment">// Required Minimum resolution</span>
+<span class="uscript-operator">}</span></pre><p>First we have the Class Declaration, only one line, easy wasnt it? (note that you should subclass GUIPage) Then we have the variable declaration, also one line! you see how easy coding is? Well, only this time, since we are making editboxes, the variables are of the moEditBox type.  Ok, now we will skip the two function (we will come back to them later) and go straight to the defaultprops.  If you are new to UnrealScript, this might seem a little weird to you (it sure did to me), but dont worry, it is really simple! in the classic UT, we had to create around 3 or 4 classes just to make one window, basically what all this code does is create this window for you using only one class, how cool is that?  To make it easy to understand for you I put a whole bunch of comments into it so just read through it and read the comments and it will give you the general idea.  Basically, Begin Object creates an object, names it, manipulates its variables and then assigns it to something.  It is commonly used in the UT2003 window system as followes:</p>
+<pre class="uscript">    Begin Object <span class="uscript-keyword">class</span><span class="uscript-operator">=</span><span class="uscript-operator">&lt;</span>ClassName<span class="uscript-operator">&gt;</span> <span class="uscript-type">Name</span><span class="uscript-operator">=</span><span class="uscript-operator">&lt;</span>ObjectName<span class="uscript-operator">&gt;</span>
+        WinWidth<span class="uscript-operator">=</span><span class="uscript-operator">&lt;</span>Width<span class="uscript-operator">&gt;</span>
+        WinHeight<span class="uscript-operator">=</span><span class="uscript-operator">&lt;</span>Height<span class="uscript-operator">&gt;</span>
+        WinLeft<span class="uscript-operator">=</span><span class="uscript-operator">&lt;</span>LocationOnXAxis<span class="uscript-operator">&gt;</span>
+        WinTop<span class="uscript-operator">=</span><span class="uscript-operator">&lt;</span>LocationOnYAxis<span class="uscript-operator">&gt;</span>
+        <span class="uscript-operator">&lt;</span>OtherVars<span class="uscript-operator">&gt;=</span><span class="uscript-operator">&lt;</span>OtherValues<span class="uscript-operator">&gt;</span>
+    End Object
+    Controls<span class="uscript-operator">(</span>n<span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">&lt;</span>ClassName<span class="uscript-operator">&gt;</span><span class="uscript-name">'&lt;ObjectName&gt;'</span>   <span class="uscript-comment">// n is the object's number - 1 (so the first object is 0)</span></pre><p>all what our DefaultProperties do is create a background, an "OK" Button, two text labels, two edit boxes and then set the variables for its own class (MJMutConfig).  There are two important things you should note, one is "OnClick=InternalOnClick" which is found in the "OK" button's creation code. Basically what it does is call our InternalOnClick function whenever the "OK" button is clicked. The second important thing is that after the creation of each window, it is assigned to a Controls(n) (n being a number), this is important to us because we will soon use this.</p>
+<p>Ok, we are done with the hard part, all what is left to do is the last two functions.  the function InitComponent is pretty much like UT's Created, it is called when our GUI component is initiated.  First it calls its parent's InitComponent to do all the important stuff of initiating the window.  Then we assign the two moEditBoxes (that were created in the default properties) to our own EditBoxes.</p>
+<p>Then we set them as IntOnly because we are only dealing with numbers, and finally we set their text to our mutator's configurable variables' values. Basically all what our InitComponent function does is getting our EditBoxes setup and ready to use.  And our last function for this tutorial, InternalOnClick, which is called when the "OK" button is clicked.  All this function does is set our mutator's variables to the new variables that were typed into the editboxes, then is saves all of our mutator's config variables (which is only two) and finally it closes the window.</p>
+<p>And thats it!</p>
+<p>By the way, you can also add checkboxes and combolists and all sorts of GUI components, look around the GUI components, or more specifically, look at moEditBox and moCheckBox and basically do the same thing with them as I did with moEditBox in this tutorial. (also look at their classes to see what kind of variables and functions they have)</p>
+<h2><a name="0.3"></a>Creating the INT file</h2>
+<p>it is very simple, just follow this syntax:</p>
+<pre class="uscript"><span class="uscript-operator">[</span>Public<span class="uscript-operator">]</span>
+Object<span class="uscript-operator">=</span><span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-operator">,</span>MetaClass<span class="uscript-operator">=</span>Engine<span class="uscript-operator">.</span>Mutator<span class="uscript-operator">,</span><span class="uscript-type">Name</span><span class="uscript-operator">=</span><span class="uscript-operator">&lt;</span>PackageName<span class="uscript-operator">&gt;</span><span class="uscript-operator">.</span><span class="uscript-operator">&lt;</span>MutatorClass<span class="uscript-operator">&gt;</span><span class="uscript-operator">,</span>Description<span class="uscript-operator">=</span><span class="uscript-string">"&lt;MutatorName&gt;,&lt;Description&gt;"</span><span class="uscript-operator">)</span></pre><p>so in our case, if lets say the mutator's package will be named MultiJumpMutator, our <a href="int-file.html">INT File</a> will look like this:</p>
+<pre class="uscript"><span class="uscript-operator">[</span>Public<span class="uscript-operator">]</span>
+Object<span class="uscript-operator">=</span><span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-operator">,</span>MetaClass<span class="uscript-operator">=</span>Engine<span class="uscript-operator">.</span>Mutator<span class="uscript-operator">,</span><span class="uscript-type">Name</span><span class="uscript-operator">=</span>MultiJumpMutator<span class="uscript-operator">.</span>MultiJumpMut<span class="uscript-operator">,</span>Description<span class="uscript-operator">=</span><span class="uscript-string">"MultiJump,Configure your multi jumping ability."</span><span class="uscript-operator">)</span></pre><p>and it will be named MultiJumpMutator.int</p>
+<h2><a name="0.4"></a>The Grand Finale</h2>
+<p><a href="compiling-with-ucc.html">Compile</a> the whole enchilada, then start UT2003. Go to instant action and click on Mutators, in there find MultiJumpMutator, add it to the mutator list and click on Configure Mutator, the window we created will pop up and you will be able to change the values to whatever you want, then start a game session and see the mutator in action.</p>
+<p>I hope you enjoyed this tutorial.</p>
+<p>LedZep (for comments EMail me at <a href="mailto:LedZepperus@Yahoo.com">LedZepperus@Yahoo.com</a>)</p>
+<h2><a name="0.5"></a>Comments </h2>
+<p><em class="em2">Dma:</em> Dude, you took my idea! <a href="dma-mutmultijump.html">dma/MutMultiJump</a> <img alt=":-)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">RoninLord:</em> Using the property <em class="em2">bBoundToParent=true</em> in a widget, including GUIButtons etc., makes the <em class="em2">WinLeft</em> and <em class="em2">WinTop</em> properties relative to the parent widget. So <em class="em2">WinTop=0.9</em> is 90% of the parent widget, rather than 90% of the whole window.</p>
+<p>This makes it easier to lay out widgets, especially if you later move the parent widget, you then don't have to adjust the properties of the child widgets.</p>
+<p><em class="em2">LedZep:</em> Wow thanks for the info RoninLord. Dma, sorry if you also used this idea (although i came up with it by myself, i didnt steal anything <img alt=":-D" src="emoticons/biggrin.gif" align="middle">) but the real point of this tutorial is to teach you how to make a GUI Config window, not a multi jump mutator <img alt=";-)" src="emoticons/wink.gif" align="middle"></p>
+<p><em class="em2">JoeDark:</em> Does this tut apply to UT or UT2003 so it can be filed correctly (if it already isn't). Please label it on here somewhere.</p>
+<p><em class="em2">Wormbo:</em> Uhm, I found this at the top of the page:</p>
+<blockquote><p>Tutorial #1: Making a configuration window for your <a href="mutator.html">mutator</a> in <a href="unreal-tournament-2003.html">UT2003</a></p>
+</blockquote><p><em class="em2">JoeDark:</em> LOL! It's late.. need sleep.</p>
+<p><em class="em2">Tarquin:</em> This page isn't linked form anywhere useful. Could someone find it a home, eg <a href="unrealscript.html">UnrealScript</a> ?</p>
+<p><em class="em2">JoeDark:</em> Done.</p>
+<p><em class="em2">LedZep:</em> Hehe JoeDark, it happens to everyone... Ill just make the title a bit bigger so it'll be easier to see <img alt=";)" src="emoticons/wink.gif" align="middle"></p>
+<p><em class="em2">EntropicLqd:</em>  If you follow the example above all positioning and scaling is relative to the window as a whole.  This is fine if your dialog window (<em class="em1">with the dirty hack of using a button as the window background - ugh</em>) takes up the whole screen.  If it doesn't then setting the <em class="em2">MenuOwner</em> proeprty to the background button will make all scalings relative to the actual button (the "real" window) - rather than the entire window itself.  I found it made laying out the widgets a little easier.</p>
+<pre class="uscript"><span class="uscript-keyword">defaultproperties</span> <span class="uscript-operator">{</span>
+  Begin Object <span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>GUIButton <span class="uscript-type">name</span><span class="uscript-operator">=</span>FMConfigBackground
+    <span class="uscript-comment">// Blah blah blah</span>
+  End Object
+  Begin Object <span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>GUIButton <span class="uscript-type">Name</span><span class="uscript-operator">=</span>FMOkButton
+    <span class="uscript-comment">// Object properties go here and add the following to make everything relative to your config background:</span>
+    bBoundToParent<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    bScaleToParent<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    MenuOwner<span class="uscript-operator">=</span>FMConfigBackground
+  End Object</pre><p><em class="em2">EntropicLqd:</em> One other thing that is worth noting is that you can specify your own functions as callbacks from the OnChange events and such like.  As long as the interface matches it works fine.  For example I have three colour bar sliders that need to change the colour of a widget.  Rather than use the "InternalOnChange" function I simply created my own and set the OnChange property appropriately.  Example below:</p>
+<pre class="uscript"><span class="uscript-comment">// I define the callback function I want to use to handle my three colour bar sliders</span>
+<span class="uscript-keyword">function</span> ColourSliderChanged<span class="uscript-operator">(</span>GUIComponent Sender<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-comment">// Code goes in here</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// And then in the default property section of my slider I set the following property:</span>
+Begin Object <span class="uscript-keyword">class</span><span class="uscript-operator">=</span>GUISlider <span class="uscript-type">Name</span><span class="uscript-operator">=</span>FMRedSlider
+  OnChange<span class="uscript-operator">=</span>ColourSliderChanged
+  <span class="uscript-comment">// Rest of details</span>
+End Object</pre><p><em class="em2">Brox:</em> How would you create a new class (also extended from GUIPage) in the onClick function of a button?</p>
+<p><em class="em2">EntropicLqd:</em> Like this:  Code is taken from XInterface.Tab_InstantActionMutators.uc</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> MutConfigClick<span class="uscript-operator">(</span> GUIComponent Sender <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>MutConfigMenu <span class="uscript-operator">==</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+  <span class="uscript-comment">// In this case MutConfigMenu is set to the value of the Mutator.ConfigMenuClassName property</span>
+  Controller<span class="uscript-operator">.</span>OpenMenu<span class="uscript-operator">(</span> MutConfigMenu <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// And as for the actual button definition - I've cut out all bar the relevant properties</span>
+Begin Object <span class="uscript-keyword">Class</span><span class="uscript-operator">=</span>GUIButton <span class="uscript-type">Name</span><span class="uscript-operator">=</span>IAMutatorConfig
+  OnClick<span class="uscript-operator">=</span>MutConfigClick
+End Object</pre><p><em class="em2">the_viking:</em> But how can I create a GUIPage where i might display the contents of my inventory? </p>
+<p>Where do I have to put my code into?</p>
+<p><em class="em2">spoon:</em> You can have an in-game GUIPage by using <em class="em2">ClientOpenMenu</em>. Just create a GUIPage, then call ClientOpenMenu from a mutate command or an exec function. The above GUIPage information still applies.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> Mutate<span class="uscript-operator">(</span> <span class="uscript-type">string</span> MutateString<span class="uscript-operator">,</span> PlayerController Sender <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Caps<span class="uscript-operator">(</span> Left<span class="uscript-operator">(</span> MutateString<span class="uscript-operator">,</span> <span class="uscript-number">3</span> <span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-string">"INV"</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+      Sender<span class="uscript-operator">.</span>ClientOpenMenu<span class="uscript-operator">(</span> <span class="uscript-string">"GUIInvPage"</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Mutate<span class="uscript-operator">(</span> MutateString<span class="uscript-operator">,</span> Sender <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Your GUIPage class will have to play a nice game of find-the-actor since you can't pass anything.</p>
+<p><em class="em2">VonStrohmen:</em> In what instances do WinHeight/Width and WinTop/Left correspond to actual pixel coordinates versus fractions of the parent window? It seems to me that if I set any of those variables to be a decimal value less than 1 (e.g. 0.5) it translates that to percent, whereas greater than one is interpreted as a pixel coordinate. However, it doesn't always seem to work that way. Any advice?</p>
+<p>Also, why does Controls(n) work? I thought dynamic arrays use [] instead of ().</p>
+<p><em class="em2">Wormbo:</em> <a href="default-properties.html">Default Properties</a> are always different. <img alt=";)" src="emoticons/wink.gif" align="middle"> The size/position properties really work the way you described, but the position of a <a href="guicomponent.html">GUIComponent</a> depends on more than just WinTop/Left and its size depends on more than just WinHeight/Width. There are also the bBoundToParent and bScaleWithParent properties which affect the position and size of a control.</p>
+<p><em class="em2">VonStrohmen:</em> I experimented with those as well, with mixed results. Then I realized that I never set the properties of the GUIPage itself. That seemed to help. </p>
+<hr class="thin"><p><em class="em2">EntropicLqd:</em> Any chance someone could rename this page to <a href="mutator-config-gui-ut2003.html">Mutator Config GUI (UT2003)</a>?</p>
+<p><em class="em2">Mr.bob:</em> Help out a poor newb here, You said "The second important thing is that after the creation of each window, it is assigned to a Controls(n) (n being a number), this is important to us because we will soon use this."</p>
+<p>And then you never used it? What does control(n) do anyway?</p>
+<p>I have another problem. I took the text that was shown, copied an pasted it into a .uc file. Then it tired to compile it, everything went fine until it said:</p>
+<p>Parsing MultiJumpMut</p>
+<p>C;\UT2004\MultijumpMut\ClassesMultiJumpMut.uc&lt;20&gt; : Error Unexpected 'class'</p>
+<p>Complie aborted due to errors.</p>
+<p>Failure - 1 error, 0 warnings</p>
+<p>Yes I did change the code so it knew that it was MultiJumpMut instead of MultiJumpMutator, also you may have noticed that I have Unreal Tourny 2004. I have never had 2003</p>
+<p><em class="em2">Tarquin:</em> I am not sure it is useful for this tutorial page to include an actual mutator &ndash; it rather detracts from the point, doesn't it?</p>
+<p><em class="em2">M.r.bob:</em> I see what you mean, but I exspected to see what this code did, and then change it so it did something else, and that way figure out how code like this worked. Anyway I found out my problem, GUI's work very different in 2004 then in 2003.</p>
+<hr class="thin"><p><a href="category-tutorial.html">Category Tutorial</a><br><a href="refactor-me.html">Refactor Me</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Creating the Mutator Class", "#0.1");
+menuItemAdd("Creating the Configuration Window for the Mutator", "#0.2");
+menuItemAdd("Creating the INT file", "#0.3");
+menuItemAdd("The Grand Finale", "#0.4");
+menuItemAdd("Comments ", "#0.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Mutator_Config_GUI_(UT2003)">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Mutator_Config_GUI_(UT2003)">View other revisions</a><br>Last edited June 20, 2004 12:40 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Mutator_Config_GUI_(UT2003)">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Mutator_Config_GUI_(UT2003)">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Always snap to grid
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

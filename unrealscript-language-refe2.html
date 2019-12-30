@@ -1,0 +1,148 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: UnrealScript Language Reference/Advanced Technical Issues</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=UnrealScript_Language_Reference/Advanced_Technical_Issues; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="unrealscript-language-refer.html">UnrealScript Language Reference</a>/<a href="http://wiki.beyondunreal.com/wiki?back=UnrealScript+Language+Reference/Advanced+Technical+Issues">Advanced Technical Issues</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>UnrealScript Language Reference</h2>
+<p><em class="em1">This subpage is part of a document by Tim Sweeney. The Unreal Wiki has been granted permission to host it. Please don't make any edits to these pages other than basic formatting of the text. If you have more to say on a topic here, please start a new Wiki page on it, for example from <a href="unrealscript.html">UnrealScript</a> or <a href="unreal-engine.html">Unreal Engine</a>, and then add a "related topics" section to the very end of a page here.</em></p>
+<blockquote><p>Tim Sweeney<br>Epic MegaGames, Inc.<br><a href="mailto:tim@epicgames.com">tim@epicgames.com</a><br><a href="http://www.epicgames.com">http://www.epicgames.com</a></p>
+</blockquote><h2><a name="0.2"></a>Advanced Technical Issues</h2>
+<h3><a name="0.2.1"></a>UnrealScript Binary Compatibility Issues</h3>
+<p>UnrealScript is designed so that classes in package files may evolve over time without breaking binary compatibility.&nbsp; Here, binary compatibility means "dependent binary files may be loaded and linked without error"; whether your modified code functions as designed is a separate issue.</p>
+<p>Specifically, the kinds of modifications when may be made safely are as follows: </p>
+<ul><li>The .uc script files in a package may be recompiled without breaking binary compatibility.</li>
+<li>Adding new classes to a package.</li>
+<li>Adding new functions to a class.</li>
+<li>Adding new states to a class.</li>
+<li>Adding new variables to a class.</li>
+<li>Removing private variables from a class.</li>
+</ul>
+<p>Other transformations are generally unsafe, including (but not limited to): </p>
+<ul><li>Adding new members to a struct. </li>
+<li>Removing a class from a package. </li>
+<li>Changing the type of any variable, function parameter, or return value. </li>
+<li>Changing the number of parameters in a function.</li>
+</ul>
+<h3><a name="0.2.2"></a>Technical Notes</h3>
+<dl><dt>Garbage collection</dt><dd>All objects and actors in Unreal are garbage-collected using a tree-following garbage collector similar to that of the Java VM. The Unreal garbage collector uses the UObject class’s serialization functionality to recursively figure out which other objects are referenced by each active object. As a result, object need not be explicitly deleted, because the garbage collector will eventually hunt them down when they become unreferenced. This approach has the side-effect of latent deletion of unreferenced objects; however it is far more efficient than reference counting in the case of infrequent deletion.</dd><dt>Unreal COM integration</dt><dd>Unreal's base UObject class derives from IUnknown in anticipation of making Unreal interoperable with the Component Object Model without requiring binary changes to objects. However, Unreal is not COM-aware at the moment and the benefits of integrating Unreal with COM are not yet clear, so this project is on indefinite hold.</dd><dt>UnrealScript is bytecode based</dt><dd>UnrealScript code is compiled into a series of bytecodes similar to p-code or the Java bytecodes. This makes UnrealScript platform-neutral; thus porting the client and server components of Unreal to other platforms, i.e. the Macintosh or Unix, is straightforward, and all versions can interoperate easily by executing the same scripts.</dd><dt>Unreal as a Virtual Machine</dt><dd>The Unreal engine can be regarded as a virtual machine for 3D gaming in the same way that the Java language and the built-in Java class hierarchy define a virtual machine for Web page scripting. The Unreal virtual machine is inherently portable (due to splitting out all platform-dependent code in separate modules) and expandable (due to the expandable class hierarchy). However, at this time, there are no plans to document the Unreal VM to the extent necessary for others to create independent but compatible implementations.</dd><dt>The UnrealScript compiler is two-pass</dt><dd>Unlike C++, UnrealScript is compiled in two distinct passes. In the first pass, variable, state and function definitions are parsed and remembered. In the second pass, the script code is compiled to byte codes. This enables complex script hierarchies with circular dependencies to be completely compiled and linked in two passes, without a separate link phase.</dd><dt>Persistent actor state</dt><dd>It is important to note that in Unreal, because the user can save the game at any time, the state of all actors, including their script execution state, can be saved at any time where all actors are at their lowest possible stack level. This persistence requirement is the reason behind the limitation that latent functions may only be called from state code: state code executes at the lowest possible stack level, and thus can be serialized easily. Function code may exist at any stack level, and could have (for example) C++ native functions below it on the stack, which is clearly not a situation which one could save on disk and later restore.</dd><dt>Unrealfiles</dt><dd>Unrealfiles are Unreal's native binary file format. Unrealfiles contain an index, serialized dump of the objects in a particular Unreal package. Unrealfiles are similar to DLL’s, in that they can contain references to other objects stored in other Unrealfiles. This approach makes it possible to distribute Unreal content in predefined "packages" on the Internet, in order to reduce download time (by never downloading a particular package more than once).</dd><dt>Why UnrealScript does not support static variables</dt><dd>While C++ supports static (per class-process) variables for good reasons true to the language's low-level roots, and Java support static variables for reasons that appear to be not well thought out, such variables do not have a place in UnrealScript because of ambiguities over their scope with respect to serialization, derivation, and multiple levels: should static variables have "global" semantics, meaning that all static variables in all active Unreal levels have the same value? Should they be per package? Should they be per level? If so, how are they serialized &ndash; with the class in its .u file, or with the level in its .unr file? Are they unique per base class, or do derived versions of classes have their own values of static variables? In UnrealScript, we sidestep the problem by not defining static variables as a language feature, and leaving it up to programmers to manage static-like and global-like variables by creating classes to contain them and exposing them in actual objects. If you want to have variables that are accessible per-level, you can create a new class to contain those variables and assure they are serialized with the level. This way, there is no ambiguity. For examples of classes that serve this kind of purpose, see LevelInfo and GameInfo.</dd></dl>
+<table class="paratable-border" border=0 cellspacing=0 cellpadding=0><tr valign=top><td><h4><a name="0.2.2.1"></a>Comments</h4>
+<p><em class="em2">MythOpus:</em> Tim says that varibles can't be declared as static... Is this true now in the newer versions of the engine (I swear I saw a static variable somewhere through my source wanderings).  I don't think I understand exactly what 'static' entails, but what about variables that are declared in static functions?</p>
+<p><em class="em2">Dante:</em> Static pretty much says that you can access a variable/call a mehod without having an instance of the class. Variables declared in a static method are not accessible from outside the method.</p>
+</td>
+</tr>
+</table>
+<h3><a name="0.2.3"></a>UnrealScript Programming Strategy</h3>
+<p>Here I want to cover a few topics on how to write UnrealScript code effectively, and take advantage of UnrealScript's strengths while avoiding the pitfalls.</p>
+<ul><li>UnrealScript is a slow language compared to C/C++. A typical C++ program runs at about 50 million base language instructions per second, while UnrealScript runs at about 2.5 million - a 20X performance hit. The programming philosophy behind all of our own script writing is this: Write scripts that are almost always idle. In other words, use UnrealScript only to handle the "interesting" events that you want to customize, not the root tasks, like basic movement, which Unreal's physics code can handle for you. For example, when writing a projectile script, you typically write a HitWall(), Bounce(), and Touch() function describing what to do when key events happen. Thus 95% of the time, your projectile script isn’t executing any code, and is just waiting for the physics code to notify it of an event. This is inherently very efficient. In our typical level, even though UnrealScript is comparably much slower than C++, UnrealScript execution time averages 5-10% of CPU time.</li>
+<li>Exploit latent functions (like FinishAnim and Sleep) as much as possible. By basing the flow of your script execution on them, you are creating animation-driven or time-driven code, which is fairy efficient in UnrealScript. </li>
+<li>Keep an eye on the Unreal log while you're testing your scripts. The UnrealScript runtime often generates useful warnings in the log that notify you of nonfatal problems that are occuring.</li>
+<li>Be wary of code that can cause infinite recursion. For example, the "Move" command moves the actor and calls your Bump() function if you hit something. Therefore, if you use a Move command within a Bump function, you run the risk of recursing forever. Be careful. Infinite recursion and infinite looping are the two error conditions which UnrealScript doesn’t handle gracefully.</li>
+<li>Spawning and destroying actors are fairly expensive operations on the server side, and are even more expensive in network games, because spawns and destroys take up network bandwidth. Use them reasonably, and regard actors as "heavy weight" objects. For example, do not try to create a particle system by spawning 100 unique actors and sending them off on different trajectories using the physics code. That will be sloooow.</li>
+<li>Exploit UnrealScript's object-oriented capabilities as much as possible. Creating new functionality by overriding existing functions and states leads to clean code that is easy to modify and easy to integrate with other peoples' work. Avoid using traditional C techniques, like doing a switch() statement based on the class of an actor or the state, because code like this tends to break as you add new classes and modify things.</li>
+</ul>
+<hr class="thin"><p>Prev Page: <a href="unrealscript-language-refe1.html">/Advanced Language Features</a> &ndash; <em class="em2">Section 9 of 9</em> &ndash; End of Document</p>
+<script type="text/javascript"><!--
+ menuItemAdd("UnrealScript Language Reference", "#0.1");
+menuItemAdd("Advanced Technical Issues", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>UnrealScript Binary Compatibility Issues", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Technical Notes", "#0.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Comments", "#0.2.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>UnrealScript Programming Strategy", "#0.2.3");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="unrealscript-language-refer.html">UnrealScript Language Reference</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=UnrealScript_Language_Reference/Advanced_Technical_Issues">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=UnrealScript_Language_Reference/Advanced_Technical_Issues">View other revisions</a><br>Last edited June 20, 2006 17:47 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=UnrealScript_Language_Reference/Advanced_Technical_Issues">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/UnrealScript_Language_Reference/Advanced_Technical_Issues">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Gah - a solution with more questions. (EntropicLqd)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

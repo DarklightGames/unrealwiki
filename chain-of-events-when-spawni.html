@@ -1,0 +1,213 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Chain Of Events When Spawning Actors</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Chain_Of_Events_When_Spawning_Actors; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Chain Of Events When Spawning Actors">Chain Of Events When Spawning Actors</a></h1>
+	<div class="wiki"><p>This page describes what happens when an actor is created via the Spawn() method on a server or client or replicated to a client in a network game. It lists the engine events and the UnrealScript functions subsequently called by those events and gives a short description how these events and functions could be used.</p>
+<p><em class="em1">This page is based on a snipped of native UT2004 code posted on the UT2003Mods mailing list. Most parts will be similar in older engine versions, but there might be important differences in the functions called by these events.</em></p>
+<pre class="uscript">Spawn<span class="uscript-operator">(</span> 
+  SpawnClass<span class="uscript-operator">,</span>      <span class="uscript-comment">// class of actor to spawn</span>
+  SpawnOwner<span class="uscript-operator">,</span>      <span class="uscript-comment">// what to set the new actor's Owner to</span>
+  SpawnTag<span class="uscript-operator">,</span>        <span class="uscript-comment">// what to set its Tag to</span>
+  SpawnLocation<span class="uscript-operator">,</span>   <span class="uscript-comment">// new actor's Location</span>
+  SpawnRotation    <span class="uscript-comment">// new actor's Rotation </span>
+<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><h2><a name="0.1"></a>Before The Actor Is Created</h2>
+<p>Before an actual <a href="actor.html">Actor</a> object is created the native ULevel::SpawnActor() function checks that a class was passed to it and that the class is not abstract and a subclass of actor. Also this class may neither have <tt>bStatic</tt> nor <tt>bNoDelete</tt> set to True. The class also won't be spawned when its <tt>bHighDetail</tt> property is set to True and the <a href="levelinfo.html">LevelInfo</a>'s <tt>DetailMode</tt> is set to <tt>DM_Low</tt> or the LevelInfo indicates a low framerate with <tt>bDropDetail</tt> or the actor is spawned on a dedicated server.</p>
+<p>The final check before creating the actor makes sure the actor fits in the location it should be spawned at. This check will be run for actor classes that collide with the world and for actors spawned on the server with <tt>bCollideWhenPlacing=True</tt>.</p>
+<h2><a name="0.2"></a>Chain Of Events</h2>
+<p>These are the events directly called from native code after the actor has been created. See the sections below for more details about functions called by these events. For actors created with the Spawn() function on this machine (i.e. not actors created because they were received on a client) all these events are executed from the Spawn() function.</p>
+<ol><li>the <a href="actor.html">Actor</a>'s initial properties are set:<ul><li>the actor's Tag is initialized with the actor's class name</li>
+<li>the actor's Region property (especially its Zone) is initialized with the level's <a href="levelinfo.html">LevelInfo</a> PointRegion</li>
+<li>the actor's Level property is set to the level's <a href="levelinfo.html">LevelInfo</a></li>
+<li>the actor's XLevel property is set to the Level object itself</li>
+<li>if this actor was replicated to a client, the actor's Role and RemoteRole are exchanged</li>
+<li>the actor's Brush property is set to None if it has one, "because moving brushes are not duplicatable"</li>
+<li>the actor's Location and Rotation are set from the Spawn parameters</li>
+<li>the actor is added to the collision hash if its <tt>bCollideActors</tt> is set to True (used e.g. by the CollidingActors and VisibleCollidingActors <a href="iterator.html">iterator</a> functions) If the actor is touching anything, its Touch() event is called</li>
+<li>the actor's PhysicsVolume is set to the <a href="defaultphysicsvolume.html">DefaultPhysicsVolume</a></li>
+</ul>
+</li>
+<li>the <a href="actor.html">Actor</a>'s Owner is set from the Spawn parameters</li>
+<li>the <a href="actor.html">Actor</a>'s Instigator is set to the spawning actor's Instigator</li>
+<li>Karma physics are initialized for the actor</li>
+<li>(in UT the actor's Spawned() event is called, in later engine versions this event is no longer available in UnrealScript)</li>
+<li>the <a href="actor.html">Actor</a>'s PreBeginPlay() event is called</li>
+<li>the <a href="actor.html">Actor</a>'s BeginPlay() event is called</li>
+<li>the <a href="actor.html">Actor</a>'s actual zone and PhysicsVolume are set</li>
+<li>encroachment (overlapping with other actors' collision cylinders) is checked for the actor</li>
+<li>the <a href="actor.html">Actor</a>'s PostBeginPlay() event is called</li>
+<li>the <a href="actor.html">Actor</a>'s SetInitialState() event is called</li>
+<li>the actor's base is set if it's None and the actor has <tt>bCollideActors</tt> and <tt>bShouldBaseAtStartup</tt> set to True and its Physics are set to either PHYS_None or PHYS_Rotating</li>
+<li>the <a href="actor.html">Actor</a>'s PostNetBeginPlay() event is called if this isn't a replicated actor (i.e. it was created on this machine with the Spawn() function)</li>
+<li>(in UT now all <a href="spawnnotify.html">SpawnNotify</a> actors receive a SpawnNotification() event if this actor's class is a subclass of the class specified in their ActorClass property, in later engine versions SpawnNotifies are no longer available)</li>
+<li>the <a href="actor.html">Actor</a>'s actual Tag property is set</li>
+</ol>
+<p>The chain of events is halted if the actor's <tt>bDeleteMe</tt> property becomes True during the initialization, i.e. when any of the events or subsequently called functions destroys the actor.</p>
+<h3><a name="0.2.1"></a>Initial Properties</h3>
+<p>The actor properties Tag, Region, Level, XLevel, Brush, Location, Rotation and PhysicsVolume are set before any UnrealScript is executed. Note that Region.Zone is set to the <a href="levelinfo.html">LevelInfo</a>, PhysicsVolume is set to the <a href="defaultphysicsvolume.html">DefaultPhysicsVolume</a> and Tag is set to the actor's class name.</p>
+<h3><a name="0.2.2"></a>Actor Owner</h3>
+<p>Before the spawned actor can execute any UnrealScript code its Owner is set. This will call the new owner's GainedChild() event which is the first piece of UnrealScript code executed after the actor was created. At this point the actor's Owner is still None and also its GetStateName() method returns 'None'.</p>
+<p>After GainedChild() returns the spawned actor's Instigator is set to the spawning actor's Instigator. (Not the new Owner's Instigator!)</p>
+<h3><a name="0.2.3"></a>Karma Physics Initialization <em class="em1">(UT2003)</em></h3>
+<p><em class="em1"> Does this call any UnrealScript events?</em></p>
+<h3><a name="0.2.4"></a>Actor.Spawned() <em class="em1">(UT)</em></h3>
+<p>In UT there is the Spawned() event which is called only for actors created via the Spawn() function, not for actors placed by mappers. This is the first UnrealScript event called for the newly spawned actor and allows to execute code before the <a href="gameinfo.html">GameInfo</a> and the mutators can modify the actor.</p>
+<h3><a name="0.2.5"></a>Actor.PreBeginPlay()</h3>
+<p>At this point the Owner is properly set, but the actor's GetStateName() method will return the actor's class name.</p>
+<h4><a name="0.2.5.1"></a>...in UT2003</h4>
+<p>If the actor has <tt>bGameRelevant == False</tt> and this event is not executed on a client, the game's base <a href="mutator.html">mutator</a>'s CheckRelevance() function is called.</p>
+<p>CheckRelevance() first calls the base mutator's AlwaysRelevant() function which recursively calls the other mutators' AlwaysRelevant() functions. If this function returns True the actor is concidered game relevant and CheckRelevance() returns True resulting in the Actor continuing to exist.</p>
+<p>If AlwaysRelevant() returns False, the base mutator's IsRelevant() function is called. This function calls the mutator's CheckReplacement() function and returns its result if it's False. Otherwise IsRelevant() returns the result of the next mutator's IsRelevant() function.</p>
+<p>Finally the result of the base mutator's IsRelevant() function is returned by CheckRelevance() and again, if that result is True the actor will continue to exist, otherwise it will destroy itself.</p>
+<h4><a name="0.2.5.2"></a>...in UT</h4>
+<p>If the actor has <tt>bGameRelevant == False</tt> and this event is not executed on a client, the <a href="gameinfo.html">GameInfo</a>'s IsRelevant() function is called.</p>
+<p>IsRelevant() first calls the base mutator's AlwaysRelevant() function which recursively calls the other mutators' AlwaysRelevant() functions. If this function returns True the actor is concidered game relevant and GameInfo.IsRelevant() returns True resulting in the Actor continuing to exist.</p>
+<p>If AlwaysRelevant() returns False, the base <a href="mutator.html">mutator</a>'s IsRelevant() function is called. This function calls the mutator's CheckReplacement() function and returns its result if it's False. Otherwise IsRelevant() returns the result of the next mutator's IsRelevant() function.</p>
+<p>If the base mutator's IsRelevant() function returns False the GameInfo's IsRelevant() function also returns False and the actor destroys itself. Otherwise if the bSuperRelevant property is set to 1 GameInfo.IsRelevant() returns True resulting in the Actor continuing to exist.</p>
+<p>If the base mutator's IsRelevant() function returns True but the bSuperRelevant property is not set to 1 the GameInfo's IsRelevant() function checks whether the actor may appear in the current difficulty level, if it's a "monster" (a non-player <a href="pawn-ut.html">Pawn (UT)</a>) and if there's a random chance for the actor to not appear in the game (<tt>OddsOfAppearing</tt>). The GameInfo.IsRelevant() function will also update the number of secret goals, item goals and kill goals before returning True and allowing the actor to exist.</p>
+<h3><a name="0.2.6"></a>Actor.BeginPlay()</h3>
+<p>This event is called after an Actor is concidered "relevant" for this game, i.e. no <a href="mutator.html">Mutator</a> wanted to get rid of it.</p>
+<p>Most actors don't use this event, but if you're looking for an event that is called before the actor is initialized, but after the mutator checks are done, then this is the place for you.</p>
+<h3><a name="0.2.7"></a>Actor Zone and PhysicsVolume</h3>
+<p>At this point the <a href="actor.html">Actor</a>.Region.Zone value becomes valid. This event also causes the ZoneChange() event to be called, which sees Region.Zone still as the <a href="levelinfo.html">LevelInfo</a> and the actual zone is passed as the NewZone parameter.</p>
+<p>After the zone the PhysicsVolume value becomes valid. This event also causes the PhysicsVolumeChange() event to be called, which sees PhysicsVolume still as the <a href="defaultphysicsvolume.html">DefaultPhysicsVolume</a> and the actual PhysicsVolume is passed as the NewVolume parameter.</p>
+<h3><a name="0.2.8"></a>Encroachment Check</h3>
+<p>Encroachment is when two actors in the collision hash overlap. In UnrealScript there is the EncroachingOn() event which returns whether the overlapping collision hulls with another actor actually needs to be handled and the EncroachedBy() event which is called for the other actor when EncroachingOn() returned True. The newly spawned actor will be destroyed if other colliding actors detect encroachment with this actor.</p>
+<h3><a name="0.2.9"></a>Actor.PostBeginPlay()</h3>
+<p>Most actors use PostBeginPlay() to initialize their UnrealScript values. The actor's PhysicsVolume and Zone are valid but the actor is not yet in any state.</p>
+<h3><a name="0.2.10"></a>Actor.SetInitialState()</h3>
+<p>At this point the actor is concidered "initialized" by the engine (bScriptInitialized is set to True in this event) and the actor's initial state is set. If the <a href="initialstate.html">InitialState</a> property is set, it will be used, otherwise the actor goes to its auto state. Since SetInitialState() is a <a href="simulated-function.html">simulated function</a> by default this happens on server and clients.</p>
+<p>This event uses GotoState to change the state, so during its executing the initial state's BeginState() event is called. The state's state code will however not yet start executing at this point. This will happen after all the events described on this page have finished doing their work.</p>
+<h3><a name="0.2.11"></a>Actor Base</h3>
+<p>Actors with without a Base, <tt>bCollideActors = true</tt> and <tt>bShouldBaseAtStartup = true</tt> which use either PHYS_None or PHYS_Rotating try to find a base for themselves.</p>
+<p>When a base is set the actor's BaseChange() event will be called.</p>
+<h3><a name="0.2.12"></a>Actor.PostNetBeginPlay()</h3>
+<p>PostNetBeginPlay() will only be called for actors created with the Spawn() function. For replicated actors this event will be called (if it's marked as "simulated") by the netcode when the initial variables have been replicated. That means you don't know when it'll happen... but eventually <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<h3><a name="0.2.13"></a>SpawnNotify.SpawnNotification() <em class="em1">(UT)</em></h3>
+<p>In UT there are special <a href="spawnnotify.html">SpawnNotify</a> actors which receive a SpawnNotification() event if the new actor is a subclass of their configured ActorClass after the new actor has been initialized. The <a href="spawnnotify.html">SpawnNotify</a> can modify the actor or even spawn a completely different actor which will be returned by the Spawn() function instead of this actor.</p>
+<h3><a name="0.2.14"></a>Actor.Tag</h3>
+<p>The actor's <a href="tag.html">Tag</a> property is set to the value passed to the Spawn() function after all initialization events have been executed. The first place where you can access its final value is the code executed after the Spawn() function that created this actor.</p>
+<h2><a name="0.3"></a>Related Topics</h2>
+<ul><li><a href="unrealscript.html">UnrealScript</a></li>
+<li><a href="creating-actors-and-objects.html">Creating Actors And Objects</a></li>
+<li><a href="chain-of-events-at-level-st.html">Chain Of Events At Level Startup</a></li>
+<li><a href="destroying-objects.html">Destroying Objects</a> (and Actors)</li>
+</ul>
+<script type="text/javascript"><!--
+ menuItemAdd("Before The Actor Is Created", "#0.1");
+menuItemAdd("Chain Of Events", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Initial Properties", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Actor Owner", "#0.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Karma Physics Initialization <em class=\"em1\">(UT2003)</em>", "#0.2.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Actor.Spawned() <em class=\"em1\">(UT)</em>", "#0.2.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Actor.PreBeginPlay()", "#0.2.5");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>...in UT2003", "#0.2.5.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>...in UT", "#0.2.5.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Actor.BeginPlay()", "#0.2.6");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Actor Zone and PhysicsVolume", "#0.2.7");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Encroachment Check", "#0.2.8");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Actor.PostBeginPlay()", "#0.2.9");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Actor.SetInitialState()", "#0.2.10");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Actor Base", "#0.2.11");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Actor.PostNetBeginPlay()", "#0.2.12");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>SpawnNotify.SpawnNotification() <em class=\"em1\">(UT)</em>", "#0.2.13");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Actor.Tag", "#0.2.14");
+menuItemAdd("Related Topics", "#0.3");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Chain_Of_Events_When_Spawning_Actors">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Chain_Of_Events_When_Spawning_Actors">View other revisions</a><br>Last edited May 23, 2004 5:37 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Chain_Of_Events_When_Spawning_Actors">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Chain_Of_Events_When_Spawning_Actors">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>The three virtues of a programmer: Laziness, Impatience, and Hubris. (Larry Wall)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

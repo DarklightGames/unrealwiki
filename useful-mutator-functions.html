@@ -1,0 +1,301 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Useful Mutator Functions</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Useful_Mutator_Functions; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Useful Mutator Functions">Useful Mutator Functions</a></h1>
+	<div class="wiki"><p>Some useful <a href="mutator-ut.html">Mutator (UT)</a> functions. The code on this page probably doesn't work at all in UT2003.</p>
+<h2><a name="0.1"></a>HUD Mutators</h2>
+<blockquote><p>"How do I register a HUD mutator?"</p>
+<p>"Why doesn't my HUD mutator work in online/LAN games?"</p>
+</blockquote><p>This is a sample HUD mutator which does nothing more that registering itself and showing how to get a reference to the local <a href="playerpawn.html">PlayerPawn</a> and the <a href="hud-ut.html">HUD (UT)</a>.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MyHUDMutator <span class="uscript-keyword">extends</span> Mutator<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> PlayerPawn MyPlayer<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> HUD MyHUD<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bHUDMutator <span class="uscript-operator">&amp;&amp;</span> Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">!=</span> NM_DedicatedServer <span class="uscript-operator">)</span>
+        RegisterHUDMutator<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostRender<span class="uscript-operator">(</span>canvas Canvas<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    MyPlayer <span class="uscript-operator">=</span> Canvas<span class="uscript-operator">.</span>Viewport<span class="uscript-operator">.</span>Actor<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> MyPlayer <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        MyHUD <span class="uscript-operator">=</span> MyPlayer<span class="uscript-operator">.</span>myHUD<span class="uscript-operator">;</span>
+    
+    <span class="uscript-comment">// This is important! It allows the next HUD mutator to draw on the canvas.</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> NextHUDMutator <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        NextHUDMutator<span class="uscript-operator">.</span>PostRender<span class="uscript-operator">(</span>Canvas<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+     RemoteRole<span class="uscript-operator">=</span>ROLE_SimulatedProxy
+     bAlwaysRelevant<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     bNetTemporary<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>  <span class="uscript-comment">// Set to false if you need to replicate data to the clients more than once per level</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">Note:</em> Don't use the code of the Team Beacon HUD mutator or the Relics. Team Beacon is far to complicated for this simple task and the RelicHUDMutator (apart from being incompatible to regular HUD mutators) calls its Destroy function without properly unregistering itself. (see Destructable Mutators below)</p>
+<p><em class="em2">Note:</em> If you want to execute code once client-side, but wish to do it after values have been replicated from the server to the client then used the <em class="em1">PostNetBeginPlay()</em> function.</p>
+<p>Also see <a href="netcode-idioms.html">Netcode Idioms</a>.</p>
+<h2><a name="0.2"></a>Destructable Mutators</h2>
+<p>Never destroy a <a href="mutator-ut.html">Mutator (UT)</a> while it still is in any of the mutator chains. This would effectively disconnect all mutators further down in the list. If you really need to destroy a mutator make sure it was unregistered before destroying it.</p>
+<p>The other possible solution is that the mutator unregisters itself:</p>
+<pre class="uscript"><span class="uscript-comment">// correctly unregister this mutator from all linked mutator chains</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Mutator M<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> HUD H<span class="uscript-operator">;</span>
+    
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Level<span class="uscript-operator">.</span>Game <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator <span class="uscript-operator">==</span> <span class="uscript-keyword">Self</span> <span class="uscript-operator">)</span>
+            Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator <span class="uscript-operator">=</span> NextMutator<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>DamageMutator <span class="uscript-operator">==</span> <span class="uscript-keyword">Self</span> <span class="uscript-operator">)</span>
+            Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>DamageMutator <span class="uscript-operator">=</span> NextDamageMutator<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>MessageMutator <span class="uscript-operator">==</span> <span class="uscript-keyword">Self</span> <span class="uscript-operator">)</span>
+            Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>MessageMutator <span class="uscript-operator">=</span> NextMessageMutator<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">ForEach</span> AllActors<span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-name">'Engine.HUD'</span><span class="uscript-operator">,</span> H<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> H<span class="uscript-operator">.</span>HUDMutator <span class="uscript-operator">==</span> <span class="uscript-keyword">Self</span> <span class="uscript-operator">)</span>
+            H<span class="uscript-operator">.</span>HUDMutator <span class="uscript-operator">=</span> NextHUDMutator<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">ForEach</span> AllActors<span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-name">'Engine.Mutator'</span><span class="uscript-operator">,</span> M<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> M<span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">==</span> <span class="uscript-keyword">Self</span> <span class="uscript-operator">)</span>
+            M<span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">=</span> NextMutator<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> M<span class="uscript-operator">.</span>NextHUDMutator <span class="uscript-operator">==</span> <span class="uscript-keyword">Self</span> <span class="uscript-operator">)</span>
+            M<span class="uscript-operator">.</span>NextHUDMutator <span class="uscript-operator">=</span> NextHUDMutator<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> M<span class="uscript-operator">.</span>NextDamageMutator <span class="uscript-operator">==</span> <span class="uscript-keyword">Self</span> <span class="uscript-operator">)</span>
+            M<span class="uscript-operator">.</span>NextDamageMutator <span class="uscript-operator">=</span> NextDamageMutator<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> M<span class="uscript-operator">.</span>NextMessageMutator <span class="uscript-operator">==</span> <span class="uscript-keyword">Self</span> <span class="uscript-operator">)</span>
+            M<span class="uscript-operator">.</span>NextMessageMutator <span class="uscript-operator">=</span> NextMessageMutator<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.3"></a>Replacing Inventory Items</h2>
+<p>The <tt>ReplaceWith</tt> function does its job in most cases, but not in all maps the items are placed with their default properties. Some have the rotation turned off (either <tt>bRotatingPicklup=False</tt>, which is the recommended way to do it, or <tt>RotationRate.Yaw=0</tt>) or float in mid-air though they normally fall down. (<tt>Physics=PHYS_None</tt> instead of <tt>PHYS_Falling</tt>)</p>
+<p>Also mutator sometimes want to further adjust the properties of the item after spawning it.</p>
+<p>The <tt>ReplaceWithItem</tt> function takes both into account: It modifies the new item's rotation and physics and returns it, so the mutator can modify its properties.</p>
+<pre class="uscript"><span class="uscript-comment">// Modified version of the ReplaceWith function</span>
+<span class="uscript-comment">// Replaces an inventory Other with an inventory of class aClassName and</span>
+<span class="uscript-comment">// returns a reference to it</span>
+<span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> Inventory ReplaceWithItem<span class="uscript-operator">(</span>Inventory Other<span class="uscript-operator">,</span> <span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> aClassName<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Inventory A<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Inventory<span class="uscript-operator">&gt;</span> aClass<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> bAllowItemFall<span class="uscript-operator">,</span> bForceItemFall<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> bAllowItemRotation<span class="uscript-operator">,</span> bForceItemRotation<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>Location <span class="uscript-operator">==</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    aClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Inventory<span class="uscript-operator">&gt;</span><span class="uscript-operator">(</span>DynamicLoadObject<span class="uscript-operator">(</span>aClassName<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Class'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> aClass <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        A <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span>aClass<span class="uscript-operator">,</span> Other<span class="uscript-operator">.</span>Owner<span class="uscript-operator">,</span> Other<span class="uscript-operator">.</span>Tag<span class="uscript-operator">,</span>
+                Other<span class="uscript-operator">.</span>Location <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>aClass<span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>CollisionHeight <span class="uscript-operator">-</span> Other<span class="uscript-operator">.</span>CollisionHeight<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span>
+                Other<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>MyMarker <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        Other<span class="uscript-operator">.</span>MyMarker<span class="uscript-operator">.</span>markedItem <span class="uscript-operator">=</span> A<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> A <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+            A<span class="uscript-operator">.</span>MyMarker <span class="uscript-operator">=</span> Other<span class="uscript-operator">.</span>MyMarker<span class="uscript-operator">;</span>
+        Other<span class="uscript-operator">.</span>MyMarker <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> A <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        A<span class="uscript-operator">.</span>bHeldItem <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        A<span class="uscript-operator">.</span>Respawntime <span class="uscript-operator">=</span> <span class="uscript-number">0.0</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> A <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>Physics <span class="uscript-operator">!=</span> Other<span class="uscript-operator">.</span><span class="uscript-keyword">Class</span><span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>Physics <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>Physics <span class="uscript-operator">==</span> PHYS_Falling <span class="uscript-operator">)</span>
+                bForceItemFall <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span><span class="uscript-keyword">Class</span><span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>Physics <span class="uscript-operator">==</span> PHYS_Falling <span class="uscript-operator">)</span>
+                bAllowItemFall <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>Other<span class="uscript-operator">.</span>bRotatingPickup <span class="uscript-operator">||</span> Other<span class="uscript-operator">.</span>RotationRate <span class="uscript-operator">==</span> <span class="uscript-keyword">rot</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+                <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">.</span>Pitch <span class="uscript-operator">!=</span> <span class="uscript-number">0</span> <span class="uscript-operator">||</span> Other<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">.</span>Roll <span class="uscript-operator">!=</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            bAllowItemRotation <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+            bAllowItemRotation <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>RotationRate <span class="uscript-operator">!=</span> <span class="uscript-keyword">rot</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> Other<span class="uscript-operator">.</span>bRotatingPickup<span class="uscript-operator">)</span>
+                    <span class="uscript-operator">||</span> <span class="uscript-operator">!</span>Other<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>bRotatingPickup <span class="uscript-operator">||</span> Other<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>RotationRate <span class="uscript-operator">==</span> <span class="uscript-keyword">rot</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        bForceItemRotation <span class="uscript-operator">=</span> Other<span class="uscript-operator">.</span>RotationRate <span class="uscript-operator">!=</span> <span class="uscript-keyword">rot</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> Other<span class="uscript-operator">.</span>bRotatingPickup
+                <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>Other<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>bRotatingPickup <span class="uscript-operator">||</span> Other<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>RotationRate <span class="uscript-operator">==</span> <span class="uscript-keyword">rot</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> A<span class="uscript-operator">.</span>Physics <span class="uscript-operator">==</span> PHYS_Falling <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>bAllowItemFall <span class="uscript-operator">)</span>
+            A<span class="uscript-operator">.</span>SetPhysics<span class="uscript-operator">(</span>PHYS_None<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> A<span class="uscript-operator">.</span>Physics <span class="uscript-operator">!=</span> PHYS_Falling <span class="uscript-operator">&amp;&amp;</span> bForceItemFall <span class="uscript-operator">)</span>
+            A<span class="uscript-operator">.</span>SetPhysics<span class="uscript-operator">(</span>PHYS_Falling<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        A<span class="uscript-operator">.</span>bRotatingPickup <span class="uscript-operator">=</span> bAllowItemRotation <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>A<span class="uscript-operator">.</span>bRotatingPickup <span class="uscript-operator">||</span> bForceItemRotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        
+        A<span class="uscript-operator">.</span><span class="uscript-keyword">Event</span> <span class="uscript-operator">=</span> Other<span class="uscript-operator">.</span><span class="uscript-keyword">Event</span><span class="uscript-operator">;</span>
+        A<span class="uscript-operator">.</span>Tag <span class="uscript-operator">=</span> Other<span class="uscript-operator">.</span>Tag<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span> A<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.4"></a>Giving Weapons To Players</h2>
+<p>This function is a modified version of the <tt><a href="deathmatchplus.html">DeathMatchPlus</a>.GiveWeapon</tt> function. It adds the weapon to the player's inventory and optionally brings it up as the players selected weapon. The function returns the weapon.</p>
+<pre class="uscript"><span class="uscript-comment">// Give a weapon to a player and optionally bring it up as current weapon.</span>
+<span class="uscript-keyword">function</span> Weapon GiveWeapon<span class="uscript-operator">(</span>Pawn PlayerPawn<span class="uscript-operator">,</span> <span class="uscript-type">string</span> aClassName<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">bool</span> bBringUp<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Weapon<span class="uscript-operator">&gt;</span> WeaponClass<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Weapon NewWeapon<span class="uscript-operator">;</span>
+
+    WeaponClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Weapon<span class="uscript-operator">&gt;</span><span class="uscript-operator">(</span>DynamicLoadObject<span class="uscript-operator">(</span>aClassName<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Class'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PlayerPawn<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span>WeaponClass<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    newWeapon <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span>WeaponClass<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> newWeapon <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        newWeapon<span class="uscript-operator">.</span>RespawnTime <span class="uscript-operator">=</span> <span class="uscript-number">0.0</span><span class="uscript-operator">;</span>
+        newWeapon<span class="uscript-operator">.</span>GiveTo<span class="uscript-operator">(</span>PlayerPawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        newWeapon<span class="uscript-operator">.</span>bHeldItem <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        newWeapon<span class="uscript-operator">.</span>GiveAmmo<span class="uscript-operator">(</span>PlayerPawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        newWeapon<span class="uscript-operator">.</span>SetSwitchPriority<span class="uscript-operator">(</span>PlayerPawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        newWeapon<span class="uscript-operator">.</span>WeaponSet<span class="uscript-operator">(</span>PlayerPawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        newWeapon<span class="uscript-operator">.</span>AmbientGlow <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PlayerPawn<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'PlayerPawn'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            newWeapon<span class="uscript-operator">.</span>SetHand<span class="uscript-operator">(</span>PlayerPawn<span class="uscript-operator">(</span>PlayerPawn<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Handedness<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+            newWeapon<span class="uscript-operator">.</span>GotoState<span class="uscript-operator">(</span><span class="uscript-name">'Idle'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bBringUp <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+            PlayerPawn<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span>GotoState<span class="uscript-operator">(</span><span class="uscript-name">'DownWeapon'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            PlayerPawn<span class="uscript-operator">.</span>PendingWeapon <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+            PlayerPawn<span class="uscript-operator">.</span>Weapon <span class="uscript-operator">=</span> newWeapon<span class="uscript-operator">;</span>
+            PlayerPawn<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span>BringUp<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">return</span> newWeapon<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.5"></a>Related Topics</h2>
+<ul><li><a href="open-source.html">Open Source</a></li>
+<li><a href="mutator-topics.html">Mutator Topics</a></li>
+<li><a href="making-mods.html">Making Mods</a></li>
+</ul>
+<h2><a name="0.6"></a>Discussion</h2>
+<p><em class="em2">Kuhal:</em> I have a developed a way to allow a mutator to "appear" to handle Damage to players BEFORE Inventory.ReduceDamage is called.  Shall I create a page for this and link to it from OpenSource or would it be better to create the page and link form my homepage until one of the guru's can comment on the content?  I investigated this while helping someone on the forums who wanted it specifically for his SpawnProtection code.</p>
+<p><em class="em2">Mychaeel:</em> Would you describe that method in a few words? &ndash; By the way, I believe the sections on this page would be well worth individual pages; maybe subpages of this one.</p>
+<p><em class="em2">Kuhal:</em> Synopsis: Create an Inventory Item with Charge=0; ArmorAbsorption=0;  AbsorptionPriority=1000; bIsAnArmor=true;.  Override ArmorAbsorbDamage in new class to update member variables for use by the mutator.  Make sure that the mutator deals out the damage accordingly because the REAL armor was not damaged in the hit.  Has limited usefulness - Why oh why didn't EPIC give Inventory.ReduceDamage the Victim and InstigatedBy vars too?  I'm interested in other ideas in this area so by all means hook me up.  I have full working source for the SpawnProtection use if needed.</p>
+<p><em class="em2">Csimbi:</em> Could someone add an example of adding another mutator from a mutator that is already added? I want to have only one entry in the .int file for practical reasons (the one Mutator would add all the others), and I cannot figure out how to do it. I tried a couple of things, but none of those worked so far. Thank You in advance.</p>
+<p><em class="em2">Foxpaw:</em> Depending on what exactly you had in mind, that may be quite easy. Or it may be next to impossible. Do you mean, you only want the one entry in the mutator list and when play begins all the other mutators are added? Or do you mean you want all of them to show up in the mutator list, but only want one listed in the INT file?</p>
+<p><em class="em2">Wormbo:</em> Just Level.Game.BaseMutator.AddMutator(Spawn(theMutatorClass)) should do the trick, but why don't you just combine the mutators into a single class?</p>
+<p><em class="em2">Csimbi:</em></p>
+<p>Foxpaw, the idea is that one mutator adds all the others.</p>
+<p>Wormbo, in which function do You call this? Prebeginplay, PostBeginPlay, or ?</p>
+<p><em class="em2">Wormbo:</em> Yes, call it from one of the *BeginPlay functions.</p>
+<p><em class="em2">Csimbi:</em> I do this in the Mutator's PostBeginplay: Level.Game.BaseMutator.AddMutator(Spawn(class'CustomTranslocator'));</p>
+<p>The error message I get is: "Error, Call to 'AddMutator': type mismatch in parameter 1"</p>
+<p>What am I doing wrong?</p>
+<p><em class="em2">Wormbo:</em> 'Type mismatch' <a href="compiler-errors.html">compiler errors</a> tell you that the function expects a different variable type than you used. This CustomTranslocator class of yours, it's a mutator subclass, isn't it?</p>
+<p><em class="em2">Csimbi:</em> My mistake. It's a TournamentWeapon. Changed class name to the mutator's class, and it works like a charm. Thank You.</p>
+<p><em class="em2">Vindexus:</em> I tried to make an arena mut using the Replace function above. However, when i try to</p>
+<p>compile it with the ucc make command, it says I'm missing a ";" in "Class" on line 4 where the function is started. Anybody know what that means?</p>
+<p><em class="em2">EntropicLqd:</em> Check your class definition.  It should be similar to the very first line of the HUD Mutator code snippet (first code snippet) on this page.  If you class definition is correct then check that you don't mention the word <em class="em1">class</em> anywhere in a comment block before the class declaration line.  e.g. the following code will give you an error at line 1:</p>
+<pre class="uscript"><span class="uscript-comment">// This class is a mutator that does some stuff</span>
+<span class="uscript-keyword">class</span> MyMutator <span class="uscript-keyword">extends</span> Mutator<span class="uscript-operator">;</span>
+<span class="uscript-comment">// .. rest of class definition ...</span></pre><p><em class="em2">Vindexus:</em> For what it's worth, I'm using UT2004. Here's the line of code that has the error on it</p>
+<pre class="uscript"><span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> Inventory ReplaceWithItem<span class="uscript-operator">(</span>Inventory Other<span class="uscript-operator">,</span> <span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> MyWeaponPickup<span class="uscript-operator">)</span></pre><p><em class="em2">EntropicLqd:</em> The line number the error is being reported on is bogus.  Something that's pretty normal for compilers.  Check your code for missing semi-colons and the like - especially after the class definition.  It might be worth posting the whole code block rather than just a single line.</p>
+<p><em class="em2">Wormbo:</em> Vindexus, please read the top of this page again:</p>
+<blockquote><p>Some useful <a href="mutator-ut.html">Mutator (UT)</a> functions. The code on this page probably doesn't work at all in UT2003.</p>
+</blockquote><p>These functions are not intended to be used in UT2003/4 because many aspects of Mutators and also the Pickup/Inventory system have changed.</p>
+<p><em class="em2">AJRAD:</em> I'm trying to use the weapon replacement mutator thingy, but you don't specify which bits to change!!! How the hell is a newbies such as me supposed to understand? Please tell me what needs to be changed.</p>
+<hr class="thin"><p><a href="refactor-me.html">Refactor Me</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("HUD Mutators", "#0.1");
+menuItemAdd("Destructable Mutators", "#0.2");
+menuItemAdd("Replacing Inventory Items", "#0.3");
+menuItemAdd("Giving Weapons To Players", "#0.4");
+menuItemAdd("Related Topics", "#0.5");
+menuItemAdd("Discussion", "#0.6");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Useful_Mutator_Functions">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Useful_Mutator_Functions">View other revisions</a><br>Last edited January 7, 2006 15:44 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Useful_Mutator_Functions">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Useful_Mutator_Functions">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>The three virtues of a programmer: Laziness, Impatience, and Hubris. (Larry Wall)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

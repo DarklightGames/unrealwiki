@@ -1,0 +1,281 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Writing On ScriptedTextures</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Writing_On_ScriptedTextures; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Writing On ScriptedTextures">Writing On ScriptedTextures</a></h1>
+	<div class="wiki"><p><em class="em2">Please note for what ever reason Epic did not support this feature on the OpenGL render. So any one that runs with the OpenGL render (Mac/Linux) will not see them.</em> Since the lion share of UT2003 players use the D3D render I felt it was ok to use this just this one time in our mod, ChaosUT2. </p>
+<p>This tutorial will show you how to use use <a href="scriptedtexture.html">ScriptedTexture</a>s to draw the names of players on objects. You can then use this method to expand on it to add in other features. Note this is the same method that UnrealSpeed used to draw the player's name on the license plate of the cars. With the Tombstones in Chaos we has certain rules for when we would spawn them, had animations on them so they "rise up" from the ground/floor, had 5/6 custom "rise" sounds, different skins and have 5/6 different meshes of each Tombstone. Since this is a tutorial, we will simplify it to drawing the name of the dead player on the Tombstone with a "R.I.P" text as a header.</p>
+<p>See <a href="scriptedtexture.html">ScriptedTexture</a> for technical documentation of the class and its functions.</p>
+<p>There are two parts are required for scripted textures to work:</p>
+<ul><li>Custom scripted texture</li>
+<li>Code that draws on the scripted texture</li>
+</ul>
+<h2><a name="0.1"></a>Custom Scripted Texture</h2>
+<p>What you will want to do is make a new texture. Give your texture a name and select ScriptedTexture as its Material Class:</p>
+<div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[scriptedTex1]" src="images/scriptedtex1.jpeg"></div>
+</td>
+</tr>
+</table>
+</div>
+<p>Next make sure you give your images a size by setting up the Uclamp and Vclamp.</p>
+<div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[scriptedTex2]" src="images/scriptedtex2.jpeg"></div>
+</td>
+</tr>
+</table>
+</div>
+<p>Finally you want to ensure that you place the Scripted Texture on the object in the proper place:</p>
+<div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[scriptedTex3]" src="images/scriptedtex3.jpeg"></div>
+</td>
+</tr>
+</table>
+</div>
+<p>Again your object will need to support this by having a section ready for this texture.</p>
+<p>Make sure to save your texture file. That is it for your Custom Scripted Texture.</p>
+<h2><a name="0.2"></a>Code</h2>
+<p>What the code will do is spawn the object you want to draw the text on then draw the text. Simple you say? Well yes but there is one gotcha. Normally textures are global. So if you spawn three of your objects, then all of them would have the SAME text written on them! Why? The engine sees its as only one texture and not one for each object. What you can do is use the object pool. This way you can spawn a separate texture for each object. Let me again show the key parts and then the complete code. First lets look at  the PostNetBeginPlay:</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostNetBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostNetBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>   
+    TombStoneName <span class="uscript-operator">=</span> ScriptedTexture<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>AllocateObject<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'ScriptedTexture'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>   <span class="uscript-comment">// this spawns a unquie Scripted texture for us to use</span>
+    TombStoneName<span class="uscript-operator">.</span>SetSize<span class="uscript-operator">(</span><span class="uscript-number">256</span><span class="uscript-operator">,</span><span class="uscript-number">128</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                                                      <span class="uscript-comment">// Size will default it to 0,0....so...better give it some size or eles you wont see it :)</span>
+    TombStoneName<span class="uscript-operator">.</span>FallBackMaterial <span class="uscript-operator">=</span> TombStoneNameBack<span class="uscript-operator">;</span>                                                  <span class="uscript-comment">// Set the background material</span>
+    TombStoneName<span class="uscript-operator">.</span>Client <span class="uscript-operator">=</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">;</span>                                                                                             <span class="uscript-comment">// This is the ref we need to draw on</span>
+    skins<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> TombStoneName<span class="uscript-operator">;</span>                                                                                                <span class="uscript-comment">// Set the "name area</span>
+<span class="uscript-operator">}</span></pre><p>The key for us is to ensure we use the objectpool to get a unique scripted texture to use. Next we need to modify the RenderTexture function (that all actors have) to setup then drawn the players name:</p>
+<pre class="paraverbatim"> </pre><pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> RenderTexture<span class="uscript-operator">(</span>ScriptedTexture Tex<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> SizeX<span class="uscript-operator">,</span>  SizeY<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Err for now go with a name in black letters</span>
+    NameColor<span class="uscript-operator">.</span>R<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    NameColor<span class="uscript-operator">.</span>G<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    NameColor<span class="uscript-operator">.</span>B<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    NameColor<span class="uscript-operator">.</span>A<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Set this to whitew/ no alpha for now...</span>
+    BackColor<span class="uscript-operator">.</span>R<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">;</span>
+    BackColor<span class="uscript-operator">.</span>G<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">;</span>
+    BackColor<span class="uscript-operator">.</span>B<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">;</span>
+    BackColor<span class="uscript-operator">.</span>A<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+   
+    Tex<span class="uscript-operator">.</span>TextSize<span class="uscript-operator">(</span>DeadPlayersName<span class="uscript-operator">,</span>NameFont<span class="uscript-operator">,</span>SizeX<span class="uscript-operator">,</span>SizeY<span class="uscript-operator">)</span><span class="uscript-operator">;</span>     <span class="uscript-comment">//Returns the Size needed for this string to ensure it will fit on the space provided</span>
+ 
+    Tex<span class="uscript-operator">.</span>DrawTile<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Tex<span class="uscript-operator">.</span>USize<span class="uscript-operator">,</span>Tex<span class="uscript-operator">.</span>VSize<span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Tex<span class="uscript-operator">.</span>USize<span class="uscript-operator">,</span>Tex<span class="uscript-operator">.</span>VSize<span class="uscript-operator">,</span>TombStoneNameBack<span class="uscript-operator">,</span>BackColor<span class="uscript-operator">)</span><span class="uscript-operator">;</span>   <span class="uscript-comment">// Draws the tile background    </span>
+    Tex<span class="uscript-operator">.</span>TextSize<span class="uscript-operator">(</span><span class="uscript-string">"R.I.P."</span><span class="uscript-operator">,</span>NameFont<span class="uscript-operator">,</span>SizeX<span class="uscript-operator">,</span>SizeY<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                                                <span class="uscript-comment">// Drews the header "R.I.P."</span>
+    Tex<span class="uscript-operator">.</span>DrawText<span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Tex<span class="uscript-operator">.</span>USize <span class="uscript-operator">-</span> SizeX<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-number">0.5</span><span class="uscript-operator">,</span> <span class="uscript-number">32</span><span class="uscript-operator">,</span> <span class="uscript-string">"R.I.P"</span><span class="uscript-operator">,</span> NameFont<span class="uscript-operator">,</span> NameColor<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+    Tex<span class="uscript-operator">.</span>TextSize<span class="uscript-operator">(</span>DeadPlayersName<span class="uscript-operator">,</span>NameFont<span class="uscript-operator">,</span>SizeX<span class="uscript-operator">,</span>SizeY<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                                <span class="uscript-comment">// get the size of the players name    </span>
+    Tex<span class="uscript-operator">.</span>DrawText<span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Tex<span class="uscript-operator">.</span>USize <span class="uscript-operator">-</span> SizeX<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-number">0.5</span><span class="uscript-operator">,</span> <span class="uscript-number">74</span><span class="uscript-operator">,</span> DeadPlayersName<span class="uscript-operator">,</span> NameFont<span class="uscript-operator">,</span> NameColor<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                   <span class="uscript-comment">// draws the name of the player that died</span>
+<span class="uscript-operator">}</span></pre><p>Most of the above is cut and dry. We set up the colors, check to make sure the text will fit in the area we want to draw it, then draw the text. The last item that we need to do is free up our scripted texture when this object is destroyed:</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+       Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>FreeObject<span class="uscript-operator">(</span>TombStoneName<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Finally here is the whole code:</p>
+<pre class="uscript"><span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// TombStone</span>
+<span class="uscript-comment">// $Id: Tombstone.uc,v 1.19 2003/06/29 23:11:17 jb Exp $</span>
+<span class="uscript-comment">// Special Thanks to Kaoh Scarabea for his help and post about this</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">class</span> Tombstone <span class="uscript-keyword">extends</span> Decoration<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// texture stuff</span>
+<span class="uscript-keyword">var</span> Material   TombStoneNameBack<span class="uscript-operator">;</span>          <span class="uscript-comment">// background on the tombstone</span>
+<span class="uscript-keyword">var</span> ScriptedTexture  TombStoneName<span class="uscript-operator">;</span>       <span class="uscript-comment">// Texture that we write the name  on, this is the key elemet</span>
+
+<span class="uscript-comment">//Font/Color/stuff</span>
+<span class="uscript-keyword">var</span> Font NameFont<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> font SmallNameFont<span class="uscript-operator">;</span>                           <span class="uscript-comment">// Used when the name is to big too fit</span>
+<span class="uscript-keyword">var</span> color NameColor<span class="uscript-operator">;</span>                                <span class="uscript-comment">// Colors</span>
+<span class="uscript-keyword">var</span> Color BackColor<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">string</span> DeadPlayersName<span class="uscript-operator">;</span>                    <span class="uscript-comment">// The players name that just got fragged</span>
+
+
+<span class="uscript-keyword">replication</span>
+<span class="uscript-operator">{</span>
+   <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span>
+      DeadPlayersName<span class="uscript-operator">;</span>   <span class="uscript-comment">// well other people need to see this :)</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostNetBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostNetBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>   
+    TombStoneName <span class="uscript-operator">=</span> ScriptedTexture<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>AllocateObject<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'ScriptedTexture'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>   <span class="uscript-comment">// this spawns a unquie Scripted texture for us to use</span>
+    TombStoneName<span class="uscript-operator">.</span>SetSize<span class="uscript-operator">(</span><span class="uscript-number">256</span><span class="uscript-operator">,</span><span class="uscript-number">128</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                                                      <span class="uscript-comment">// Size will default it to 0,0....so...better give it some size or eles you wont see it :)</span>
+    TombStoneName<span class="uscript-operator">.</span>FallBackMaterial <span class="uscript-operator">=</span> TombStoneNameBack<span class="uscript-operator">;</span>                                                  <span class="uscript-comment">// Set the background material</span>
+    TombStoneName<span class="uscript-operator">.</span>Client <span class="uscript-operator">=</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">;</span>                                                                                             <span class="uscript-comment">// This is the ref we need to draw on</span>
+    skins<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> TombStoneName<span class="uscript-operator">;</span>                                                                                                <span class="uscript-comment">// Set the "name" area</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> RenderTexture<span class="uscript-operator">(</span>ScriptedTexture Tex<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> SizeX<span class="uscript-operator">,</span>  SizeY<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Err for now go with a name in black letters</span>
+    NameColor<span class="uscript-operator">.</span>R<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    NameColor<span class="uscript-operator">.</span>G<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    NameColor<span class="uscript-operator">.</span>B<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    NameColor<span class="uscript-operator">.</span>A<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Set this to whitew/ no alpha for now...</span>
+    BackColor<span class="uscript-operator">.</span>R<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">;</span>
+    BackColor<span class="uscript-operator">.</span>G<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">;</span>
+    BackColor<span class="uscript-operator">.</span>B<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">;</span>
+    BackColor<span class="uscript-operator">.</span>A<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+   
+    Tex<span class="uscript-operator">.</span>TextSize<span class="uscript-operator">(</span>DeadPlayersName<span class="uscript-operator">,</span>NameFont<span class="uscript-operator">,</span>SizeX<span class="uscript-operator">,</span>SizeY<span class="uscript-operator">)</span><span class="uscript-operator">;</span>     <span class="uscript-comment">//Returns the Size needed for this string to ensure it will fit on the space provided</span>
+
+    Tex<span class="uscript-operator">.</span>DrawTile<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Tex<span class="uscript-operator">.</span>USize<span class="uscript-operator">,</span>Tex<span class="uscript-operator">.</span>VSize<span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Tex<span class="uscript-operator">.</span>USize<span class="uscript-operator">,</span>Tex<span class="uscript-operator">.</span>VSize<span class="uscript-operator">,</span>TombStoneNameBack<span class="uscript-operator">,</span>BackColor<span class="uscript-operator">)</span><span class="uscript-operator">;</span>   <span class="uscript-comment">// Draws the tile background    </span>
+    Tex<span class="uscript-operator">.</span>TextSize<span class="uscript-operator">(</span><span class="uscript-string">"R.I.P."</span><span class="uscript-operator">,</span>NameFont<span class="uscript-operator">,</span>SizeX<span class="uscript-operator">,</span>SizeY<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                                                <span class="uscript-comment">// Drews the header "R.I.P."</span>
+    Tex<span class="uscript-operator">.</span>DrawText<span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Tex<span class="uscript-operator">.</span>USize <span class="uscript-operator">-</span> SizeX<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-number">0.5</span><span class="uscript-operator">,</span> <span class="uscript-number">32</span><span class="uscript-operator">,</span> <span class="uscript-string">"R.I.P"</span><span class="uscript-operator">,</span> NameFont<span class="uscript-operator">,</span> NameColor<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+    Tex<span class="uscript-operator">.</span>TextSize<span class="uscript-operator">(</span>DeadPlayersName<span class="uscript-operator">,</span>NameFont<span class="uscript-operator">,</span>SizeX<span class="uscript-operator">,</span>SizeY<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                                                                <span class="uscript-comment">// get the size of the players name    </span>
+    Tex<span class="uscript-operator">.</span>DrawText<span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Tex<span class="uscript-operator">.</span>USize <span class="uscript-operator">-</span> SizeX<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-number">0.5</span><span class="uscript-operator">,</span> <span class="uscript-number">74</span><span class="uscript-operator">,</span> DeadPlayersName<span class="uscript-operator">,</span> NameFont<span class="uscript-operator">,</span> NameColor<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                   <span class="uscript-comment">// draws the name of the player that died</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+       Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>FreeObject<span class="uscript-operator">(</span>TombStoneName<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+
+     skins<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>Texture<span class="uscript-name">'ChaosTex_003.Tombstones.Chaos_tombbase'</span>
+     TombStoneNameBack<span class="uscript-operator">=</span>Texture<span class="uscript-name">'ChaosTex_003.Tombstones.Chaos_tombsign'</span>
+     TombStoneName<span class="uscript-operator">=</span>ScriptedTexture<span class="uscript-name">'ChaosTex_003.Tombstones.Name'</span>
+     Mesh<span class="uscript-operator">=</span>SkeletalMesh<span class="uscript-name">'Chaos_Extras1.Chaos_tombstone1'</span>
+     NameFont<span class="uscript-operator">=</span>Font<span class="uscript-name">'UT2003Fonts.FontMedium'</span>
+     SmallNameFont<span class="uscript-operator">=</span>Font<span class="uscript-name">'UT2003Fonts.FontSmall'</span>     
+     Drawscale<span class="uscript-operator">=</span><span class="uscript-number">1.0</span>
+     CollisionHeight<span class="uscript-operator">=</span><span class="uscript-number">1.2</span>
+     CollisionRadius<span class="uscript-operator">=</span><span class="uscript-number">15</span>
+     bCollideWorld<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     bCollideActors<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+     Physics<span class="uscript-operator">=</span>PHYS_Falling
+     bUseCylinderCollision<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+     bStatic<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+     bNoDelete<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+     bAcceptsProjectors<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     bUseDynamicLights<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+     AmbientGlow<span class="uscript-operator">=</span><span class="uscript-number">50</span>
+     Lifespan<span class="uscript-operator">=</span><span class="uscript-number">45</span>   
+     <span class="uscript-comment">// Network stuff</span>
+     bGameRelevant<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+     bNetTemporary<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     RemoteRole<span class="uscript-operator">=</span>ROLE_SimulatedProxy
+
+<span class="uscript-operator">}</span></pre><p>Some other notes I did not mention: We are spawning the Tombstone from someplace else. When we spawn it we set the DeadPlayersName var then make sure that gets replicated. Also you could choose another parent than Decoration but for our use it seemed to fit what the Tombstones are (they are just for decorations). You also can see TombStoneName in the DefaultProperties is where we call out our CustomScriptedTexture that we made in the first steps.</p>
+<p>That's the basics behind how to get them in and working. This above example is also network compliant. I am sure I may have skipped something important or made some errors so please let me know. Again this is only going to work for those D3D windows users which is not everyone. </p>
+<h2><a name="0.3"></a>Discussion</h2>
+<p><em class="em2">UArchitect:</em> hmm, what about if i wanted to draw several textures on my scripted texture, in different positions/sizes? :o i cant seem to find any other really good resources or tutorials on making scriptedtextures, other than making text/messages this helped a bit though <img alt=":P" src="emoticons/tongue.gif" align="middle"></p>
+<p><em class="em2">Mychaeel:</em> Use the DrawTile function declared in <a href="scriptedtexture.html">ScriptedTexture</a> to draw textures on your scripted texture.</p>
+<h2><a name="0.4"></a>Related Topics</h2>
+<ul><li><a href="scriptedtexture.html">ScriptedTexture</a> class</li>
+</ul>
+<hr class="thin"><p><a href="category-tutorial.html">Category Tutorial</a></p>
+<p><a href="category-to-do.html">Category To Do</a> - Lots of duplication between this and <a href="scriptedtexture.html">ScriptedTexture</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Custom Scripted Texture", "#0.1");
+menuItemAdd("Code", "#0.2");
+menuItemAdd("Discussion", "#0.3");
+menuItemAdd("Related Topics", "#0.4");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Writing_On_ScriptedTextures">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Writing_On_ScriptedTextures">View other revisions</a><br>Last edited July 2, 2005 12:18 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Writing_On_ScriptedTextures">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Writing_On_ScriptedTextures">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Always snap to grid
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

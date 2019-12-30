@@ -1,0 +1,207 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Maintaining Compatibility</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Maintaining_Compatibility; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Maintaining Compatibility">Maintaining Compatibility</a></h1>
+	<div class="wiki"><p><em class="em1">The idea behind this page is <a href="http://www.ina-community.com/forums/showthread.php?s=&threadid=228918">[this Infogrames Forum thread]</a> and <a href="http://www.ina-community.com/forums/showthread.php?s=&threadid=247052">[this other Infogrames Forum thread]</a> further pushed it. <img alt=":)" src="emoticons/smile.gif" align="middle"></em></p>
+<p><em class="em1">For those who doubt Epic's intentions as to what a mutator should do you need look no further than the header comments in Engine.Mutator.</em></p>
+<blockquote><p>Mutators allow modifications to gameplay while keeping the game rules intact.</p>
+</blockquote><p>There are several problems when coding a new mutator or gametype. This page deals with problems that are often neglected: Compatibility with other mods and mutators.</p>
+<p>This page can probably be divided in subpages for Game Types and Mutators later, but for now two headings should be enough.</p>
+<h2><a name="0.1"></a>Mutators</h2>
+<p>Avoid replacing <a href="gameinfo.html">GameInfo</a>-specific classes such as the <a href="hud.html">HUD</a>, the <a href="scoreboard.html">ScoreBoard</a>, the <a href="playerreplicationinfo.html">PlayerReplicationInfo</a>s (or PRI for short), <a href="pawn.html">Pawn</a> classes, <a href="controller.html">Controller</a> classes and the <a href="gamereplicationinfo.html">GameReplicationInfo</a> (GRI).</p>
+<p>Just imagine what happens when two mutators try to replace the PRI with their own versions. One of the mutators definately won't work. Maybe the gametype itself depends on its own PRI class, so both mutators can't be used with that gametype.</p>
+<p>How to work round these problems:</p>
+<h3><a name="0.1.1"></a>HUD / ScoreBoard Additions</h3>
+<p>Use <a href="interaction.html">Interaction</a>s for this.</p>
+<h3><a name="0.1.2"></a>Storing and/or Replicating Per-Player Information</h3>
+<p>Sure, the most straightforward idea is replacing the PRI, but there's another way: Create your own <a href="replicationinfo.html">ReplicationInfo</a> subclass. This class might look like this:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MyReplicationInfo <span class="uscript-keyword">extends</span> ReplicationInfo<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> PlayerReplicationInfo MyPRI<span class="uscript-operator">;</span>  <span class="uscript-comment">// Pawns or Controllers aren't generally available on clients</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> MyImportantVariable<span class="uscript-operator">;</span>      <span class="uscript-comment">// the value you want to replicate per-player</span>
+
+<span class="uscript-keyword">replication</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">unreliable</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Role <span class="uscript-operator">==</span> ROLE_Authority <span class="uscript-operator">)</span>
+        MyPRI<span class="uscript-operator">,</span> MyImportantVariable<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>You only need to find and use the new MyReplicationInfo actors now. If you set the <code>MyPRI</code> variable to reference the associate player's <a href="playerreplicationinfo.html">PlayerReplicationInfo</a>, that's easily done both server- and client-side with the DynamicActors <a href="iterator.html">iterator</a>:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> MyReplicationInfo FindInfoFor<span class="uscript-operator">(</span>PlayerReplicationInfo PRI<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> MyReplicationInfo MyReplicationInfo<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">foreach</span> DynamicActors<span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-name">'MyReplicationInfo'</span><span class="uscript-operator">,</span> MyReplicationInfo<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>MyReplicationInfo<span class="uscript-operator">.</span>MyPRI <span class="uscript-operator">==</span> PRI<span class="uscript-operator">)</span>
+            <span class="uscript-keyword">return</span> MyReplicationInfo<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// no matching MyReplicationInfo actor found</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.1.3"></a>Movement and Physics: The Controller Classes</h3>
+<p><em class="em2">Regulating the amount of dodges per jump</em></p>
+<p>You'd expect modifying the amount of dodging moves allowed per jump is deeply burried in one of the controller classes. Well, it is, but I was able to "hack into" the PlayerController class without actually subclassing it:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> DodgeHack <span class="uscript-keyword">extends</span> Info<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> PlayerController Controller<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    Controller <span class="uscript-operator">=</span> PlayerController<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Controller <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Controller<span class="uscript-operator">.</span>DoubleClickDir <span class="uscript-operator">&gt;=</span> DCLICK_Active <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        Controller<span class="uscript-operator">.</span>ClearDoubleClick<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Controller<span class="uscript-operator">.</span>DoubleClickDir <span class="uscript-operator">=</span> DCLICK_None<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>This simple piece of code re-enables the walldodge after a dodging move has been executed. It only needs to be spawned via:</p>
+<pre class="uscript">Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'DodgeHack'</span><span class="uscript-operator">,</span> thePlayerController<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>Why does this work? Well, the <a href="playercontroller.html">PlayerController</a> class has a DoubleClickDir property which stores the current state of the dodging move. (see <a href="actor-enums.html">Actor/Enums</a>/EDoubleClickDir) You could very well limit this to 2 dodges per jump-session, using the fact that the count should be reset whenever the movement type is walking, a way to see whether people have landed.</p>
+<p><em class="em2">Detecting which direction a player is pressing</em></p>
+<p>This might be of use whenever you want to do a combo system of your own, without having to adhere to the strict rules Epic set for these combos, AND without having to replace the controller class. (The rules I was talking about: You can only do a combo when you're not currently using one, each combo must have 4 keypresses etc.)</p>
+<p>The trick to use is that the original controller class stores the direction(s) a player is pressing in the OldKey variable, to compare it with the next tick. We could compose this variable ourselves by checking the aBaseY and aStrafe variables, but these are reset after the player's movement code. (meaning we only get second servings)</p>
+<p>Now, if you want to change the xPawn's PlayerTick function without replacing it, just make sure there's a clientside object that has the exact same function, but replace the </p>
+<pre class="uscript">    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>aForward <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>       CurrentKey <span class="uscript-operator">=</span> CurrentKey <span class="uscript-operator">|</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span> <span class="uscript-comment">// CK_Up</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>aForward <span class="uscript-operator">&lt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>  CurrentKey <span class="uscript-operator">=</span> CurrentKey <span class="uscript-operator">|</span> <span class="uscript-number">2</span><span class="uscript-operator">;</span> <span class="uscript-comment">// CK_Down</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>aStrafe <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>        CurrentKey <span class="uscript-operator">=</span> CurrentKey <span class="uscript-operator">|</span> <span class="uscript-number">4</span><span class="uscript-operator">;</span> <span class="uscript-comment">// CK_Left</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>aStrafe <span class="uscript-operator">&lt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>   CurrentKey <span class="uscript-operator">=</span> CurrentKey <span class="uscript-operator">|</span> <span class="uscript-number">8</span><span class="uscript-operator">;</span> <span class="uscript-comment">// CK_Right</span></pre><p>with something like this:</p>
+<pre class="uscript">    CurrentKey<span class="uscript-operator">=</span>CheckPlayer<span class="uscript-operator">.</span>OldKey<span class="uscript-operator">;</span></pre><p>And the rest of the function should work fine! (of course, any variables that belong to the player should have this CheckPlayer. in front of them, but that's only detail)</p>
+<p>Now you can change whatever you want in the function. For an example of this code in action, check the Advanced Adrenaline mutator once it's out. (I will replace that with a link once it is <img alt=":)" src="emoticons/smile.gif" align="middle">)</p>
+<p>Explore the various functions and properties used in the controller classes to see if you can modify something without actually subclassing a <a href="controller.html">Controller</a> or <a href="pawn.html">Pawn</a> class. Ofter there are ways to avoid subclassing, try to find them.</p>
+<h2><a name="0.2"></a>Game Types</h2>
+<p>With game types you don't have any problems replacing <a href="controller.html">Controller</a>s, <a href="pawn.html">Pawn</a>s, the <a href="hud.html">HUD</a> or any other things specific for game types. Still there are some things you should check. These include Mutator and GameRules function calls.</p>
+<p>Some things to watch out for when subclassing certain classes:</p>
+<p>When overriding functions, make sure you either call the superclass version of those functions or add the relevant Mutator or GameRules function calls back in.<br>(see the individual class script files for details)</p>
+<h3><a name="0.2.1"></a>GameInfo</h3>
+<p>The Login function should call BaseMutator.ModifyLogin before it parses any of the options.</p>
+<p>RestartPlayer calls BaseMutator.PlayerChangedClass when the player changed his/her class since the last respawn.</p>
+<p>Some functions ask the mutators to return a default weapon class via the mutators' GetDefaultWeapon function. You should do the same in every place where that class is used. (or cache the output in a class variable)</p>
+<p>The SetPlayerDefaults function executes BaseMutator.ModifyPlayer. This function is used by mutators to initialize or update player-specific things and should always be called.</p>
+<p>PreventDeath calls the GameRulesModifiers.PreventDeath function if there are any GameRules.</p>
+<p>ReduceDamage should always call GameRulesModifiers.NetDamage. This is broken in UT2k3's <a href="teamgame.html">TeamGame</a> class, so please try to fix it in your GameInfo class. If you don't want GameRules classes to modify the actual damage you can still return a different value, but NetDamage often does other things based on the damage and not calling it might render those GameRules classes useless.</p>
+<p>In PickupQuery the GameRules' OverridePickupQuery function is called and has the chance to make the gametype skip the HandlePickupQuery function of the <a href="pawn.html">Pawn</a>'s <a href="inventory.html">Inventory</a> items.</p>
+<p>GameRules also get a chance to override the RestartGame function with their own HandleRestartGame function, but they might as well only prepare for this event instead of completely handling it themselves.</p>
+<p>GameRules can also are allowed to define additional end-of-game conditions via their CheckEndGame function which is called by the GameInfo's own CheckEndGame function.</p>
+<p>This list is far from complete, but should give you an idea of what you have to look out for. Mutators, GameRules and also Controllers are allowed to handle a lot of things.</p>
+<h2><a name="0.3"></a>Related Topics</h2>
+<ul><li><a href="mychaeel-modding-etiquette.html">Mychaeel/Modding Etiquette</a></li>
+</ul>
+<h2><a name="0.4"></a>Discussion</h2>
+<p><em class="em2">Wormbo:</em> This page has become neccessary since more and more mutator authors solve their problems (and unknowingly create a lot of new ones) by subclassing gametype-specific classes and replace them in their mutator. I hope it will minimize the number of incompatible mutators although I'm confident that there will still be enough people ignoring this fact. <img alt=":(" src="emoticons/sad.gif" align="middle"></p>
+<p><em class="em2">Tarquin:</em> How about we put a link to this page from all class pages that should NOT be subclassed in modding &ndash; there's a chance authors will look up those pages for info. <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Wormbo:</em> Good idea. /me goes and adds some linkage... <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Trystan:</em> At least here alternatives are proposed.  A lot of the time you're working on something and don't really have time to wade through the various places to find an alternative - you just want to prototype and see if it works.  With the alternatives to common pitfalls listed here you've saved the programmer that much time and made it that much more probable that he will do as the page suggests.</p>
+<p><em class="em2">Boksha:</em> Added a way to "replace" the PlayerTick function without replacing the controller.</p>
+<p><em class="em2">Dingus:</em> Not quite understanding the 'Replace PlayerTick' method described above. I need to do so in UT99 in order to check/modify mouseinput (aMouseX, aMouseY) on the client. Can you give a more specific example OR sample code. Thx.</p>
+<p><em class="em2">Tarquin:</em> When you make a custom PRI, how do you go about spawning them for each player? What about the <a href="linkedreplicationinfo.html">LinkedReplicationInfo</a> CustomReplicationInfo property in <a href="playerreplicationinfo.html">PlayerReplicationInfo</a>? Basically, what's the "way in"?</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Mutators", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>HUD / ScoreBoard Additions", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Storing and/or Replicating Per-Player Information", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Movement and Physics: The Controller Classes", "#0.1.3");
+menuItemAdd("Game Types", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>GameInfo", "#0.2.1");
+menuItemAdd("Related Topics", "#0.3");
+menuItemAdd("Discussion", "#0.4");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Maintaining_Compatibility">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Maintaining_Compatibility">View other revisions</a><br>Last edited August 31, 2005 11:54 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Maintaining_Compatibility">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Maintaining_Compatibility">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Cogito, ergo sum
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

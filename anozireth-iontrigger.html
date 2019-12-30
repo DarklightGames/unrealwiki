@@ -1,0 +1,240 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Anozireth/IonTrigger</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Anozireth/IonTrigger; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="anozireth.html">Anozireth</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Anozireth/IonTrigger">IonTrigger</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Download IonTrigger Package</h2>
+<p><a href="http://www.geocities.com/Anozireth/IonTrigger.html">http://www.geocities.com/Anozireth/IonTrigger.html</a></p>
+<h2><a name="0.2"></a>Description</h2>
+<p>This package provides a pair of classes that allow the mapper to place a volume that will trigger the firing of an <a href="ioncannon.html">IonCannon</a>.  It allows the mapper to specify either a fixed targer or the triggering player as the target.  It also allows the mapper to set the minimum time between firings and the maximum number of firings.</p>
+<h2><a name="0.3"></a>How to use</h2>
+<p>Simply place an <tt>IonTriggerVolume</tt> in the map where you want it, and an <a href="ioncannon.html">IonCannon</a> that can see intended area of the target.  Then configure the following settings:</p>
+<dl><dt>bTargetPlayer</dt><dd>If set to true, it will attempt to target the player which triggered it.  If set to false it will target the IonTarget</dd><dt>IonTarget</dt><dd>Optional : An Actor of the IonTriggerTarget class at the point to be targeted.  Note that there are no configuration options for the IonTriggerTarget.</dd><dt>maxFires</dt><dd>The maximum number of times this volume can trigger a firing.  0 = infinite</dd><dt>resetTime</dt><dd>The minimum time between firings.  Note that each individual cannon takes about 3 seconds to reload, so a value of less than 3 is not recommended, and may cause the cannon to not refire properly if a player is still staning in the volume when the timer resets.</dd></dl>
+<h2><a name="0.4"></a>Source Code</h2>
+<pre class="uscript"><span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-comment">//  IonTriggerVolume - A volume that can be used to trigger an IonCannon.</span>
+<span class="uscript-comment">//  By Tom Nicholson, aka Anozireth</span>
+<span class="uscript-comment">//  anozireth@yahoo.com</span>
+<span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-keyword">class</span> IonTriggerVolume <span class="uscript-keyword">extends</span> Volume<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> IonTriggerTarget IonTarget<span class="uscript-operator">;</span>   <span class="uscript-comment">// designated target</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span> bTargetPlayer<span class="uscript-operator">;</span>            <span class="uscript-comment">// Targets triggering actor if true, otherwise targets IonTarget</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> resetTime<span class="uscript-operator">;</span>                <span class="uscript-comment">// Time between fires.  This should be &gt; 0</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> maxFires<span class="uscript-operator">;</span>                   <span class="uscript-comment">// Maximum number of times this volume can trigger a firing.  0 = infinite</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bWaitingToFire<span class="uscript-operator">;</span>            <span class="uscript-comment">// can we fire right now?</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> firingCount<span class="uscript-operator">;</span>                <span class="uscript-comment">// How many times we've triggered a firing</span>
+
+<span class="uscript-keyword">event</span> touch<span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// Don't fire if not enough time has elapsed since the last firing</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bWaitingToFire<span class="uscript-operator">)</span>
+       <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Don't fire if we're over the max number of firings</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>maxFires<span class="uscript-operator">&gt;</span><span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>firingCount <span class="uscript-operator">&gt;=</span> maxFires<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+       <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Pawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Pawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>IsPlayerPawn<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            FireCannon<span class="uscript-operator">(</span>Pawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>       <span class="uscript-comment">// if the touch was by a player, then FIRE!</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> IonCannon CheckMark<span class="uscript-operator">(</span>Pawn TargetPawn<span class="uscript-operator">,</span> vector MarkLocation<span class="uscript-operator">,</span> <span class="uscript-type">bool</span> bFire<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> IonCannon I<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// iterate through all cannons in the map until we can find one that can hit our target</span>
+    <span class="uscript-keyword">foreach</span> DynamicActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'IonCannon'</span><span class="uscript-operator">,</span> I<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-comment">// Found a cannon, try to fire it and check if it succeeded.</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> I<span class="uscript-operator">.</span>CheckMark<span class="uscript-operator">(</span>Instigator<span class="uscript-operator">,</span>MarkLocation<span class="uscript-operator">,</span>bFire<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            firingCount<span class="uscript-operator">++</span><span class="uscript-operator">;</span>   <span class="uscript-comment">// Keep track of how many times we've triggered a firing</span>
+            <span class="uscript-keyword">return</span> I<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-comment">// didn't find a cannon that could hit the target</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> FireCannon<span class="uscript-operator">(</span>Pawn TargetPawn<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-keyword">local</span> vector vecTarget<span class="uscript-operator">;</span>     <span class="uscript-comment">// Location aimed at by cannon</span>
+<span class="uscript-keyword">local</span> vector vecNorm<span class="uscript-operator">;</span>       <span class="uscript-comment">// not really used, just required by trace</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">string</span> s<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Trace straight down from the target.</span>
+    <span class="uscript-comment">// Cannons don't seem to like shooting at points that aren't on the ground.</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bTargetPlayer <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>IonTarget <span class="uscript-operator">==</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>  <span class="uscript-comment">// Target the triggering player</span>
+       Trace<span class="uscript-operator">(</span>vecTarget<span class="uscript-operator">,</span>vecNorm<span class="uscript-operator">,</span>TargetPawn<span class="uscript-operator">.</span>Location<span class="uscript-operator">+</span><span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-operator">-</span><span class="uscript-number">10000</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span> TargetPawn<span class="uscript-operator">.</span>Location<span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>    <span class="uscript-comment">// Target the map specified target</span>
+       Trace<span class="uscript-operator">(</span>vecTarget<span class="uscript-operator">,</span>vecNorm<span class="uscript-operator">,</span>IonTarget<span class="uscript-operator">.</span>Location<span class="uscript-operator">+</span><span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-operator">-</span><span class="uscript-number">10000</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span> IonTarget<span class="uscript-operator">.</span>Location<span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Try to actually find a cannon and fire it</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>CheckMark<span class="uscript-operator">(</span>TargetPawn<span class="uscript-operator">,</span>vecTarget<span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>  <span class="uscript-comment">// didn't fire for some reason, log error</span>
+       s <span class="uscript-operator">=</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span><span class="uscript-type">name</span><span class="uscript-operator">)</span> <span class="uscript-operator">$</span> <span class="uscript-string">" Couldn't find a valid cannon to fire on Target at: "</span> <span class="uscript-operator">$</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>vecTarget<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+       Log<span class="uscript-operator">(</span>s<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+    <span class="uscript-operator">{</span>  <span class="uscript-comment">// successfully fired, so reset timer</span>
+       bWaitingToFire<span class="uscript-operator">=</span><span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+       SetTimer<span class="uscript-operator">(</span>resetTime<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// Checks if any pawns are touching the volume when it is re-activated</span>
+<span class="uscript-keyword">function</span> CheckIfTouching<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> actor A<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Don't fire if we're over the max number of firings</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>maxFires<span class="uscript-operator">&gt;</span><span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>firingCount <span class="uscript-operator">&gt;=</span> maxFires<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+       <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">foreach</span> TouchingActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> A<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"Found a touching actor"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Pawn<span class="uscript-operator">(</span>A<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            Log<span class="uscript-operator">(</span><span class="uscript-string">"Found a touching Pawn"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Pawn<span class="uscript-operator">(</span>A<span class="uscript-operator">)</span><span class="uscript-operator">.</span>IsPlayerPawn<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                 Log<span class="uscript-operator">(</span><span class="uscript-string">"Found a touching PlayerPawn, firing..."</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                 FireCannon<span class="uscript-operator">(</span>Pawn<span class="uscript-operator">(</span>A<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>       <span class="uscript-comment">// we found a player touching the volume, so FIRE!</span>
+                 <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// Re-Activates cannon after time delay</span>
+<span class="uscript-keyword">function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    bWaitingToFire<span class="uscript-operator">=</span><span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    CheckIfTouching<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+   maxFires<span class="uscript-operator">=</span><span class="uscript-number">0</span>
+   resetTime<span class="uscript-operator">=</span><span class="uscript-number">30</span>
+   bTargetPlayer<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+   bWaitingToFire<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+   bStatic<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+<span class="uscript-operator">}</span></pre><p>The <tt>IonTriggerTarget</tt> class is nothing but placeable subclass of <tt>Actor &rarr; Info</tt> and there's not really any code for it.</p>
+<h2><a name="0.5"></a>Discussion</h2>
+<p><em class="em2">Anozireth:</em> This is my first real contribution here, so I hope you guys like it!  I'm up way past my bedtime tonight so I'll have to polish this off tomorrow evening <img alt=":-)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">EntropicLqd:</em> Nice.  About the only change I would make to the code would be to move the checks for invalid parameters into either the PreBeingPlay() or PostBeingPlay() function.  You might also want an option for an infinite amount of fires.  Pretty cool though - good job well done <img alt=":)" src="emoticons/smile.gif" align="middle">.</p>
+<p><em class="em2">Jimbo:</em> Indeed! I've been after a script like this for some time. Thanks for your help! (check your email, Tom)</p>
+<p><em class="em2">Anozireth:</em> EntropicLqd - I forgot to mention it in the description (at first, I added it now) but it was already in the code, 0 = infinite firings <img alt=":-)" src="emoticons/smile.gif" align="middle"> I'll see if I can rework it to get those checks into one of those two functions you mentioned. Jimbo, I'll write you back on that email later today, for now I gotta get to work here.  Thanks for the positive feed back guys, I'm glad you liked it!  </p>
+<p><em class="em2">Anozireth:</em> I just noticed a small bug that would allow the volume to exceed its <tt>maxFires</tt> if a player was standing in it when the <tt>CheckIfTouching</tt> function was called.  I've updated the code here and the download with the new package.</p>
+<p>~~ You could simplify this by using a <a href="looktarget.html">LookTarget</a> instead of the custom target class. </p>
+<hr class="thin"><p><a href="category-custom-class.html">Category Custom Class</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Download IonTrigger Package", "#0.1");
+menuItemAdd("Description", "#0.2");
+menuItemAdd("How to use", "#0.3");
+menuItemAdd("Source Code", "#0.4");
+menuItemAdd("Discussion", "#0.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="anozireth.html">Anozireth</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Anozireth/IonTrigger">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Anozireth/IonTrigger">View other revisions</a><br>Last edited August 11, 2004 12:34 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Anozireth/IonTrigger">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Anozireth/IonTrigger">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Cogito, ergo sum
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

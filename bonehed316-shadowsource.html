@@ -1,0 +1,451 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Bonehed316/ShadowSource</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Bonehed316/ShadowSource; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="bonehed316.html">Bonehed316</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Bonehed316/ShadowSource">ShadowSource</a></h1>
+	<div class="wiki"><p>As many others have done, I have created some form of shadows using projectors.  There are other methods, including SquirrelZero's <a href="squirrelzero-realtimeshadow.html">RealtimeShadows</a>, which are good indeed, but the workload is per pawn, and performed each tick, and therefor is, and will always be, very slow. </p>
+<p>Next there is a method, which is very similar to my own, called <a href="sourced-player-shadows.html">Sourced Player Shadows</a>.  There are also some others, but I cant find the links right off hand, and I'm sure there are some which I've never thought of myself.  I am not familiar with other methods, so I will not comment on them, nor compare directly with any of them.</p>
+<p>The method I worked on, which is by no means a superb solution, is to use an actor I call a ShadowSource to handle attaching and detaching shadow projectors, and also act as a "source" of the shadow itself.  It uses the Touch() and UnTouch() functions to spawn and destroy shadow projectors.  The projectors use a reference to the ShadowSource as a location from which the shadow should be cast.  A level designer would place these ShadowSources wherever a static mesh that represents a light source exists, and the code will take care of the rest.</p>
+<p>Once the idea is down, the code here is trivial: </p>
+<pre class="uscript"><span class="uscript-keyword">class</span> ShadowSource <span class="uscript-keyword">extends</span> Actor
+    <span class="uscript-keyword">placeable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>ShadowBitmapMaterial<span class="uscript-operator">&gt;</span> TextureDetailClass<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>DynamicShadow<span class="uscript-operator">&gt;</span> Shadows<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">enum</span> EShadowDetail        <span class="uscript-comment">// shadow detail level</span>
+<span class="uscript-operator">{</span>
+    SD_Low<span class="uscript-operator">,</span>                 <span class="uscript-comment">// 64x64</span>
+    SD_Medium<span class="uscript-operator">,</span>              <span class="uscript-comment">// 128x128</span>
+    SD_High<span class="uscript-operator">,</span>                <span class="uscript-comment">// 256x256</span>
+    SD_Highest<span class="uscript-operator">,</span>             <span class="uscript-comment">// 512x512</span>
+<span class="uscript-operator">}</span> ShadowDetail<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> DynamicShadow<span class="uscript-operator">.</span>EShadowEffect ShadowEffect<span class="uscript-operator">;</span>     <span class="uscript-comment">// the type of light effect for this shadow</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> MaxFOV<span class="uscript-operator">;</span>                   <span class="uscript-comment">// adjusts rotation to compensate for FOV</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> FOVScale<span class="uscript-operator">;</span>                   <span class="uscript-comment">// scales FOV to change the size of the shadow</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">int</span> MaxTraceDistance<span class="uscript-operator">;</span>             <span class="uscript-comment">// how far the projector can draw</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ShadowSourceEffect<span class="uscript-operator">)</span> <span class="uscript-type">float</span> PhaseScale<span class="uscript-operator">;</span>       <span class="uscript-comment">// used to control light effects, result may vary depending on the effect used</span>
+
+<span class="uscript-comment">// fire effect specific variables</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ShadowSourceEffect<span class="uscript-operator">)</span> <span class="uscript-type">int</span> FireFlickerMagnitude<span class="uscript-operator">;</span>   <span class="uscript-comment">// how far the fire flicker is allowed to move</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>ShadowSourceEffect<span class="uscript-operator">)</span> <span class="uscript-type">int</span> FireFlickerSpeed<span class="uscript-operator">;</span>       <span class="uscript-comment">// how fast the shadow moves</span>
+
+<span class="uscript-comment">// Initialize anything</span>
+<span class="uscript-keyword">event</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    GetShadowTexture<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// sets the shadow texture depending on the selected detail setting</span>
+<span class="uscript-comment">// each class is simply a subclass of ShadowBitmapMaterial with a different USize and VSize</span>
+<span class="uscript-keyword">function</span> GetShadowTexture<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Switch</span><span class="uscript-operator">(</span>ShadowDetail<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">case</span> SD_Low: TextureDetailClass <span class="uscript-operator">=</span> <span class="uscript-keyword">Class</span><span class="uscript-name">'ShadowDetailLow'</span><span class="uscript-operator">;</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">case</span> SD_Medium: TextureDetailClass <span class="uscript-operator">=</span> <span class="uscript-keyword">Class</span><span class="uscript-name">'ShadowDetailMedium'</span><span class="uscript-operator">;</span><span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">case</span> SD_High:   TextureDetailClass <span class="uscript-operator">=</span> <span class="uscript-keyword">Class</span><span class="uscript-name">'ShadowDetailHigh'</span><span class="uscript-operator">;</span><span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">case</span> SD_Highest: TextureDetailClass <span class="uscript-operator">=</span> <span class="uscript-keyword">Class</span><span class="uscript-name">'ShadowDetailHighest'</span><span class="uscript-operator">;</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">default</span>: TextureDetailClass <span class="uscript-operator">=</span> <span class="uscript-keyword">Class</span><span class="uscript-name">'ShadowDetailLow'</span><span class="uscript-operator">;</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> DynamicShadow SpawnShadow<span class="uscript-operator">(</span>Pawn P<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> DynamicShadow DynamicShadow<span class="uscript-operator">;</span>
+
+    DynamicShadow <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'DynamicShadow'</span><span class="uscript-operator">,</span><span class="uscript-keyword">self</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span>P<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DynamicShadow <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        DynamicShadow<span class="uscript-operator">.</span>ShadowActor <span class="uscript-operator">=</span> P<span class="uscript-operator">;</span>
+        DynamicShadow<span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> P<span class="uscript-operator">;</span>
+        DynamicShadow<span class="uscript-operator">.</span>ShadowEffect <span class="uscript-operator">=</span> ShadowEffect<span class="uscript-operator">;</span>
+        DynamicShadow<span class="uscript-operator">.</span>FireFlickerMagnitude <span class="uscript-operator">=</span> FireFlickerMagnitude<span class="uscript-operator">;</span>
+        DynamicShadow<span class="uscript-operator">.</span>FireFlickerSpeed <span class="uscript-operator">=</span> FireFlickerSpeed<span class="uscript-operator">;</span>
+        DynamicShadow<span class="uscript-operator">.</span>PhaseScale <span class="uscript-operator">=</span> PhaseScale<span class="uscript-operator">;</span>
+        DynamicShadow<span class="uscript-operator">.</span>bBlobShadow <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+        DynamicShadow<span class="uscript-operator">.</span>FOVScale <span class="uscript-operator">=</span> FOVScale<span class="uscript-operator">;</span>
+        DynamicShadow<span class="uscript-operator">.</span>MaxFOV <span class="uscript-operator">=</span> MaxFOV<span class="uscript-operator">;</span>
+        DynamicShadow<span class="uscript-operator">.</span>MaxTraceDistance <span class="uscript-operator">=</span> MaxTraceDistance<span class="uscript-operator">;</span>
+        DynamicShadow<span class="uscript-operator">.</span>ShadowTexture <span class="uscript-operator">=</span> ShadowBitmapMaterial<span class="uscript-operator">(</span> Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>AllocateObject<span class="uscript-operator">(</span>TextureDetailClass<span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        DynamicShadow<span class="uscript-operator">.</span>InitShadow<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">return</span> DynamicShadow<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// pawns are given a shadow when they touch</span>
+<span class="uscript-keyword">event</span> Touch<span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Pawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        Shadows<span class="uscript-operator">[</span>Shadows<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> SpawnShadow<span class="uscript-operator">(</span>Pawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// pawns are removed from the shadow list when they untouch, and the shadow is destroyed</span>
+<span class="uscript-keyword">event</span> UnTouch<span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Pawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        i <span class="uscript-operator">=</span> GetShadowIndex<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">&gt;</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            Shadows<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            Shadows<span class="uscript-operator">.</span><span class="uscript-keyword">Remove</span><span class="uscript-operator">(</span>i<span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// returns the index of an actor within the shadow array</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">int</span> GetShadowIndex<span class="uscript-operator">(</span>Actor A<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>Shadows<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span><span class="uscript-operator">++</span>i<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Shadows<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ShadowActor <span class="uscript-operator">==</span> A<span class="uscript-operator">)</span>
+            <span class="uscript-keyword">return</span> i<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    ShadowDetail<span class="uscript-operator">=</span>SD_Medium
+    ShadowEffect<span class="uscript-operator">=</span>SE_Normal
+
+    FireFlickerMagnitude<span class="uscript-operator">=</span><span class="uscript-number">60</span>
+    FireFlickerSpeed<span class="uscript-operator">=</span><span class="uscript-number">20</span>
+    PhaseScale<span class="uscript-operator">=</span><span class="uscript-number">0.5</span>
+    MaxFOV<span class="uscript-operator">=</span><span class="uscript-number">70</span>
+    FOVScale<span class="uscript-operator">=</span><span class="uscript-number">0.9</span>
+    MaxTraceDistance<span class="uscript-operator">=</span><span class="uscript-number">1000</span>
+
+    bCollideActors<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bUseCylinderCollision<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    CollisionHeight<span class="uscript-operator">=</span><span class="uscript-number">500</span>
+    CollisionRadius<span class="uscript-operator">=</span><span class="uscript-number">500</span>
+<span class="uscript-operator">}</span></pre><p>The key here is that the CollisionHeight and CollisionRadius are what effect how close to the source you have to be to recieve a shadow from it.  Adjusting this radius is important to the concept.  Basic projector properties can be controlled with the exposed variables, and more can be added easily, and subclasses of ShadowSource can be created which have even more functionality, if that is the method you prefer.</p>
+<p>As you can see, the real magic is all in the projector class.  The beauty is that the projector draws itself, from the location of the ShadowSource that owns it.  This way, the overhead of sorting lights and shadow projectors is eliminated.  The projector simply draws until it is destroyed.</p>
+<p>The projector is listed here:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> DynamicShadow <span class="uscript-keyword">extends</span> ShadowProjector<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// various shadow effects can exist here</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">enum</span> EShadowEffect
+<span class="uscript-operator">{</span>
+    SE_Normal<span class="uscript-operator">,</span>
+    SE_Fire<span class="uscript-operator">,</span>
+<span class="uscript-operator">}</span> ShadowEffect<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// these are set by the shadow source</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> FireFlickerMagnitude<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> FireFlickerSpeed<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> MaxFOV<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> PhaseScale<span class="uscript-operator">,</span> FOVScale<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//hack for interpolating crouch distance over time when pawn stands up again</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> crouchtime<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> vector CurrentFirePos<span class="uscript-operator">,</span> TargetFirePos<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>vector<span class="uscript-operator">&gt;</span> FirePositions<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// This must be called by the ShadowSource to initialize the projector to start drawing</span>
+<span class="uscript-keyword">function</span> InitShadow<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ShadowActor <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        ShadowTexture<span class="uscript-operator">.</span>bBlobShadow <span class="uscript-operator">=</span> bBlobShadow<span class="uscript-operator">;</span>
+        ShadowTexture<span class="uscript-operator">.</span>ShadowActor <span class="uscript-operator">=</span> ShadowActor<span class="uscript-operator">;</span>
+        ProjTexture <span class="uscript-operator">=</span> ShadowTexture<span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ProjTexture <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-comment">// UpdateShadows is time driven, to allow shadow animating</span>
+            UpdateShadows<span class="uscript-operator">(</span><span class="uscript-number">0.03</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// start the shadow rendering, and enable tick</span>
+            Enable<span class="uscript-operator">(</span><span class="uscript-name">'Tick'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-comment">// timer is used for fire effect, but could be used for others as well, so </span>
+        <span class="uscript-comment">// we start it up here as well</span>
+        SetTimer<span class="uscript-operator">(</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">event</span> Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ShadowTexture <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        ShadowTexture<span class="uscript-operator">.</span>ShadowActor <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>ShadowTexture<span class="uscript-operator">.</span>Invalid<span class="uscript-operator">)</span>
+            Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>FreeObject<span class="uscript-operator">(</span>ShadowTexture<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        ShadowTexture <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+        ProjTexture <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">event</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> dt<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    UpdateShadows<span class="uscript-operator">(</span>dt<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>ShadowEffect <span class="uscript-operator">==</span> SE_Fire<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-comment">// random target positions for fire flicker, and random timer rate</span>
+        TargetFirePos <span class="uscript-operator">=</span> FirePositions<span class="uscript-operator">[</span>Rand<span class="uscript-operator">(</span>FirePositions<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">)</span><span class="uscript-operator">]</span> <span class="uscript-operator">*</span> Rand<span class="uscript-operator">(</span>FireFlickerMagnitude<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        TimerRate <span class="uscript-operator">=</span> FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">*</span> PhaseScale<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+        bTimerLoop<span class="uscript-operator">=</span><span class="uscript-keyword">False</span><span class="uscript-operator">;</span>       <span class="uscript-comment">// disable timer loop for non-effect shadows</span>
+
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// we use our own update shadow function</span>
+<span class="uscript-keyword">function</span> UpdateShadow<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// updates location, rotation, and FOV</span>
+<span class="uscript-keyword">function</span> UpdateShadows<span class="uscript-operator">(</span><span class="uscript-type">float</span> dt<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> vector Diff<span class="uscript-operator">,</span> ShadowLocation<span class="uscript-operator">,</span> RandVec<span class="uscript-operator">,</span> instloc<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> rotator AdjustedRotation<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Plane BoundingSphere<span class="uscript-operator">;</span>
+
+    DetachProjector<span class="uscript-operator">(</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// check to make sure we should draw, maybe this should also destroy the projector</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>bHidden <span class="uscript-operator">||</span> <span class="uscript-operator">!</span>bShadowActive <span class="uscript-operator">||</span> ShadowTexture <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">||</span> Instigator <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    instloc <span class="uscript-operator">=</span> Instigator<span class="uscript-operator">.</span>Location<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// hack for fixing shadow detaching from pawn when crouching</span>
+    <span class="uscript-comment">// crouchheight based on anim time, values may vary</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>bIsCrouched<span class="uscript-operator">)</span>
+        crouchtime <span class="uscript-operator">=</span> FMin<span class="uscript-operator">(</span>crouchtime<span class="uscript-operator">+</span>dt<span class="uscript-operator">*</span><span class="uscript-number">5</span><span class="uscript-operator">,</span><span class="uscript-number">0.5</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>crouchtime <span class="uscript-operator">&gt;</span> <span class="uscript-number">0.0</span><span class="uscript-operator">)</span>
+        crouchtime <span class="uscript-operator">-=</span> dt<span class="uscript-operator">*</span><span class="uscript-number">2</span><span class="uscript-operator">;</span>
+
+    instloc<span class="uscript-operator">.</span>Z <span class="uscript-operator">-=</span> <span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>CrouchHeight<span class="uscript-operator">*</span>crouchtime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ShadowTexture<span class="uscript-operator">.</span>Invalid<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>ShadowEffect <span class="uscript-operator">==</span> SE_Fire<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-comment">// move a bit closer to the target position</span>
+        RandVec <span class="uscript-operator">=</span> CurrentFirePos <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>Normal<span class="uscript-operator">(</span>TargetFirePos <span class="uscript-operator">-</span> CurrentFirePos<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>FireFlickerSpeed <span class="uscript-operator">*</span> dt<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-comment">// if we have moved too far out of range, begin moving back to the shadow source</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> VSize<span class="uscript-operator">(</span>CurrentFirePos<span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span>  FireFlickerMagnitude<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            TargetFirePos <span class="uscript-operator">=</span> FirePositions<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>       <span class="uscript-comment">// reset back to 0,0,0</span>
+            RandVec <span class="uscript-operator">=</span> CurrentFirePos <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>Normal<span class="uscript-operator">(</span>TargetFirePos <span class="uscript-operator">-</span> CurrentFirePos<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>FireFlickerSpeed <span class="uscript-operator">*</span> dt<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-comment">// if we have already reached our target position, pick a new one</span>
+        <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> VSize<span class="uscript-operator">(</span>TargetFirePos <span class="uscript-operator">-</span> RandVec<span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> VSize<span class="uscript-operator">(</span>TargetFirePos <span class="uscript-operator">-</span> CurrentFirePos<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            TargetFirePos <span class="uscript-operator">=</span> FirePositions<span class="uscript-operator">[</span>Rand<span class="uscript-operator">(</span>FirePositions<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">)</span><span class="uscript-operator">]</span> <span class="uscript-operator">*</span> Rand<span class="uscript-operator">(</span>FireFlickerMagnitude<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            RandVec <span class="uscript-operator">=</span> CurrentFirePos <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>Normal<span class="uscript-operator">(</span>TargetFirePos <span class="uscript-operator">-</span> CurrentFirePos<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>FireFlickerSpeed <span class="uscript-operator">*</span> dt<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+        CurrentFirePos <span class="uscript-operator">=</span> RandVec<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    Diff <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> Owner<span class="uscript-operator">.</span>Location <span class="uscript-operator">+</span> RandVec <span class="uscript-operator">)</span> <span class="uscript-operator">-</span> instloc<span class="uscript-operator">;</span>
+    LightDistance <span class="uscript-operator">=</span> VSize<span class="uscript-operator">(</span>Diff<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    ShadowLocation <span class="uscript-operator">=</span> instloc <span class="uscript-operator">+</span> <span class="uscript-operator">(</span><span class="uscript-number">4</span> <span class="uscript-operator">*</span> Normal<span class="uscript-operator">(</span>Diff<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>VSize<span class="uscript-operator">(</span>ShadowLocation<span class="uscript-operator">-</span>instloc<span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> LightDistance<span class="uscript-operator">)</span>
+        ShadowLocation <span class="uscript-operator">=</span> instloc<span class="uscript-operator">;</span>
+    SetLocation<span class="uscript-operator">(</span>ShadowLocation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    BoundingSphere <span class="uscript-operator">=</span> Instigator<span class="uscript-operator">.</span>GetRenderBoundingSphere<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    FOV <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>Atan<span class="uscript-operator">(</span>BoundingSphere<span class="uscript-operator">.</span>W<span class="uscript-operator">*</span><span class="uscript-number">2</span> <span class="uscript-operator">+</span> <span class="uscript-number">160</span><span class="uscript-operator">,</span> LightDistance<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-number">180</span><span class="uscript-operator">/</span>PI<span class="uscript-operator">)</span><span class="uscript-operator">*</span>FOVScale<span class="uscript-operator">;</span>
+    SetDrawScale<span class="uscript-operator">(</span> LightDistance <span class="uscript-operator">*</span> tan<span class="uscript-operator">(</span><span class="uscript-number">0.5</span> <span class="uscript-operator">*</span> FOV <span class="uscript-operator">*</span> PI <span class="uscript-operator">/</span> <span class="uscript-number">180</span><span class="uscript-operator">)</span> <span class="uscript-operator">/</span> <span class="uscript-operator">(</span><span class="uscript-number">0.5</span> <span class="uscript-operator">*</span> ShadowTexture<span class="uscript-operator">.</span>USize<span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// adjust rotation to fix the FOV causing the shadow to detatch from the player</span>
+    AdjustedRotation <span class="uscript-operator">=</span> rotator<span class="uscript-operator">(</span>instloc<span class="uscript-operator">-</span><span class="uscript-operator">(</span>Owner<span class="uscript-operator">.</span>Location <span class="uscript-operator">+</span> RandVec<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    AdjustedRotation<span class="uscript-operator">.</span>Pitch <span class="uscript-operator">-=</span> <span class="uscript-number">1408</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span>FOV<span class="uscript-operator">/</span>MaxFOV<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    SetRotation<span class="uscript-operator">(</span>AdjustedRotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    LightDirection <span class="uscript-operator">=</span> <span class="uscript-operator">-</span>vector<span class="uscript-operator">(</span>AdjustedRotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    ShadowTexture<span class="uscript-operator">.</span>LightDirection <span class="uscript-operator">=</span> LightDirection<span class="uscript-operator">;</span>
+    ShadowTexture<span class="uscript-operator">.</span>LightDistance <span class="uscript-operator">=</span> LightDistance<span class="uscript-operator">;</span>
+    ShadowTexture<span class="uscript-operator">.</span>LightFOV <span class="uscript-operator">=</span> FOV<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// cull more if we havent rendered this pawn in 5 seconds</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">-</span> Instigator<span class="uscript-operator">.</span>LastRenderTime <span class="uscript-operator">&gt;</span> <span class="uscript-number">5</span><span class="uscript-operator">)</span>
+        CullDistance <span class="uscript-operator">=</span> <span class="uscript-number">0.25</span><span class="uscript-operator">*</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>CullDistance<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        CullDistance <span class="uscript-operator">=</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>CullDistance<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// cull shadows much earlier if below min framerate</span>
+    <span class="uscript-comment">// ..this may or may not be desired, it does get rather ugly</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>bDropDetail<span class="uscript-operator">)</span>
+        ShadowTexture<span class="uscript-operator">.</span>CullDistance <span class="uscript-operator">=</span> <span class="uscript-number">0.5</span><span class="uscript-operator">*</span>CullDistance<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        ShadowTexture<span class="uscript-operator">.</span>CullDistance <span class="uscript-operator">=</span> CullDistance<span class="uscript-operator">;</span>
+    ShadowTexture<span class="uscript-operator">.</span>Dirty <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+    AttachProjector<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    bGradient<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    CullDistance<span class="uscript-operator">=</span><span class="uscript-number">1800</span><span class="uscript-operator">.</span>f
+
+    <span class="uscript-comment">// directional offsets for target pos movements</span>
+    <span class="uscript-comment">// 1. origin (will move back to the shadow source)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span>
+    <span class="uscript-comment">// 2. ordinal directions (will move along one axis)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">4</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">5</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">6</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    <span class="uscript-comment">// 3. diagonal on axis directions (will move on two axes)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">7</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">8</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">9</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">10</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">11</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">12</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">13</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">14</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    <span class="uscript-comment">// 4. diagonal mid axis directions (will move on three axes)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">15</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">16</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">17</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">18</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">19</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">20</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">21</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    FirePositions<span class="uscript-operator">(</span><span class="uscript-number">22</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.1"></a>Issues to consider</h3>
+<p>First, the code is largely untested in practical play, but does work.  Issues to consider, which have not been specifically tested include:</p>
+<ul><li><em class="em2">What happens if a pawn is spawned inside the CollisionRadius of a ShadowSource?</em><ul><li>If Touch() is called correctly, then everything works properly, but if not...</li>
+</ul>
+</li>
+<li><em class="em2">What happens if a pawn is killed inside the CollisionRadius of a ShadowSource?</em><ul><li>Only if UnTouch() is called when the pawn dies will the shadow be destroyed</li>
+</ul>
+</li>
+<li><em class="em2">What about other light effects?</em></li>
+</ul>
+<h3><a name="0.0.2"></a>Comments</h3>
+<p><em class="em2">Blueneptune:</em> It appears that the shadow projectors will clip off pieces of the shadow that are out of their FOV angle.  This happens often when near a light since the projector is always so close to the shadowed actor.  This solution is bad for the shadow texture sharpness, but I found that setting the projector to the light's location works much better for shadow clipping (unless the mesh being shadowed encapsulates the light).  As said, it's bad for the shadow sharpness and it often needs adjustments to the rotation since it's set too low.</p>
+<p><em class="em2">Bonehed316:</em> A compromise solution would be to set the projector location somewhere between the source and the pawn.  Also I need to put some pics up, and get a working demo, I think.  Maybe one day.</p>
+<p><em class="em2">MythOpus:</em> To solve the problems of a pawn dying inside the actors collision zone, when spawning the projectors, set the owner of the projector to that of the pawn it is being created on.  Then in the projector class, have it destroy itself when it's owner = none.  </p>
+<p><em class="em2">Foxpaw:</em> Untouch() will not get called when a pawn is destroyed, but I believe it will be called when a pawn actor is destroyed (and removed from the world). So the pawn would continue to have the projector acting on it while it was ragdolling.</p>
+<p>Mythopus' solution is good but instead of using Owner I would use a variable declared in the projector and use that to store the pawn. I am wary of using Owner because Owner has some special implications when it comes to replication that I'd generally prefer not to worry about. Since the projector would be client-side, I don't THINK that you would have problems with this, but it might not hurt to store it in an internal variable instead of Owner.</p>
+<p><em class="em2">Bonehed316:</em> It uses the owning pawn as its Instigator as well, so that could be checked, since it's already used.  I think the Owner should be the ShadowSource (logically this is accurate, but I'm not sure about the replication implications).  As far as I know though, the shadow is destroyed when the Pawn dies, but the ShadowSource's list would not be updated, which must also be solved .  This could probably be solved by calling a new function on the ShadowSource from the Projector's Destroyed() function which would remove itself from the ShadowSource's array iff Instigator == None (which, correct me if I'm wrong, means the Instigator was killed).</p>
+<p><em class="em2">Bonehed316:</em> Also the ShadowSource needs to destroy any projectors that exist if/when it is destroyed.  The garbage collector might still get them, but I think this is important anyway.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Issues to consider", "#0.0.1");
+menuItemAdd("Comments", "#0.0.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="bonehed316.html">Bonehed316</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Bonehed316/ShadowSource">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Bonehed316/ShadowSource">View other revisions</a><br>Last edited June 25, 2005 1:15 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Bonehed316/ShadowSource">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Bonehed316/ShadowSource">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>There is no spoon
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

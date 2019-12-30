@@ -1,0 +1,222 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Debugging Techniques</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Debugging_Techniques; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Debugging Techniques">Debugging Techniques</a></h1>
+	<div class="wiki"><p>Put all your <em class="em2">Hints for Debugging</em> here. </p>
+<p>As a programmer, I can only think on UnrealScript stuff, but you should add anything that would help someone to get extra info about the environment, actor behaviour and errors on the fly.</p>
+<h2><a name="0.1"></a>UnrealScript Techniques</h2>
+<h3><a name="0.1.1"></a>Use the Log!</h3>
+<p>The log is generally the first thing to try when debugging. </p>
+<p>It lets you append text to the game's log file. The stuff it writes can be viewed while the game is running, type "showlog" in console to open the log window. To start the game with log window already displayed and in windowed mode start UT2004.exe with " -WINDOWED -LOG" parameters.</p>
+<p>It is a native function declared in <a href="object.html">Object</a>, so it is, in effect, a global function. Its declaration is as follows:</p>
+<pre class="uscript"><span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">231</span><span class="uscript-operator">)</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">function</span> Log<span class="uscript-operator">(</span> <span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> S<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">name</span> Tag <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-comment">//'S' is your message that you want to appear in the log.</span></pre><p>The 'Tag' parameter gives the beginning of your message a more meaningful name (useful for mod developers to differentiate their warning messages).</p>
+<p>Log output gives you something like this:  "Tag: S", where of course 'Tag' and 'S' are replaced.  If 'Tag' is not supplied, "ScriptLog" is used.</p>
+<p>Log is saved by default to "/GameName/System/GameName.log" file, ie "UT2004/System/UT2004.log". Attempting to view the log file with external application while the game is still running is not recommended, as sometimes information is not actually saved into the log at the moment that it happens &ndash; the order and variables are still preserved, but I believe that the Unreal Engine maintains an internal log in memory and only writes it to disk periodically.</p>
+<p>The warn function is essentially the same as log, but there is no "tag" argument. The "tag" of the warn function is always "Warning."</p>
+<pre class="uscript"><span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">232</span><span class="uscript-operator">)</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">static</span> <span class="uscript-keyword">function</span> Warn<span class="uscript-operator">(</span> <span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> S <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-comment">//'S' is your message that you want to appear in the log.</span></pre><p>The warn function's output is similar to UT's and UT2003's <a href="log-warnings.html">log warnings</a>.</p>
+<p>You can also use the "say" functionality to make your actor "talk" within the level and read the output. This allows for a realtime "log" that you can view in-game, though things written using this will not actually be written to the log file:</p>
+<pre class="uscript">Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>Broadcast<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">,</span> <span class="uscript-string">"blah blah blah"</span><span class="uscript-operator">,</span> <span class="uscript-name">'Say'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p><em class="em2">OverloadUT:</em> Unfortunately, this method has limited reliability, because the messages broadcasted will be spam filtered just like normal chat.  Meaning that if you send too many messages too fast, some of them simply won't be displayed.  The limit is quite low too... So be sure you're only sending one message at a time, and only at key times. I like to instead use the <em class="em3">ClientMessage()</em> function inside <em class="em3">PlayerController</em> - but unfortunately it's a more annoying because you need a specific PlayerController to send it to.</p>
+<p><em class="em2">Kirk:</em> Also note that if you suddenly see messages coming up you didn't instigate... it's probably form the bots doing the same thing as you.</p>
+<h3><a name="0.1.2"></a>Using DisplayDebug (UT2003)</h3>
+<p>The DisplayDebug function in class <a href="actor.html">Actor</a> shows a lot of info about the player/zone/weapon. It is shown when you use the <tt>ShowDebug</tt> console command and it can be used to draw pertinent information on the HUD in realtime. If you want to make it compatible with other DisplayDebug functions from other actors, you must insert a carriage return at the end of whatever you are writing, to prevent other actors from appending text directly to whatever you have written.</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> DisplayDebug<span class="uscript-operator">(</span>Canvas Canvas<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> <span class="uscript-type">float</span> YL<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> <span class="uscript-type">float</span> YPos<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> T<span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>DisplayDebug<span class="uscript-operator">(</span>Canvas<span class="uscript-operator">,</span> YL<span class="uscript-operator">,</span> YPos<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  T <span class="uscript-operator">=</span> <span class="uscript-string">"DOT: "</span><span class="uscript-operator">$</span><span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">Dot</span> Normal<span class="uscript-operator">(</span>vector<span class="uscript-operator">(</span>rotation<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  Canvas<span class="uscript-operator">.</span>DrawText<span class="uscript-operator">(</span>T<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  YPos <span class="uscript-operator">+=</span> YL<span class="uscript-operator">;</span>
+  Canvas<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span><span class="uscript-number">4</span><span class="uscript-operator">,</span>YPos<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>You can also use DisplayDebug to draw anything you normally could to the Canvas. Here is an example of drawing the position of a vector onto the screen visually. The example draws a cross at the on-screen location where the vector would be percieved to be - note that this assumes that the vector is a "location" vector, as it will be drawn relative to the world origin:</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> DisplayDebug<span class="uscript-operator">(</span>Canvas Canvas<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> <span class="uscript-type">float</span> YL<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> <span class="uscript-type">float</span> YPos<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>DisplayDebug<span class="uscript-operator">(</span>Canvas<span class="uscript-operator">,</span> YL<span class="uscript-operator">,</span> YPos<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  Canvas<span class="uscript-operator">.</span>SetDrawColor<span class="uscript-operator">(</span><span class="uscript-number">255</span><span class="uscript-operator">,</span><span class="uscript-number">255</span><span class="uscript-operator">,</span><span class="uscript-number">255</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  Canvas<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span>Canvas<span class="uscript-operator">.</span>WorldToScreen<span class="uscript-operator">(</span>YOURVECTORHERE<span class="uscript-operator">)</span><span class="uscript-operator">.</span>X<span class="uscript-operator">,</span>Canvas<span class="uscript-operator">.</span>WorldToScreen<span class="uscript-operator">(</span>YOURVECTORHERE<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  DrawCross<span class="uscript-operator">(</span>Canvas<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  Canvas<span class="uscript-operator">.</span>DrawText<span class="uscript-operator">(</span><span class="uscript-string">"A SHORT DESCRIPTION WHICH WILL GET DRAWN NEXT TO THE CROSS GOES HERE"</span><span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  Canvas<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span><span class="uscript-number">4</span><span class="uscript-operator">,</span>YPos<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> DrawCross<span class="uscript-operator">(</span>canvas c<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  c<span class="uscript-operator">.</span>DrawLine<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">18</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  c<span class="uscript-operator">.</span>DrawLine<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">18</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  c<span class="uscript-operator">.</span>DrawLine<span class="uscript-operator">(</span><span class="uscript-number">2</span><span class="uscript-operator">,</span> <span class="uscript-number">18</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  c<span class="uscript-operator">.</span>DrawLine<span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">,</span> <span class="uscript-number">18</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.1.3"></a>Using the Graph (UT2003)</h3>
+<p>The graph is a debugging method only availible from KVehicle and its subclasses. It is defined in KVehicle. It can be displayed with the <code>Graph Show</code> console command. To plot a value on the graph, call the GraphData function, as follows:</p>
+<pre class="uscript">GraphData<span class="uscript-operator">(</span><span class="uscript-string">"description"</span><span class="uscript-operator">,</span> <span class="uscript-keyword">var</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>Where <em class="em1">var</em> (float or int) is your variable and <em class="em1">description</em> is any string. The graph automatically adjusts the vertical scale to fit all of the values that have been fed into it. The graph will update whenever a new point is plotted, regardless of what actor plots it. The graph is color coded, and points are joined together based on their <em class="em1">descriptions</em>. There is a legend with the graph that will indicate which color is associated with which <em class="em1">description</em> and the maximum value that has been plotted for that <em class="em1">description.</em></p>
+<h3><a name="0.1.4"></a>The Debug Line (UT2003)</h3>
+<pre class="uscript">  DrawDebugLine<span class="uscript-operator">(</span> Location1<span class="uscript-operator">,</span> Location2<span class="uscript-operator">,</span> R<span class="uscript-operator">,</span> G<span class="uscript-operator">,</span> B<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>This is a great way of showing vectors. It draws a line between the two vectors specified in Location1 and Location2. Technically one is the start and the other is the end, but it doesn't make any visual difference. R, G, and B, are the elements of the color of the line, red, green and blue, respectively. They must each be between 0 and 255. This is superior to just drawing something on the canvas, as it will go "through" objects instead of being drawn on top of them. This makes it much easier to see the actual vector that is being expressed. It is, however, relatively slow. It is not slow in the sense that it will drag down your framerate while you debug, but it is too slow to be reasonably used for in-game effects like a laser. This function can be called at any time and will be "stored up" by the engine until the next frame is drawn. You can draw as many debug lines as you like and they will all be "saved up" in this manner. This can be very useful for, for instance, making a line drawing of the path a bot intends to follow, etcetera.</p>
+<h4><a name="0.1.4.1"></a>Staying Debug Line</h4>
+<p>Another debug line command similar to the one above creates a permanent line, which can be used for easily creating non-dynamic lines in 3D space. This can be handy for displaying the path that a wandering or searching character has taken over time. -ymalaika</p>
+<pre class="uscript">  DrawStayingDebugLine<span class="uscript-operator">(</span> Location1<span class="uscript-operator">,</span> Location2<span class="uscript-operator">,</span> R<span class="uscript-operator">,</span> G<span class="uscript-operator">,</span> B<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  ClearStayingDebugLines<span class="uscript-operator">(</span><span class="uscript-operator">)</span></pre><h3><a name="0.1.5"></a>Using TextToSpeech (UT2004/UT2003?)</h3>
+<pre class="uscript"><span class="uscript-keyword">native</span> <span class="uscript-keyword">function</span> TextToSpeech<span class="uscript-operator">(</span> <span class="uscript-type">string</span> Text<span class="uscript-operator">,</span> <span class="uscript-type">float</span> Volume <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-comment">//Text: Text you want to be turned into speech</span></pre><p>This function is declared in Actor so any actor can use it.  An example of how to use it would be to find out if a function was fired or not.  It's very useful for those who don't want to go into the log all the time and would like voice confirmation.</p>
+<p><em class="em2">Seabreeze:</em> what does the 'Volume' variable represent?</p>
+<p><em class="em2">Wormbo:</em> The same thing it represents in any audio function &ndash; how loud you want the output to be.</p>
+<p><em class="em2">Seabreeze:</em> ahhh.. newbie here! for some reason I was only thinking of volume of objects and not volume of sound, thanks!</p>
+<h3><a name="0.1.6"></a>Slowing things down</h3>
+<p>If you need time to set a particular situation up, use one of these [console command]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Console_Command&referrerid=Debugging_Techniques">?</a>s:</p>
+<ul><li>playersonly : freezes all movement except you</li>
+<li>slomo #, or set engine.gameinfo gamespeed &lt;value here&gt;</li>
+</ul>
+<h2><a name="0.2"></a>Network Debugging</h2>
+<h3><a name="0.2.1"></a>Testing in a Client/Server Environment</h3>
+<p>It is crucial that you test your code under client/server conditions. Just running a "listen server" (a network server started from within the game) won't help there; for concerns like <a href="replication.html">replication</a> the listen server behaves just like a standalone game as far as the local player is concerned. </p>
+<p>You don't need a LAN or an Internet connection to test your code under networking conditions though: you can <a href="launch-a-local-netgame.html">Launch A Local Netgame</a>.</p>
+<h3><a name="0.2.2"></a>ServerPackages</h3>
+<p>None of your client-side actors will show up or execute client-side code <em class="em2">unless your package is loaded client-side</em>; unless that happens to happen anyway (because you're coding a game type, for example), you'll have to add your code package to the server .ini file's <code>ServerPackages</code> list.</p>
+<p>Open the server's .ini file (usually server.ini or, on a local dedicated server, frequently just the <a href="game-ini-file.html">game ini file</a>), look for the <code>[Engine.GameEngine]</code> section and add a line for your package:</p>
+<pre class="paraverbatim">  ServerPackages=MyPackage</pre><h3><a name="0.2.3"></a>Simulating Lag and Packet Loss</h3>
+<p>You can tell the engine to simulate network lag, packet loss, packets out of order and packet duplicating when testing on a local server as described above.</p>
+<p>Add one or several of the following parameters to the server's command line:</p>
+<dl><dt>pktlag=<i>&lt;milliseconds&gt;</i></dt><dd>Simulates lag.</dd><dt>pktloss=<i>&lt;percentage&gt;</i></dt><dd>Simulates packet loss.  The given percentage specifies how many packets are lost; it can be between 0 (no packet loss) and 100 (all packets will be lost).</dd><dt>pktdup=<i>&lt;percentage&gt;</i></dt><dd>Simulates packet duplication.  The given percentage specifies how many packets are duplicated; it can be between 0 (no packet duplication) and 100 (all packets duplicated).</dd><dt>pktorder=<i>&lt;0 or 1&gt;</i></dt><dd>Simulates packets that are received out of order.</dd></dl>
+<p>A server for a test game with 150 milliseconds lag, 10 percent packet loss and packets out of order would look like this:</p>
+<pre class="paraverbatim">  ucc server DM-Gael pktlag=150 pktloss=10 pktorder=1</pre><h2><a name="0.3"></a>Console Commands</h2>
+<p>See <a href="console-commands-debugging.html">Console Commands/Debugging Console Commands</a></p>
+<h2><a name="0.4"></a>A Note about Debugging</h2>
+<p>It's important to remember that not only can software develop bugs, but your debugging tools themselves can have bugs too. Log and other native debugging commands seem quite stable, but things in DisplayDebug and similar functions are prone to error like any other program.  If your debugging tools show that your code is acting in an absolutely bizarre fashion, check your debugging code to see if it is in fact the debugger that is faulty.</p>
+<h2><a name="0.5"></a>Optimizing</h2>
+<p>If your mod runs slowly or causes hitches on some computers, see <a href="code-optimization.html">Code Optimization</a>.</p>
+<h2><a name="0.6"></a>Related Topics</h2>
+<ul><li><a href="log-warnings.html">Log Warnings</a></li>
+<li><a href="a-bugs-life.html">A Bug's Life</a></li>
+<li><a href="spectate-bots.html">Spectate Bots</a></li>
+<li><a href="testing-botplay.html">Testing Botplay</a></li>
+<li><a href="udebugger.html">UDebugger</a></li>
+<li><a href="running-a-dedicated-server.html">Running A Dedicated Server With UCC</a></li>
+<li><a href="testing-lab.html">Testing Lab</a></li>
+</ul>
+<h2><a name="0.7"></a>Discussion</h2>
+<p><em class="em2">Ch3z</em> I actually run a copy of the 436 server only disto from a seperate folder and connect to it with my reg UT installation. That way I know I'm actually connecting via the internet, and with all the hops to get back to my own machine I get plenty of non-simulated lag. I just feel like its a better test. I also make sure none of the files i need to join the server are in my UT dir and it makes me download them all from the server before connecting. Seems more like a valid test to me. I'm wondering if this would be a good idea or not. Not sure if this is where the page should be created from or not but... check out the <a href="testing-lab.html">Testing Lab</a>.</p>
+<p>Shouldn't this page, Debugging Techniques be Category Tutorial?</p>
+<p><em class="em2">Tarquin:</em> Not really.</p>
+<p><em class="em2">Vitaloverdose</em> is none of this relevant to 2004? </p>
+<p><em class="em2">Wormbo:</em> There's a section about <em class="em1">additional</em> techniques in UT2004, and of course they apply to UT2004 as well.</p>
+<p><em class="em2">OlympusMons:</em> Found the clear debug staying lines thing on the udn just thought I would add it here, not sure if its in the right spot.</p>
+<p><em class="em2">Shambler:</em> A class I made to spew debug logs onto the HUD instead of into the log file: <a href="log-interaction.html">Log Interaction</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("UnrealScript Techniques", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Use the Log!", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Using DisplayDebug (UT2003)", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Using the Graph (UT2003)", "#0.1.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>The Debug Line (UT2003)", "#0.1.4");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Staying Debug Line", "#0.1.4.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Using TextToSpeech (UT2004/UT2003?)", "#0.1.5");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Slowing things down", "#0.1.6");
+menuItemAdd("Network Debugging", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Testing in a Client/Server Environment", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>ServerPackages", "#0.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Simulating Lag and Packet Loss", "#0.2.3");
+menuItemAdd("Console Commands", "#0.3");
+menuItemAdd("A Note about Debugging", "#0.4");
+menuItemAdd("Optimizing", "#0.5");
+menuItemAdd("Related Topics", "#0.6");
+menuItemAdd("Discussion", "#0.7");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Debugging_Techniques">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Debugging_Techniques">View other revisions</a><br>Last edited November 6, 2006 10:39 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Debugging_Techniques">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Debugging_Techniques">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I'm a doctor, not a mechanic
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

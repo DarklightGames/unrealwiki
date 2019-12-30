@@ -1,0 +1,188 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Bot</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Bot; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Bot">Bot</a></h1>
+	<div class="wiki"><div class="classpath"><img src="shared//gameicons/icon-ut2003.png"> <a href="unreal-tournament-2003.html">UT2003</a> :: <a href="actor.html">Actor</a> &gt;&gt; <a href="controller.html">Controller</a> &gt;&gt; <a href="aicontroller.html">AIController</a> &gt;&gt; <a href="scriptedcontroller.html">ScriptedController</a> &gt;&gt; Bot<br></div>
+<p>The Bot class contains most of the details of the AI implementation, except for team-related functions which are mostly handled by the <a href="squadai.html">SquadAI</a>. It also has some game-specific code, referencing TransLauncher<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=TransLauncher&referrerid=Bot">?</a> for translocator hopping (that is, using the translocator just to get you somewhere faster), and <a href="balllauncher.html">BallLauncher</a> for self-passing in Bombing Run.</p>
+<h2><a name="0.1"></a>Properties</h2>
+<p>Nearly all Bot properties are hidden. (exception: OrderNames)</p>
+<h3><a name="0.1.1"></a>AI Magic Numbers</h3>
+<dl><dt>AngleConvert = 0.0000958738 (const)</dt><dd>2*PI/65536</dd></dl>
+<h3><a name="0.1.2"></a>AI Flags</h3>
+<dl><dt>bool bCanFire</dt><dd>used by TacticalMove and Charging states</dd><dt>bool bStrafeDir</dt><dt>bool bCanLeadTarget</dt><dd>Lead target with projectile attack.</dd><dt>bool bChangeDir</dt><dd>Tactical move boolean.</dd><dt>bool bFrustrated</dt><dd>Being attacked in certain states causes frustration, and a frustrated bot is more aggressive.</dd><dt>bool bInitLifeMessage</dt><dd>Keeps track of whether the bot has sent messages like "I've got your back" or "I'm in position". Used by squad AIs.</dd><dt>bool bReachedGatherPoint</dt><dd>Used for gathering a squad at an <a href="alternatepath.html">AlternatePath</a>. Used by squad AIs.</dd><dt>bool bFinalStretch</dt><dd>True if the bot is almost at its destination objective (ie a flag base). Set by squad AIs.</dd><dt>bool bJumpy</dt><dd>Likes to jump around if true.</dd><dt>bool bHasTranslocator</dt><dt>bool bHasImpactHammer</dt><dt>bool bTacticalDoubleJump</dt><dd>True when the bot is going to double jump.</dd><dt>bool bWasNearObjective</dt><dd>Used by <tt><a href="gameobjective.html">GameObjective</a>.BotNearObjective</tt>.</dd><dt>bool bPlannedShot</dt><dd>Used for self-passing in Bombing Run.</dd><dt>bool bHasFired</dt><dd>The bot has recently fired its weapon.</dd><dt>bool bForcedDirection</dt><dd>Keeps the bot moving in the same direction for tactical moves.</dd><dt>bool bFireSuccess</dt><dd>Determined by the <a href="weapon.html">Weapon</a>'s <tt>BotFire</tt> method, which indicates if the weapon actually fired.</dd><dt>bool bStoppedFiring</dt><dd>Set to true in the <tt>StopFiring</tt> method.</dd><dt>bool bEnemyIsVisible</dt><dt>bool bTranslocatorHop</dt><dd>Used during a translocator hop maneuver. Also referenced by TransLauncher<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=TransLauncher&referrerid=Bot">?</a>.</dd><dt>bool bEnemyEngaged</dt><dd>Used by <a href="squadai.html">SquadAI</a> when finding defense scripts.</dd><dt>bool bMustCharge</dt><dd>Used in <tt>FightEnemy</tt> to determine if the bot should charge the enemy while attacking.</dd><dt>bool bPursuingFlag</dt><dd>Used by <a href="ctfsquadai.html">CTFSquadAI</a>.</dd><dt>bool bJustLanded</dt><dd>The bot has just recently landed from a fall.</dd><dt>bool bSingleTestSection</dt><dd>Used in ReviewJumpSpots</dd><dt>bool bRecommendFastMove</dt><dd>One of the factors in deciding whether to do a translocator hop in <tt>FaceActor</tt>. May also be set by the squad AI (as in <a href="bombingrunsquadai.html">BombingRunSquadAI</a>).</dd></dl>
+<h3><a name="0.1.3"></a>Translocating</h3>
+<dl><dt>actor TranslocationTarget</dt><dd>The actor at which the bot is shooting its translocator. Used for translocator hopping, and also set by <a href="jumpspot.html">JumpSpot</a>. Not to be confused with the TransBeacon<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=TransBeacon&referrerid=Bot">?</a> property of the same name.</dd><dt>actor RealTranslocationTarget</dt><dd>There doesn't seem to be any instance where this is set differently from TranslocationTarget.</dd><dt>actor ImpactTarget</dt><dd>Used for impact/shield jumping.</dd><dt>float TranslocFreq</dt><dd>Set by TransLancher<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=TransLancher&referrerid=Bot">?</a> to help bots keep from exceeding its charge.</dd><dt>float NextTranslocTime</dt><dd></dd></dl>
+<h3><a name="0.1.4"></a>Messages</h3>
+<dl><dt>name OldMessageType</dt><dd>Type of last message sent. Used in the <tt>SendMessage</tt> function to keep from repeating the same message too much.</dd><dt>int OldMessageID</dt><dd>Last message ID, as with OldMessageType.</dd></dl>
+<h3><a name="0.1.5"></a>Advanced AI Attributes</h3>
+<dl><dt>vector HidingSpot</dt><dd>Used to track down enemies after losing sight of them.</dd><dt>float Aggressiveness</dt><dd>0.0 to 1.0 (typically)</dd><dt>float LastAttractCheck</dt><dd></dd><dt><a href="navigationpoint.html">NavigationPoint</a> BlockedPath</dt><dd></dd><dt>float AcquireTime</dt><dd>time at which current enemy was acquired</dd><dt>float Aggression</dt><dt>float LoseEnemyCheckTime</dt><dd>Used in <tt>LoseEnemy</tt> to keep from calling <tt>Squad.LostEnemy()</tt> too often.</dd><dt>actor StartleActor</dt><dd>The last actor passed to <tt>Startle()</tt></dd><dt>float StartTacticalTime</dt><dd>Set in <tt>TacticalMove.PickDestination</tt></dd></dl>
+<h3><a name="0.1.6"></a>Modifiable AI Attributes</h3>
+<dl><dt>float BaseAlertness</dt><dt>float Accuracy</dt><dd>-1 to 1 (0 is default, higher is more accurate)</dd><dt>float BaseAggressiveness</dt><dd>0 to 1 (0.3 default, higher is more aggressive)</dd><dt>float StrafingAbility</dt><dd>-1 to 1 (higher uses strafing more)</dd><dt>float CombatStyle</dt><dd>-1 to 1 = low means tends to stay off and snipe, high means tends to charge and melee.</dd><dt>float Tactics</dt><dt>float TranslocUse</dt><dd>0 to 1 - higher means more likely to use.</dd><dt>float ReactionTime</dt><dt>class&lt;<a href="weapon.html">Weapon</a>&gt; FavoriteWeapon</dt></dl>
+<h2><a name="0.2"></a>Team AI Attributes</h2>
+<dl><dt>string GoalString</dt><dd>For debugging - used to show what bot is thinking (with 'ShowDebug').</dd><dt>string SoakString</dt><dd>For debugging - shows problem when soaking.</dd><dt><a href="squadai.html">SquadAI</a> Squad</dt><dd>The <a href="squadai.html">SquadAI</a> that the bot is in.</dd><dt><a href="bot.html">Bot</a> NextSquadMember</dt><dd>Linked list of members of this squad</dd><dt>float ReTaskTime</dt><dd>Time when squad will retask bot (delayed to avoid hitches).</dd><dt>int FormationPosition</dt><dd>Determined by the squad's RestingFormation<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=RestingFormation&referrerid=Bot">?</a>.</dd></dl>
+<h3><a name="0.2.1"></a>Scripted Sequences</h3>
+<dl><dt><a href="unrealscriptedsequence.html">UnrealScriptedSequence</a> GoalScript</dt><dd><a href="unrealscriptedsequence.html">UnrealScriptedSequence</a> bot is moving toward (assigned by <a href="teamai.html">TeamAI</a>).</dd><dt><a href="unrealscriptedsequence.html">UnrealScriptedSequence</a> EnemyAcquisitionScript</dt><dd>Determined by <tt>GoalScript</tt>.</dd><dt><a href="vehicle.html">Vehicle</a> FormerVehicle</dt><dd></dd><dt>enum&lt;EScriptFollow&gt; ScriptedCombat</dt><dd>See the <tt>EScriptFollow</tt> enum.</dd></dl>
+<h3><a name="0.2.2"></a>ChooseAttachMode() state</h3>
+<dl><dt>int ChoosingAttackLevel</dt><dd>Used to detect nested calls to <tt>WhatToDoNext</tt>.</dd><dt>float ChooseAttackTime</dt><dd>Used in <tt>WhatToDoNext</tt> to detect when it gets called too often (more than 3 times a second).</dd><dt>int ChooseAttackCounter</dt><dd>How many times <tt>WhatToDoNext</tt> has been called in the current level time second.</dd><dt>float EnemyVisibilityTime</dt><dd>The last time when the enemy became visible.</dd><dt><a href="pawn.html">Pawn</a> VisibleEnemy</dt><dd>Helps determine if the enemy is visible.</dd><dt><a href="pawn.html">Pawn</a> OldEnemy</dt><dd>Marked with "FIXME TEMP".</dd><dt>float StopStartTime</dt><dd>Time that the bot started standing still (sniping, waiting for mover, etc.).</dd><dt>float LastRespawnTime</dt><dd>Used by <a href="ctfsquadai.html">CTFSquadAI</a> in determining whether to pursue an enemy flag carrier.</dd><dt>float FailedHuntTime</dt><dd>The last time that the bot could not find a path to its enemy.</dd><dt><a href="pawn.html">Pawn</a> FailedHuntEnemy</dt><dd>The last enemy to which the bot could not find a path.</dd></dl>
+<h3><a name="0.2.3"></a>Inventory Search</h3>
+<dl><dt>float LastSearchTime</dt><dt>float LastSearchWeight</dt><dt>float CampTime</dt><dt>int LastTaunt</dt><dt>int NumRandomJumps</dt><dd>Attempts to free bot from being stuck.</dd><dt>string ComboNames[4]</dt></dl>
+<h3><a name="0.2.4"></a>Weapon Check</h3>
+<dl><dt>float LastFireAttempt</dt><dt>float GatherTime</dt><dt>name OrderNames[16]</dt><dt>name OldOrders</dt><dt><a href="controller.html">Controller</a> OldOrderGiver</dt></dl>
+<h3><a name="0.2.5"></a>1vs1 Enemy Location Model</h3>
+<dl><dt>vector LastKnownPosition</dt><dt>vector LastKillerPosition</dt></dl>
+<h3><a name="0.2.6"></a>ReviewJumpSpots</h3>
+<dl><dt><a href="navigationpoint.html">NavigationPoint</a> TestStart</dt><dt>int TestPath</dt><dt>name TestLabel</dt></dl>
+<h2><a name="0.3"></a>Enums</h2>
+<h3><a name="0.3.1"></a>EScriptFollow</h3>
+<dl><dt>FOLLOWSCRIPT_IgnoreAllStimuli</dt><dt>FOLLOWSCRIPT_IgnoreEnemies</dt><dt>FOLLOWSCRIPT_StayOnScript</dt><dt>FOLLOWSCRIPT_LeaveScriptForCombat</dt></dl>
+<h2><a name="0.4"></a>Known Subclasses</h2>
+<ul><li><a href="xbot.html">xBot</a><ul><li>InvasionBot<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=InvasionBot&referrerid=Bot">?</a></li>
+</ul>
+</li>
+</ul>
+<h2><a name="0.5"></a>Related Topics</h2>
+<ul><li><a href="bot-support.html">Bot Support</a> &ndash; Main topic for bot support<ul><li><a href="bot-pathing.html">Bot Pathing</a> &ndash; Concepts and elements of a bot path network<ul><li><a href="basic-bot-pathing.html">Basic Bot Pathing</a> &ndash; A tutorial for basic bot pathing</li>
+</ul>
+</li>
+<li><a href="strategic-bots.html">Strategic Bots</a> &ndash; Advanced bot support<ul><li><a href="creating-and-using-scripted.html">Creating And Using ScriptedActions</a></li>
+<li><a href="creating-a-defense-point-in.html">Creating A Defense Point In UT200x</a></li>
+</ul>
+</li>
+<li><a href="bot-mind.html">Bot Mind</a> &ndash; Understanding the bots</li>
+<li><a href="testing-botplay.html">Testing Botplay</a> &ndash; Ensuring reliable bot support</li>
+</ul>
+</li>
+</ul>
+<h2><a name="0.6"></a>Related Classes</h2>
+<ul><li><a href="controller-overview.html">Controller Overview</a></li>
+<li><a href="squadai.html">SquadAI</a></li>
+<li><a href="teamai.html">TeamAI</a></li>
+<li><a href="alternatepath.html">AlternatePath</a></li>
+<li><a href="scriptedsequence.html">ScriptedSequence</a></li>
+<li><a href="unrealscriptedsequence.html">UnrealScriptedSequence</a></li>
+</ul>
+<h2><a name="0.7"></a>Discussion</h2>
+<p><em class="em2">SuperApe:</em> Removed "function description links" to other pages.  Only <a href="bot-weapon-management.html">Bot/Weapon Management</a> was made and it was utterly useless.  Added To Do tag.  Filled in all property variable types.</p>
+<hr class="thin"><p><a href="category-to-do.html">Category To Do</a> &ndash; Add functions definitions.</p>
+<p><a href="category-class-ut2003.html">Category Class (UT2003)</a></p>
+<p><a href="category-class-ut2004.html">Category Class (UT2004)</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Properties", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>AI Magic Numbers", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>AI Flags", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Translocating", "#0.1.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Messages", "#0.1.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Advanced AI Attributes", "#0.1.5");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Modifiable AI Attributes", "#0.1.6");
+menuItemAdd("Team AI Attributes", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Scripted Sequences", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>ChooseAttachMode() state", "#0.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Inventory Search", "#0.2.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Weapon Check", "#0.2.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>1vs1 Enemy Location Model", "#0.2.5");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>ReviewJumpSpots", "#0.2.6");
+menuItemAdd("Enums", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>EScriptFollow", "#0.3.1");
+menuItemAdd("Known Subclasses", "#0.4");
+menuItemAdd("Related Topics", "#0.5");
+menuItemAdd("Related Classes", "#0.6");
+menuItemAdd("Discussion", "#0.7");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Bot">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Bot">View other revisions</a><br>Last edited November 21, 2005 13:37 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Bot">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Bot">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>My program doesn't have bugs. It just develops random features.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

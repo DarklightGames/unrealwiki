@@ -1,0 +1,171 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: VitalOverdose/VecBooster</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=VitalOverdose/VecBooster; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="vitaloverdose.html">VitalOverdose</a>/<a href="http://wiki.beyondunreal.com/wiki?back=VitalOverdose/VecBooster">VecBooster</a></h1>
+	<div class="wiki"><div class="classpath"><img src="shared//gameicons/icon-ut2004.png"> <a href="unreal-tournament-2004.html">UT2004</a> :: <a href="actor.html">Actor</a> &gt;&gt; <a href="trigger.html">Trigger</a> &gt;&gt; VecBooster (Package: custom)<br></div>
+<p>by <a href="vitaloverdose.html">VitalOverdose</a></p>
+<p>Part of  <a href="vitaloverdose-vitals-pro-ma.html">Vital'sPMT</a></p>
+<h3><a name="0.0.1"></a>Overview</h3>
+<p>The VecBooster uses one of the generic properties of the trigger bDirectionalto set the direction that any touching vecs will be boosted.If left at the default setting of false then the vec will be boosted in whatever direction it is traveling at the the time it makes contact with the vec booster. I set to true thec vec will be boosted in whichever direction the Vehicle booster is facing. As the vec booster cant move at all this of course will be the same every time. </p>
+<p>The script works by using the 'KAddImpulse()' function thats built into every vehicle.  KaddImpulse() only delivers force not damage so its quite safe to give the vec a good boost.</p>
+<h3><a name="0.0.2"></a>Note:</h3>
+<p>There are a few things to consider when using a vec booster in a level. The max speed of the Vehicles is set at 2500..and this is for a good reason.anything faster you have a good chance of getting stuck in Any meshes you collide with. Avoid using them in areas with trees or lamppost's and back up the collision on any nearby meshes with blocking volumes to be sure.</p>
+<pre class="uscript"><span class="uscript-comment">//     class vecbooster</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">// kicks ANY vehicle.</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">// By VitalOverdose</span>
+<span class="uscript-comment">// optional vocal's(just remove sound to disable in unrealed)</span>
+<span class="uscript-comment">// booster will boost the vehicle in the direction hes facing</span>
+<span class="uscript-comment">// unless the directional option is set to true</span>
+<span class="uscript-comment">//-----------------------------------------------------------</span>
+
+<span class="uscript-keyword">class</span> vecbooster <span class="uscript-keyword">extends</span> Trigger
+<span class="uscript-keyword">placeable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">Var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> vector                      AppliedBoostForce<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> sound                       VocBoost<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> Touch<span class="uscript-operator">(</span> Actor Other <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> vehicle vec<span class="uscript-operator">;</span>
+ vec <span class="uscript-operator">=</span> vehicle<span class="uscript-operator">(</span> other <span class="uscript-operator">)</span><span class="uscript-operator">;</span>                    <span class="uscript-comment">//typecasts other to vehicle</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>vec <span class="uscript-operator">==</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span> <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>                   <span class="uscript-comment">//use the typcasted variable to check 4 a vec</span>
+ VecBoost<span class="uscript-operator">(</span>Vec<span class="uscript-operator">)</span><span class="uscript-operator">;</span>                             <span class="uscript-comment">//calls vecboost and passes the valid ref</span>
+<span class="uscript-operator">}</span>                                          <span class="uscript-comment">//the vehicle that touched it</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span>  VecBoost<span class="uscript-operator">(</span> vehicle theVec<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> Vector PointOfBoostForce<span class="uscript-operator">;</span>    <span class="uscript-comment">//PointOfBoostForce defaults to(0,0,0) center of the vec                                               //point of boost force</span>
+ <span class="uscript-keyword">local</span> actor  rotrelation<span class="uscript-operator">;</span>
+ 
+ rotrelation <span class="uscript-operator">=</span> thevec<span class="uscript-operator">;</span>             <span class="uscript-comment">// will kick the vec in the diection its facing</span>
+ 
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> VocBoost<span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+      Playsound <span class="uscript-operator">(</span> VocBoost<span class="uscript-operator">)</span> <span class="uscript-operator">;</span>      <span class="uscript-comment">//sound fx</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bDirectional<span class="uscript-operator">)</span>               <span class="uscript-comment">// if bdirectional is true: kick vec in direction this actor</span>
+     rotrelation <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>          <span class="uscript-comment">// ia facing</span>
+
+ theVec<span class="uscript-operator">.</span>KAddImpulse<span class="uscript-operator">(</span> AppliedBoostForce <span class="uscript-operator">&gt;&gt;</span> theVec<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">,</span> PointOfBoostForce <span class="uscript-operator">&gt;&gt;</span> theVec<span class="uscript-operator">.</span>Rotation <span class="uscript-operator">)</span> <span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+     AppliedBoostForce<span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">9000000.000000</span><span class="uscript-operator">)</span>
+     VocBoost<span class="uscript-operator">=</span>Sound<span class="uscript-name">'AnnouncerEvil.Booster'</span>
+     Texture<span class="uscript-operator">=</span>Texture<span class="uscript-name">'XEffectMat.Shock.Shock_ring_a'</span>
+     CollisionRadius<span class="uscript-operator">=</span><span class="uscript-number">150.000000</span>
+     CollisionHeight<span class="uscript-operator">=</span><span class="uscript-number">150.000000</span>
+<span class="uscript-operator">}</span></pre><h4><a name="0.0.2.1"></a>Tested:Works Online.</h4>
+<h2><a name="0.1"></a>Related Topics</h2>
+<p><a href="vitaloverdose-vecbooster.html">VitalOverdose/VecBooster</a></p>
+<p><a href="vitaloverdose-vehicletelepo.html">VitalOverdose/VehicleTeleporter</a></p>
+<p><a href="vitaloverdose-randomrelocat.html">VitalOverdose/RandomRelocator</a></p>
+<pre class="paraverbatim"> </pre><hr class="thin"><pre class="paraverbatim"> </pre><h2><a name="0.2"></a>Discussion</h2>
+<p><a href="category-custom-class.html">Category Custom Class</a> </p>
+<script type="text/javascript"><!--
+ menuItemAdd("Overview", "#0.0.1");
+menuItemAdd("Note:", "#0.0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Tested:Works Online.", "#0.0.2.1");
+menuItemAdd("Related Topics", "#0.1");
+menuItemAdd("Discussion", "#0.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="vitaloverdose.html">VitalOverdose</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=VitalOverdose/VecBooster">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=VitalOverdose/VecBooster">View other revisions</a><br>Last edited June 15, 2006 14:12 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=VitalOverdose/VecBooster">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/VitalOverdose/VecBooster">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Always snap to grid
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

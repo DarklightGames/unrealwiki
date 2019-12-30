@@ -1,0 +1,839 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: SquirrelZero/RealtimeShadows</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=SquirrelZero/RealtimeShadows; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="squirrelzero.html">SquirrelZero</a>/<a href="http://wiki.beyondunreal.com/wiki?back=SquirrelZero/RealtimeShadows">RealtimeShadows</a></h1>
+	<div class="wiki"><p>A completely automatic code based system for creating realtime player and vehicle shadows.  Also completely free for public use, see the disclaimer at the bottom.</p>
+<p><img src="http://www.frag-ops.com/images/shadow1.jpg"></p>
+<p><a href="http://www.frag-ops.com/content/Demos/RealtimeShadows2.avi">[video clip #1 (small)]</a></p>
+<p><a href="http://www.frag-ops.com/content/Demos/Shadows5.avi">[video clip #2 (large)]</a></p>
+<h2><a name="0.1"></a>Features</h2>
+<ul><li>True realtime directional shadows using all standard map lights for sourcing</li>
+<li>Completely compatible with all existing maps and mods, very easy to plug in</li>
+<li>Multiple shadow detail settings, built with performance in mind</li>
+<li>Dynamic Light support, which allows for things like muzzle flash and explosion shadows</li>
+<li>Sunlight actor support as a fallback light</li>
+<li>Shadows will still be rendered (but culled very early) even if the playerpawn owning the shadow is not.  Made primarily so that shadows can be seen before people, a stealth advantage that is key to the mod I code for, <a href="http://www.frag-ops.com">[Frag.Ops]</a>.</li>
+<li>Unlike the UT2004 <a href="shadowprojector.html">ShadowProjector</a> these will project onto dynamic actors like vehicles and other playerpawns</li>
+</ul>
+<h2><a name="0.2"></a>Known Issues</h2>
+<ul><li>This unfortunately will not work under OpenGL implementations of UT2004, like linux and macintosh.  I have heard that <a href="http://www.icculus.org/">[icculus]</a> is working on a possible macintosh fix for this, but i'm not sure.</li>
+<li>Shadows may extend beyond the borders of the shadow projector's frustrum, appearing cut off.  I've attempted to minimize the visibility of this by making highly stretched shadows less dark. (Deprecated.  Fixed as of r1.2)</li>
+</ul>
+<h2><a name="0.3"></a>Todo</h2>
+<ul><li>Blend between projector rotations when encountering a new lightsource.  Will be really nice when combined with the current fade in/out effect.</li>
+<li>Find a better way to check for sunlight visibility when sunlight actor is in a SkyZone.</li>
+</ul>
+<h2><a name="0.4"></a>Revisions</h2>
+<p>v1.2</p>
+<ul><li>Both Effect_ShadowController and Effect_ShadowProjector updated</li>
+<li>Added UpdateFrequency float, lower settings mean faster updates but consume more CPU.  Do not go lower than 0.03.</li>
+<li>Fastest code revision yet</li>
+<li>Improvements on light selection and fading</li>
+<li>Projector pitch limiter added, eliminates shadow breakage</li>
+</ul>
+<p>v1.1</p>
+<ul><li>Updated both Effect_ShadowController and Effect_ShadowProjector with moderate changes</li>
+<li>Wrote in a system to fade between light sources, no more shadow "popping"</li>
+<li>Fixed an accessed none when no sunlight is present</li>
+<li>Improved blending between light sources</li>
+<li>Better, darker shadows</li>
+<li>Sunlit shadows will now be given a static darkness</li>
+<li>Added an extra sunlight check to avoid sunlight creating shadows indoors, however this will not work with sunlight actors placed in skyboxes.  Sunlight will still be used as a fallback light though if no other lights are present, even if in a skybox.  Anyone know how to figure out what zone an actor is in?  Would help with this bit of the system.</li>
+</ul>
+<p>v1.0</p>
+<ul><li>Initial Release</li>
+</ul>
+<h2><a name="0.5"></a>Summary</h2>
+<p>I started playing with realtime directional shadows about 6 months ago and realized it would be very difficult to do what I wanted without projecting onto the playerpawn owning the shadow.  UT2004 then added the bNoProjectOnOwner variable which made me decide to revisit and finish this small side project.  What it does is allow you to specify a number of shadow "slots" to allocate and create shadows for each new light source encountered within a spherical radius, specified by the <b>MaxLightDistance</b> variable.  To do this we spawn a new custom shadow projector for each light in the <b>Lights</b> array, which is filled by assessing the <b>LightPriority</b> of each light found in the radius.  Each shadow projector then works independantly to create a very nice-looking directional shadow, and when combined by setting <b>MaxShadows</b> to 2 or higher, creates some very real and atmospheric shadow webbing.</p>
+<h2><a name="0.6"></a>Requirements</h2>
+<p>You'll need to have access to a method of spawning an actor clientside on all network clients, like copying and modifying the PostBeginPlay() function in xPawn which is already used to spawn player shadows.  Mine looks like this:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> FOPawn <span class="uscript-keyword">extends</span> xPawn<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> Effect_ShadowController RealtimeShadow<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bRealtimeShadows<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">(</span>UnrealPawn<span class="uscript-operator">)</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    AssignInitialPose<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bActorShadows <span class="uscript-operator">&amp;&amp;</span> bPlayerShadows <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">!=</span> NM_DedicatedServer<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-comment">// decide which type of shadow to spawn</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>bRealtimeShadows<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            PlayerShadow <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'ShadowProjector'</span><span class="uscript-operator">,</span><span class="uscript-keyword">Self</span><span class="uscript-operator">,</span><span class="uscript-name">''</span><span class="uscript-operator">,</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            PlayerShadow<span class="uscript-operator">.</span>ShadowActor <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+            PlayerShadow<span class="uscript-operator">.</span>bBlobShadow <span class="uscript-operator">=</span> bBlobShadow<span class="uscript-operator">;</span>
+            PlayerShadow<span class="uscript-operator">.</span>LightDirection <span class="uscript-operator">=</span> Normal<span class="uscript-operator">(</span><span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            PlayerShadow<span class="uscript-operator">.</span>LightDistance <span class="uscript-operator">=</span> <span class="uscript-number">320</span><span class="uscript-operator">;</span>
+            PlayerShadow<span class="uscript-operator">.</span>MaxTraceDistance <span class="uscript-operator">=</span> <span class="uscript-number">350</span><span class="uscript-operator">;</span>
+            PlayerShadow<span class="uscript-operator">.</span>InitShadow<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span>
+        <span class="uscript-operator">{</span>
+            RealtimeShadow <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Effect_ShadowController'</span><span class="uscript-operator">,</span><span class="uscript-keyword">self</span><span class="uscript-operator">,</span><span class="uscript-name">''</span><span class="uscript-operator">,</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            RealtimeShadow<span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+            RealtimeShadow<span class="uscript-operator">.</span>Initialize<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    bCanDoubleJump <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    bRealtimeShadows<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+<span class="uscript-operator">}</span></pre><p>This is only a snippet to explain how my shadow controller is spawned, you must also destroy your shadow controller appropriately when the pawn is destroyed, hide it when in vehicles, etc.  Follow the methods xPawn uses to control its <b>PlayerShadow</b> actor as an example.</p>
+<p><b>Note:</b> when coming out of an idle state (setting bShadowActive=true again) you must run FillLights() once to retrigger the timer loop.  Thanks to Byte from <a href="http://shatteredoasis.jolt.co.uk/">[Shattered Oasis]</a> for pointing this out.</p>
+<h2><a name="0.7"></a>Effect_ShadowController.uc</h2>
+<p>Instead of ticking the shadow projectors individually, we only need to tick this actor and update all shadows at once.  <b>bShadowActive</b> acts a master switch to toggle shadows on/off.  Everything else is otherwise commented in the script itself.</p>
+<pre class="uscript"><span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// © 2004 Matt 'SquirrelZero' Farber</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// This is a master class for controlling all shadows.  This is needed to spawn</span>
+<span class="uscript-comment">// and determine the visibility of all shadows.  It also keeps track of all the</span>
+<span class="uscript-comment">// nearby lights.</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">class</span> Effect_ShadowController <span class="uscript-keyword">extends</span> Actor
+    <span class="uscript-keyword">config</span><span class="uscript-operator">(</span>User<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// the type of shadow projector we're going to use</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Effect_ShadowProjector<span class="uscript-operator">&gt;</span> ShadowClass<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// an array of shadows, the maximum allowed per player can be specified below</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>Effect_ShadowProjector<span class="uscript-operator">&gt;</span> Shadows<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// an array of static lights</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>Light<span class="uscript-operator">&gt;</span> LightList<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// a special variable type, lastlight is used for fading</span>
+<span class="uscript-keyword">struct</span> LightGroup
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">var</span> Actor CurrentLight<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">var</span> Actor LastLight<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// an array of lightgroups, filled when spawned</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>LightGroup<span class="uscript-operator">&gt;</span> Lights<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// the maximum distance a light can be from a player to cast a shadow</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> MaxLightDistance<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// update frequency for filling light array</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> UpdateFrequency<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// the sun</span>
+<span class="uscript-keyword">var</span> SunLight SunLightActor<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// turns on/off all shadows</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bShadowActive<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// maximum allowed shadows per player, configurable</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">globalconfig</span> <span class="uscript-type">int</span> MaxShadows<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// how crisp (detailed) the shadows should be.  The higher, the better</span>
+<span class="uscript-comment">// they look, but the worse they perform.</span>
+<span class="uscript-comment">// Low = 128x128</span>
+<span class="uscript-comment">// Medium = 256</span>
+<span class="uscript-comment">// High = 512</span>
+<span class="uscript-comment">// Maximum = 1024 &lt;- can any modern video technology even run it at maximum?</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">globalconfig</span> <span class="uscript-keyword">enum</span> CrispnessEnum
+<span class="uscript-operator">{</span>
+    Low<span class="uscript-operator">,</span>
+    Medium<span class="uscript-operator">,</span>
+    High<span class="uscript-operator">,</span>
+    Maximum
+<span class="uscript-operator">}</span>ShadowCrispness<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> Initialize<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Light LightActor<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>SunLight<span class="uscript-operator">&gt;</span> SunLights<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// set the sunlight, pick the brightest one if we have multiple</span>
+    <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Light'</span><span class="uscript-operator">,</span>LightActor<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>SunLight<span class="uscript-operator">(</span>LightActor<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            SunLights<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> SunLight<span class="uscript-operator">(</span>LightActor<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            i<span class="uscript-operator">++</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>LightActor<span class="uscript-operator">.</span>LightType <span class="uscript-operator">!=</span> LT_None <span class="uscript-operator">&amp;&amp;</span> LightActor<span class="uscript-operator">.</span>LightBrightness <span class="uscript-operator">&gt;</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span>
+            LightList<span class="uscript-operator">[</span>LightList<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> LightActor<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>SunLights<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>SunLightActor <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">||</span> SunLightActor<span class="uscript-operator">.</span>LightBrightness <span class="uscript-operator">&lt;</span> SunLights<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>LightBrightness<span class="uscript-operator">)</span>
+            SunLightActor <span class="uscript-operator">=</span> SunLights<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">// fill the arrays with placeholders</span>
+    Shadows<span class="uscript-operator">.</span><span class="uscript-keyword">Insert</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>MaxShadows<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Lights<span class="uscript-operator">.</span><span class="uscript-keyword">Insert</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>MaxShadows<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// enable</span>
+    bShadowActive <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// build light array</span>
+    FillLights<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    FillLights<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> FillLights<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">,</span> j<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> actor LightActor<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>Actor<span class="uscript-operator">&gt;</span> OrigLight<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> Diff<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// clear array of lights, leave LastLight alone to fade</span>
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>MaxShadows<span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        OrigLight<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Lights<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight<span class="uscript-operator">;</span>
+        Lights<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">// set the location of the controller, for light detection purposes</span>
+    SetLocation<span class="uscript-operator">(</span>Owner<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// shadow is off</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>bShadowActive<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// build the array of lights, we prioritize by both brightness and distance</span>
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>LightList<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Diff <span class="uscript-operator">=</span> VSize<span class="uscript-operator">(</span>LightList<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Location<span class="uscript-operator">-</span>Owner<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>LightList<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>bStatic <span class="uscript-operator">||</span> LightList<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>bDynamicLight<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> Diff <span class="uscript-operator">&lt;</span> MaxLightDistance <span class="uscript-operator">&amp;&amp;</span> LightList<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>LightRadius <span class="uscript-operator">&gt;=</span> <span class="uscript-operator">(</span>Diff<span class="uscript-operator">*</span><span class="uscript-number">0.041</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> Diff <span class="uscript-operator">&gt;</span> <span class="uscript-operator">(</span>Owner<span class="uscript-operator">.</span>CollisionRadius<span class="uscript-operator">*</span><span class="uscript-number">0.5</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> IsVisible<span class="uscript-operator">(</span>LightList<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-comment">// (0.041 is not perfect)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Lights<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> LightPriority<span class="uscript-operator">(</span>Lights<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight<span class="uscript-operator">.</span>LightBrightness<span class="uscript-operator">,</span>Lights<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight<span class="uscript-operator">.</span>LightRadius<span class="uscript-operator">,</span>VSize<span class="uscript-operator">(</span>Lights<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight<span class="uscript-operator">.</span>Location<span class="uscript-operator">-</span>Owner<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> LightPriority<span class="uscript-operator">(</span>LightList<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>LightBrightness<span class="uscript-operator">,</span>LightList<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>LightRadius<span class="uscript-operator">,</span>Diff<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+                <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+            
+            <span class="uscript-comment">// this puts them in order of priority</span>
+            <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>j<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>j<span class="uscript-operator">&lt;</span>MaxShadows<span class="uscript-operator">;</span>j<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+                Lights<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight <span class="uscript-operator">=</span> Lights<span class="uscript-operator">[</span>j<span class="uscript-number">-1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight<span class="uscript-operator">;</span>
+
+            Lights<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight <span class="uscript-operator">=</span> LightList<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">foreach</span> DynamicActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span>LightActor<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Diff <span class="uscript-operator">=</span> VSize<span class="uscript-operator">(</span>LightActor<span class="uscript-operator">.</span>Location<span class="uscript-operator">-</span>Owner<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-comment">// if we are within the light's radius, and it's shining on at least one part of us, then add it to the array</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Diff <span class="uscript-operator">&lt;</span> MaxLightDistance <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>LightActor<span class="uscript-operator">.</span>bUnlit <span class="uscript-operator">&amp;&amp;</span> LightActor<span class="uscript-operator">.</span>LightType <span class="uscript-operator">!=</span> LT_None <span class="uscript-operator">&amp;&amp;</span> Projectile<span class="uscript-operator">(</span>LightActor<span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> Attachment_Base<span class="uscript-operator">(</span>LightActor<span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> Effect_TacLightGlow<span class="uscript-operator">(</span>LightActor<span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>LightActor<span class="uscript-operator">.</span>bStatic <span class="uscript-operator">||</span> LightActor<span class="uscript-operator">.</span>bDynamicLight<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> LightActor<span class="uscript-operator">.</span>LightEffect <span class="uscript-operator">!=</span> LE_Sunlight <span class="uscript-operator">&amp;&amp;</span> IsVisible<span class="uscript-operator">(</span>LightActor<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> LightActor<span class="uscript-operator">.</span>LightBrightness <span class="uscript-operator">&gt;</span> <span class="uscript-number">1</span> <span class="uscript-operator">&amp;&amp;</span> LightActor<span class="uscript-operator">.</span>LightRadius <span class="uscript-operator">&gt;=</span> <span class="uscript-operator">(</span>Diff<span class="uscript-operator">*</span><span class="uscript-number">0.041</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> Diff <span class="uscript-operator">&gt;</span> <span class="uscript-operator">(</span>Owner<span class="uscript-operator">.</span>CollisionRadius<span class="uscript-operator">*</span><span class="uscript-number">0.5</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-comment">// (0.041 is not perfect)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Lights<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> LightPriority<span class="uscript-operator">(</span>Lights<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight<span class="uscript-operator">.</span>LightBrightness<span class="uscript-operator">,</span>Lights<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight<span class="uscript-operator">.</span>LightRadius<span class="uscript-operator">,</span>VSize<span class="uscript-operator">(</span>Lights<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight<span class="uscript-operator">.</span>Location<span class="uscript-operator">-</span>Owner<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> LightPriority<span class="uscript-operator">(</span>LightActor<span class="uscript-operator">.</span>LightBrightness<span class="uscript-operator">,</span>LightActor<span class="uscript-operator">.</span>LightRadius<span class="uscript-operator">,</span>Diff<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+                <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+
+            <span class="uscript-comment">// this puts them in order of priority</span>
+            <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>MaxShadows<span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+                Lights<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight <span class="uscript-operator">=</span> Lights<span class="uscript-operator">[</span>i<span class="uscript-number">-1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight<span class="uscript-operator">;</span>
+
+            Lights<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight <span class="uscript-operator">=</span> LightActor<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    
+    <span class="uscript-comment">// we'll use the sunlight as the very lowest priority of lights</span>
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>MaxShadows<span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Lights<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> SunlightActor <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>IsVisible<span class="uscript-operator">(</span>SunLightActor<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span> <span class="uscript-operator">||</span> Lights<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            Lights<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight <span class="uscript-operator">=</span> SunLightActor<span class="uscript-operator">;</span>
+            <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+
+    <span class="uscript-comment">// set up last light for fading</span>
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>MaxShadows<span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>      
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>OrigLight<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> Lights<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>OrigLight<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> Lights<span class="uscript-operator">[</span>i<span class="uscript-number">-1</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight <span class="uscript-operator">||</span> OrigLight<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> OrigLight<span class="uscript-operator">[</span>i<span class="uscript-number">-1</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span>
+                    OrigLight<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+            Lights<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>LastLight <span class="uscript-operator">=</span> OrigLight<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">// loop it, loop it good</span>
+    SetTimer<span class="uscript-operator">(</span>UpdateFrequency<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// simple function for determining the priority of a light</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">float</span> LightPriority<span class="uscript-operator">(</span><span class="uscript-type">float</span> Brightness<span class="uscript-operator">,</span> <span class="uscript-type">float</span> Radius<span class="uscript-operator">,</span> <span class="uscript-type">float</span> Distance<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> Priority<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// brightness takes higher priority</span>
+    Priority <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>Brightness<span class="uscript-operator">*</span><span class="uscript-number">10</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span>Distance<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// lights that are very close get higher priority</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Distance <span class="uscript-operator">&lt;</span> <span class="uscript-number">0.1</span> <span class="uscript-operator">*</span> MaxLightDistance<span class="uscript-operator">)</span>
+        Priority <span class="uscript-operator">*=</span> <span class="uscript-number">1.5</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// lights with very small radii shouldn't really cast shadows</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Radius <span class="uscript-operator">&lt;</span> <span class="uscript-number">2.0</span><span class="uscript-operator">)</span>
+        Priority <span class="uscript-operator">*=</span> <span class="uscript-operator">(</span>Radius<span class="uscript-operator">*</span><span class="uscript-number">0.38</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+    <span class="uscript-keyword">return</span> Priority<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> IsVisible<span class="uscript-operator">(</span>vector Loc<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> vector FootLocation<span class="uscript-operator">;</span>
+    
+    <span class="uscript-comment">// get a location near the feet</span>
+    FootLocation <span class="uscript-operator">=</span> Owner<span class="uscript-operator">.</span>Location<span class="uscript-operator">;</span>
+    FootLocation<span class="uscript-operator">.</span>Z <span class="uscript-operator">-=</span> Owner<span class="uscript-operator">.</span>CollisionHeight<span class="uscript-operator">*</span><span class="uscript-number">0.49</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// not very clean, returns true if either the head, feet, or middle torso of the player is visible to Loc</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>FastTrace<span class="uscript-operator">(</span>Loc<span class="uscript-operator">,</span>Owner<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span> <span class="uscript-operator">||</span> FastTrace<span class="uscript-operator">(</span>Loc<span class="uscript-operator">,</span>Owner<span class="uscript-operator">.</span>GetBoneCoords<span class="uscript-operator">(</span><span class="uscript-name">'head'</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Origin<span class="uscript-operator">)</span> <span class="uscript-operator">||</span> FastTrace<span class="uscript-operator">(</span>Loc<span class="uscript-operator">,</span>FootLocation<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> dt<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// fallback</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Owner <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    
+    <span class="uscript-comment">// update all shadows</span>
+    UpdateShadows<span class="uscript-operator">(</span>dt<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> UpdateShadows<span class="uscript-operator">(</span><span class="uscript-type">float</span> dt<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>Lights<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-comment">// disable the shadow attached to this slot if light no longer active, or if manually made inactive</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Lights<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> Lights<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>LastLight <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">!</span>bShadowActive<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Shadows<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+                Shadows<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>DisableShadow<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+        <span class="uscript-comment">// spawn a new shadow if it doesn't already exist</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Shadows<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+            Shadows<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> SpawnShadow<span class="uscript-operator">(</span>rotator<span class="uscript-operator">(</span>Lights<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight<span class="uscript-operator">.</span>Location<span class="uscript-operator">-</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-comment">// update each shadow</span>
+        Shadows<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>UpdateShadow<span class="uscript-operator">(</span>dt<span class="uscript-operator">,</span>i<span class="uscript-operator">,</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Effect_ShadowProjector SpawnShadow<span class="uscript-operator">(</span>rotator LightRotation<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Effect_ShadowProjector NewShadow<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// spawn and initialize a shadow projector</span>
+    NewShadow <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span>ShadowClass<span class="uscript-operator">,</span>Owner<span class="uscript-operator">,</span><span class="uscript-operator">,</span>Location<span class="uscript-operator">,</span>LightRotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    NewShadow<span class="uscript-operator">.</span>Disable<span class="uscript-operator">(</span><span class="uscript-name">'Tick'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    NewShadow<span class="uscript-operator">.</span>InitializeFor<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> NewShadow<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+
+    Disable<span class="uscript-operator">(</span><span class="uscript-name">'Tick'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// destroy all shadows</span>
+    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>MaxShadows<span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Shadows<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+            Shadows<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// internal</span>
+    UpdateFrequency<span class="uscript-operator">=</span><span class="uscript-number">0.1</span>
+    MaxShadows<span class="uscript-operator">=</span><span class="uscript-number">2</span>
+    MaxLightDistance<span class="uscript-operator">=</span><span class="uscript-number">1300.0</span>
+    ShadowCrispness<span class="uscript-operator">=</span>Low
+    ShadowClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'Effect_ShadowProjector'</span>
+
+    <span class="uscript-comment">// settings</span>
+    bNoDelete<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+    bStatic<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+    bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    DrawType<span class="uscript-operator">=</span>DT_None
+    RemoteRole<span class="uscript-operator">=</span>ROLE_None
+    Physics<span class="uscript-operator">=</span>PHYS_None
+<span class="uscript-operator">}</span></pre><h2><a name="0.8"></a>Effect_ShadowProjector.uc</h2>
+<p>The actual shadow projector, much better than the old UT200x shadow projector.</p>
+<pre class="uscript"><span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// © 2004 Matt 'SquirrelZero' Farber</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// Similar to ShadowProjector, just a lot better.  This shadow projector, while</span>
+<span class="uscript-comment">// always in the same relative location to the player model, will dynamically</span>
+<span class="uscript-comment">// adjust its FOV and also feed the ShadowBitmapMaterial new lighting data on</span>
+<span class="uscript-comment">// the fly.  It uses a more exaggerated FOV than the standard UT200x shadows,</span>
+<span class="uscript-comment">// because it looks so much cooler :).  It also uses the ShadowCrispness </span>
+<span class="uscript-comment">// setting of the ShadowController to set a larger ShadowBitmapMaterial size.</span>
+<span class="uscript-comment">// Note that the bigger the shadow material the more data is being passed to</span>
+<span class="uscript-comment">// video each frame, so performance will worsen exponentially as you go higher.</span>
+<span class="uscript-comment">// I had to do a lot of little tweaks and hack some settings in to get the</span>
+<span class="uscript-comment">// projector to do what i wanted, and not cut off at strange angles.</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">class</span> Effect_ShadowProjector <span class="uscript-keyword">extends</span> Projector<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> vector LightDirection<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> LightDistance<span class="uscript-operator">,</span> InterpolationRate<span class="uscript-operator">,</span> MaxFOV<span class="uscript-operator">,</span> FadeSpeed<span class="uscript-operator">,</span> DarknessScale<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> ShadowBitmapMaterial ShadowTexture<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bFadeIn<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">(</span>Actor<span class="uscript-operator">)</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// these don't need to tick, we update all shadows at the same time in the controller</span>
+<span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> dt<span class="uscript-operator">)</span> <span class="uscript-operator">{</span><span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// this turns the shadow off</span>
+<span class="uscript-keyword">function</span> DisableShadow<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// detach</span>
+    DetachProjector<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// stop shadow texture from being reuploaded to video here  </span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ShadowTexture <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        ShadowTexture<span class="uscript-operator">.</span>Dirty <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+        ShadowTexture<span class="uscript-operator">.</span>ShadowActor <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// initialize</span>
+<span class="uscript-keyword">function</span> InitializeFor<span class="uscript-operator">(</span>Effect_ShadowController ShadowController<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ShadowController<span class="uscript-operator">.</span>Owner <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-comment">// set the Owner</span>
+        SetOwner<span class="uscript-operator">(</span>ShadowController<span class="uscript-operator">.</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        
+        <span class="uscript-comment">// allocate the shadow texture</span>
+        <span class="uscript-keyword">switch</span> <span class="uscript-operator">(</span>ShadowController<span class="uscript-operator">.</span>ShadowCrispness<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">case</span> Medium:
+                ShadowTexture <span class="uscript-operator">=</span> ShadowBitmapMaterial<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>AllocateObject<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Effect_ShadowBitmapMaterialMedium'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+        
+            <span class="uscript-keyword">case</span> High:
+                ShadowTexture <span class="uscript-operator">=</span> ShadowBitmapMaterial<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>AllocateObject<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Effect_ShadowBitmapMaterialHigh'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+            
+            <span class="uscript-keyword">case</span> Maximum:
+                ShadowTexture <span class="uscript-operator">=</span> ShadowBitmapMaterial<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>AllocateObject<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Effect_ShadowBitmapMaterialMax'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+            
+            <span class="uscript-keyword">Default</span>:
+                ShadowTexture <span class="uscript-operator">=</span> ShadowBitmapMaterial<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>AllocateObject<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Effect_ShadowBitmapMaterialLow'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-operator">}</span>
+
+        <span class="uscript-comment">// set projector texture</span>
+        ProjTexture <span class="uscript-operator">=</span> ShadowTexture<span class="uscript-operator">;</span>
+        
+        <span class="uscript-comment">// initialize the shadow texture</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ShadowTexture <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            ShadowTexture<span class="uscript-operator">.</span>Invalid <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+            ShadowTexture<span class="uscript-operator">.</span>ShadowActor <span class="uscript-operator">=</span> Owner<span class="uscript-operator">;</span>
+            ShadowTexture<span class="uscript-operator">.</span>bBlobShadow <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+            ShadowTexture<span class="uscript-operator">.</span>CullDistance <span class="uscript-operator">=</span> CullDistance<span class="uscript-operator">;</span> 
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span>
+        <span class="uscript-operator">{</span>
+            log<span class="uscript-operator">(</span><span class="uscript-type">Name</span><span class="uscript-operator">$</span><span class="uscript-string">".InitializeFor: No shadow texture!  Escaping..."</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+        log<span class="uscript-operator">(</span><span class="uscript-type">Name</span><span class="uscript-operator">$</span><span class="uscript-string">".InitializeFor: No Owner!"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// updates this shadow's location, rotation, and FOV</span>
+<span class="uscript-keyword">function</span> UpdateShadow<span class="uscript-operator">(</span><span class="uscript-type">float</span> dt<span class="uscript-operator">,</span> <span class="uscript-type">int</span> LN<span class="uscript-operator">,</span> Effect_ShadowController ShadowController<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Plane BoundingSphere<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Actor ShadowLight<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> vector Diff<span class="uscript-operator">,</span> ShadowLocation<span class="uscript-operator">,</span> Origin<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> rotator LightRotation<span class="uscript-operator">,</span> AdjustedRotation<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> Interpolation<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> bFadeOut<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// detach projector</span>
+    DetachProjector<span class="uscript-operator">(</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// fallback, don't draw if hidden or no shadow texture</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Owner <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">||</span> Owner<span class="uscript-operator">.</span>bHidden <span class="uscript-operator">||</span> ShadowTexture <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// fallback and destroy</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ShadowTexture<span class="uscript-operator">.</span>Invalid<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">// cull more if we haven't rendered this pawn in 5 seconds</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">-</span> Owner<span class="uscript-operator">.</span>LastRenderTime <span class="uscript-operator">&gt;</span> <span class="uscript-number">5</span><span class="uscript-operator">)</span>
+        CullDistance <span class="uscript-operator">=</span> <span class="uscript-number">0.5</span><span class="uscript-operator">*</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>CullDistance<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        CullDistance <span class="uscript-operator">=</span> <span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>CullDistance<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// cull shadows much earlier if below min framerate, important</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>bDropDetail<span class="uscript-operator">)</span>
+        ShadowTexture<span class="uscript-operator">.</span>CullDistance <span class="uscript-operator">=</span> <span class="uscript-number">0.6</span><span class="uscript-operator">*</span>CullDistance<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        ShadowTexture<span class="uscript-operator">.</span>CullDistance <span class="uscript-operator">=</span> CullDistance<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// in case shadow was disabled earlier</span>
+    ShadowTexture<span class="uscript-operator">.</span>ShadowActor <span class="uscript-operator">=</span> Owner<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// set light</span>
+    ShadowLight <span class="uscript-operator">=</span> ShadowController<span class="uscript-operator">.</span>Lights<span class="uscript-operator">[</span>LN<span class="uscript-operator">]</span><span class="uscript-operator">.</span>CurrentLight<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// fade out if necessary</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ShadowController<span class="uscript-operator">.</span>Lights<span class="uscript-operator">[</span>LN<span class="uscript-operator">]</span><span class="uscript-operator">.</span>LastLight <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ShadowTexture<span class="uscript-operator">.</span>ShadowDarkness <span class="uscript-operator">&gt;</span> <span class="uscript-number">5</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            ShadowLight <span class="uscript-operator">=</span> ShadowController<span class="uscript-operator">.</span>Lights<span class="uscript-operator">[</span>LN<span class="uscript-operator">]</span><span class="uscript-operator">.</span>LastLight<span class="uscript-operator">;</span>
+            bFadeOut <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span>
+        <span class="uscript-operator">{</span>
+            ShadowController<span class="uscript-operator">.</span>Lights<span class="uscript-operator">[</span>LN<span class="uscript-operator">]</span><span class="uscript-operator">.</span>LastLight <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+            bFadeOut <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+            bFadeIn <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+            DarknessScale <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">// fallback if no more lights after fadeout</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ShadowLight <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// get the direction of the light</span>
+    Diff <span class="uscript-operator">=</span> ShadowLight<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> Owner<span class="uscript-operator">.</span>Location<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// set light distance</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ShadowLight<span class="uscript-operator">.</span>LightEffect <span class="uscript-operator">==</span> LE_Sunlight<span class="uscript-operator">)</span>
+        LightDistance <span class="uscript-operator">=</span> ShadowController<span class="uscript-operator">.</span>MaxLightDistance<span class="uscript-operator">*</span><span class="uscript-number">0.3</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        LightDistance <span class="uscript-operator">=</span> FClamp<span class="uscript-operator">(</span>VSize<span class="uscript-operator">(</span>Diff<span class="uscript-operator">)</span><span class="uscript-operator">,</span> ShadowController<span class="uscript-operator">.</span>MaxLightDistance<span class="uscript-operator">*</span><span class="uscript-number">0.1</span><span class="uscript-operator">,</span> ShadowController<span class="uscript-operator">.</span>MaxLightDistance<span class="uscript-operator">*</span><span class="uscript-number">0.3</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+    <span class="uscript-comment">// get a location along the path of the light slightly away from center of player</span>
+    ShadowLocation <span class="uscript-operator">=</span> Owner<span class="uscript-operator">.</span>Location <span class="uscript-operator">+</span> <span class="uscript-number">4</span><span class="uscript-operator">*</span>Normal<span class="uscript-operator">(</span>Diff<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ShadowLocation<span class="uscript-operator">.</span>Z <span class="uscript-operator">&lt;</span> Owner<span class="uscript-operator">.</span>Location<span class="uscript-operator">.</span>Z<span class="uscript-operator">)</span>
+        ShadowLocation<span class="uscript-operator">.</span>Z <span class="uscript-operator">=</span> Owner<span class="uscript-operator">.</span>Location<span class="uscript-operator">.</span>Z<span class="uscript-number">+4</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// set location</span>
+    SetLocation<span class="uscript-operator">(</span>ShadowLocation <span class="uscript-operator">+</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-operator">-</span><span class="uscript-number">8</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// determine correct rotation, interpolate</span>
+    Origin <span class="uscript-operator">=</span> ShadowLocation <span class="uscript-operator">+</span> ShadowTexture<span class="uscript-operator">.</span>LightDirection <span class="uscript-operator">*</span> ShadowTexture<span class="uscript-operator">.</span>LightDistance<span class="uscript-operator">;</span>
+    Interpolation <span class="uscript-operator">=</span> FMin<span class="uscript-operator">(</span><span class="uscript-number">1.0</span><span class="uscript-operator">,</span> <span class="uscript-operator">(</span>dt<span class="uscript-operator">*</span>InterpolationRate<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Origin <span class="uscript-operator">+=</span> <span class="uscript-operator">(</span>ShadowLight<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> Origin<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> Interpolation<span class="uscript-operator">;</span>  
+    Diff <span class="uscript-operator">=</span> ShadowLocation <span class="uscript-operator">-</span> Origin<span class="uscript-operator">;</span>
+    LightRotation <span class="uscript-operator">=</span> rotator<span class="uscript-operator">(</span>Diff<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// calculate FOV</span>
+    BoundingSphere <span class="uscript-operator">=</span> Owner<span class="uscript-operator">.</span>GetRenderBoundingSphere<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    FOV <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>Atan<span class="uscript-operator">(</span>BoundingSphere<span class="uscript-operator">.</span>W<span class="uscript-operator">*</span><span class="uscript-number">2</span> <span class="uscript-operator">+</span> <span class="uscript-number">160</span><span class="uscript-operator">,</span> LightDistance<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-number">180</span><span class="uscript-operator">/</span>PI<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// set rotation, compensate for FOV warping -- kinda hackish, but fixes shadows that </span>
+    <span class="uscript-comment">// bend so much they detach from the pawn</span>
+    AdjustedRotation <span class="uscript-operator">=</span> rotator<span class="uscript-operator">(</span>Owner<span class="uscript-operator">.</span>Location<span class="uscript-operator">-</span>ShadowLight<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    AdjustedRotation<span class="uscript-operator">.</span>Pitch <span class="uscript-operator">=</span> Clamp<span class="uscript-operator">(</span>AdjustedRotation<span class="uscript-operator">.</span>Pitch<span class="uscript-operator">,</span> <span class="uscript-operator">-</span><span class="uscript-number">20500</span><span class="uscript-operator">,</span> <span class="uscript-operator">-</span><span class="uscript-number">9500</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    SetRotation<span class="uscript-operator">(</span>AdjustedRotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// determine correct direction of light</span>
+    LightDirection <span class="uscript-operator">=</span> <span class="uscript-operator">-</span>vector<span class="uscript-operator">(</span>AdjustedRotation<span class="uscript-operator">)</span><span class="uscript-operator">*</span>LightDistance<span class="uscript-operator">;</span>
+    
+    <span class="uscript-comment">// set light direction</span>
+    ShadowTexture<span class="uscript-operator">.</span>LightDirection <span class="uscript-operator">=</span> Normal<span class="uscript-operator">(</span>LightDirection<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// set lightdistance</span>
+    ShadowTexture<span class="uscript-operator">.</span>LightDistance <span class="uscript-operator">=</span> LightDistance<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// update shadow texture FOV</span>
+    ShadowTexture<span class="uscript-operator">.</span>LightFOV <span class="uscript-operator">=</span> FOV<span class="uscript-operator">;</span>
+    
+    <span class="uscript-comment">// set the drawscale, exaggerate a bit</span>
+    SetDrawScale<span class="uscript-operator">(</span><span class="uscript-operator">(</span>LightDistance<span class="uscript-operator">*</span><span class="uscript-number">0.82</span><span class="uscript-operator">)</span> <span class="uscript-operator">*</span> tan<span class="uscript-operator">(</span><span class="uscript-number">0.5</span><span class="uscript-operator">*</span>FOV<span class="uscript-operator">*</span>PI<span class="uscript-operator">/</span><span class="uscript-number">180</span><span class="uscript-operator">)</span> <span class="uscript-operator">/</span> <span class="uscript-operator">(</span><span class="uscript-number">0.45</span><span class="uscript-operator">*</span>ShadowTexture<span class="uscript-operator">.</span>USize<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// fade out gracefully</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bFadeOut<span class="uscript-operator">)</span>
+        ShadowTexture<span class="uscript-operator">.</span>ShadowDarkness <span class="uscript-operator">=</span> Max<span class="uscript-operator">(</span>ShadowTexture<span class="uscript-operator">.</span>ShadowDarkness <span class="uscript-operator">-</span> <span class="uscript-operator">(</span>FadeSpeed<span class="uscript-operator">*</span>dt<span class="uscript-operator">)</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+    <span class="uscript-operator">{</span>
+        ShadowTexture<span class="uscript-operator">.</span>ShadowDarkness <span class="uscript-operator">=</span> <span class="uscript-number">140</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span><span class="uscript-number">1.0</span><span class="uscript-operator">-</span><span class="uscript-operator">(</span>FClamp<span class="uscript-operator">(</span>VSize<span class="uscript-operator">(</span>ShadowLight<span class="uscript-operator">.</span>Location<span class="uscript-operator">-</span>Owner<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">/</span>ShadowController<span class="uscript-operator">.</span>MaxLightDistance<span class="uscript-operator">,</span> <span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-number">1.0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-number">70</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bFadeIn <span class="uscript-operator">&amp;&amp;</span> DarknessScale <span class="uscript-operator">&lt;</span> <span class="uscript-number">1.0</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            DarknessScale <span class="uscript-operator">=</span> FMin<span class="uscript-operator">(</span>DarknessScale <span class="uscript-operator">+</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>FadeSpeed<span class="uscript-operator">*</span><span class="uscript-number">0.007</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>dt<span class="uscript-operator">)</span><span class="uscript-operator">,</span> <span class="uscript-number">1.0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            ShadowTexture<span class="uscript-operator">.</span>ShadowDarkness <span class="uscript-operator">=</span> <span class="uscript-type">float</span><span class="uscript-operator">(</span>ShadowTexture<span class="uscript-operator">.</span>ShadowDarkness<span class="uscript-operator">)</span><span class="uscript-operator">*</span>DarknessScale<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span>
+            bFadeIn <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">// dirty texture for reuploading to video</span>
+    ShadowTexture<span class="uscript-operator">.</span>Dirty <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// reattach projector</span>
+    AttachProjector<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// free shadow texture from the object pool</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ShadowTexture <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        ShadowTexture<span class="uscript-operator">.</span>ShadowActor <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+        
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>ShadowTexture<span class="uscript-operator">.</span>Invalid<span class="uscript-operator">)</span>
+            Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>FreeObject<span class="uscript-operator">(</span>ShadowTexture<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-comment">// must set to none</span>
+        ShadowTexture <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+        ProjTexture <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">// this lets us have shadows that cast onto other players</span>
+    bProjectActor<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    <span class="uscript-comment">// ... made possible by this, so it doesn't project onto the pawn owning it</span>
+    bNoProjectOnOwner<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    <span class="uscript-comment">// how quickly we should interpolate</span>
+    InterpolationRate<span class="uscript-operator">=</span><span class="uscript-number">2.5</span>
+    <span class="uscript-comment">// this should be dynamically updated also</span>
+    MaxTraceDistance<span class="uscript-operator">=</span><span class="uscript-number">165</span>
+    <span class="uscript-comment">// maximum FOV</span>
+    MaxFOV<span class="uscript-operator">=</span><span class="uscript-number">80.0</span>
+    <span class="uscript-comment">// how quickly to fade in/out</span>
+    FadeSpeed<span class="uscript-operator">=</span><span class="uscript-number">500.0</span>
+
+    bProjectOnParallelBSP<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    bProjectOnAlpha<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+    bClipBSP<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    bGradient<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+    bStatic<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+    bOwnerNoSee<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    bDynamicAttach<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    RemoteRole<span class="uscript-operator">=</span>ROLE_None
+    CullDistance<span class="uscript-operator">=</span><span class="uscript-number">1200.0</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.9"></a>ShadowBitmapMaterial Detail Levels</h2>
+<p>Multiple detail levels; higher for crisper, more detailed shadows, lower for performance.</p>
+<pre class="uscript"><span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// © 2004 Matt 'SquirrelZero' Farber</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">class</span> Effect_ShadowBitmapMaterialLow <span class="uscript-keyword">extends</span> ShadowBitmapMaterial<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    USize<span class="uscript-operator">=</span><span class="uscript-number">128</span>
+    VSize<span class="uscript-operator">=</span><span class="uscript-number">128</span>
+    UClamp<span class="uscript-operator">=</span><span class="uscript-number">128</span>
+    VClamp<span class="uscript-operator">=</span><span class="uscript-number">128</span>
+    UClampMode<span class="uscript-operator">=</span>TC_Clamp
+    VClampMode<span class="uscript-operator">=</span>TC_Clamp
+<span class="uscript-operator">}</span></pre><pre class="uscript"><span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// © 2004 Matt 'SquirrelZero' Farber</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">class</span> Effect_ShadowBitmapMaterialMedium <span class="uscript-keyword">extends</span> Effect_ShadowBitmapMaterialLow<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    USize<span class="uscript-operator">=</span><span class="uscript-number">256</span>
+    VSize<span class="uscript-operator">=</span><span class="uscript-number">256</span>
+
+<span class="uscript-operator">}</span></pre><pre class="uscript"><span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// © 2004 Matt 'SquirrelZero' Farber</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">class</span> Effect_ShadowBitmapMaterialHigh <span class="uscript-keyword">extends</span> Effect_ShadowBitmapMaterialLow<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    USize<span class="uscript-operator">=</span><span class="uscript-number">512</span>
+    VSize<span class="uscript-operator">=</span><span class="uscript-number">512</span>
+<span class="uscript-operator">}</span></pre><pre class="uscript"><span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// © 2004 Matt 'SquirrelZero' Farber</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">class</span> Effect_ShadowBitmapMaterialMax <span class="uscript-keyword">extends</span> Effect_ShadowBitmapMaterialLow<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    USize<span class="uscript-operator">=</span><span class="uscript-number">1024</span>
+    VSize<span class="uscript-operator">=</span><span class="uscript-number">1024</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.10"></a>Notes</h2>
+<p>That's all there is to it thankfully, once spawned the controller and projectors really take care of the rest.  Many people will most likely be satisfied with the default settings, although feel free to tweak and explore.  Just make sure you post any positive results, improvements are always welcome!</p>
+<h2><a name="0.11"></a>Disclaimer</h2>
+<p>This code is free for any kind of use including commercial and non-commercial applications, just let me know what it's being used for, only because I'm always interested in new applications or fresh ideas.</p>
+<h2><a name="0.12"></a>Files</h2>
+<p><a href="http://games.DiscoverThat.co.uk">[Demonstration Mutator]</a> - A UT2004 mutator written by JCBDigger to demonstrate the realtime shadow system.  It is based on the rev1.1 code with a few minor changes to get it to work multiplayer.  It is located under the header 'UT2004 Work In Progress', and please note that this is for demonstration purposes only!</p>
+<h3><a name="0.12.1"></a>Comments</h3>
+<p><em class="em2">SquirrelZero:</em> Any changes or improvements to my code is welcome.</p>
+<p><em class="em2">Foxpaw:</em> There is already the <a href="sourced-player-shadows.html">Sourced Player Shadows</a> page.. maybe the two should be merged or something.</p>
+<p><em class="em2">SquirrelZero:</em> That page is way too disorganized for me, and i don't have time to organize it.  It's a different method anyway.  All pages i add from this one on will be linked from the <a href="squirrelzero.html">SquirrelZero</a> page.</p>
+<p><em class="em2">SquirrelZero:</em> The code has been updated to revision 1.1, key new feature is fading between shadows.</p>
+<p><em class="em2">Foxpaw:</em> I noticed you were looking for a way to determine what zone an actor is in. A reference to the zone an actor is in is available as Region.Zone.</p>
+<p><em class="em2">SquirrelZero:</em> Oh, good find.  I'll have to update the sunlight stuff again in a bit.</p>
+<p><em class="em2">SquirrelZero:</em> Ooookay, this page was edited 10 times yesterday and the only visible change i can see is that my preview image is now missing.  Please do not remove or change anything without documenting your changes.</p>
+<p><em class="em2">JCBDigger:</em> I've used v1.1 of this code to create a demonstration mutator.  You can download it from my web site: <a href="http://games.DiscoverThat.co.uk">http://games.DiscoverThat.co.uk</a>  in the 'UT2004 Work In Progress' section.</p>
+<p><em class="em2">SquirrelZero:</em> Nice stuff, but it does look like it might not work in multiplayer.  Still a great way to preview it though <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">JCBDigger:</em> Multiplayer is proving more tricky than expected, I thought I would have it done by now, but no!</p>
+<p><em class="em2">JCBDigger:</em> Finally it works multiplayer.</p>
+<p><em class="em2">dataangel</em>: I've been experimenting jcb's mutator that implements squirrel's shadow code and after some fiddling I've come up with some possible optimizations. I'm not an unrealscript expert like Squirrel Zero, so this code is probably buggy . I've attached my optimized version of his mutator below. All of my tests were singleplayer on the NORMAL UT2K4  deathmatch map albatross. If you try this mutator with FragOps I have no idea how it will mix with the existing shadow system. If you must try with Fragops, you'll probably want to turn its shadow option to None, then restart the game, and only try in botmatch (but that's just a guess). This is meant as a proof of concept  for shadow optimizations to be included with future versions of FragOps.</p>
+<p>1. Option to set MaxShadows per player. Defaulting to 1 so we only see shadow for the highest priority light. Right now (again, at least in the mutator) MaxShadows is set to 2. Half as many shadows gives in my tests what seems to be less than half the performance hit. Yet a shadow was still visible most of the time &ndash; so the tactical advantage would be mostly preserved. The advantage compared to normal ut2k4 shadows comes in in that Squirrel's shadows can be longer and wider mostly I think, not that there are more of them.</p>
+<p>2. Separate detail levels for friendly and enemy shadows, defaulting to normal shadows for friendlies and the lowest level of fancy shadow for enemies. Friendly shadows are of little use tactically. Inparticular, this would help with the laginess associated with the beginning of rounds when all of your team members are standing bunched together around you. Note that the option in the mutator to disable friendly shadows doesn't disable them entirely, it just makes friendlies have normal ut2k4 shadows.</p>
+<p>3. Toggle for whether or not ragdolls have shadows. Currently (at least in jcb's mutator) they do. Bodies usually fly through the air from grenades and the like; times when fps is already dropping, no need to shoot a dead horse Wink</p>
+<p>4. As far as I can tell it's unnecessary for UpdateShadows() to run every tick. I altered this so now it runs every .03 seconds, right after FillLights(). In game the shadows seemed to act the same but I got better performance (spectating two bots w/ max detail settings was actually somewhat playable speed). I'm not sure how SquirrelZero came to the .03 number, it maybe possible to go higher, I suspect he just tweaked it.</p>
+<p>5. Toggle to make it only show a player's shadow when you don't have line of sight to them. Shadows are supposed to help tactically by letting you see that your opponent is about to come around the corner. This option makes it so that once they do come out from behind the corner, their shadow disappears. This way you only see it when it's useful, and once you get in the open firefight it stops sucking frames. I didn't do enough testing though &ndash; my mutator may not actually be implementing this properly, can someone confirm for me? In any case I bet Squirrel Zero can code it into FO if he likes the idea Wink</p>
+<p>These optimizations/options together I think will enable lower end players to see shadows just when they're gameplay relevant, and thus letting alot more people take advantage of them.</p>
+<p>If you want the source just export it.</p>
+<p>Post here how well this works for you. Hope somebody benefits <img alt="=)" src="emoticons/smile.gif" align="middle"></p>
+<p>Download:</p>
+<p><a href="http://battledome.wc3campaigns.com/k0d3/DAsShadows/DAsShadows.zip">[30]</a></p>
+<p>P.S. The mutators defaults should be the most optimized. If you want to see how the mutator was before, set MaxShadows to 2, uncheck the line of sight option, check ragdoll shadows, uncheck the only render enemy shadows option. Although to truly turn it back you'll also need to change the code to get rid of #4.</p>
+<p><em class="em2">Bigcheese</em>:I have been using your code for the hackerz (www.hackerz.tk) mod and i got it to work on people. but then i tryed to use it on a new karma actor that i baced off of the exion karma. it just adds online play and some other interesting things, but i want to use dynamic showdows for it but i just dont know how to spawn them like you do in pawn???</p>
+<p><em class="em2">Daemonica:</em> You wanted to know who's using your code, it's so tasty the Undying Curse <a href="http://undying.sanffo.co.uk">http://undying.sanffo.co.uk</a> team are using it. Nice work SquirrelZero!</p>
+<p><em class="em2">SquirrelZero:</em> Glad to see this is getting so much use <img alt=":)" src="emoticons/smile.gif" align="middle">.  I've improved it further to use a rotation limiter, which effectively fixes the breakage on shadows that bend too much.  It probably runs a bit better, too.  I'll post this 3rd revision sometime soon, and maybe take some new videos of it in action.</p>
+<p><em class="em2">DJPaul:</em> <a href="esc.html">Esc</a> is playing about with producing a UT2004 version, and we are implementing this as I type.</p>
+<p><em class="em2">DJPaul:</em> SquirrelZero/everyone, is this meant to work from first person view?  I specifically mean are you mmeant to see YOUR shadow from the first-person view of YOUR pawn?  I can only see the shadows (of my pawn) when I switch to third person.</p>
+<p><em class="em2">SquirrelZero:</em> If the pawn is invisible, the shadow will be too.  Try doing bOwnerNoSee=false on both the projector and the pawn.  Just keep in mind that the native animation code for pawns will prevent them from playing movement animations in first person, so you get upper body anims but no lower.  Some clever hacking can resolve it, though.  By the way, i've added a new code revision.  It's highly recommended everyone update their mods to use the new revision; it's faster and more accurate.</p>
+<p><em class="em2">Blue Ion:</em> Could you (or anyone, of course) make a mutator out of your code like JCBDigger's? You know for those of us that just want to download, download and download and don't know a thing about UnrealScript <img alt=";)" src="emoticons/wink.gif" align="middle">. The effect is impressive and plays even better with just one shadow, too bad that sometimes the shadows turns into evil black squares.</p>
+<p><em class="em2">EricBlade:</em> I just found this page, and i have a couple questions, if anyone can help me out..  First, does this work at all reasonably well in 2k3 (since it doesn't have bNoProjectOnOwner)?  Second, how might it perform with say 30 pawns on screen potentially using it?</p>
+<p>... well ,I eventually answered myself.  I forgot about this page for several months, until I decided to do my own work in this area, and someone on #unrealscript pointed me to here.  One thing that I've found is by setting the Projector's location to well above the Pawn's head, instead of slightly below the Pawn.Location, you get a better look, and it doesn't draw so much on itself (i don't have bProjectOnOwner or whatever) ..  now to find ways to improve it's CPU usage.  BTW, Sunlight is referenced by Zone, not by world. ... Further examination seems to indicate that the section commented "determine correct rotation, interpolate" doesn't actually achieve anything, as none of those variables seem to be used for any purpose.  </p>
+<p>Here's some code to simulate bNoProjectOnOwner=True for those that don't have it:</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> Touch<span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Other <span class="uscript-operator">==</span> Owner<span class="uscript-operator">)</span> <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>Touch<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><script type="text/javascript"><!--
+ menuItemAdd("Features", "#0.1");
+menuItemAdd("Known Issues", "#0.2");
+menuItemAdd("Todo", "#0.3");
+menuItemAdd("Revisions", "#0.4");
+menuItemAdd("Summary", "#0.5");
+menuItemAdd("Requirements", "#0.6");
+menuItemAdd("Effect_ShadowController.uc", "#0.7");
+menuItemAdd("Effect_ShadowProjector.uc", "#0.8");
+menuItemAdd("ShadowBitmapMaterial Detail Levels", "#0.9");
+menuItemAdd("Notes", "#0.10");
+menuItemAdd("Disclaimer", "#0.11");
+menuItemAdd("Files", "#0.12");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Comments", "#0.12.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="squirrelzero.html">SquirrelZero</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=SquirrelZero/RealtimeShadows">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=SquirrelZero/RealtimeShadows">View other revisions</a><br>Last edited December 10, 2006 18:44 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=SquirrelZero/RealtimeShadows">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/SquirrelZero/RealtimeShadows">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Worst-case scenario: the UEd Goblin wipes the map and burns down your house.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

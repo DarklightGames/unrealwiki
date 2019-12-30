@@ -1,0 +1,175 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: VitalOverdose/SFX SelfScaling</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=VitalOverdose/SFX_SelfScaling; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="vitaloverdose.html">VitalOverdose</a>/<a href="http://wiki.beyondunreal.com/wiki?back=VitalOverdose/SFX+SelfScaling">SFX SelfScaling</a></h1>
+	<div class="wiki"><div class="classpath"><img src="shared//gameicons/icon-ut2004.png"> <a href="unreal-tournament-2004.html">UT2004</a> :: <a href="actor.html">Actor</a> &gt;&gt; <a href="emitter.html">Emitter</a> &gt;&gt;SFX_SelfScaling(Package: custom)<br></div>
+<pre class="paraverbatim"> </pre><p>by <a href="vitaloverdose.html">VitalOverdose</a></p>
+<p>Part of  <a href="vitaloverdose-vitals-pro-ma.html">Vital'sPMT</a></p>
+<h3><a name="0.0.1"></a>Overview</h3>
+<p>This custom emitter class that will alter its particle size depending on the <em class="em2">drawscale</em> of its Owner.Whatever spawns the Emtter has to Set it's Owner to whatever it wants the emiter to base is scale on. This is great for explosion fx on things like exploding deco in a level. The mapper is able to rescale the deco without having to worry about having to make a special emitter just to fit the new size of the mesh.</p>
+<p>Also the velocity of the particles is alterd to match the owners size.</p>
+<p>This works with MeshEmitters as well as Sprite emitters.</p>
+<h3><a name="0.0.2"></a>Method</h3>
+<p>-The Drawscale is gained in function postbeginplay() from the emitters owner.</p>
+<p>-A ForLoop is used to cycle through the <a href="particleemitter.html">Emitters</a> belonging to this emitter actor and use the looking for mesh emitters and sprite emitters. When found the StartSizeRange for that emitters is multiplied by the <em class="em2">drawscale</em> gained in Function PostBeginPlay()which results in scaled particles.</p>
+<p>Note:For sprite emitter only the X value has to be altered as sprites are scaled uniformly from a single value.</p>
+<p>Here is the completed script;-</p>
+<pre class="uscript"><span class="uscript-comment">//==================================================</span>
+<span class="uscript-comment">// SelfScalingFx - Emitter Fx that changes the Size of the startSize.</span>
+<span class="uscript-comment">// range and velocity of the emitted particles based on the drawscale of its 'base'.</span>
+<span class="uscript-comment">// Full class list http://wiki.beyondunreal.com/wiki/Vital's_Pro_Mapping_Tools.</span>
+<span class="uscript-comment">// Direct Download the Mod in zipped format Http://promappingtools.zapto.org .</span>
+<span class="uscript-comment">//==================================================</span>
+
+<span class="uscript-keyword">class</span> SelfScaling_Fx <span class="uscript-keyword">Extends</span> VitalFx
+<span class="uscript-keyword">placeable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ ProcessScale<span class="uscript-operator">(</span>owner<span class="uscript-operator">.</span>Drawscale<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>postbeginplay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">function</span> ProcessScale<span class="uscript-operator">(</span><span class="uscript-type">Float</span> NewScale<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">Local</span> <span class="uscript-type">int</span> I<span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> I<span class="uscript-operator">=</span><span class="uscript-number">0</span> <span class="uscript-operator">;</span> I <span class="uscript-operator">&lt;</span>Emitters<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> I<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>
+     <span class="uscript-operator">{</span>
+      Emitters<span class="uscript-operator">[</span>I<span class="uscript-operator">]</span><span class="uscript-operator">.</span>StartVelocityRange<span class="uscript-operator">.</span>X<span class="uscript-operator">.</span>Min <span class="uscript-operator">*=</span> NewScale<span class="uscript-operator">;</span>       <span class="uscript-comment">// Change X Velocity</span>
+      Emitters<span class="uscript-operator">[</span>I<span class="uscript-operator">]</span><span class="uscript-operator">.</span>StartVelocityRange<span class="uscript-operator">.</span>x<span class="uscript-operator">.</span>Max <span class="uscript-operator">*=</span> NewScale<span class="uscript-operator">;</span>       <span class="uscript-comment">// Change X Velocity</span>
+      Emitters<span class="uscript-operator">[</span>I<span class="uscript-operator">]</span><span class="uscript-operator">.</span>StartVelocityRange<span class="uscript-operator">.</span>y<span class="uscript-operator">.</span>Min <span class="uscript-operator">*=</span> NewScale<span class="uscript-operator">;</span>       <span class="uscript-comment">// Change y Velocity</span>
+      Emitters<span class="uscript-operator">[</span>I<span class="uscript-operator">]</span><span class="uscript-operator">.</span>StartVelocityRange<span class="uscript-operator">.</span>y<span class="uscript-operator">.</span>Max <span class="uscript-operator">*=</span> NewScale<span class="uscript-operator">;</span>       <span class="uscript-comment">// Change y Velocity</span>
+      Emitters<span class="uscript-operator">[</span>I<span class="uscript-operator">]</span><span class="uscript-operator">.</span>StartVelocityRange<span class="uscript-operator">.</span>z<span class="uscript-operator">.</span>Min <span class="uscript-operator">*=</span> NewScale<span class="uscript-operator">;</span>       <span class="uscript-comment">// Change z Velocity</span>
+      Emitters<span class="uscript-operator">[</span>I<span class="uscript-operator">]</span><span class="uscript-operator">.</span>StartVelocityRange<span class="uscript-operator">.</span>z<span class="uscript-operator">.</span>Max <span class="uscript-operator">*=</span> NewScale<span class="uscript-operator">;</span>       <span class="uscript-comment">// Change z Velocity</span>
+      Emitters<span class="uscript-operator">[</span>I<span class="uscript-operator">]</span><span class="uscript-operator">.</span>StartSizeRange<span class="uscript-operator">.</span>X<span class="uscript-operator">.</span>Min     <span class="uscript-operator">*=</span> NewScale<span class="uscript-operator">;</span>       <span class="uscript-comment">// Change X Scale</span>
+      Emitters<span class="uscript-operator">[</span>I<span class="uscript-operator">]</span><span class="uscript-operator">.</span>StartSizeRange<span class="uscript-operator">.</span>X<span class="uscript-operator">.</span>Max     <span class="uscript-operator">*=</span> NewScale<span class="uscript-operator">;</span>       <span class="uscript-comment">// Change X Scale</span>
+     
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Emitters<span class="uscript-operator">[</span>I<span class="uscript-operator">]</span><span class="uscript-operator">.</span><span class="uscript-keyword">Class</span> <span class="uscript-operator">==</span> <span class="uscript-keyword">Class</span><span class="uscript-name">'meshEmitter'</span><span class="uscript-operator">)</span>
+         <span class="uscript-operator">{</span>
+          Emitters<span class="uscript-operator">[</span>I<span class="uscript-operator">]</span><span class="uscript-operator">.</span>StartSizeRange<span class="uscript-operator">.</span>y<span class="uscript-operator">.</span>Min <span class="uscript-operator">*=</span> NewScale<span class="uscript-operator">;</span>        <span class="uscript-comment">// Change Y</span>
+          Emitters<span class="uscript-operator">[</span>I<span class="uscript-operator">]</span><span class="uscript-operator">.</span>StartSizeRange<span class="uscript-operator">.</span>y<span class="uscript-operator">.</span>Max <span class="uscript-operator">*=</span> NewScale<span class="uscript-operator">;</span>        <span class="uscript-comment">// Change Y</span>
+          Emitters<span class="uscript-operator">[</span>I<span class="uscript-operator">]</span><span class="uscript-operator">.</span>StartSizeRange<span class="uscript-operator">.</span>z<span class="uscript-operator">.</span>Min <span class="uscript-operator">*=</span> NewScale<span class="uscript-operator">;</span>        <span class="uscript-comment">// Change Z</span>
+          Emitters<span class="uscript-operator">[</span>I<span class="uscript-operator">]</span><span class="uscript-operator">.</span>StartSizeRange<span class="uscript-operator">.</span>z<span class="uscript-operator">.</span>Max <span class="uscript-operator">*=</span> NewScale<span class="uscript-operator">;</span>        <span class="uscript-comment">// Change Z</span>
+         <span class="uscript-operator">}</span>
+     <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><pre class="paraverbatim"> </pre><h2><a name="0.1"></a>Related Topics </h2>
+<ul><li><a href="vitaloverdose-sfx-painful.html">VitalOverdose/SFX Painful</a></li>
+<li><a href="vitaloverdose-sfx-vectelepo.html">VitalOverdose/SFX VecTeleporting</a></li>
+<li><a href="vitaloverdose-sfx-pawntelep.html">VitalOverdose/SFX PawnTeleporting</a></li>
+<li><a href="vitaloverdose-sfx-triggerin.html">VitalOverdose/SFX Triggering</a></li>
+<li><a href="vitaloverdose-sfx-boosting.html">VitalOverdose/SFX Boosting</a></li>
+<li>SFX_MonsterSpawning<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=SFX_MonsterSpawning&referrerid=VitalOverdose/SFX_SelfScaling">?</a></li>
+<li>SFX_Healing<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=SFX_Healing&referrerid=VitalOverdose/SFX_SelfScaling">?</a></li>
+<li><a href="vitaloverdose-inventoryflar.html">VitalOverdose/InventoryFlare</a></li>
+</ul>
+<pre class="paraverbatim">  </pre><h3><a name="0.1.1"></a>Discussion</h3>
+<p><em class="em2">EricBlade:</em> This is a great little add-on.  I have used a code similar to this, along with some custom mods to the default Fire classes, to create a fire that slowly spreads out and consumes everything it can reach that's consumable. <img alt=":)" src="emoticons/smile.gif" align="middle"> </p>
+<p><em class="em2">VitalOverdose</em> Thats great. I did set out to make Spreadable fire one time but i couldnt decide on how to make it look right and the conditions of how to make it spread. Id be intrested to see how you did it.</p>
+<p><em class="em2">EricBlade:</em> Well, i'm currently using Land of the Dead's default fire emitter, so it's not exactly the greatest looking.. basically what i've got is any object that is burnable will have an IgnitionTime, and if there's a fire that burns it for it's IgnitionTime seconds, then the fire will spawn a new fire.  If an object is on fire for it's IgnitionTime, it will increase the scale of the existing fire, if it's not spreading somewhere.  It's not bad, unless you put a fire next to an object that you accidently set with an IgnitionTime, but didn't set a Health on, so it burns forever .. increasing in size <img alt=":D" src="emoticons/biggrin.gif" align="middle">  Now, I'm revisiting this class to see if I can figure out a way to rescale a breaking glass emitter, so I can have glass shattering that fits the size of the window ..  *wonder if it's possible to get an objects X and Y dimensions*</p>
+<p><em class="em2">VitalOverdose</em> Im not sure. If not you could try making a SheetofGlass actor that hides itself  and spawns an emitter on contact (rather like an exploding barrel), the mapper could set the x and y dimentions for the glass when he assigns an emitter class to the glass in unrealed. Have a look at Dynamic_Emitter_Control<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Dynamic_Emitter_Control&referrerid=VitalOverdose/SFX_SelfScaling">?</a> for some handy Emitter scaling functions.You can do the automatic rescaling of the particles using the functions MeasureTileU() together with function PartScale().  </p>
+<p><a href="category-custom-class.html">Category Custom Class</a> </p>
+<script type="text/javascript"><!--
+ menuItemAdd("Overview", "#0.0.1");
+menuItemAdd("Method", "#0.0.2");
+menuItemAdd("Related Topics ", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Discussion", "#0.1.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="vitaloverdose.html">VitalOverdose</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=VitalOverdose/SFX_SelfScaling">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=VitalOverdose/SFX_SelfScaling">View other revisions</a><br>Last edited June 15, 2006 14:37 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=VitalOverdose/SFX_SelfScaling">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/VitalOverdose/SFX_SelfScaling">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Gah - a solution with more questions. (EntropicLqd)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

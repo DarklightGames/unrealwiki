@@ -1,0 +1,143 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: First Person Shooter AI Architecture</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=First_Person_Shooter_AI_Architecture; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=First Person Shooter AI Architecture">First Person Shooter AI Architecture</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Preliminary Description and Basic Concepts</h2>
+<h3><a name="0.1.1"></a>Introduction</h3>
+<p>The information in this article is adapted from a chapter in the recently published book, <em class="em2">"AI Game Programming Wisdom"</em>, published 2002. It was written by Paul Tozour, and entitled, "First-Person Shooter AI Archtecture". The author prefaces the article with this statement: </p>
+<p>This article describes a generic AI architecture for the typical first-person shooter ("FPS") game such as any of the titles associated with the <em class="em1">Quake</em>, <em class="em1">Unreal</em>, or <em class="em1">Half-Life</em> engines.</p>
+<h3><a name="0.1.2"></a>Overview:</h3>
+<p><a href="artificial-intelligence.html">Artificial Intelligence</a> (AI) in First Person Shooter (FPS) game architectures tends be organized and controlled as seperate, individual agents, rather than coordinated teams that are synchronized to the same strategy playbook. The FPS Artificial Intelligence architecture is organized into a hierarchy with four major integrated components: <em class="em2">Behavior</em>, <em class="em2">Movement</em>, <em class="em2">Animation</em>, and <em class="em2">Combat</em>. </p>
+<h2><a name="0.2"></a>Principal Game AI Components:</h2>
+<p>The <em class="em2">movement</em> component is tasked with determining how the character should move in the game world. The movement AI is what makes the character avoid obstacles, follow navigation system nodes, and find paths through the complex environments to reach its destination. The movement subsystem never determines where to move, only how to do so. It simply receives commands from other components telling it where to move, and it is responsible for making sure the character moves to that point in an appropriate manner.</p>
+<p>The <em class="em2">animation</em> component is responsible for controlling the game bot’s skeletal articulation and display appearance during gameplay. Its major role is selecting, parameterizing, and playing character animation sequences. It is also responsible for generating animations that cannot be played from pre-assembled animation sequences. Since we can’t tell in advance in what direction a character will face in a given scene, we need a method of integrated control over the real-time animation to ensure that the character behaves correctly.</p>
+<pre class="paraverbatim"> </pre><p>The <em class="em2">combat</em> component is assigned the role of assessing the character’s current tactical situation, selecting tactics in combat, aiming and firing at opponents, deciding when to pick up a new weapon, and so on. Since combat is the core gameplay dynamic in most FPS games, the performance of this subsystem will be crucial to the player’s perception of the AI.</p>
+<p>The <em class="em2">behavior</em> component is the integrating framework that determines the character’s current goal, orders, state, and immediate destination, and communicates with the other subsystems to coordinate physical motion towards a determined staging area. It is the highest-level AI subsystem and sits on top of all the other subsystems.</p>
+<h2><a name="0.3"></a>Pathfinding and the Bot Navigation System:</h2>
+<p>Fundamental to the movement AI system is the pathfinding component. This system is responsible for finding a Bot path from any coordinate location in the level to any other. Given a starting point, a state designation, and a goal or destination, it will find a series of waypoints that comprise an optimal path to some intermediate destination. It is possible that it will report that no path can be found, or will generate an apparent error in its repertoire of simulated human motion. The game AI pathfinder in <em class="em1">Unreal Tournament</em> uses a pre-computed data structure for guiding movement. This is a complex algorithm-controlled assemblage of linked lists, <a href="navigationpoint.html">NavigationPoint</a>s, and Binary Space Partitioning (<a href="bsp-tree.html">BSP</a>) collision data. The FPS game world is relatively static, so it makes sense to pre-generate a database that is highly optimized for performing fast pathfinding in a particular section of the game world. At runtime, the pathfinding database is initialized and parameterized. The performance of this directed navigation system search is highly correlated with how appropriately the pathfinding database is optimized. </p>
+<h2><a name="0.4"></a>Realistic Interaction with Moving Objects and the Physics System:</h2>
+<p>The obvious weakness with the global pathfinding system is that it does not correctly interact with dynamic obstacles. Practical solutions to the problem of efficient in-game agent avoidance of moving obstacles are built on communication between the physics system and the local pathfinding system. Since dynamic obstacles can be moved at any time, the AI needs to continually query the physics system for the presence of dynamic obstacles in any area it intends to move through. This designated the local pathfinding system, and is an essential quality of any object capable of three dimensional movement in the level.</p>
+<p>A local pathfinder does not replace a global pathfinder; the two are integrated and each subsystem is optimized for a different part of the problem. The local pathfinding system is built on top of the global pathfinder. When an AI needs to move from point A to point B, its movement AI first queries the global pathfinding system, and if it’s successful, the global pathfinder will return an ordered list of points that constitute a path from A to B. The AI can then use the global path as a guideline, and use the local pathfinding system to find a path to each successive waypoint in that global path, avoiding any obstacles that it might happen to interact with along the way.</p>
+<p>Fundamentally, a local pathfinder needs to be based on a search algorithm which constrains possible initial directions to the immediate area near the origin of the search. This technique will ensure that the optimal path is found if such a path exists. A good way to do this is to perform sampling (for example, querying the physics system for the presence of obstacles) using a fixed size grid oriented toward the destination point. However, keep in mind that sampling can be computationally expensive if it’s performed too often, so it’s very important to take steps to minimize the amount of sampling that the system needs to perform in any given local search.</p>
+<h2><a name="0.5"></a>The Agent Movement Control Component:</h2>
+<p>The movement AI acts as the client of all the other parts of the AI; that is, it is a subsystem that performs arbitrary tasks assigned to it by higher-level components. Those tasks are issued in the form of discrete movement commands, such as, “move to point (X,Y,Z)”, “move to object B”, “turn to face point (X,Y,Z)”, or “stop moving”.</p>
+<p>The movement AI will be executing exactly one of those movement commands at any given moment. We describe the movement component as the object that “owns” the current movement command.</p>
+<p>Once we have done this, we can design the appropriate algorithms to execute the movement commands into the individual movement command objects themselves. A command such as, “move to (X,Y,Z)”, for example, will be responsible for using the global and local pathfinding systems to find and execute a path to (X,Y,Z), and making the appropriate engine calls to ensure that the character moves along the specified path. If no path is available, or when the AI entity reaches the end of its path, the movement command reports back to the movement controller so that it can be garbage-collected.</p>
+<p>This technique is also useful for handling different types of movement. Different types of movement commands can handle tasks such as walking, running, swimming, and dying, with appropriate parameters to determine the AI agent’s acceleration, movement range, turn rate, animations, and other movement characteristics. </p>
+<h2><a name="0.6"></a>The Combat Control Component:</h2>
+<p>When an AI initiates combat, control for the majority of its behaviors is transferred to a combat control component. The combat controller is responsible for all combat-related tasks, such as selecting an opponent, selecting a weapon, maneuvering, firing, and searching for additional weapons and ammo.</p>
+<p>The most difficult part of the combat problem is determining how to intelligently assess the current situation, and select and execute an appropriate tactic in response.</p>
+<p>The challenge comes from the extraordinary difficulty of getting an AI entity to understand the significance of the spatial configuration of any given area. Any human can glance at his current surroundings and immediately form an assessment of the space.</p>
+<hr class="thin"><p>Go on to the next part: <a href="fps-ai-architecture-continu.html">FPS AI Architecture, Continued</a></p>
+<h2><a name="0.7"></a>Related Topics</h2>
+<ul><li><a href="artificial-intelligence.html">Artificial Intelligence</a> &ndash; Super Topic for all AI (bots, Monsters, NPCs, etc)</li>
+<li><a href="introduction-to-game-ai.html">Introduction to Game AI</a></li>
+</ul>
+<script type="text/javascript"><!--
+ menuItemAdd("Preliminary Description and Basic Concepts", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Introduction", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Overview:", "#0.1.2");
+menuItemAdd("Principal Game AI Components:", "#0.2");
+menuItemAdd("Pathfinding and the Bot Navigation System:", "#0.3");
+menuItemAdd("Realistic Interaction with Moving Objects and the Physics System:", "#0.4");
+menuItemAdd("The Agent Movement Control Component:", "#0.5");
+menuItemAdd("The Combat Control Component:", "#0.6");
+menuItemAdd("Related Topics", "#0.7");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=First_Person_Shooter_AI_Architecture">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=First_Person_Shooter_AI_Architecture">View other revisions</a><br>Last edited October 11, 2006 9:28 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=First_Person_Shooter_AI_Architecture">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/First_Person_Shooter_AI_Architecture">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I love the smell of UnrealEd crashing in the morning. (tarquin)</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

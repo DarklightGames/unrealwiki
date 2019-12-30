@@ -1,0 +1,242 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Using Binary Trees And Linked Lists To Represent Group Hierarchy</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Using_Binary_Trees_And_Linked_Lists_To_Represent_Group_Hierarchy; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Using Binary Trees And Linked Lists To Represent Group Hierarchy">Using Binary Trees And Linked Lists To Represent Group Hierarchy</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Disclaimer</h2>
+<p><em class="em2">Note:</em> This page represents an idea for a proposed way of coding some particular functionality/behavior in UnrealScript.  It does not represent the way that <a href="unreal-tournament.html">UT</a>/<a href="unreal-tournament-2003.html">UT2003</a>/<a href="unreal-tournament-2004.html">UT2004</a> actually do things in the normal game engine.</p>
+<h2><a name="0.2"></a>Introduction</h2>
+<p>I was thinking of way to construct classes that could behave with other classes in a group fasion.  I came across the idea of using the C++ ideas of binary trees and linked lists to get the job done.  It may be put to good use in forming a hierarchy among classes.  It allows us to form "groups" of classes with parents,children, heads, and tails, which can later be used to construct "group" behaviour.  Now, linked lists and binary trees can be used, but I feel it depends on the complexity of ones groups.  For those of you who don't know of linked lists or binary trees, below is an overview of the linked list and the binary tree idea.</p>
+<h4><a name="0.2.0.1"></a>Linked Lists</h4>
+<p>A linked list is basically a list of chunks of data linked together.  Each "chunk" of data is known as a node.  Each node contains some data and some form of "linking" itself to another node.  In C++, usually each node has some data, and a pointer to another node.  This form is knows as a singly-linked list.  Some linked lists have nodes with pointers to the the next node, and the previous node in the list.  These types of lists are known as doubly-linked lists.  Each list has a head, and a tail.  The head being the first node in the list, and the tail being the last node in the lists.  Linked lists are an effective way of storing complex datatypes in an array-like structure.</p>
+<p>Generally, a linked list is used when an array-type structure is needed but the final size of the array is not known, or, elements within the array are often moved, added, and removed.  Linked lists are generally un-ordered although elements can be efficiently sorted into position as they are added to the list.</p>
+<h4><a name="0.2.0.2"></a>Binary Trees</h4>
+<p>Binary trees are ways of storing data in hierarchial structure composed of nodes (elements of the structure that have children) and leaves (elements of the structure that have no children).  A binary tree has a parent node, and two child nodes.</p>
+<p>Large trees can be constructed by having contain more <em class="em1">node</em> elements than <em class="em1">leaf</em> elements &ndash; imagine having several layers of nodes with child nodes.  This provides a good foundation for searching and finding positional status (if the nodes and leaves are ordered).</p>
+<h2><a name="0.3"></a>Unreal Examples</h2>
+<h4><a name="0.3.0.1"></a>The Linked List Example</h4>
+<p>Say I wanted to create a group of skaarj that had a hierarchy with a leader and a general. I would need two classes, List, and ListNode.  List could contain a ListNode head, a ListNode tail, and a name listName.  ListNode could contain an instance of a scripted pawn called _skaarj, lowerSkaarj, and higherSkaarj.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> List <span class="uscript-keyword">extends</span> ScriptedPawn<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//global variables</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> ListNode head<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> ListNode tail<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">string</span>   listName<span class="uscript-operator">;</span></pre><p>The head could be the leader of the pack, and the tail could be the last person in the pack, it is irrelevant, but for this example, that will be true.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> ListNode <span class="uscript-keyword">extends</span> List<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//global variables</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> Skaarj _skaarj<span class="uscript-operator">;</span>  <span class="uscript-comment">//the data</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> Skaarj lowerSkaarj<span class="uscript-operator">;</span> <span class="uscript-comment">//the previous monster</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> Skaarj higherSkaarj<span class="uscript-operator">;</span> <span class="uscript-comment">//the next monster</span></pre><p>This node forms a doubly linked list.  We will have to modify the skaarj class a little to include a list if in a group.  So lets do that:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> Skaarj <span class="uscript-keyword">extends</span> ScriptedPawn<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//added variable</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> List group<span class="uscript-operator">;</span></pre><p>Now we could form a hierarchy by creating a List of Skaarj.  Say I created a map and in it I have six skaarj: Larry, George, Matt, Jack, Tarquin, and Mychaeel.  All six skaarj have a group since we just added it above.  I will now create a list.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> SkaarjGroup <span class="uscript-keyword">extends</span> List<span class="uscript-operator">;</span>
+
+listName <span class="uscript-operator">=</span> <span class="uscript-string">"SkaarjGroup1"</span><span class="uscript-operator">;</span> </pre><p>Now that the list is created we can add the six skaarj to it.</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> ListNode LN_Larry<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> ListNode LN_George<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> ListNode LN_Jack<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> ListNode LN_Tarquin<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> ListNode LN_Mychaeel<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> ListNode LN_Matt<span class="uscript-operator">;</span>
+
+Larry<span class="uscript-operator">.</span>group <span class="uscript-operator">=</span> SkaarjGroup<span class="uscript-operator">;</span>
+George<span class="uscript-operator">.</span>group <span class="uscript-operator">=</span> SkaarjGroup<span class="uscript-operator">;</span>
+Jack<span class="uscript-operator">.</span>group <span class="uscript-operator">=</span> SkaarjGroup<span class="uscript-operator">;</span>
+Tarquin<span class="uscript-operator">.</span>group <span class="uscript-operator">=</span> SkaarjGroup<span class="uscript-operator">;</span>
+Mychaeel<span class="uscript-operator">.</span>group <span class="uscript-operator">=</span> SkaarjGroup<span class="uscript-operator">;</span>
+Matt<span class="uscript-operator">.</span>group <span class="uscript-operator">=</span> SkaarjGroup<span class="uscript-operator">;</span>
+
+LN_Larry<span class="uscript-operator">.</span>_skaarj <span class="uscript-operator">=</span> Larry<span class="uscript-operator">;</span>
+LN_George<span class="uscript-operator">.</span>_skaarj<span class="uscript-operator">=</span> George<span class="uscript-operator">;</span>
+LN_Jack<span class="uscript-operator">.</span>_skaarj <span class="uscript-operator">=</span> Jack<span class="uscript-operator">;</span>
+LN_Tarquin<span class="uscript-operator">.</span>_skaarj <span class="uscript-operator">=</span> Tarquin<span class="uscript-operator">;</span>
+LN_Mychaeel<span class="uscript-operator">.</span>_skaarj <span class="uscript-operator">=</span> Mychaeel<span class="uscript-operator">;</span>
+LN_Matt<span class="uscript-operator">.</span>_skaarj <span class="uscript-operator">=</span> Matt<span class="uscript-operator">;</span>
+
+SkaarjGroup<span class="uscript-operator">.</span>head <span class="uscript-operator">=</span> LN_Larry<span class="uscript-operator">;</span>
+SkaarjGroup<span class="uscript-operator">.</span>tail <span class="uscript-operator">=</span> LN_Matt<span class="uscript-operator">;</span>
+
+LN_Larry<span class="uscript-operator">.</span>lowerSkaarj <span class="uscript-operator">=</span> LN_George<span class="uscript-operator">;</span>
+LN_Larry<span class="uscript-operator">.</span>higherSkaarj <span class="uscript-operator">=</span> NULL<span class="uscript-operator">;</span>
+
+LN_George<span class="uscript-operator">.</span>higherSkaarj <span class="uscript-operator">=</span> LN_Larry<span class="uscript-operator">;</span>
+LN_George<span class="uscript-operator">.</span>lowerSkaarj <span class="uscript-operator">=</span> LN_Jack<span class="uscript-operator">;</span>
+
+LN_Jack<span class="uscript-operator">.</span>higherSkaarj <span class="uscript-operator">=</span> LN_George<span class="uscript-operator">;</span>
+LN_Jack<span class="uscript-operator">.</span>lowerSkaarj <span class="uscript-operator">=</span> LN_Tarquin<span class="uscript-operator">;</span>
+
+LN_Tarquin<span class="uscript-operator">.</span>higherSkaarj <span class="uscript-operator">=</span> LN_Jack<span class="uscript-operator">;</span>
+LN_Tarquin<span class="uscript-operator">.</span>lowerSkaarj <span class="uscript-operator">=</span> LN_Mychaeel<span class="uscript-operator">;</span>
+
+LN_Mychaeel<span class="uscript-operator">.</span>higherSkaarj <span class="uscript-operator">=</span> LN_Tarquin<span class="uscript-operator">;</span>
+LN_Mychaeel<span class="uscript-operator">.</span>lowerSkaarj <span class="uscript-operator">=</span> LN_Matt<span class="uscript-operator">;</span>
+
+LN_Matt<span class="uscript-operator">.</span>higherSkaarj <span class="uscript-operator">=</span> LN_Mychaeel<span class="uscript-operator">;</span>
+LN_Matt<span class="uscript-operator">.</span>lowerSkaarj <span class="uscript-operator">=</span> NULL<span class="uscript-operator">;</span></pre><p>Fairly pseudo assuming all this would be done in the map editor by the mapper, but that is what would be happening in code.</p>
+<p>As you can see this sets up a hierarchy with Larry at the top, Matt at the bottom, and George, Jack, Tarquin, and Mychaeel down the list.  With this you can setup different responsibilities and behaviour:</p>
+<pre class="uscript"><span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-keyword">self</span> <span class="uscript-operator">=</span> SkaarjGroup<span class="uscript-operator">.</span>head<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+
+<span class="uscript-comment">//do stuff</span>
+
+<span class="uscript-operator">}</span></pre><h4><a name="0.3.0.2"></a>The Binary Tree Example</h4>
+<p>Using the same group in the Linked List example, lets set it up using a binary tree structure.  Lets first start out by creating a BinaryTree class:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> BinaryTree <span class="uscript-keyword">extends</span> ScriptedPawn<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Tree<span class="uscript-operator">)</span> Skaarj parent<span class="uscript-operator">;</span>    <span class="uscript-comment">// the parent</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Tree<span class="uscript-operator">)</span> Skaarj childOne<span class="uscript-operator">;</span>  <span class="uscript-comment">// the first child</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Tree<span class="uscript-operator">)</span> Skaarj childTwo<span class="uscript-operator">;</span>  <span class="uscript-comment">// the second child</span>
+
+
+<span class="uscript-operator">}</span></pre><p>Each instance of Binary tree will have parent skaarj, a 1st child skaarj, and a 2nd child skaarj.</p>
+<p>Now, as if we were in the editor again, and had the six skaarj, we could set this up as so:</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> BinaryTree Piece1<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> BinaryTree Piece2<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> BinaryTree Piece3<span class="uscript-operator">;</span>
+
+Piece1<span class="uscript-operator">.</span>parent <span class="uscript-operator">=</span> Larry<span class="uscript-operator">;</span>
+Piece1<span class="uscript-operator">.</span>childOne <span class="uscript-operator">=</span> George<span class="uscript-operator">;</span>
+Piece1<span class="uscript-operator">.</span>childTwo <span class="uscript-operator">=</span> Jack<span class="uscript-operator">;</span>
+
+Piece2<span class="uscript-operator">.</span>parent <span class="uscript-operator">=</span> Jack<span class="uscript-operator">;</span>
+Piece2<span class="uscript-operator">.</span>childOne <span class="uscript-operator">=</span> Tarquin<span class="uscript-operator">;</span>
+Piece2<span class="uscript-operator">.</span>childTwo <span class="uscript-operator">=</span> Mychaeel<span class="uscript-operator">;</span>
+
+Piece3<span class="uscript-operator">.</span>parent <span class="uscript-operator">=</span> Mychaeel<span class="uscript-operator">;</span>
+Piece3<span class="uscript-operator">.</span>childOne <span class="uscript-operator">=</span> Matt<span class="uscript-operator">;</span>
+Piece3<span class="uscript-operator">.</span>childTwo <span class="uscript-operator">=</span> NULL<span class="uscript-operator">;</span></pre><p>Of course there are ways to get around the Piece idea, it's just much eaisier to understand when it's set up like this.  We create 3 binary trees and construct a hierarchy from it.</p>
+<h2><a name="0.4"></a>Conclusion</h2>
+<p>Try it. It will only further your experiece.</p>
+<p><a href="c0ry.html">C0ry</a></p>
+<p>Questions?</p>
+<p>email me. </p>
+<p><a href="mailto:fusion815@cox.net">fusion815@cox.net</a></p>
+<h2><a name="0.5"></a>Some thoughts</h2>
+<p>I didn't want to break your lovely example above with some unweildy hackings and slashings so I thought I'd comment here.</p>
+<p>As far as I can tell you are attempting to construct a structre that will allow groups of objects (in this case enemies) to be handled with some sort of priority (superiority) order.  Also, that the numbers of objects within these groups can change, or are not known.  What is shown below is merely a suggested class definition.  The benefit of abstracting the data elements from the actual list element (ListElement) class is that the code can then be re-used every other time you need similar functionality.</p>
+<pre class="uscript"><span class="uscript-comment">// I don't know if you can actually subclass from object - but this class needs to be as light as you can make it.</span>
+<span class="uscript-keyword">class</span> ListElement <span class="uscript-keyword">extends</span> Object<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> ListElement parent<span class="uscript-operator">;</span> <span class="uscript-comment">// A pointer to the parent element of this object -- null if there isn't one.</span>
+<span class="uscript-keyword">var</span> ListElement child<span class="uscript-operator">;</span> <span class="uscript-comment">// A pointer to the _first_ child element of this object -- null if there isn't one.</span>
+<span class="uscript-keyword">var</span> ListElement next<span class="uscript-operator">;</span> <span class="uscript-comment">// A pointer to the next sibling element of this object -- null if there isn't one.</span>
+<span class="uscript-keyword">var</span> ListElement prev<span class="uscript-operator">;</span> <span class="uscript-comment">// A pointer to the previous element of this object -- null if there isn't one.</span>
+
+<span class="uscript-keyword">var</span> Object data<span class="uscript-operator">;</span> <span class="uscript-comment">// A pointer to the object containing the data to be held in the list -- null if there is no data.</span>
+
+<span class="uscript-comment">// Functions to add, remove, and search for elements go here (see below for more info).</span></pre><p>Probably the most vital functions needed within this class are the <em class="em1">AddChild()</em> and <em class="em1">AddSibling()</em>.  These functions must set the <em class="em2">parent</em> attribute of the object correctly at the point it is inserted into the list.  Personally, I'd have functions to handle just about every operation you can think of on the class simply because it allows the pointer manipulation to be hidden and held all in one place.  It also means you can change the way in which the data is stored should you need to.</p>
+<p>One thing I would note though.  If you know you are going to have very few elements in a list (say less than 10) then consider using an array and handling the null pointers (assuming sparse population).  It will be quicker &ndash; particularly if the data needs to be replicated to the client.</p>
+<p>I think that's all from me.</p>
+<hr class="thin"><p><em class="em2">Foogod:</em> I added the disclaimer at the top, because the way these pages are linked from <a href="artificial-intelligence.html">Artificial Intelligence</a> could confuse some people into thinking this is an explanation of the way that the UT-based games actually do things.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Disclaimer", "#0.1");
+menuItemAdd("Introduction", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Linked Lists", "#0.2.0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Binary Trees", "#0.2.0.2");
+menuItemAdd("Unreal Examples", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>The Linked List Example", "#0.3.0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>The Binary Tree Example", "#0.3.0.2");
+menuItemAdd("Conclusion", "#0.4");
+menuItemAdd("Some thoughts", "#0.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Using_Binary_Trees_And_Linked_Lists_To_Represent_Group_Hierarchy">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Using_Binary_Trees_And_Linked_Lists_To_Represent_Group_Hierarchy">View other revisions</a><br>Last edited November 16, 2005 21:06 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Using_Binary_Trees_And_Linked_Lists_To_Represent_Group_Hierarchy">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Using_Binary_Trees_And_Linked_Lists_To_Represent_Group_Hierarchy">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I search for solutions in this order: Past Code, Unreal Source, Wiki, BUF, groups.yahoo, google, screaming at monitor. (RegularX)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

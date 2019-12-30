@@ -1,0 +1,378 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Daemonica/Previous Problems</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Daemonica/Previous_Problems; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="daemonica.html">Daemonica</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Daemonica/Previous+Problems">Previous Problems</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Previous Problems</h2>
+<p>I'm considering these problems resolved now <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<h3><a name="0.1.1"></a>Locally Viewed Actors</h3>
+<p>How to work out if an <a href="actor-ut.html">Actor (UT)</a> is being viewed on the local players view. In other words making an object hidden to some people, but visible to others.</p>
+<h4><a name="0.1.1.1"></a>Why am I working on this problem</h4>
+<p>Because of <a href="http://undying.sanffo.co.uk">[The Undying Curse]</a> where players have access to a spell called Scrye, which allows them to see hidden objects. I only want people who are actually 'Scrying' to be able to see the objects without effecting anyone else's perception of the world around them. My head hurts after this <img alt=";)" src="emoticons/wink.gif" align="middle"></p>
+<p><em class="em2">Foxpaw:</em> I think I may have a solution to this problem, if you are still seeking one.. One way of course would be to have it client-side - you could put it in the objects Tick function to be executed client side - if they are scrying, bHidden is set to false, otherwise it is set to true. Of course, since it's client side it could probrably be hacked.. but if the actor is considered relevant to the network and is being replicated it could likely be hacked in the same way. If you want it to be client-side and only replicate to people who can see it... well, that could be a doozie. But the client-side implementation probrably wouldn't be too difficult. I don't recall the code to determine whether a given pawn/controller is being controlled by a local player or over a network, but I've seen it around.</p>
+<p><em class="em2">Daemonica:</em> yeah, that's what I've been thinking, it works almost all the way upto Listen Servers, they end up doing weird things due to replication.</p>
+<p><em class="em2">Daemonica:</em> Well, I've moved over to UT2003 now <img alt=":)" src="emoticons/smile.gif" align="middle"> Finally, this lil problem has been put on the backburner for now, hopefully I can figure this out so it works on Listen Servers too!</p>
+<p><em class="em2">Daemonica:</em> Back on this problem now and it's getting there. I'm using a simulated Tick function as explained above but it's only working on the Listen Server/Single player side, client's don't seem to get this right. I'm using the following code</p>
+<pre class="uscript"><span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-comment">// UCScryeObject - Any object that is viewable only when</span>
+<span class="uscript-comment">// a player is 'scrying'</span>
+<span class="uscript-comment">// Copyright (C), Undying Curse</span>
+<span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-keyword">class</span> UCScryeObject <span class="uscript-keyword">extends</span> UCInteractiveItem<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> UCPlayer UCLocalPlayer<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">!=</span> NM_DedicatedServer<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        UCLocalPlayer <span class="uscript-operator">=</span> UCPlayer<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>GetLocalPlayerController<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> UCLocalPlayer <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> UCLocalPlayer<span class="uscript-operator">.</span>bScrying <span class="uscript-operator">)</span>
+                bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">else</span>
+                bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bNetTemporary<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bTearOff<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-operator">}</span></pre><p>I'm assuming the actor is not being replicated to the clients. Should a bAlwaysRelevent be set to true?</p>
+<p><em class="em1">Edit: Full source code now'</em></p>
+<p><em class="em2">EntropicLqd:</em> As far as I can tell it depends on where the Actor is spawned from.  If the actor is spawned from a function that is called on both the client and server then bAlwaysRelevant doesn't seem to be required.  When an actor is spawned from pure server side code I've always had to set the bAlwaysRelevant flag to True in order to get the Actor to replicate.  This approach has always seemed like a <em class="em1">hack</em> to me and I've always had the feeling that I'm just missing something that everyone else in the world seems to know about.  You'll probably need to ensure that the actor has a SimulatedProxy role.</p>
+<p><em class="em2">Wormbo:</em> When the actor is spawned from a function that's executed on server and clients, you get seperate actors and additionally the server-spawned one could get replicated to the client.</p>
+<p><em class="em2">Daemonica:</em> What happens if the actor is built into the map, how is that spawned? I need an object that is handles 100% by the client (or listen server) to alter it's bHidden property based on the Local Players (Controller) 'bScrying' property</p>
+<p><em class="em2">Daemonica:</em> Been working with the team and the following code is 80% working. It appears that if the server has bHidden=false then the scrying works, otherwise it's the actor remains invisible to everyone. So I hit on the idea of leaving the objects bHidden=false on the server and let the client play around with that to their hears content. In the meantime, use the listen servers LocalPlayerController to become the owner of the object and use bOwnerNoSee on the Listen Server only. Slight problem is, my attempts to set the owner at PostBeginPlay have failed as Level.GetLocalPlayerController() returns none at this time. The latest code is below, the older code is removed <img alt=":D" src="emoticons/biggrin.gif" align="middle"></p>
+<pre class="uscript"><span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-comment">// UCScryeObject - Any object that is viewable only when</span>
+<span class="uscript-comment">// a player is 'scrying'</span>
+<span class="uscript-comment">// Copyright (C), Undying Curse</span>
+<span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-keyword">class</span> UCScryeObject <span class="uscript-keyword">extends</span> UCInteractiveItem<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> PostNetBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    log<span class="uscript-operator">(</span><span class="uscript-string">"UC-TESTING: Setting Owner for Scrye Object - "</span><span class="uscript-operator">$</span>Level<span class="uscript-operator">.</span>NetMode<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>PostNetBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">==</span> NM_ListenServer<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        log<span class="uscript-operator">(</span><span class="uscript-string">"UC-TESTING: Acknowledged Listen Server, Setting Owner - "</span><span class="uscript-operator">$</span>Level<span class="uscript-operator">.</span>GetLocalPlayerController<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        SetOwner<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>GetLocalPlayerController<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    log<span class="uscript-operator">(</span><span class="uscript-string">"UC-TESTING: Scrye Object now owned - "</span><span class="uscript-operator">$</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> UCPlayer UCLocalPlayer<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">!=</span> NM_DedicatedServer<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        UCLocalPlayer <span class="uscript-operator">=</span> UCPlayer<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>GetLocalPlayerController<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> UCLocalPlayer <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">==</span> NM_Client<span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">==</span> NM_StandAlone<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> UCLocalPlayer<span class="uscript-operator">.</span>bScrying <span class="uscript-operator">)</span>
+                    bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+                <span class="uscript-keyword">else</span>
+                    bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+            <span class="uscript-keyword">else</span>
+            <span class="uscript-operator">{</span>
+                bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> UCLocalPlayer<span class="uscript-operator">.</span>bScrying <span class="uscript-operator">)</span>
+                    bOwnerNoSee<span class="uscript-operator">=</span><span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+                <span class="uscript-keyword">else</span>
+                    bOwnerNoSee<span class="uscript-operator">=</span><span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    RemoteRole<span class="uscript-operator">=</span>ROLE_SimulatedProxy
+    bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+    bOwnerNoSee<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">Lilguy:</em> You could always put the code that sets the owner in the tick function, and set it once the player controller is not none...Not sureif that will help, but it's an idea...It seems like you'll run into trouble if you change the value of bHidden on the listen server, because the value of the variable will be replicated to all the clients (Unless you set bSkipActorPropertyReplicationto true, but you might not want to do that)</p>
+<p>It seems like an easy solution to all this would be to ensure that the entities are owned by the person who's "scrying", and then put something like this in the tick function:</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> dt<span class="uscript-operator">)</span><span class="uscript-operator">{</span>
+   UCLocalPlayer <span class="uscript-operator">=</span> UCPlayer<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>GetLocalPlayerController<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+   <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> UCLocalPlayer <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span><span class="uscript-operator">{</span>
+        bVisible <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>Owner <span class="uscript-operator">==</span> UCLocalPlayer<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>That way, even though bVisible would be replicated as true if the listen server player was "Scrying", the clients would immediately set the value to false, and they wouldn't be drawn. Hope that helps you...</p>
+<p><em class="em2">Daemonica:</em> Problem with making the object owned by the 'scrying' player is any number of players can be 'scrying' at the same time. Setting the visibility using my code above now works fine on the client-side and single player, the Listen server is causing the problem. I tried to set the owner in PreBeginPlay, PostBeginPlay, PostNetBeginPlay and the simulated Tick, but to no avail, the SetOwner(UCLocalPlayer) doesn't seem to do anything <img alt=":(" src="emoticons/sad.gif" align="middle"></p>
+<p><em class="em2">Foxpaw:</em> I wouldn't worry about the owner stuff - the reason your previous code wasn't working is because if an actor has bHidden true and is not owned by the player in question, it is not considered relevant. The reason why it works on a dedicated server but not a listen server is clear. (to me <img alt=":D" src="emoticons/biggrin.gif" align="middle"> )</p>
+<p>If it's on a dedicated server that whole code bunch gets skipped. bHidden remains false, and the actor remains relevant. If it's a listen server, that bit doesn't get skipped, and if the local player can't see it, it's bHidden true, and thus not replicated.</p>
+<p>Okay, now the fix. It's easy. There's two main ways to control whether something is drawn or not. bHidden is one way. It is tied into replication, which is usually what you want, but in this case it's not. The other way is to set it's drawtype DT_None. Also, Tick probrably isn't the best place for it, but I can't think of a better one off the top of my head so maybe there's no better choice. So basically:</p>
+<pre class="uscript"><span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-comment">// UCScryeObject - Any object that is viewable only when</span>
+<span class="uscript-comment">// a player is 'scrying'</span>
+<span class="uscript-comment">// Copyright (C), Undying Curse</span>
+<span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-keyword">class</span> UCScryeObject <span class="uscript-keyword">extends</span> UCInteractiveItem<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> EDrawType RealDrawType<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> UCPlayer UCLocalPlayer<span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Tick<span class="uscript-operator">(</span> Delta <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// If it's a dedicated server, Level.GetLocalPlayerController()</span>
+<span class="uscript-comment">// will return None, so the dedicated server check was</span>
+<span class="uscript-comment">// redundant.</span>
+  UCLocalPlayer <span class="uscript-operator">=</span> UCPlayer<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>GetLocalPlayerController<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> UCLocalPlayer <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> UCLocalPlayer<span class="uscript-operator">.</span>bScrying <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+      <span class="uscript-comment">// Spare yourself some clock cycles by not setting</span>
+      <span class="uscript-comment">// drawtype every tick.</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> DrawType <span class="uscript-operator">==</span> DT_None <span class="uscript-operator">)</span>
+        SetDrawType<span class="uscript-operator">(</span> RealDrawType <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> DrawType <span class="uscript-operator">!=</span> DT_None <span class="uscript-operator">)</span>
+      SetDrawType<span class="uscript-operator">(</span> DT_None <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bNetTemporary<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bTearOff<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">Daemonica:</em> Of course, makes perfect sense now, I'll give this a go, but looks good here. I totally forgot about drawtypes <img alt=":D" src="emoticons/biggrin.gif" align="middle"></p>
+<p><em class="em2">Angel Mapper</em> MadNad did something similar to this with Excessive Overkill's night vision.  It drew an exact replica of players and vehicles on the HUD with a custom texture to make them appear brighter.  You could ask him for the code, I'm sure he'll let you use it.</p>
+<p><em class="em2">Daemonica:</em> We've changed our minds on how this will work. It's going to be an 'Area of effect' now so if one person casts it, everyone will be effected. It's not ideal and could change if we can ever work it out, but for now my head hurts!</p>
+<h3><a name="0.1.2"></a>Menu Music</h3>
+<p>How to change the music that plays when the <a href="guipage.html">GUIPage</a> Main Menu is shown.</p>
+<p><em class="em2">Tarquin:</em> If you've resolved this, could you write up the results on <a href="guipage.html">GUIPage</a> please? The same goes for other things: please incorporate results into the main body of the wiki <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Daemonica:</em> Good point, these has been added to <a href="guipage.html">GUIPage</a> hopefully clear enough, any suggestions where the tracing information should go? Probably somewhere near the trace function I suspect?</p>
+<h4><a name="0.1.2.1"></a>Why am I working on this problem</h4>
+<p>Because of <a href="http://undying.sanffo.co.ul">[The Undying Curse]</a> which is now a UT2003 Mod, playing the default KR-UT2003-Menu music just doesn't have the right feel.</p>
+<p><em class="em2">Foxpaw:</em> This might be a bit tricky to explain, depending on how well you understand the Unreal Engine, but here's the skinny:</p>
+<p>There is always at least one, and at most two levels loaded in any given instance of an Unreal Engine game. The first level is generally referred to as the "Entry" level. The second level is the one that you generally play in, and is the one that is changed by the <em class="em2">servertravel</em> and <em class="em2">start</em> console commands.</p>
+<p>The Entry level is loaded when the Engine starts, and cannot change to a different level or be unloaded in any way. (That's not <em class="em2">entirely</em> true, but generally speaking..) You can still play in it, it is a level in every respect, but generally for performance reasons (since it's going to be running at the same time as the map you're playing on) it is generally just a subtracted cube without any bells and whistles in it.</p>
+<p>Now, one level or the other is "screened out" depending on the context. If the "active" level is the entry level, your input will go to your controller in that level, etc. It's almost like having a completely separate instance of the game, but it isn't really.</p>
+<p>Now, how this relates to your question: when you first start UT2003, the "Entry" level is loaded. The music you hear during the menu, is actually just the level's music. When the context switches to another level, you no longer hear sounds from the "entry" level and start hearing them from the other level.</p>
+<p>So: to change the menu music you have to change the entry level. The entry level for UT2003 is in your maps directory, and is called Entry.UT2. Make a copy of it, and name it whatever you like, then open it and change the map's music. Then you'll have to make a copy of UT2003.ini, and in it change the reference to Entry.UT2 to your map. (it might just be entry, I don't remember if the UT2 gets appended automatically or not) You will then have to run UT2003 with a commandline parameter to read your modified ini instead of the default UT2003.ini. Most mods that do this also include a batch file so that you don't have to manually specify the command line argument.</p>
+<p><em class="em2">Daid303:</em> Well, I tried to change the entry level, but I didn't have any luck. It just kept using the default Entry.ut2. So I made this crappy hack:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> InitComponent<span class="uscript-operator">(</span>GUIController MyController<span class="uscript-operator">,</span> GUIComponent MyOwner<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>InitComponent<span class="uscript-operator">(</span>MyController<span class="uscript-operator">,</span> MyOwner<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//Hack</span>
+    Controller<span class="uscript-operator">.</span>ViewPortOwner<span class="uscript-operator">.</span>Actor<span class="uscript-operator">.</span>GetEntryLevel<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Song <span class="uscript-operator">=</span> <span class="uscript-string">"UMS_Main_Menu_Music"</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>in my mainmenu class.</p>
+<p><em class="em2">Foxpaw:</em> Hmm, it works fine on my mod. I use the "Entry" level as the workshop where you design your vehicles. That way you can very quickly switch back and forth between the combat simulator and the design level. It seems to have worked fine for me.</p>
+<p><em class="em2">Daemonica:</em> I encountered the same problems as Daid303, My own copy of Entry.UT2 (Entry-TUC.UT2) was totally ignored, the hack however worked a treat. The only entry in UT2003.ini that refers to Entry.UT2 is NetBrowseMap=Entry.ut2, but didn't make squat 'o' difference <img alt=":(" src="emoticons/sad.gif" align="middle"> Thanks to you both. I'm happy this solution works</p>
+<p><em class="em2">Foxpaw:</em> Whoops! You're right. <img alt=":P" src="emoticons/tongue.gif" align="middle"> UT2003 has a separate entry level for network and local games. (not sure why) LocalMap is the local one. Unfortunately, that contains a call to start up the menu so you can't really replace it as easily. I'd say, continue using the hack method above. Alternatively, write your own GUI from scratch using Interactions like I did.. then you can replace the entry level without worrying. <img alt=":D" src="emoticons/biggrin.gif" align="middle"></p>
+<p><em class="em2">Daemonica:</em> Can I not and just pretend I did <img alt=";)" src="emoticons/wink.gif" align="middle">, besides the Hack works well, and I _really_ don't have the time to write a GUI from scratch. I'm _reasonably_ happy with the current implementation of menus but looking forward to the improvements from UT2004</p>
+<p><em class="em2">GRAF1K:</em> Can you say "UWindows returns" &ndash; or, more to the point &ndash; "YIPEE!"? <img alt=";-)" src="emoticons/wink.gif" align="middle"><img alt=":D" src="emoticons/biggrin.gif" align="middle"></p>
+<p><em class="em2">Daemonica:</em> YIPEE! <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Ian Pilipski:</em> There is a solution, you have to create your own Entry.ut2 map and save it in your mod path maps directory (with the name Entry.ut2).  Then add your map path for your mod in your .ini file.  I would recommend creating your own copy of the UT2003.ini file to something like MyModUT2003.ini.  Then launch ut2003 with this command line switch UT2003.exe -ini=MyModUT2003.ini.  The ini entry should look something like this:</p>
+<pre class="uscript"><span class="uscript-operator">[</span>Core<span class="uscript-operator">.</span>System<span class="uscript-operator">]</span>
+<span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span>
+<span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span>
+Paths<span class="uscript-operator">=</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">/</span>MyMod<span class="uscript-operator">/</span>Maps<span class="uscript-comment">/*.ut2
+Paths=../Maps/*.ut2
+Paths= ...
+...
+...</span></pre><p>Now when you run your mod, it will use your Entry.ut2 file as the entry level because it finds it first when searching the paths.  Using this method can also allow you to do interesting things on the menu screens.  If you set the menu backgrounds to none, then you will actually see the Entry.ut2 level in play.  You can add some Matinee scene in there and you now have a very interesting menu system.  As Foxpaw points out, if this level is always loaded during game play, you should not overload it by making it too complex.  That would affect the performance of your mod.</p>
+<h3><a name="0.1.3"></a>Useable Actors</h3>
+<p>How do I check to see if an <a href="actor.html">Actor</a> is useable (i.e. It has a function UsedBy(Pawn User))</p>
+<h4><a name="0.1.3.1"></a>Why am I working on this problem</h4>
+<p>I need a way of highlighting useable actors on the HUD, however there is now bUseable variable, defined in Actor (or something similar). The reason I need to check this is that these usable items include pickups, triggers &amp; decorations!</p>
+<p><em class="em2">Foxpaw:</em> I don't believe that there is any way to check if it "has" the UsedBy function, because every actor has it. (I think) What you CAN do, however, is have every "useable" think spawn an invisible "tag" that points to that object. Then, when you want to highlight the actors that are "useable," you can iterate through all of your "tags" and you will essentially have a list of all the things that should be highlighted.</p>
+<p><em class="em2">Daemonica:</em> Foxpaw comes to the rescue again <img alt=":)" src="emoticons/smile.gif" align="middle"> Thanks. I'm asuming then somewhere in the PostBeginPlay() function I would <u>Spawn</u> this TagActor, then I can do an Other.IsA('TagActor') to varify useable items? Now I'm trying to get trace to actually return the object I'm looking at and not just the world!</p>
+<pre class="uscript"><span class="uscript-comment">// Called from a HUD to determine if the player is looking at a hostile, useable item</span>
+<span class="uscript-comment">//etc, so the crosshair colour can be changed :)</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">string</span> PlayerLookingAt<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> vector HitLocation<span class="uscript-operator">,</span>HitNormal<span class="uscript-operator">,</span>StartTrace<span class="uscript-operator">,</span>EndTrace<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> actor Other<span class="uscript-operator">;</span>
+
+    StartTrace <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">.</span>Location<span class="uscript-operator">;</span>
+    StartTrace<span class="uscript-operator">.</span>Z <span class="uscript-operator">+=</span> Pawn<span class="uscript-operator">.</span>BaseEyeHeight<span class="uscript-operator">;</span>
+    EndTrace <span class="uscript-operator">=</span> StartTrace <span class="uscript-operator">+</span> vector<span class="uscript-operator">(</span>Pawn<span class="uscript-operator">.</span>GetViewRotation<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-number">1000.0</span><span class="uscript-operator">;</span>
+
+    Other<span class="uscript-operator">=</span>Pawn<span class="uscript-operator">.</span>Trace<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> EndTrace<span class="uscript-operator">,</span> StartTrace<span class="uscript-operator">,</span> <span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-comment">// Assumes that all useable items have spawned a UseableItem actor :)</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'UseableItem'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            <span class="uscript-keyword">return</span><span class="uscript-operator">(</span><span class="uscript-string">"Useable"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+            <span class="uscript-keyword">return</span><span class="uscript-operator">(</span><span class="uscript-string">"Hostile"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-string">"None"</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">Foxpaw:</em> Well, the implementation would depend on what exactly you had in mind. If you wanted the crosshair to respond to things underneath it, the code would be something like the following:</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> PlayerLookingAt<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> vector HitLocation<span class="uscript-operator">,</span>HitNormal<span class="uscript-operator">,</span>StartTrace<span class="uscript-operator">,</span>EndTrace<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> actor Other<span class="uscript-operator">;</span>
+
+  StartTrace <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">.</span>Location<span class="uscript-operator">;</span>
+  StartTrace<span class="uscript-operator">.</span>Z <span class="uscript-operator">+=</span> Pawn<span class="uscript-operator">.</span>BaseEyeHeight<span class="uscript-operator">;</span>
+  EndTrace <span class="uscript-operator">=</span> StartTrace <span class="uscript-operator">+</span> vector<span class="uscript-operator">(</span>Pawn<span class="uscript-operator">.</span>GetViewRotation<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-number">1000.0</span><span class="uscript-operator">;</span>
+
+  Other <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">.</span>Trace<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> EndTrace<span class="uscript-operator">,</span> StartTrace<span class="uscript-operator">,</span> <span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> IsUseable<span class="uscript-operator">(</span> Other <span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+      <span class="uscript-keyword">return</span><span class="uscript-operator">(</span><span class="uscript-string">"Useable"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+      <span class="uscript-keyword">return</span><span class="uscript-operator">(</span><span class="uscript-string">"Hostile"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-string">"None"</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> IsUseable<span class="uscript-operator">(</span> actor A <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> UseableTag Tag<span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">foreach</span> AllObjects<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'UseableTag'</span><span class="uscript-operator">,</span> Tag<span class="uscript-operator">)</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Tag<span class="uscript-operator">.</span>Actor <span class="uscript-operator">==</span> A <span class="uscript-operator">)</span>
+      <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>That is of course a <em class="em2">logical</em> implementation, certainately not the fastest implementation. To speed it up you could make the UseableTags actors with bHidden true, then use DynamicActors instead of AllObjects. (would be much faster, not sure if you can do that in a HUD though anyway.) Even better, you could keep a list of all the UseableTags in the HUD, and just have every useabletag register itself with the HUD when it is created.</p>
+<p>However, if you're going to do that (I'm kind of on a roll now <img alt=":D" src="emoticons/biggrin.gif" align="middle">) you might as well scrap the useabletags and just have the HUD keep a dynamic array pointing to all useable things, and then just iterate through that. Then when an actor wants to register itself as useable, it can find the HUD fairly easily by calling Level.GetLocalPlayerController().myHUD.. or something like that anyway. However, this method might not replicate very well because not only can you not replicate a dynamic array, but even if you worked around it you might constantly be adding and removing things as they become relevant or irrelevant.. so maybe just stick with the DynamicActors iterator for that reason.</p>
+<p><em class="em2">Daemonica:</em>You really went for it there <img alt=":)" src="emoticons/smile.gif" align="middle">, I seem to have run into a bug at the moment, the trace is only colliding the world and not any actors, at all, ever. I think I've got my head round the implementation, if only there was a nifty bool bIsUsable back in actor this would be soooo much easier <img alt=";)" src="emoticons/wink.gif" align="middle"></p>
+<p><em class="em2">Foxpaw:</em> Hmm, well, my first thought would be that the trace is not set to collide with actors. There's a bool in the trace function, bTraceActors, that sets it to do this. In both the code examples above it's set to true, but I would check to see if you accidentally omitted that in your code because that's what would normally cause that sort of behaviour.</p>
+<p><em class="em2">Daemonica:</em> Yup, that's what I thought, but the trace is acurate, it just don't like returning any actors <img alt=":(" src="emoticons/sad.gif" align="middle"> The LookingAt() function now returns the actor the player is looking at (in theory) with the following definition</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> actor PlayerLookingAt<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> vector HitLocation<span class="uscript-operator">,</span>HitNormal<span class="uscript-operator">,</span>StartTrace<span class="uscript-operator">,</span>EndTrace<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> actor Other<span class="uscript-operator">;</span>
+
+    StartTrace <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">.</span>Location <span class="uscript-operator">+</span> Pawn<span class="uscript-operator">.</span>EyePosition<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    EndTrace <span class="uscript-operator">=</span> StartTrace <span class="uscript-operator">+</span> vector<span class="uscript-operator">(</span>Pawn<span class="uscript-operator">.</span>GetViewRotation<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-number">1000.0</span><span class="uscript-operator">;</span>
+
+    Other<span class="uscript-operator">=</span>Pawn<span class="uscript-operator">.</span>Trace<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> EndTrace<span class="uscript-operator">,</span> StartTrace<span class="uscript-operator">,</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>Other<span class="uscript-operator">.</span>bWorldGeometry <span class="uscript-operator">)</span>
+       <span class="uscript-keyword">return</span> Other<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+       <span class="uscript-keyword">return</span> <span class="uscript-keyword">none</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>This is defined in TUCPlayer (extends PlayerController) so as far as I can see it should work. It hits Static meshes correctly so I know the vectors for the trace are correct, it just needs to hit actors now!</p>
+<p><em class="em2">Daemonica:</em> And a little more work reveals that if the object I'm LookingAt() has bBlockPlayers set to True then the trace works, otherwise it fails, this to me is not usefull as I want know what actor I am looking at, even if this doesn't block the player (as most pickups won't actually block a player)..... which can be done by setting bProjTarget = True for those actors <img alt=";)" src="emoticons/wink.gif" align="middle"> Finally it works, but only because I'm working on a TC, I would hate to try and do this for mutators/etc. You would have to use ForEach type things as mentioned above (Eeeky, that's just nasty!)</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Previous Problems", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Locally Viewed Actors", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Why am I working on this problem", "#0.1.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Menu Music", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Why am I working on this problem", "#0.1.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Useable Actors", "#0.1.3");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Why am I working on this problem", "#0.1.3.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="daemonica.html">Daemonica</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Daemonica/Previous_Problems">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Daemonica/Previous_Problems">View other revisions</a><br>Last edited September 20, 2004 21:17 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Daemonica/Previous_Problems">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Daemonica/Previous_Problems">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Describe the new page here.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

@@ -1,0 +1,266 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Hunted Lesson 1</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Hunted_Lesson_1; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Hunted Lesson 1">Hunted Lesson 1</a></h1>
+	<div class="wiki"><p><a href="hunted2003.html">Hunted2003</a> tutorial, Lesson 1: The Custom GameType.</p>
+<h2><a name="0.1"></a>Folders and files</h2>
+<p>First of all, let's <a href="set-up-package-folders.html">Set Up Package Folders</a> with the base name "hunted".  Inside the classes folder, create 4 text files:</p>
+<ul><li>HuntedGame.uc</li>
+<li>HuntPawn.uc</li>
+<li>HuntController.uc</li>
+<li>HUDhunted.uc</li>
+</ul>
+<p>Let me explain these further:</p>
+<dl><dt>HuntedGame</dt><dd>this is the <a href="gametype.html">gametype</a> such as <em class="em2">Capture the Flag</em>, <em class="em2">DeathMatch</em>, etc.</dd><dt>HuntPawn</dt><dd>this is a <a href="pawn.html">pawn</a>.  A pawn is what you control, such as a <em class="em2">Player</em> a <em class="em2">Vehicle</em>, etc.</dd><dt>HuntController</dt><dd>a <a href="controller.html">controller</a> is what you use to control movement etc.  I like to think of it as your soul, in the way that it "posseses" different pawns.  When you enter a vehicle, the controller stops controlling the player pawn, and posseses the vehicle pawn.  When you get out of the vehicle, it posseses the player pawn.  A GUI controller takes over when you are accessing a menu.  This is probably not a thourough definition, but it works for me. (<em class="em1"> link to an overview page for these?</em>)</dd><dt>HUDhunted</dt><dd>this is the Heads Up Display <a href="hud.html">HUD</a>, right now we are going to just add a symbol or something to the TeamDeathMatch Hud so we can tell that our custom gametype works. </dd></dl>
+<p>Now lets edit the HuntedGame.uc file (my code is riddled with comments, so you can understand what I am doing.) :</p>
+<pre class="uscript"><span class="uscript-comment">/////////////////////////////////////////////////</span>
+<span class="uscript-comment">/// Hunted Game</span>
+<span class="uscript-comment">/// I chose to extend xTeamGame (Team Deathmatch)</span>
+<span class="uscript-comment">/// because in essence The Hunted is a Team Deathmatch that ends</span>
+<span class="uscript-comment">///  if the Hunted Dies, I may have to change and extend from another </span>
+<span class="uscript-comment">///// gametype later , but for now ill try this</span>
+<span class="uscript-comment">///////////////////////////////////////////////</span>
+
+<span class="uscript-keyword">class</span> HuntedGame <span class="uscript-keyword">extends</span> xTeamGame<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+     <span class="uscript-comment">//gametype name, will appear in in-game list</span>
+     GameName<span class="uscript-operator">=</span><span class="uscript-string">"The Hunted"</span>
+     <span class="uscript-comment">//we will use the regular pawn till we make some changes in our pawn  </span>
+     DefaultPlayerClassName<span class="uscript-operator">=</span><span class="uscript-string">"XGame.xPawn"</span>
+     <span class="uscript-comment">// and will use the regular controller till we make some changes in ours </span>
+     PlayerControllerClassName<span class="uscript-operator">=</span><span class="uscript-string">"XGame.xPlayer"</span> 
+     
+     <span class="uscript-comment">// I will leave this DM for now</span>
+     MapPrefix<span class="uscript-operator">=</span><span class="uscript-string">"DM"</span> 
+     <span class="uscript-comment">//here is our new HUD</span>
+     HUDType<span class="uscript-operator">=</span><span class="uscript-string">"hunted.HUDhunted"</span>  
+     
+<span class="uscript-operator">}</span></pre><pre class="paraverbatim"> </pre><p>hmm... not sure why everything in quotations shows up as comments, I need to learn how to fix that.</p>
+<p><em class="em2">Daid303:</em> It doesn't, the default sysntax highlight color for stuff in quotes is green, just as comments. If you open up a script in UnrealEd it also does that (I even set up Editplus to use the same colors as unrealed, I like those colors <img alt=":)" src="emoticons/smile.gif" align="middle"> )</p>
+<p>If you want to know where I got these default properties, look in the default properties of the source code for DeathMatch.  We essentially extended off of it as follows: <a href="deathmatch.html">DeathMatch</a> &gt;&gt; <a href="teamgame.html">TeamGame</a> &gt;&gt; <a href="xteamgame.html">xTeamGame</a> &gt;&gt; HuntedGame</p>
+<h2><a name="0.2"></a>Step 2</h2>
+<p>Now we are going to make changes in our HuntPawn and HuntController in another lesson. Right now, if we load up our custom game we wouldnt see any changes, so I am going to add something to the HUD to verify that our game works.  So lets edit HUDhunted.uc:</p>
+<pre class="uscript"> 
+<span class="uscript-comment">//////////////////////////////////</span>
+<span class="uscript-comment">/// HUDhunted</span>
+<span class="uscript-comment">//// just going to add a symbol </span>
+<span class="uscript-comment">/// to make it unique to our gametype</span>
+<span class="uscript-comment">////////////////////////////////////////</span>
+
+<span class="uscript-keyword">class</span> HUDhunted <span class="uscript-keyword">extends</span> HudBTeamDeathMatch<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//a variable to hold our logo</span>
+<span class="uscript-keyword">var</span> texture logotex<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> DrawHud<span class="uscript-operator">(</span>Canvas c<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> color tempColor<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">byte</span> tempstyle<span class="uscript-operator">;</span>
+
+    tempColor <span class="uscript-operator">=</span> c<span class="uscript-operator">.</span>DrawColor<span class="uscript-operator">;</span>
+    tempstyle <span class="uscript-operator">=</span> c<span class="uscript-operator">.</span>Style<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>DrawHud<span class="uscript-operator">(</span>c<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    c<span class="uscript-operator">.</span>DrawColor<span class="uscript-operator">=</span>WhiteColor<span class="uscript-operator">;</span>
+    c<span class="uscript-operator">.</span>Style<span class="uscript-operator">=</span>ERenderStyle<span class="uscript-operator">.</span>STY_Additive<span class="uscript-operator">;</span>
+
+    DrawLogo<span class="uscript-operator">(</span>c<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    c<span class="uscript-operator">.</span>DrawColor <span class="uscript-operator">=</span> tempColor<span class="uscript-operator">;</span><span class="uscript-comment">//restore values</span>
+    c<span class="uscript-operator">.</span>Style <span class="uscript-operator">=</span> tempstyle<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//a function to draw it</span>
+<span class="uscript-keyword">function</span> DrawLogo<span class="uscript-operator">(</span>Canvas c<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    c<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span><span class="uscript-number">193</span><span class="uscript-operator">,</span><span class="uscript-number">44</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>   <span class="uscript-comment">//193 pix to the right, and 44 downwards from the upperleft corner.</span>
+    c<span class="uscript-operator">.</span>DrawIcon<span class="uscript-operator">(</span>logotex<span class="uscript-operator">,</span><span class="uscript-number">0.5</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">//scale is 1</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-comment">// reference to the texture we want to draw on the hud</span>
+logotex<span class="uscript-operator">=</span>texture<span class="uscript-name">'HuntedTex.huntlogo'</span>
+<span class="uscript-operator">}</span></pre><p>now some explaining:</p>
+<ul><li>first I made a logo in photoshop.  I saved it as a 24bit targa file entitled "huntlogo.tga".<ol><li>I opened up UnrealEd, went to the <a href="texture-browser.html">texture browser</a> and hit import</li>
+<li>I selected my targa and saved it in a package called HuntedTex</li>
+<li>I unchecked mipmaps and checked Alpha</li>
+<li>I saved the package as HuntedTex.utx in the folder /UT2003/Textures</li>
+</ol>
+</li>
+</ul>
+<p>for more on importing textures, please check out</p>
+<p><a href="import-the-texture.html">Import The Texture</a></p>
+<p>here is the logo if you need it.  It is in gif format here, you may be able to import it without converting it to targa I dunno.</p>
+<div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[huntlogo]" src="images/huntlogo.gif"><p>huntlogo in .gif format</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<p>In the code we simply set a variable to hold the texture, then the function <em class="em2">DrawLogo</em>draws it on the specified position and at the set scale.  In the default properties we point it to our logo.  I learned this thru the powerpoint tutorials of J. Giles at SEGA500 Unreal scripting. If you want to learn how to make further changes to the HUD here is a link:</p>
+<p><a href="http://gamestudies.cdis.org/~jgiles/">http://gamestudies.cdis.org/~jgiles/</a></p>
+<p>BTW,   The <em class="em2">super.DrawHud(c)</em> command calls on the function DrawHud as it was written in the HudBTeamDeathMatch class, so we are just adding to it.  If you leave out this line it will only draw the logo we added.  I suggest you try this just to get an idea of how the super command works.</p>
+<h2><a name="0.3"></a>GameType int file "Hunted.int"</h2>
+<p>So now we want to see it in action.  But first, we have to make an [int file]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Int_File&referrerid=Hunted_Lesson_1">?</a> to reference our gametype.  Without this, it will not show up in the list of gametypes and we wont get to play it.</p>
+<ul><li>make a text file called Hunted.int</li>
+</ul>
+<p>it should read like so:</p>
+<pre class="uscript"><span class="uscript-operator">[</span>Public<span class="uscript-operator">]</span>
+
+Object<span class="uscript-operator">=</span><span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-operator">,</span>MetaClass<span class="uscript-operator">=</span>Engine<span class="uscript-operator">.</span>GameInfo<span class="uscript-operator">,</span><span class="uscript-type">Name</span><span class="uscript-operator">=</span>Hunted<span class="uscript-operator">.</span>HuntedGame<span class="uscript-operator">,</span>Description<span class="uscript-operator">=</span><span class="uscript-string">"DM|The Hunted|xinterface.Tab_IADeathMatch|xinterface.MapListDeathMatch|false"</span><span class="uscript-operator">)</span>
+
+<span class="uscript-operator">[</span>Hunted<span class="uscript-operator">.</span>HuntedGame<span class="uscript-operator">]</span>
+GameName<span class="uscript-operator">=</span><span class="uscript-string">"The Hunted"</span></pre><p>This should be pretty self explanitory.  Now save it and put it in the /UT2003/system directory</p>
+<p>Now our gametype should show up in the gametype list.</p>
+<p>But first we have to do a couple of things</p>
+<p>We need to add some headers to our HuntPawn and HuntController classes, even though we wont get to them in this lesson.  They won't compile the way they are.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> HuntPawn <span class="uscript-keyword">extends</span> xPawn<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span></pre><pre class="uscript"><span class="uscript-keyword">class</span> HuntController <span class="uscript-keyword">extends</span> xPlayer<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.4"></a>Compiling</h2>
+<p>You now need to compile the mod. There are two ways to compile:</p>
+<ul><li><em class="em2"><a href="ucc.html">Ucc</a> Make</em>: see <a href="compiling-with-ucc.html">Compiling With UCC</a></li>
+<li><a href="umake.html">UMake</a></li>
+</ul>
+<h2><a name="0.5"></a>After compiling</h2>
+<p>If all goes well,  the file "hunted.u" will appear in your system folder. If it doesn't open up UCC.LOG and search for errors, there are always a few like "package hunted.u couldn't be found" but that's good, because if UCC MAKE doesn't find it, it will try to compile it.</p>
+<h2><a name="0.6"></a>Conclusion</h2>
+<p>Now run the game and go to Instant Action.  The Hunted should be in your list of gametypes.  Start a map and there is our logo.  Its not much, but it verifies that our gametype works, and now we can bend it to our will, make it do our bidding.</p>
+<h2><a name="0.7"></a>Things to do</h2>
+<ul><li><ol><li>get the logo centered and alpha working </li>
+</ol>
+</li>
+</ul>
+<h2><a name="0.8"></a>Comments</h2>
+<p><em class="em2">Archnemesis:</em> I had made an error in the HuntedGame.uc file.  A default property was listed as</p>
+<p>PlayerControllerClassName="XGame.xController"</p>
+<p>when it should have been </p>
+<p>PlayerControllerClassName="XGame.xPlayer"</p>
+<p><em class="em2">Archnemesis:</em>  If you have already done this tutorial, I have made some changes to the Hud</p>
+<ul><li><ol><li>The background of the logo needs to be black, not white, I will repost the image.</li>
+<li>The render style should be Additive, not Alpha, this way the black part will be transparent.</li>
+<li>I have moved changed the x coordinate to 193 so the logo will be better centered</li>
+</ol>
+</li>
+</ul>
+<p>These changes are noted in the HUD code.</p>
+<p>I am going to plan my next lesson more carefully before I post it, I wrote this one while I was doing the actual coding, so it had these errors.  I will post the next couple of lessons in a week or so.  Paitience!</p>
+<p><em class="em2">Daid303:</em> I've added some text by the compiling, maybe there is a wiki page about compiling you could link to? I also changed the comment in the logo HUD because it isn't centerd. If you want to center you'll have to so something like this: (Canvas.ClipX - Tex.Width)/2, (Canvas.ClipY-Tex.Height)/2</p>
+<p><em class="em2">Archnemesis:</em> Thanks, I was thinking that on a different resolution, it probably wouldn't be centered, but I forgot to look into it.  I am going to work on the back linking before I post any other lessons.  I have been reading some of the wiki stuff and am going to revise this page to make it more wiki-friendly when I get a chance.  But first I'm off to Unreal University this weekend.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Folders and files", "#0.1");
+menuItemAdd("Step 2", "#0.2");
+menuItemAdd("GameType int file \"Hunted.int\"", "#0.3");
+menuItemAdd("Compiling", "#0.4");
+menuItemAdd("After compiling", "#0.5");
+menuItemAdd("Conclusion", "#0.6");
+menuItemAdd("Things to do", "#0.7");
+menuItemAdd("Comments", "#0.8");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Hunted_Lesson_1">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Hunted_Lesson_1">View other revisions</a><br>Last edited November 8, 2003 8:28 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Hunted_Lesson_1">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Hunted_Lesson_1">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Always snap to grid
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

@@ -1,0 +1,198 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Vertex Lighting</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Vertex_Lighting; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Vertex Lighting">Vertex Lighting</a></h1>
+	<div class="wiki"><p>Lights a mesh based on light reaching each polygon vertex.  </p>
+<h2><a name="0.1"></a>When Vertex Lighting occurs in Unreal</h2>
+<ul><li>on meshes</li>
+<li>not on BSP (uses lightmaps)</li>
+<li>Originally built into rendering software</li>
+<li>Built into 3D graphics cards for speed</li>
+</ul>
+<h2><a name="0.2"></a>How it works</h2>
+<p>Each polygon has a minimum of 3 vertices.  If light is cast towards the polygon, each vertex will usually receieve a differing light level.  Vertex lighting blends the light level on the surface of the polygon based on the vertex light levels.  </p>
+<p>Because of this blend, neighboring polygons will also appear smooth, resulting in a smooth mesh surface even if the mesh geometry is coarse.  However, a coarse polygon will still be detected by seeing its edges and comes with its own set of problems.</p>
+<p><em class="em1">Can mesh light smoothing be toggled?</em></p>
+<p><em class="em2">Foxpaw:</em> In UT there is an actor setting bCurvyMesh which I believe does this. In UT2003 I believe you can do it using materials, but I can't say that with certainty.</p>
+<h3><a name="0.2.1"></a>Stretched light or shadow</h3>
+<ul><li>Since light based on polys<ul><li>avoid long stretched polys</li>
+<li>Use even spaced polys for maximum light and shadow clarity</li>
+</ul>
+</li>
+</ul>
+<p>[show image]</p>
+<h3><a name="0.2.2"></a>Low polygon</h3>
+<ul><li>[show light] in center fade to black on edges</li>
+<li>[show light] on one edge fade to black</li>
+</ul>
+<h3><a name="0.2.3"></a>No shadow</h3>
+<ul><li>onto BSP lightmap world</li>
+<li>onto other meshes</li>
+</ul>
+<h2><a name="0.3"></a>Solutions</h2>
+<h3><a name="0.3.1"></a>Smooth shading</h3>
+<ul><li>prevents shade 'stepping' </li>
+</ul>
+<h3><a name="0.3.2"></a>Mesh detail</h3>
+<ul><li>Tesselation increases polygon count</li>
+<li>Increased polygons = increased lighting detail</li>
+</ul>
+<h3><a name="0.3.3"></a>Weld vertices</h3>
+<p>Dont place static mesh on top or near others</p>
+<ul><li>Make one mesh by welding vertices</li>
+<li>SHadows calcualted across entire mesh</li>
+</ul>
+<h2><a name="0.4"></a>If its still too bright or dark</h2>
+<p>You can always toggle a few parameters in the mesh's <a href="actor-overview.html">actor properties</a>:</p>
+<ul><li>bStaticTrue &rarr; false<ul><li>alters lighting on badly lit meshes</li>
+<li>Instead of being lit on a per-vertex basis, the mesh takes a direct trace from the eight nearest lightsources and uses those for its lighting. Useful if you end up with a black mesh because a couple of vertices aren't receiving light.</li>
+<li>Downsides - The entire mesh will appear to be too bright because it is being lit as a whole by eight separate lights. Additionally, the mesh will no longer cast a shadow. Also, if you have two wildly contrasting lights near the mesh you will end up with some pretty funky lighting <img alt=";)" src="emoticons/wink.gif" align="middle"></li>
+</ul>
+</li>
+</ul>
+<p>[show image]</p>
+<h2><a name="0.5"></a>Black-Lit meshes (A workaround using blocking volumes)</h2>
+<p>Pretty much anyone who has used UnrealEd 3 will have experienced those horrible black meshes caused by certain vertices not receiving light. Here's a handy workaround to provide nice lighting, with shadows, and retain functionality of the mesh:</p>
+<p>All that is needed for this to work is a single collision property in the mesh itself, and a <a href="blockingvolume.html">BlockingVolume</a>. Select your badly lit mesh and set its bBlockZeroExtentTraces collision property to false. This will mean the mesh effectively becomes non-solid to objects such as lights and weaponsfire. Therefore it logically follows that light will be able to penetrate the mesh and reach otherwise hidden vertices. That solves the black mesh problem, and also allows the mesh to be nicely lit (unlike the bStaticLight property).</p>
+<p>Next, you need to make a <a href="blockingvolume.html">BlockingVolume</a> in the correct size and shape to cover the mesh as closely as possible. In its collision properties, set bBlockZeroExtentTraces to TRUE this time. Now you might be wondering why we're setting this to true when it should block lights again. The simple answer is that blocking volumes don't work the same as meshes, and lighting will still be able to travel through the volume to reach the mesh. However, the volume *will* block both coronas and weaponsfire. There you have it, a nicely lit mesh that still blocks coronas aand weapons. Neat, huh? <img alt=":D" src="emoticons/biggrin.gif" align="middle"></p>
+<ul><li>Displayglow<ul><li>1.0 is maximum</li>
+</ul>
+</li>
+<li>Ambientglow<ul><li>changes overall lighting</li>
+</ul>
+</li>
+<li>enable bUnlit<ul><li>Full bright mesh reveals texture only</li>
+<li>uses no lighting</li>
+</ul>
+</li>
+<li>toggle bShadowcast<ul><li>mesh doesnt block light</li>
+</ul>
+</li>
+</ul>
+<h3><a name="0.5.1"></a>Projectors (UT2003 and later)</h3>
+<ul><li>If mesh is not bright but surrounding area is</li>
+<li>example: light area around a lamp mesh</li>
+<li>if BSP world is correctly lit<ul><li>project light onto mesh only</li>
+</ul>
+</li>
+</ul>
+<h2><a name="0.6"></a>Related Topics</h2>
+<ul><li>Hourences' tute: <a href="http://planetunreal.com/phalanx/tut%27s/tutorial_vertex.htm">http://planetunreal.com/phalanx/tut%27s/tutorial_vertex.htm</a></li>
+<li>General <a href="lighting.html">lighting</a></li>
+</ul>
+<h2><a name="0.7"></a>Discussion</h2>
+<p><em class="em2">Radiosity:</em> I've added my personal workaround for those dastardly black-lit meshes, hope it helps anyone who might read this <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<hr class="thin"><p><a href="category-mapping.html">Category Mapping</a><br><a href="category-to-do.html">Category To Do</a> &ndash; Add image examples as indicated above.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("When Vertex Lighting occurs in Unreal", "#0.1");
+menuItemAdd("How it works", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Stretched light or shadow", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Low polygon", "#0.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>No shadow", "#0.2.3");
+menuItemAdd("Solutions", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Smooth shading", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Mesh detail", "#0.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Weld vertices", "#0.3.3");
+menuItemAdd("If its still too bright or dark", "#0.4");
+menuItemAdd("Black-Lit meshes (A workaround using blocking volumes)", "#0.5");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Projectors (UT2003 and later)", "#0.5.1");
+menuItemAdd("Related Topics", "#0.6");
+menuItemAdd("Discussion", "#0.7");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Vertex_Lighting">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Vertex_Lighting">View other revisions</a><br>Last edited November 18, 2005 15:17 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Vertex_Lighting">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Vertex_Lighting">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I love the smell of UnrealEd crashing in the morning. (tarquin)</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

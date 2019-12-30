@@ -1,0 +1,161 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Armor Damage Absorption</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Armor_Damage_Absorption; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Armor Damage Absorption">Armor Damage Absorption</a></h1>
+	<div class="wiki"><p>When a <a href="pawn-ut.html">Pawn (UT)</a> takes damage it allows its <a href="inventory-ut.html">Inventory (UT)</a> items to reduce the damage by calling the <tt>ReduceDamage</tt> function of the first item in the inventory chain, but only if the Pawn's <tt>bIsPlayer</tt> property is <tt>True</tt> and the Pawn's <tt>ReducedDamageType</tt> property is not 'All'.<br></p>
+<p>The damage reduction process is divided into two steps:</p>
+<ol><li>Create a list of armor items and sort it by priority.</li>
+<li>Let the single items in that list reduce the damage until either the damage is 0 or the end of the list is reached.</li>
+</ol>
+<h2><a name="0.1"></a>Creating the List</h2>
+<p>When building the list of armor items <em class="em1">every</em> item in the Pawn's inventory list is checked even if its <tt>bIsAnArmor</tt> is <tt>False</tt>. (e.g. the Relic of Redemption is not an armor item, but still uses armor functions to check for probably deadly hits.)<br></p>
+<p>The list is built by the recursively called <tt>PrioritizeArmor</tt> function:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> inventory PrioritizeArmor<span class="uscript-operator">(</span> <span class="uscript-type">int</span> Damage<span class="uscript-operator">,</span> <span class="uscript-type">name</span> DamageType<span class="uscript-operator">,</span> vector HitLocation <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Inventory FirstArmor<span class="uscript-operator">,</span> InsertAfter<span class="uscript-operator">;</span>
+    
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Inventory <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        FirstArmor <span class="uscript-operator">=</span> Inventory<span class="uscript-operator">.</span>PrioritizeArmor<span class="uscript-operator">(</span>Damage<span class="uscript-operator">,</span> DamageType<span class="uscript-operator">,</span> HitLocation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        FirstArmor <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bIsAnArmor<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> FirstArmor <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            nextArmor <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">return</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    
+        <span class="uscript-comment">// insert this armor into the prioritized armor list</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> FirstArmor<span class="uscript-operator">.</span>ArmorPriority<span class="uscript-operator">(</span>DamageType<span class="uscript-operator">)</span> <span class="uscript-operator">&lt;</span> ArmorPriority<span class="uscript-operator">(</span>DamageType<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            nextArmor <span class="uscript-operator">=</span> FirstArmor<span class="uscript-operator">;</span>
+            <span class="uscript-keyword">return</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        InsertAfter <span class="uscript-operator">=</span> FirstArmor<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>InsertAfter<span class="uscript-operator">.</span>nextArmor <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> 
+                <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>InsertAfter<span class="uscript-operator">.</span>nextArmor<span class="uscript-operator">.</span>ArmorPriority<span class="uscript-operator">(</span>DamageType<span class="uscript-operator">)</span> <span class="uscript-operator">&gt;</span> ArmorPriority<span class="uscript-operator">(</span>DamageType<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            InsertAfter <span class="uscript-operator">=</span> InsertAfter<span class="uscript-operator">.</span>nextArmor<span class="uscript-operator">;</span>
+        
+        nextArmor <span class="uscript-operator">=</span> InsertAfter<span class="uscript-operator">.</span>nextArmor<span class="uscript-operator">;</span>
+        InsertAfter<span class="uscript-operator">.</span>nextArmor <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">return</span> FirstArmor<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>If there is at least one more item in the inventory chain that item's <tt>PrioritizeArmor</tt> function is called and returns the first item of a sorted list of all armors behind this item in the inventory chain. That item is stored in the <tt>FirstArmor</tt> variable. When "<tt>if (bIsAnArmor)</tt>" is reached and the <tt>FirstArmor</tt> variable still contains <tt>None</tt> there are no armor items in the inventory chain behind this item, so if this item <em class="em1">is</em> an armor it will be returned as the first (and only) item of the armor list to either the previous <tt>PrioitizeArmor</tt> function or to the <tt>ReduceDamage</tt> function.</p>
+<p>If the armor list is not empty the return values of the <tt>ArmorPriority</tt> functions of this item and of the items in the armor list are compared until the correct position for this item is found. The item is inserted into the list then and the first item of the list (which could also be this item) is returned to either the previous <tt>PrioitizeArmor</tt> function or to the <tt>ReduceDamage</tt> function.</p>
+<p>When code execution is returned to the <tt>ReduceDamage</tt> function it has a reference to the complete and sorted list of armor items.</p>
+<h2><a name="0.2"></a>Reducing Damage</h2>
+<p>Now the items can start reducing the damage. The items in the armor list now receive <tt>ArmorAbsorbDamage</tt> calls untill the damage is 0 or the end of the list is reached.</p>
+<p>By default the <tt>ArmorAbsorbDamage</tt> function works like this:</p>
+<ol><li>If the damage type is not 'Drowned' the item's <tt>ArmorImpactEffect</tt> function is called.</li>
+<li>If the damage type is not 'None' and matches either <tt>ProtectionType1</tt> or <tt>ProtectionType2</tt> a damage of 0 si returned meaning all damage has been absorbed without using the armor's charge.</li>
+<li>If the damage type is 'Drowned' the full damage is returned meaning no damage has been absorbed at all.</li>
+<li>An "armor damage" value is calculated: <tt>ArmorDamage = (Damage * ArmorAbsorption) / 100</tt><br>If the armor damage is greater than or equal to the armor's <tt>Charge</tt> the armor damage is reduced to <tt>Charge</tt> and the item is destroyed. If there's more charge than armor damage <tt>Charge</tt> is reduced by <tt>ArmorDamage</tt>.<br>In both cases <tt>Damage - ArmorDamage</tt> is returned as the new damage value to be processed by the next armor item.</li>
+</ol>
+<h2><a name="0.3"></a>Related Topics</h2>
+<ul><li><a href="taking-damage.html">Taking Damage</a></li>
+</ul>
+<script type="text/javascript"><!--
+ menuItemAdd("Creating the List", "#0.1");
+menuItemAdd("Reducing Damage", "#0.2");
+menuItemAdd("Related Topics", "#0.3");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Armor_Damage_Absorption">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Armor_Damage_Absorption">View other revisions</a><br>Last edited May 28, 2002 19:10 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Armor_Damage_Absorption">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Armor_Damage_Absorption">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Once I get that upgrade to 36-hour days, I will tackle that. (Mychaeel)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

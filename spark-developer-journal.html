@@ -1,0 +1,164 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Spark/Developer Journal</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Spark/Developer_Journal; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="spark.html">Spark</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Spark/Developer+Journal">Developer Journal</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Majestic Kingdom</h2>
+<h3><a name="0.1.1"></a>Introduction</h3>
+<p>Majestic Kingdom is a sophisticated (read: insane) project to create a roleplaying strategy experience in a first person world. It should allow players to play either as the king (controlling structure building, training units, ressource managment, ...) or as a hero (choosing one of several classes, controlling units, ...). Heros will play the game like a role playing game, they can fight to gain experience (either against creeps or enemy units), use magic, meelee and ranged weapons and buy or learn new stuff. If a hero dies, he has to be retrained by the king and then start from scratch. </p>
+<h3><a name="0.1.2"></a>3/1/2003</h3>
+<p>Developer Journal created. I will use this place to talk about everything I do for the Majestic Kingdom project, maybe some of this will be usefull. Currently I'm working on a basic creep code.</p>
+<h3><a name="0.1.3"></a>4/1/2003 - A baby creep is born</h3>
+<p>It can't fight yet, but it will react to the player once it sees it. It is really super simple, so I doubt that it's worth lots of words. The placeable creep is just a subclassed xPawn but placeable:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> Creep <span class="uscript-keyword">extends</span> MajesticPawn <span class="uscript-keyword">placeable</span><span class="uscript-operator">;</span></pre><p>The default property <em class="em1">ControllerClass</em> is set to my CreepController class. This controller class is a subclass of AIController and simply has two states, one for Idle and one for Attacking. In the Idle state, the "SeePlayer()" event will set the Enemy of the Creep and then go to the Attacking state. The attacking state then looks like this:</p>
+<pre class="uscript"><span class="uscript-keyword">state</span> Attacking
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">function</span> WhatToDo<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-comment">// Is our enemy still alive?</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Enemy<span class="uscript-operator">.</span>Health <span class="uscript-operator">&lt;=</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            Log<span class="uscript-operator">(</span><span class="uscript-string">"Enemy dead, let's return to home"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            GotoState<span class="uscript-operator">(</span><span class="uscript-name">'ReturnToHome'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        
+        <span class="uscript-comment">// Ok, so enemy does still live.</span>
+        <span class="uscript-comment">// We can't fight yet, so just check if we reached it yet.</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>Pawn<span class="uscript-operator">.</span>ReachedDestination<span class="uscript-operator">(</span>Enemy<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-comment">// We didn't, so find best path</span>
+            Log<span class="uscript-operator">(</span><span class="uscript-string">"Finding new path to enemy"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            MoveTarget <span class="uscript-operator">=</span> FindPathToward<span class="uscript-operator">(</span>Enemy<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            Focus <span class="uscript-operator">=</span> MoveTarget<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>   
+        <span class="uscript-keyword">else</span>
+        <span class="uscript-operator">{</span>
+            Log<span class="uscript-operator">(</span><span class="uscript-string">"Reached enemy"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            MoveTarget <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+
+Begin:
+    WhatToDo<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> MoveTarget <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        MoveToward<span class="uscript-operator">(</span>MoveTarget<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">Goto</span><span class="uscript-operator">(</span><span class="uscript-name">'Begin'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span> <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+        GotoState<span class="uscript-operator">(</span><span class="uscript-name">'Idle'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>What I don't like about this is, that SeePlayer() is only triggered if the player is actually in the FOV of the creep. Before I used RadiusActors to find a surrounding pawn in a Timer event, but the SeePlayer event seemed to be a better choice to me. If anyone knows how to make it see in every distance... Maybe I could use the HearNoise event, but this would be difficult to predict.</p>
+<p>I should go on making the creep actually attack now, award XP points for killing it, etc but I feel that this isn't really possible yet without the framework, so I need to find a starting point. The best idea to me seems to be to create a new GameInfo and a new PlayerController/Pawn. I will probably subclass the most basic classes because the game really hasn't much to do with Unreal anymore and most of the stuff there in xPlayer, xPawn, etc is simply not needed by me. This will take a while though because the GameInfo class doesn't even run as a gametype yet. </p>
+<h3><a name="0.1.4"></a>6/1/2003</h3>
+<p>I was mistaken, GameInfo DOES run, it was TeamGame that didn't run (crashed). I have a nice starting point now. <img alt=":)" src="emoticons/smile.gif" align="middle"> You can't really enter the game as a player yet, but I added an option to the midgamemenu to join the game as a king. This includes a nice topdown look at the map which automatically adjusts to terrainheight. See <a href="http://forums.beyondunreal.com/showthread.php?s=&threadid=145131">[this thread]</a> at BuF for more details. Next I will do zoomin and zoomout functionality and start creating a HUD for the king including a mouse pointer.</p>
+<p>Today I also posted a thread in the recruitment forum, hopefully someone will respond.</p>
+<h3><a name="0.1.5"></a>8/1/2003</h3>
+<p>Zooming is working nicely already. Creating the HUD took me a bit longer until I figured out that my HUD isn't drawn because my player has no pawn. Now that this is solved I can finally start working on a mouse pointer.</p>
+<p>I think I will create a subpage <a href="spark-mouse-pointer.html">Spark/Mouse Pointer</a> for this, might be usefull.</p>
+<hr class="thin"><p><a href="category-journal.html">Category Journal</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Majestic Kingdom", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Introduction", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>3/1/2003", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>4/1/2003 - A baby creep is born", "#0.1.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>6/1/2003", "#0.1.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>8/1/2003", "#0.1.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="spark.html">Spark</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Spark/Developer_Journal">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Spark/Developer_Journal">View other revisions</a><br>Last edited August 5, 2003 5:53 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Spark/Developer_Journal">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Spark/Developer_Journal">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>There is no spoon
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

@@ -1,0 +1,169 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Activating A Mover</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Activating_A_Mover; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Activating A Mover">Activating A Mover</a></h1>
+	<div class="wiki"><p>This page follows on from: </p>
+<ol><li><a href="create-a-mover.html">Create A Mover</a>: making a mover shape and adding it to the map </li>
+<li><a href="keyframe.html">Keyframe</a>: setting the mover keyframes </li>
+</ol>
+<p>Mover <a href="keyframe.html">keyframe</a>s set the places the mover will go to in space. There are now two remaining questions:</p>
+<ol><li>what will make the mover start moving? This is its <em class="em1">activation method</em></li>
+<li>how far along its keyframe sequence will it move &amp; when will it come back? This is set by the <a href="initialstate.html">InitialState</a>.</li>
+</ol>
+<h2><a name="0.1"></a>Activation Methods</h2>
+<h3><a name="0.1.1"></a>Triggering</h3>
+<p>The mover is activated by being triggered. This can be by:</p>
+<ul><li>a <a href="trigger.html">Trigger</a> (or <a href="dispatcher.html">Dispatcher</a>, <a href="roundrobin.html">RoundRobin</a>, etc) </li>
+<li>another type of event, such as something the game itself generates (eg a flag capture)</li>
+<li>the mover itself, with <em class="em2">BumpEvent</em>: a player bumps the mover, which fires the BumpEvent, which matches the mover's Events &rarr; Tag. See "bumping" below.</li>
+<li>Another mover (A button, switch, etc) using the MoverEvents section of its properties.</li>
+</ul>
+<p>For a mover to be activated by triggering, set Object&rarr;InitialState to one of the 'TriggerFoo' <a href="state.html">state</a>s. </p>
+<h3><a name="0.1.2"></a>Bumping</h3>
+<p>The mover is activated by an actor touching it. The BumpType property determines which actors count as valid.</p>
+<ul><li>Use one of the Bump states</li>
+<li>Set the mover's BumpEvent property to match its Tag, so it triggers itself when bumped, and use a 'TriggerFoo' state.</li>
+</ul>
+<h3><a name="0.1.3"></a>Standing</h3>
+<p>The mover is activated by an actor standing on it. This is often used for lifts.</p>
+<p class="indent1">anyone know how the engine differentiates between "bump" and "stand"?</p>
+<p><em class="em2">Legal:</em> You have to stand on top of it rather than just bumping (running into the side of) it. At least in theory...</p>
+<p>StandOpenTimed, as I see it, is mostly for bots. A lift will still lift if it's set to "BumpOpenTimed", however, a bot will think treat it like a door. StandOpenTimed lets bots know they have to stand on it.</p>
+<p>However for extremly long lifts I would advise using <em class="em2">TriggerControl</em> instead. Then if the player falls, the lift will rise up and "catch" them.</p>
+<h2><a name="0.2"></a>Setting the State</h2>
+<p>Each state listed in the mover's Object &rarr; <a href="initialstate.html">InitialState</a> property sets a different type of behaviour for the mover. (hence they are sometimes referred to as move types.... <i> or are they? I might have dreamt this one...  <em class="em1">Tarquin</em> </i></p>
+<p>The full list is covered in detail on the <a href="mover.html">Mover</a> class page. Which one you use depends on what the mover is meant to represent in the map and what you want it to do:</p>
+<h3><a name="0.2.1"></a>Lift</h3>
+<p>Use StandOpenTimed: the mover will open, wait, close if a player or a <a href="bot-ut.html">bot (UT)</a> stands on it.  </p>
+<h3><a name="0.2.2"></a>Door</h3>
+<p>TriggerOpenTimed and TriggerControl are both often used for doors. Both will start opening when triggered, but there is a differnce in what happens next:</p>
+<ul><li>TriggerOpenTimed will open, wait, close automatically regardless of where the player is.</li>
+<li>TriggerControl will open, and stay open as long as the player is still standing in the Trigger. The moment the player steps out, it will reverse direction and close, even if it was only partially open. </li>
+</ul>
+<p>TriggerControl is used in DM-StalwartXL for the slow-opening redeemer door, and for all the doors CTF-Cybrosis. It's a very nice effect, as doors shut as soon as the player has gone through, and also will never close on a player.</p>
+<p><em class="em2">This is generally the preferred method for doors.</em></p>
+<h3><a name="0.2.3"></a>Button</h3>
+<p>Use BumpOpenTimed: the mover will open, wait, close if it's touched. BumpButton adds extra detail to the movement: see the <a href="mover.html">mover</a> page.</p>
+<h2><a name="0.3"></a>Adding a Trigger</h2>
+<p>The next step after setting up your mover and its keyframes is adding in a <a href="trigger.html">Trigger</a> to make it work. Note that you do not <i>have</i> to have a trigger to make the mover work; you only need one if you are going to use an InitialState that starts with "Trigger*". For the purposes of a mover, you can use any type of Trigger you want, it doesn't matter. To get the mover to activate set the Events &rarr; <a href="event.html">Event</a> property of you trigger to the Events &rarr; <a href="tag.html">Tag</a> property of your mover.</p>
+<p>Note that you don't actually have to have a subclass of Trigger to trigger a mover. A mover can even be triggered by another mover, as long as the other mover's Event is set to the triggered mover's Tag. In the case of certain mods (like Jailbreak), you may also have the mover be triggered by events that are fired off by the game itself. Really, any Event that matches the mover's Tag will cause it to activate.</p>
+<h2><a name="0.4"></a>Related Topics </h2>
+<ul><li><a href="mover-topics.html">Mover Topics</a></li>
+<li><a href="create-a-mover.html">Create A Mover</a> shape and adding it to the map</li>
+<li><a href="event.html">Event</a> and <a href="tag.html">Tag</a></li>
+<li><a href="trigger-systems.html">Trigger Systems</a></li>
+</ul>
+<h2><a name="0.5"></a>Discussion</h2>
+<hr class="thin"><p><a href="category-to-do.html">Category To Do</a></p>
+<p><a href="category-mapping.html">Category Mapping</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Activation Methods", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Triggering", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Bumping", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Standing", "#0.1.3");
+menuItemAdd("Setting the State", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Lift", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Door", "#0.2.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Button", "#0.2.3");
+menuItemAdd("Adding a Trigger", "#0.3");
+menuItemAdd("Related Topics ", "#0.4");
+menuItemAdd("Discussion", "#0.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Activating_A_Mover">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Activating_A_Mover">View other revisions</a><br>Last edited August 15, 2006 0:38 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Activating_A_Mover">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Activating_A_Mover">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Worst-case scenario: the UEd Goblin wipes the map and burns down your house.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

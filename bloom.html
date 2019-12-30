@@ -1,0 +1,622 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Bloom</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Bloom; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Bloom">Bloom</a></h1>
+	<div class="wiki"><p>A <em class="em2">bloom</em> is a lenticular halo. This page shows how to implement this visual effect in <a href="unreal-tournament-2004.html">UT2004</a>.</p>
+<p>Blooms are another type of effect seen around lights. While <a href="corona.html">corona</a>s form the fuzzy glow you see around a light at night, or the rays which seem to shoot out from the light of the sun, blooms are a color-banded halo which is usually visible surrounding the corona. They are only seen when a person's pupils are dilated enough. (And <a href="lens-flare.html">lens flare</a>s are a natural phenomena that occurs when light is refracted many times by some sort of lens, creating several images of geometric shapes to appear from a single light source.  Given that fact, you'll find that lens flares are often over used and appear where they ought not to in 3D graphics.  In other words, you need a compund lens system for a lens flare. They aren't seen purely with the naked eye.)</p>
+<p>See the result on the <a href="bloom-screenshots.html">/Screenshots</a> page, or <a href="http://files.ego-creations.de/ut2004/BloomEffect_Mutator.zip">[Download here]</a> (don't post public, please). Use for whatever you want, but it would be nice if you let <a href="jarronis-the-vampiric-unico.html">me</a> know and add me in the credits (at least for the idea).</p>
+<h2><a name="0.1"></a>Code</h2>
+<p>At first, let take a look at the mutator:</p>
+<pre class="uscript"><span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-comment">// Bloom Mutator</span>
+<span class="uscript-comment">// Creates Interaction and handles</span>
+<span class="uscript-comment">// rendering of the bloom-texture</span>
+<span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-exec">#exec OBJ LOAD FILE=DreamTex.utx</span>
+<span class="uscript-keyword">class</span> Bloom <span class="uscript-keyword">extends</span> Mutator<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bAffectSpectators<span class="uscript-operator">;</span> <span class="uscript-comment">// If this is set to true, an interaction will be created for spectators</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bAffectPlayers<span class="uscript-operator">;</span> <span class="uscript-comment">// If this is set to true, an interaction will be created for players</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bHasInteraction<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> ScriptedTexture st<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> Actor bMesh<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> BloomInteraction BI<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> PreBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">//Log("ICU Mutator Started"); // Always comment out your logs unless they're errors</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> PlayerController PC<span class="uscript-operator">;</span>
+
+
+    <span class="uscript-comment">// If the player has an interaction already, exit function.</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bHasInteraction<span class="uscript-operator">)</span>
+        <span class="uscript-keyword">Return</span><span class="uscript-operator">;</span>
+    PC <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>GetLocalPlayerController<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Run a check to see whether this mutator should create an interaction for the player</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PC <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>PC<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">.</span>bIsSpectator <span class="uscript-operator">&amp;&amp;</span> bAffectSpectators<span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>bAffectPlayers <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>PC<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">.</span>bIsSpectator<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        st<span class="uscript-operator">=</span>ScriptedTexture<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>AllocateObject<span class="uscript-operator">(</span> <span class="uscript-keyword">class</span><span class="uscript-name">'ScriptedTexture'</span> <span class="uscript-operator">)</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        st<span class="uscript-operator">.</span>Client<span class="uscript-operator">=</span><span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+        <span class="uscript-comment">//change this for different 'bloom-map' qualities</span>
+        st<span class="uscript-operator">.</span>SetSize<span class="uscript-operator">(</span><span class="uscript-number">256</span><span class="uscript-operator">,</span><span class="uscript-number">256</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        PC<span class="uscript-operator">.</span>Player<span class="uscript-operator">.</span>InteractionMaster<span class="uscript-operator">.</span>AddInteraction<span class="uscript-operator">(</span><span class="uscript-string">"Dreamland.BloomInteraction"</span><span class="uscript-operator">,</span> PC<span class="uscript-operator">.</span>Player<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Create the interaction</span>
+        bHasInteraction <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Set the variable so this lot isn't called again</span>
+        bMesh<span class="uscript-operator">=</span>Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'BloomMesh'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-comment">//A FinalBlend with FB_Brighten</span>
+        FinalBlend<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">.</span>Skins<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Material<span class="uscript-operator">=</span>st<span class="uscript-operator">;</span>
+
+        BloomInteraction<span class="uscript-operator">(</span>PC<span class="uscript-operator">.</span>Player<span class="uscript-operator">.</span>LocalInteractions<span class="uscript-operator">[</span>PC<span class="uscript-operator">.</span>Player<span class="uscript-operator">.</span>LocalInteractions<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-number">-1</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>St<span class="uscript-operator">=</span>st<span class="uscript-operator">;</span>
+        BloomInteraction<span class="uscript-operator">(</span>PC<span class="uscript-operator">.</span>Player<span class="uscript-operator">.</span>LocalInteractions<span class="uscript-operator">[</span>PC<span class="uscript-operator">.</span>Player<span class="uscript-operator">.</span>LocalInteractions<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-number">-1</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>BMesh<span class="uscript-operator">=</span>bMesh<span class="uscript-operator">;</span>
+        BI<span class="uscript-operator">=</span>BloomInteraction<span class="uscript-operator">(</span>PC<span class="uscript-operator">.</span>Player<span class="uscript-operator">.</span>LocalInteractions<span class="uscript-operator">[</span>PC<span class="uscript-operator">.</span>Player<span class="uscript-operator">.</span>LocalInteractions<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-number">-1</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">event</span> RenderTexture<span class="uscript-operator">(</span>ScriptedTexture Tex<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> PlayerController PC<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> vector camloc<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Rotator camrot<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Actor camactor<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Color tAlpha<span class="uscript-operator">;</span>
+
+
+
+    talpha<span class="uscript-operator">.</span>R<span class="uscript-operator">=</span><span class="uscript-number">238</span><span class="uscript-operator">;</span>
+    talpha<span class="uscript-operator">.</span>G<span class="uscript-operator">=</span><span class="uscript-number">238</span><span class="uscript-operator">;</span>
+    talpha<span class="uscript-operator">.</span>B<span class="uscript-operator">=</span><span class="uscript-number">238</span><span class="uscript-operator">;</span>
+
+
+    PC <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>GetLocalPlayerController<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    PC<span class="uscript-operator">.</span>PlayerCalcView<span class="uscript-operator">(</span>camactor<span class="uscript-operator">,</span>camloc<span class="uscript-operator">,</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//log("RenderEvent");</span>
+
+    Tex<span class="uscript-operator">.</span>DrawPortal<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Tex<span class="uscript-operator">.</span>USize<span class="uscript-operator">,</span>Tex<span class="uscript-operator">.</span>VSize<span class="uscript-operator">,</span>camactor<span class="uscript-operator">,</span>camloc<span class="uscript-operator">,</span>camrot<span class="uscript-operator">,</span>PC<span class="uscript-operator">.</span>DefaultFOV<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//Lightfilter is a FinalBlend with FB_Darken</span>
+    <span class="uscript-comment">//The Light-threshold is controlled via talpha;</span>
+    <span class="uscript-comment">//Colored Bloom should be possible with unequal RGB values (untested)</span>
+    Tex<span class="uscript-operator">.</span>DrawTile<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Tex<span class="uscript-operator">.</span>USize<span class="uscript-operator">,</span>Tex<span class="uscript-operator">.</span>VSize<span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">16</span><span class="uscript-operator">,</span><span class="uscript-number">16</span><span class="uscript-operator">,</span>FinalBlend<span class="uscript-name">'DreamTex.Lightfilter'</span><span class="uscript-operator">,</span>talpha<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-operator">}</span>
+
+
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+     bAffectSpectators<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+     bAffectPlayers<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+     RemoteRole<span class="uscript-operator">=</span>ROLE_SimulatedProxy
+     bAlwaysRelevant<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+     FriendlyName<span class="uscript-operator">=</span><span class="uscript-string">"Bloom"</span>
+     Description<span class="uscript-operator">=</span><span class="uscript-string">"Adds Bloom to the gameplay."</span>
+<span class="uscript-operator">}</span></pre><p>This mutator creates an interaction, which i'll discuss later. Additionally a simple rectangle mesh is spawned. The only spcial thing aboput this mesh is, that its UV-Coordinates do not cover the whole range, but only a horizontal 4:3 part of it. It took some time to figure out that a mesh with a full UV-Range will squeeze the bloom. </p>
+<p>This mutator also is responsible for rendering the ScriptedTexture which is uses as the material for the FinalBlend which is in turn the skin of the bloom mesh. </p>
+<p>The basic idea is to render the whole frame again into the ScriptedTexture and then filter the bright parts with a FinalBlend (FB_Darken). But that just the first part. </p>
+<pre class="uscript"><span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-comment">// Renders the bloom-mesh several times to create a blur effect</span>
+<span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-keyword">class</span> BloomInteraction <span class="uscript-keyword">extends</span> Interaction<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> ScriptedTexture St<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> Actor BMesh<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> dist<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> fov<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> dev<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bEnableBloom<span class="uscript-operator">,</span>bXBloom<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> devX<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> vector CamPos<span class="uscript-operator">,</span>X<span class="uscript-operator">,</span>Y<span class="uscript-operator">,</span>Z<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> Rotator CamRot<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">event</span> NotifyLevelChange<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+        Master<span class="uscript-operator">.</span>RemoveInteraction<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">assert</span><span class="uscript-operator">(</span> St <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        ViewportOwner<span class="uscript-operator">.</span>Actor<span class="uscript-operator">.</span>Level<span class="uscript-operator">.</span>ObjectPool<span class="uscript-operator">.</span>FreeObject<span class="uscript-operator">(</span> St <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">//  (destroy any actors spawned by this interaction)</span>
+    <span class="uscript-comment">//  (clean up any uscript objects that have been loaded)</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> KeyEvent<span class="uscript-operator">(</span>EInputKey Key<span class="uscript-operator">,</span> EInputAction Action<span class="uscript-operator">,</span> <span class="uscript-type">FLOAT</span> Delta <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Key <span class="uscript-operator">==</span> IK_PageUp<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Action <span class="uscript-operator">==</span> IST_Release<span class="uscript-operator">)</span><span class="uscript-operator">)</span> devX<span class="uscript-operator">+=</span><span class="uscript-number">0.25</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Key <span class="uscript-operator">==</span> IK_PageDown<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Action <span class="uscript-operator">==</span> IST_Release<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>devX<span class="uscript-operator">&gt;</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> devX<span class="uscript-operator">-=</span><span class="uscript-number">0.25</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Key <span class="uscript-operator">==</span> IK_Home<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Action <span class="uscript-operator">==</span> IST_Release<span class="uscript-operator">)</span><span class="uscript-operator">)</span>bEnableBloom<span class="uscript-operator">=</span><span class="uscript-operator">!</span>bEnableBloom<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Key <span class="uscript-operator">==</span> IK_End<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Action <span class="uscript-operator">==</span> IST_Release<span class="uscript-operator">)</span><span class="uscript-operator">)</span>bXBloom<span class="uscript-operator">=</span><span class="uscript-operator">!</span>bXBloom<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Key <span class="uscript-operator">==</span> IK_Insert<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Action <span class="uscript-operator">==</span> IST_Release<span class="uscript-operator">)</span><span class="uscript-operator">)</span> dev<span class="uscript-operator">+=</span><span class="uscript-number">0.05</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Key <span class="uscript-operator">==</span> IK_Delete<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Action <span class="uscript-operator">==</span> IST_Release<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>dev<span class="uscript-operator">&gt;</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> dev<span class="uscript-operator">-=</span><span class="uscript-number">0.05</span><span class="uscript-operator">;</span>
+    log<span class="uscript-operator">(</span><span class="uscript-string">"dev"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    log<span class="uscript-operator">(</span>dev<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//not used currently</span>
+<span class="uscript-keyword">function</span> RenderBloomLayer<span class="uscript-operator">(</span>Canvas c<span class="uscript-operator">,</span> <span class="uscript-type">float</span> devX<span class="uscript-operator">,</span> <span class="uscript-type">float</span> mZ<span class="uscript-operator">,</span> <span class="uscript-type">float</span> mY<span class="uscript-operator">,</span> <span class="uscript-type">float</span> dev<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>campos<span class="uscript-operator">+</span><span class="uscript-operator">(</span>dist<span class="uscript-operator">-</span>devX<span class="uscript-operator">)</span><span class="uscript-operator">*</span>vector<span class="uscript-operator">(</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-operator">(</span>mZ<span class="uscript-operator">*</span>Z<span class="uscript-operator">+</span>mY<span class="uscript-operator">*</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">*</span>dev<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    C<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> PostRender<span class="uscript-operator">(</span>canvas Canvas<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+
+    <span class="uscript-keyword">local</span> Font UsedFont<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>bEnableBloom<span class="uscript-operator">)</span><span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>UsedFont<span class="uscript-operator">==</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span><span class="uscript-operator">{</span>
+        UsedFont <span class="uscript-operator">=</span> Font<span class="uscript-operator">(</span>DynamicLoadObject<span class="uscript-operator">(</span><span class="uscript-string">"SECFonts.Arial"</span><span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-name">'Font'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    Canvas<span class="uscript-operator">.</span>Font <span class="uscript-operator">=</span> UsedFont<span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>FontScaleX <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>FontScaleY <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>Style<span class="uscript-operator">=</span>ViewportOwner<span class="uscript-operator">.</span>Actor<span class="uscript-operator">.</span>ERenderStyle<span class="uscript-operator">.</span>STY_Normal<span class="uscript-operator">;</span>
+
+
+    Canvas<span class="uscript-operator">.</span>DrawColor<span class="uscript-operator">.</span>R<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawColor<span class="uscript-operator">.</span>G<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawColor<span class="uscript-operator">.</span>B<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//calc this frame</span>
+    st<span class="uscript-operator">.</span>Revision<span class="uscript-operator">++</span><span class="uscript-operator">;</span>
+
+    Canvas<span class="uscript-operator">.</span>GetCameraLocation<span class="uscript-operator">(</span>campos<span class="uscript-operator">,</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+
+    bMesh<span class="uscript-operator">.</span>SetRotation<span class="uscript-operator">(</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    ViewportOwner<span class="uscript-operator">.</span>Actor<span class="uscript-operator">.</span>GetAxes<span class="uscript-operator">(</span>camrot<span class="uscript-operator">,</span>X<span class="uscript-operator">,</span>Y<span class="uscript-operator">,</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">//moved to init</span>
+    <span class="uscript-comment">//FinalBlend(bMesh.Skins[0]).Material=st;</span>
+
+
+    Canvas<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span><span class="uscript-number">10</span><span class="uscript-operator">,</span><span class="uscript-number">240</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+
+
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>bXBloom<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>campos<span class="uscript-operator">+</span><span class="uscript-operator">(</span>dist<span class="uscript-operator">-</span>devX<span class="uscript-operator">)</span><span class="uscript-operator">*</span>vector<span class="uscript-operator">(</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">+</span>Z<span class="uscript-operator">*</span>dev<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>campos<span class="uscript-operator">+</span><span class="uscript-operator">(</span>dist<span class="uscript-operator">-</span>devX<span class="uscript-operator">)</span><span class="uscript-operator">*</span>vector<span class="uscript-operator">(</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">-</span>Z<span class="uscript-operator">*</span>dev<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>campos<span class="uscript-operator">+</span><span class="uscript-operator">(</span>dist<span class="uscript-operator">-</span>devX<span class="uscript-operator">)</span><span class="uscript-operator">*</span>vector<span class="uscript-operator">(</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">+</span>Y<span class="uscript-operator">*</span>dev<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>campos<span class="uscript-operator">+</span><span class="uscript-operator">(</span>dist<span class="uscript-operator">-</span>devX<span class="uscript-operator">)</span><span class="uscript-operator">*</span>vector<span class="uscript-operator">(</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">-</span>Y<span class="uscript-operator">*</span>dev<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawText<span class="uscript-operator">(</span><span class="uscript-string">"XBloom"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+    <span class="uscript-operator">{</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>campos<span class="uscript-operator">+</span><span class="uscript-operator">(</span>dist<span class="uscript-operator">-</span>devX<span class="uscript-operator">)</span><span class="uscript-operator">*</span>vector<span class="uscript-operator">(</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-operator">(</span>Z<span class="uscript-operator">+</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">*</span>dev<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>campos<span class="uscript-operator">+</span><span class="uscript-operator">(</span>dist<span class="uscript-operator">-</span>devX<span class="uscript-operator">)</span><span class="uscript-operator">*</span>vector<span class="uscript-operator">(</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-operator">(</span><span class="uscript-operator">-</span>Z<span class="uscript-operator">+</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">*</span>dev<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>campos<span class="uscript-operator">+</span><span class="uscript-operator">(</span>dist<span class="uscript-operator">-</span>devX<span class="uscript-operator">)</span><span class="uscript-operator">*</span>vector<span class="uscript-operator">(</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-operator">(</span><span class="uscript-operator">-</span>X<span class="uscript-operator">-</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">*</span>dev<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>campos<span class="uscript-operator">+</span><span class="uscript-operator">(</span>dist<span class="uscript-operator">-</span>devX<span class="uscript-operator">)</span><span class="uscript-operator">*</span>vector<span class="uscript-operator">(</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-operator">(</span><span class="uscript-operator">-</span>Y<span class="uscript-operator">+</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">*</span>dev<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawText<span class="uscript-operator">(</span><span class="uscript-string">"DoubleBloom"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    Canvas<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span><span class="uscript-number">10</span><span class="uscript-operator">,</span><span class="uscript-number">200</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawText<span class="uscript-operator">(</span><span class="uscript-string">"Bloom Active"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">//innerglow</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>bXBloom<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>campos<span class="uscript-operator">+</span><span class="uscript-operator">(</span>dist<span class="uscript-operator">-</span>devX<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>vector<span class="uscript-operator">(</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">+</span>Z<span class="uscript-operator">*</span>dev<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>campos<span class="uscript-operator">+</span><span class="uscript-operator">(</span>dist<span class="uscript-operator">-</span>devX<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>vector<span class="uscript-operator">(</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">-</span>Z<span class="uscript-operator">*</span>dev<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>campos<span class="uscript-operator">+</span><span class="uscript-operator">(</span>dist<span class="uscript-operator">-</span>devX<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>vector<span class="uscript-operator">(</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">+</span>Y<span class="uscript-operator">*</span>dev<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>campos<span class="uscript-operator">+</span><span class="uscript-operator">(</span>dist<span class="uscript-operator">-</span>devX<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>vector<span class="uscript-operator">(</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">-</span>Y<span class="uscript-operator">*</span>dev<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+    <span class="uscript-operator">{</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>campos<span class="uscript-operator">+</span><span class="uscript-operator">(</span>dist<span class="uscript-operator">-</span>devX<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>vector<span class="uscript-operator">(</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-operator">(</span>Z<span class="uscript-operator">+</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">*</span>dev<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>campos<span class="uscript-operator">+</span><span class="uscript-operator">(</span>dist<span class="uscript-operator">-</span>devX<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>vector<span class="uscript-operator">(</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-operator">(</span><span class="uscript-operator">-</span>Z<span class="uscript-operator">+</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">*</span>dev<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>campos<span class="uscript-operator">+</span><span class="uscript-operator">(</span>dist<span class="uscript-operator">-</span>devX<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>vector<span class="uscript-operator">(</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-operator">(</span><span class="uscript-operator">-</span>Y<span class="uscript-operator">-</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">*</span>dev<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>campos<span class="uscript-operator">+</span><span class="uscript-operator">(</span>dist<span class="uscript-operator">-</span>devX<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>vector<span class="uscript-operator">(</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-operator">(</span><span class="uscript-operator">-</span>Y<span class="uscript-operator">+</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">*</span>dev<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+    bVisible<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    bActive<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    dist<span class="uscript-operator">=</span><span class="uscript-number">40</span>
+    fov<span class="uscript-operator">=</span><span class="uscript-number">90</span>
+    dev<span class="uscript-operator">=</span><span class="uscript-number">0.28</span>
+    devX<span class="uscript-operator">=</span><span class="uscript-number">1.6</span>
+    bEnableBloom<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    bXBloom<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+<span class="uscript-operator">}</span></pre><p>Well, as it says, it renders the mesh at different positions to create a blur effect. The "Dev"-Property will just move the mesh the blur along the axis of the screen, while "DevX" will create a perspective-blur. </p>
+<p>This is the BloomMesh-class:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> BloomMesh <span class="uscript-keyword">extends</span> Actor<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">DefaultProperties</span>
+<span class="uscript-operator">{</span>
+    DrawType <span class="uscript-operator">=</span>              DT_StaticMesh
+    StaticMesh <span class="uscript-operator">=</span>            StaticMesh<span class="uscript-name">'DreamStat.BlurMesh'</span>
+    bUnlit <span class="uscript-operator">=</span>                <span class="uscript-keyword">true</span>
+    bStatic <span class="uscript-operator">=</span>               <span class="uscript-keyword">false</span>
+    bAlwaysRelevant <span class="uscript-operator">=</span>       <span class="uscript-keyword">true</span>
+    bNoDelete <span class="uscript-operator">=</span>             <span class="uscript-keyword">false</span>
+    bHardAttach <span class="uscript-operator">=</span>           <span class="uscript-keyword">true</span>
+    bHidden<span class="uscript-operator">=</span>                <span class="uscript-keyword">true</span>
+    Skins<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>               FinalBlend<span class="uscript-name">'DreamTex.BloomFB'</span>
+    DrawScale <span class="uscript-operator">=</span>             <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+    bAcceptsProjectors <span class="uscript-operator">=</span>    <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    RemoteRole <span class="uscript-operator">=</span>            ROLE_None<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>The Material "BloomFB" is a FinalBlend with FB_Brighten, but no material assigned to it, this is done in the code. "Lightfilter" is a Finalblend with FB_Darken an a pure white, or bright gray texture assigned to it.</p>
+<h2><a name="0.2"></a>Notes</h2>
+<p>Recently I had the idea to use the BloomMesh for both filtering the lights and for the bloom-effect itself. Maybe this could solve the terrain, banding and overlit problems, as no redundant RGB data is stored in the texture. This method would apply the Lightfilter to the BloomMesh and not to the ScriptedTexture itself,  as long as RenderTexture is called, after this, the material is switched back to BloomFB.</p>
+<p>For larger mods, or TC's this could be made map, or even zone-dependant, to create individual effects. It could be even possibly to create distant-dependant bloom-effects, by changing the zone fog values to a near black before rendering and applying the scripted texture several times. </p>
+<p>Objects nearer at the camera can receive a larger glow than objects more away.</p>
+<p>I'm honestly not the one who is made to understand UScript-Replication, so if you see any issues that make my code network-incompatible, please let me know here.</p>
+<h3><a name="0.2.1"></a>Problems</h3>
+<p>Sometimes, a ScriptedTexture does not render ParticleSystems correctly, displaying them boxes. Maybe this is an  Z-Buffer Issue, or, the ScriptedTexture does not like certain Rendertypes of Particles, Subtractive, f.i.</p>
+<p>It seems, a scripted Texture renders Terrain completely different as normally, making terrain extremely blurry with the bloom-effect.</p>
+<p>Because the ScriptedTexture, rendering all the level again(and filtering the bright parts), has to be applied several times on canvas, dealing a hard punch on the framerate.</p>
+<p>Actors, that are rendered via PostRender/DrawOverlay calls, are not visible for any calls of DrawPortal, of course. They still show up when the bloom is active, but they become transparent. I think i can solve this problem by creating a 'real' actor, giving it the same mesh/animation as the desired 1stPV-Actor(most commonly weapons models) </p>
+<h2><a name="0.3"></a>Comments</h2>
+<p><em class="em2">j3rky:</em> Interesting idea, and the screenshot looks promising... i'd like to see some code snippets <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">MythOpus:</em> Looks rather beautiful.  Good Job! <img alt=":tup:" src="emoticons/tup.gif" align="middle"></p>
+<p><em class="em2">El Muerte:</em> looks nice, but, is it worth it ?</p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> Well, if you have around 80FPS and you don't know where to put them, why not? Of course, my hardware isn't good enough to manage this, but i'm working on a 'light versions' too. </p>
+<p><em class="em2">Foxpaw:</em> Hmm, I like the way that looks. It's almost like high dynamic range lighting.</p>
+<p><em class="em2">DJPaul:</em> Can I/we get the code for this?  It'll be useful for a project that I am working on.</p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> Of course, i'll make this open source, once i cleaned up the code, and added enough configurable properties. </p>
+<p><em class="em2">j3rky:</em> Actually, I think it would be more usefull to see some code that doesn't feature a lot of extras. That way the basic idea behind the implementation becomes more obvious. It shouldn't be your goal to provide a working does-it-all library - that's something the individual programmer can and should do.</p>
+<p><em class="em2">Foxpaw:</em> I'm finding it somewhat difficult to understand how this works from your code. What is the code for the BloomMesh class? It apparently must have some as it has something in it's Skins array which doesn't appear to be put there by the interaction or the mutator.</p>
+<p>As best I can tell, you render the world onto your scripted texture, then LightFilter is drawn on top of it. Lightfilter I'm guessing is an all-white texture, so since it has FB_Darken, and is drawn mostly opaque, all but the most brightly lit parts of the scripted texture will be wiped out and made completely black.</p>
+<p>Then, you draw the mostly-black-but-dim-in-areas-that-should-get-brightened mesh with FB_Brighten, to brighten only the areas that remain on the scriptedtexture. The mesh appears to be drawn several times with slight offsets, which I'm guessing is so that instead of directly brightening only the brighter areas, (with hard edges) the bloommesh is shifted around to make the lightening "spill over" onto nearby areas.</p>
+<p>Is that correct? The BloomMesh class is missing and of course there's little information on what the materials used contain, so I'm guessing at how it works.</p>
+<p><em class="em2">Graphik:</em> I'm drooling. Added this to <a href="featured-pages.html">Featured Pages</a>.</p>
+<p><em class="em2">El Muerte:</em> A little note: never use the <code>assert()</code> function. It will trigger an engine shutdown when the expression is false. UnrealScript should never do this. </p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> Of course, i wouldn't do that normally, but interactions sometimes show strange behavior when handling Null-Objects. Sometimes they tend to crash anyway if you even attempt to check if they are "None" with an if expression. </p>
+<p>Foxpaw is right concerning how the code works. The BloomMesh(derived from Actor) class has no code, just some defaultproperties, that make sure this thing isn't replicated, unlit, etc. It's Skin is a predefined FinalBlend with FB_Brighten, but no Material assigned, because i'm doing that in the code.</p>
+<p>I'll add Material descriptions and the missing class later, of course.</p>
+<p><em class="em2">Tarquin:</em> This is now on <a href="featured-pages.html">Featured Pages</a> &ndash; so could we bring it out of walled garden space please and into the main project namespace? Thanks <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">DJPaul:</em> The BloomMesh is client-side only, I presume?  Also, have you made any progress fixing this from a first person view?  And whilst I plan to add this to my project in the next few days, is there any chance of screenshots that demonstrate the transparent-meshes-whilst-in-first-person so that I can appreciate how distracting this effect is a s a signifcant part of my mod is first-person.</p>
+<p><em class="em2">Foxpaw:</em> Unfortunately, I don't see how the first-person could be fixed without resorting to a hack. The issue is that the first person weapon is not drawn in DrawPortal because it is not drawn normally as part of the world - it is itself drawn in PostRender(). So, it would be more accurate to say that your first person weapon is like a part of the HUD, rather than being a part of the world.</p>
+<p>This can be solved, as Jarronis mentioned, by having the first person weapon be part of the world. However, that of course is going to be a hack and won't work for mods that use something different for their first person weapons. It would also involve replacing some other classes, which would be somewhat invasive and prone to incompatibilities with other mods.</p>
+<p>You might be able to work around it by copying the same code that draws the weapon onto the canvas, to have the weapon itself drawn onto the scriptedtexture after drawing the world onto it. However, now that I think about it some more, the bloommesh should be getting drawn beneath the weapon, and so should not be visible over top of it, so maybe the cause is soemthing different from what I was thinking. Hrmm. I'll see if I can get this working and see if I can figure out what's going on there.</p>
+<p>Also, what mesh did you use for the bloommesh, or did you create your own? Also, does the bloommesh compensate in any way for different resolutions (and hence, different aspect ratios on the monitor) or different POV settings? If not it seems like it might look funny when zoomed in on the sniper rifle, for example.</p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> I created my own mesh, though it is nothing more than a rectangle with an 4:3, so it should work on resolution that have the same ratio. Not that the UV-Coords must be map in the same way, this means, not the whole UV-"Square" but the biggest 4:3 part of it.</p>
+<p>As long as you zoom in(decreasing the FOV), everything is just fine, because the mesh floats in front of the camera as a virtual canvas. Increasing FOV will make the bordes become visible.</p>
+<p>Drawing the weapon directly onto the ScriptedTexture is not possible i think, because ScriptedTextures unfortunately don't have a DrawActor-Function. As said, another solution can be an actor that has the same Mesh, Animation und position like the FPV-Weapon, but this one is only visible during the RenderTexture event of the texture. So, copying code from the Postrender/DrawOverlay-Function might be a good idea for determining the position, the rest must be done via animation-replication. </p>
+<p>In general, i would suggest mod-authors to modify the code, as is fit to them, such as implenting the routines in a HUD instead of Interaction, which always draws ontop of the HUD.</p>
+<p><em class="em2">DJPaul:</em> I've been away too long to remember how these functions interact and how things are rendered; for simplicity's sake, on my part, I think I will wait to see if anyone comes up with a fix for this and otherwise leave it out of my code.</p>
+<p><em class="em2">Foxpaw:</em> Hrmm, I tried the code above, substituting in a mesh of my own and making the appropriate materials, but the effect I get isn't as nice. The "bloom" effect has visible contours on my setup, like the kind you get when you convert a colorful image to 256 color palettized. Is there any other settings you changed on the materials that are pertinent to making the effect look good?</p>
+<p><em class="em2">Foxpaw:</em> Actually it looks like I spoke too soon. It only does that in my mod. In UT2004 it doesn't do that. Wierd. (Actually, I would speculate that it probrably still exists in UT2004, but UT2004 doesn't have the same smooth gradient background that would make such an effect noticeable. Hmmm.</p>
+<p>Also it should be mentioned that the bloommesh has to have bHidden=true, otherwise it will look wierd when moving - because otherwise the bloommesh from the last frame gets rendered onto the scriptedtexture.</p>
+<p>Also I see what is going on with the weapons. My initial speculation was correct. Your bloommesh is getting drawn after the weapon, so it gets drawn on top of it. This causes it to appear "translucent" when in reality a translucent version of the world is being applied to it. I believe this because it seems logical and the transparency is greater over brighter objects, which would be the objects doing more brightening on the bloommesh. The least invasive workaround would be to draw the weapon on after drawing the bloommesh - so it would end up getting drawn twice, which is less than ideal but that way you don't have to have a custom controller or anything to work around it.</p>
+<p><em class="em2">DJPaul:</em> What sort of function would you use for that?  HUD.Postrender/DrawOverlay as was mentioned in Jarronis' post above?</p>
+<p><em class="em2">Foxpaw:</em> PostRender. The exact same place as the bloommesh is drawn in - just draw it after drawing the bloommesh. This won't prevent the first drawing, but then you can draw over the "translucent" version with a new one that won't have the bloommesh on top of it. This may look a bit strange for weapons with transparent bits, though, I haven't tried.</p>
+<p>Also, I haven't had any problems with emitters, like you had Jarronis. I had them at first, but setting bHidden to true on the bloommesh fixed them.</p>
+<p><em class="em2">DJPaul:</em> It would be appreciated if someone would upload the missing class that is mentioned, and the bloomesh  as I cannot model anything.  Thanks.</p>
+<p><em class="em2">Foxpaw:</em> Also I found a line that I think is a typo. One of the bloom offset thingies references X, when I think you meant to type Z.</p>
+<p>The comment about zooming in with the sniper rifle is, the "zoom" on the sniper rifle does not affect the location of the camera - it alters the FOV. However, I tried that and it doesn't seem to hurt anything when the FOV is tightened. I did notice that the overlay when zooming in with the lightning gun ends up being very bright, but again, there's not much that can be done about that.</p>
+<p>I've also noticed some glitchy behaviour when moving with the bloom on - sometimes the apparent light level makes a sudden shift. I'm guessing that this is related to the "deviation" of the glow.</p>
+<p>Okay, I'm also changing my stance on the emitters again - Emitters seem fine, but some xEmitters seem to have a kind of square around them. This is probrably simply an imperfect texture, and the imperfection is amplified. (Most modulated textures, for example, start to look wierd if you put a lot of them on top of each other.)</p>
+<p>Also, it turns out my speculation was right in that UT2004 does suffer from the same issue of looking like an indexed image, it's just not as noticeable because there isn't much in the way of color gradients. However, I did notice a color gradient (the sky in DM-Antalus) and it had the same "banding" issue.</p>
+<p>Also, I've noticed that the bloom effect varies a lot on different levels. I don't really know if anything can be done about that as it is likely related to the level's general brightness. For instance, in DM-Antalus it's very bright, kind of overdone-looking. However, on DM-TrainingDay, it's barely visible. (Except for some wierd artifacts visible out the windows.) On ONS-Torlan, the distance fog is lit up like a Christmas tree.</p>
+<p>Also, I optimized the code in the interaction slightly, which may also increase readability somewhat. Here's what I changed it to:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> PostRender<span class="uscript-operator">(</span>canvas Canvas<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> vector BaseDisplacement<span class="uscript-operator">;</span>
+  
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>bEnableBloom<span class="uscript-operator">)</span>
+    <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+  st<span class="uscript-operator">.</span>Revision<span class="uscript-operator">++</span><span class="uscript-operator">;</span>
+
+  Canvas<span class="uscript-operator">.</span>Reset<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  Canvas<span class="uscript-operator">.</span>GetCameraLocation<span class="uscript-operator">(</span>campos<span class="uscript-operator">,</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  BMesh<span class="uscript-operator">.</span>SetRotation<span class="uscript-operator">(</span><span class="uscript-keyword">Rot</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-operator">-</span><span class="uscript-number">16384</span><span class="uscript-operator">)</span> CoordRot Camrot<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  BMesh<span class="uscript-operator">.</span>GetAxes<span class="uscript-operator">(</span>Camrot<span class="uscript-operator">,</span>X<span class="uscript-operator">,</span>Y<span class="uscript-operator">,</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+  BaseDisplacement <span class="uscript-operator">=</span> CamPos <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>dist<span class="uscript-operator">-</span>devX<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> vector<span class="uscript-operator">(</span>CamRot<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  Y <span class="uscript-operator">*=</span> dev<span class="uscript-operator">;</span>
+  Z <span class="uscript-operator">*=</span> dev<span class="uscript-operator">;</span>
+    
+  <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>bXBloom<span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>BaseDisplacement<span class="uscript-operator">+</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>BaseDisplacement<span class="uscript-operator">-</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>BaseDisplacement<span class="uscript-operator">+</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>BaseDisplacement<span class="uscript-operator">-</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span>
+  <span class="uscript-operator">{</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>BaseDisplacement<span class="uscript-operator">+</span>Z<span class="uscript-operator">+</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span><span class="uscript-operator">(</span>BaseDisplacement<span class="uscript-operator">-</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">+</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span><span class="uscript-operator">(</span>BaseDisplacement<span class="uscript-operator">-</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">-</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span><span class="uscript-operator">(</span>BaseDisplacement<span class="uscript-operator">-</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">+</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+
+
+  BaseDisplacement <span class="uscript-operator">=</span> CamPos <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>Dist<span class="uscript-operator">-</span><span class="uscript-operator">(</span>DevX<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>Vector<span class="uscript-operator">(</span>CamRot<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  Y <span class="uscript-operator">*=</span> <span class="uscript-number">0.5</span><span class="uscript-operator">;</span>
+  Z <span class="uscript-operator">*=</span> <span class="uscript-number">0.5</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>bXBloom<span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>BaseDisplacement<span class="uscript-operator">+</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>BaseDisplacement<span class="uscript-operator">-</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>BaseDisplacement<span class="uscript-operator">+</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>BaseDisplacement<span class="uscript-operator">-</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">else</span>
+  <span class="uscript-operator">{</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>BaseDisplacement<span class="uscript-operator">+</span>Z<span class="uscript-operator">+</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span><span class="uscript-operator">(</span>BaseDisplacement<span class="uscript-operator">-</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">+</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span><span class="uscript-operator">(</span>BaseDisplacement<span class="uscript-operator">-</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">-</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span><span class="uscript-operator">(</span>BaseDisplacement<span class="uscript-operator">-</span>Y<span class="uscript-operator">)</span><span class="uscript-operator">+</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawActor<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">Graphik:</em> See tarquin's comment above. May I please move this to a public page (a subpage of <a href="lighting.html">Lighting</a> perhaps) rather than your personal page?</p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> Of course move it into project name space, or into <a href="lighting.html">Lighting</a> as you desire.</p>
+<p>Thank you, Foxpaw, for the typo. I mixed them up before, so i probably just forgot to change that. </p>
+<p>I noticed the color-banding and overlit issue too, if you you look close to screenshots you can see them there too. That's why i mentionend that especially talpha(the light treshold) cannot be the same maps. Dark maps can handle a lower talpha, resulting in brighter bloom-maps, but especially outdoor maps are overlit easily, so the threshhold must be higher. </p>
+<p>A general problem is that FB_Darken don't work that i want too, i think. It seems that the textures stores kind of 'negative' RGB-Values. So when you add them up, by drawing them ontop of each other several times, the colors that should be 'zero' show up again. That's also where the banding-effect takes place. </p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> I found a hack for the FPV Problem. Just add <code>ViewportOwner.Actor.Pawn.Weapon.RenderOverlays(Canvas);</code> at the end of the posternder - routine of the interaction. This will prevent the weapon becoming translucent. However, the weapon still won't be included into the bloom-lighting. I tried to set the weapons bHidden to false, when calling RenderTexture, because everytime RenderOverlay is called, the weapon's Rotation/Location is recalculated and drawn directly. In theory, when calling RenderOverlay in the interaction(although is shouldn't be necessary because the HUD already did it the same frame), setting bHidden to false, and then rendering the texture, the weapon should be visible in the bloom layer.</p>
+<p>My result was that the weapon actually shows up but in a wrong position. For some strange reasons, the weapons position seems to be reset, after RenderOverlay has been called.</p>
+<p><em class="em2">Graphik:</em> Moved.</p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em>Thank you. I found the problem. I was wrong, the position stays same, but the FPV-Weapons are drawn at a different FOV, which is weird for my purpose.</p>
+<p>I tried it with this:</p>
+<pre class="uscript"><span class="uscript-keyword">event</span> RenderTexture<span class="uscript-operator">(</span>ScriptedTexture Tex<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> PlayerController PC<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> vector camloc<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Rotator camrot<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Actor camactor<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Color tAlpha<span class="uscript-operator">;</span>
+
+
+
+    talpha<span class="uscript-operator">.</span>R<span class="uscript-operator">=</span><span class="uscript-number">238</span><span class="uscript-operator">;</span>
+    talpha<span class="uscript-operator">.</span>G<span class="uscript-operator">=</span><span class="uscript-number">238</span><span class="uscript-operator">;</span>
+    talpha<span class="uscript-operator">.</span>B<span class="uscript-operator">=</span><span class="uscript-number">238</span><span class="uscript-operator">;</span>
+
+
+    PC <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>GetLocalPlayerController<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    PC<span class="uscript-operator">.</span>PlayerCalcView<span class="uscript-operator">(</span>camactor<span class="uscript-operator">,</span>camloc<span class="uscript-operator">,</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//log("RenderEvent");</span>
+    <span class="uscript-comment">//make weapons visible</span>
+    PC<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span>bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    Tex<span class="uscript-operator">.</span>DrawPortal<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Tex<span class="uscript-operator">.</span>USize<span class="uscript-operator">,</span>Tex<span class="uscript-operator">.</span>VSize<span class="uscript-operator">,</span>camactor<span class="uscript-operator">,</span>camloc<span class="uscript-operator">,</span>camrot<span class="uscript-operator">,</span>PC<span class="uscript-operator">.</span>DefaultFOV<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//Lightfilter is a FinalBlend with FB_Darken</span>
+    <span class="uscript-comment">//The Light-threshold is controlled via talpha;</span>
+    <span class="uscript-comment">//Colored Bloom should be possible with unequal RGB values (untested)</span>
+    Tex<span class="uscript-operator">.</span>DrawTile<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Tex<span class="uscript-operator">.</span>USize<span class="uscript-operator">,</span>Tex<span class="uscript-operator">.</span>VSize<span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">16</span><span class="uscript-operator">,</span><span class="uscript-number">16</span><span class="uscript-operator">,</span>FinalBlend<span class="uscript-name">'DreamTex.Lightfilter'</span><span class="uscript-operator">,</span>talpha<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-comment">//hide weapon</span>
+    PC<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span>bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+<span class="uscript-operator">}</span></pre><p>It works just fine, except when the weapon-bloom disappears when you are too close to a wall, because of the z-buffer, but that's another problem. Well, in the RenderOverlay-function, DrawActor is called with a weapon-specific FOV which lies around 60 to 70. Well, Standard-Player-FOV is around 90, and that's the whole problem. So mod-makers: Match you FPV-Weapon's FOV to the Player-FOV and it will work fine.</p>
+<p><em class="em2">Foxpaw:</em> Did some more experimentation today. I was noticing a slight glitchiness, but when you posted your BloomMesh I thought I'd compare it to mine to see if there was any differences. I had forgotten to make mine bUnlit. This resolved some glitchiness with the apparent amount of bloom varying at different areas in the level.</p>
+<p>I had an idea regarding the banding but it was a no-go. I was thinking to myself. I thought, "It looks like what you get when you convert a 24 bit color image to 8-bit palletized." I responded by thinking, "maybe that's because the color compression of the scripted texture is 8-bit palletized, seing as how that's the default compression type." I deftly replied with "Holy Compression Batman, you're right!", while doing my best mental impression of err. that guy that played batman.</p>
+<p>Long story short, I changed the texture compression type, I tried a bunch of the options, but it didn't fix the banding. It seems like that might be a piece of the puzzle though, so to speak.</p>
+<p>I'm also a little unclear on what exactly you are planning with the lightfilter in your recent edit. Do you mean as in, putting the lightmap on the scripted texture, making it visible, then doing DrawPortal again with the filter over top?</p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> I used this code as an alternative RenderTexture:</p>
+<pre class="uscript">    PC <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>GetLocalPlayerController<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    PC<span class="uscript-operator">.</span>PlayerCalcView<span class="uscript-operator">(</span>camactor<span class="uscript-operator">,</span>camloc<span class="uscript-operator">,</span>camrot<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>Skins<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>FinalBlend<span class="uscript-name">'DreamTex.Lightfilter'</span><span class="uscript-operator">;</span>
+    Tex<span class="uscript-operator">.</span>DrawPortal<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Tex<span class="uscript-operator">.</span>USize<span class="uscript-operator">,</span>Tex<span class="uscript-operator">.</span>VSize<span class="uscript-operator">,</span>camactor<span class="uscript-operator">,</span>camloc<span class="uscript-operator">,</span>camrot<span class="uscript-operator">,</span>PC<span class="uscript-operator">.</span>DefaultFOV<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>Skins<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>FinalBlend<span class="uscript-name">'DreamTex.BloomFB'</span><span class="uscript-operator">;</span>
+    FinalBlend<span class="uscript-operator">(</span>bMesh<span class="uscript-operator">.</span>Skins<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>Material<span class="uscript-operator">=</span>st<span class="uscript-operator">;</span>
+    bMesh<span class="uscript-operator">.</span>bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">true</span><span class="uscript-operator">;</span></pre><p>Unfortunately it didn't work. It seems that DrawPortal has problems with rendering FinalBlends. </p>
+<p>I don't think that the band-problem can be resolved completely. Because all colors are added up more or less, the difference between to colors become greater.</p>
+<p><em class="em2">Foxpaw:</em> Hrm.. That actually worked fairly well on my mod. The sun was nicely brightened as was my white spacecraft, but the nebula background wasn't all bandy. It doesn't seem to work well in UT2004 though. I have to go to class now, but I'll experiment more when I return.</p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> Cool. Let me know if you got it working in UT2004, unless i don't get it. This solution don't creates redundant RGB-Data, which add up and create the banding-effect. </p>
+<p>It think it might be a z-buffer issue, because if Standard-UT2004 clears the z-buffer while rendering the HUD.</p>
+<p>When you use this solution you should'nt use a pure white texture, because then the FB would suctract everything, all light gray should do the trick, but i guess you already figured this out.</p>
+<p><em class="em2">Mosquito:</em> could this effect be intensified, sorta like the blur effect in farcry? If it causes such a performance hit, it could just be a hit effect or a shell effect.</p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> Variations of this effect are nearly limitless. You can play with different Blendmodes, Filters and offsets to achieve different effects.</p>
+<p><em class="em2">Foxpaw:</em> Actually, I was using an all-white texture. Now I know why the scriptedtexture was ending up completely black in UT2004. <img alt=";)" src="emoticons/wink.gif" align="middle"></p>
+<p>However, there's a new problem posed by using this method. Because you are using something that exists in world space as your light filter, it can get clipped by other objects. That means that if you are really close to some grass or something, the grass doesn't get filtered and as such is blindingly bright. This turned out to be why my mod was working.. because my entire ship was between the clipping plane and the bloom mesh. This problem should be fixable by simply reducing the drawscale of the bloommesh and moving it closer to the camera, until it's right next to the clipping plane.</p>
+<p>However, erm... All of that is fairly irrelevant, as now that I got it working using the bloommesh as a light filter, it still has the banding. <img alt=":(" src="emoticons/sad.gif" align="middle"></p>
+<p>I did get a strange insight though - the darkening light filter doesn't appear to actually push all pixels down a set amount (thus causing anything below a certain threshold to bottom out at 0, as one would think.) I set the scriptedtexture's FinalBlend to FB_Overwrite instead of FB_Brighten, and noticed that, while the scriptedtexture is darker than the scene, it still seems to have all of the same detail, even at very high "light thresholds." I now believe that the entire scene is being patterned around when the bloommesh is drawn, but is 'most noticeable' around brighter objects, as they cause the most brightening. I think we need to find a new way of filtering out the bright parts, but I'm not sure how we can go about doing that. It's possible but unlikely that the CO_Subtract of a combiner would behave the way we though that FB_Darken was. Maybe that's worth a try.</p>
+<p>Curses, now you've got me thinking about all kinds of things I might try with these filtering techniques. Previously I couldn't think of any way to implement a pixel-shader-esque effect like this in UScript because I didn't know of any way to get color data of pixels - now that I see how you've done this the possibilities seem endless. Hrmm.</p>
+<p>And Mosquito, I've already nicknamed the bloom effect, "drunken mode" or "hangover mode" because I have the blur and the light threshold fairly high. <img alt=";)" src="emoticons/wink.gif" align="middle"> The effect at high levels of dev is quite comparable to far cry's hit effect.</p>
+<p><em class="em2">Foxpaw:</em> Using Combiners for any texture math is probrably a good idea regardless as they are handled by the video card and will somewhat reduce the speed penalty.</p>
+<p>But erm... Combiners apparently do have different behaviour on their subtract than does Darken. But, err.. it appears that large subtractions (subtracting 240 for instance) actually produces a 'negative' of the view.</p>
+<p><em class="em2">Foxpaw:</em> Scratch that. Apparently CO_Subtract subtracts the FIRST material from the SECOND, so the order is reversed. No more negatives <img alt=";)" src="emoticons/wink.gif" align="middle"></p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> If you want to know, what a "drunken" effect is, combine bloom with motionblur...</p>
+<p>I had the same idea on using a combiner, but i wasn't sure about it, because a Combiner demands at least one constant texture. Using combiners also produces more 'overhead', it think, because the materials have more complex hierarchy.</p>
+<p>By the way, this "project" just was meant to be hobby-coding-project from me, and now it turned this large thing... I'm drooling....</p>
+<p><em class="em2">Foxpaw:</em> Err, well, you see, using Combiners actually produces drastically less overhead. To make a long story short, the overhead of combining the LightFilter and the scriptedtexture is effectively trivial. The transformation is reliably predictable, so the video card can be fed a little program that executes very quickly on purpose built hardware (the shader pipeline) instead of interpreting instructions and blitting textures in RAM.</p>
+<p>Plus the Combiner method actually does the filtering we want, completely wiping out any light below a certain threshold. <img alt=":D" src="emoticons/biggrin.gif" align="middle"></p>
+<p>However, we have a new problem: Now that we have something that's actually subtracting 238 from each pixel and bottoming out at 0, even the brightest of bright things is now only a brightness of 17, which is pretty dim. So now, I can't even see the bloom effect. (Though if I set the finalblend to FB_Overwrite I can see that it's there.) We now need a way to increase the brightness of non-zero pixels without increasing the brightness of zero pixels. Unfortunately, CO_Multiply won't work, as it interprets 255 as 1.0 and everything less as some fraction. We could just draw the additive texture a bunch of times, but that's probrably not the ideal solution. Any ideas on how we can control the brightness of the bloom effect, without changing the lightfilter?</p>
+<p><em class="em2">Foxpaw:</em> Another idea, we might be able to get better control over the effects and reduce the performance hit to almost nothing if we can find a way to prevent the world from being rendered by default, and then drawing our DrawPortal result + the Bloom effect as FB_Overwrite. Highly modified TCs like mine might be able to do this as I can have the playercontroller reside in a box way out in the middle of nowhere so everything will be occluded, and then have the playercontroller basically "watch TV" which would be the DrawPortal taken from the Pawn's first person view. However, that won't work for any mod using UT2004s default Pawn behaviour.</p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> We could reverse the texture using another combiner, then multiply, and then reverse again... "negative multiplication."</p>
+<p><em class="em2">Foxpaw:</em> Hrrmmm. I don't think that will work. If we take the negative of the texture using another combiner, the 0s become 255s, which will then get multiplied by some fraction, so when we take the negative again, they won't be zeros anymore..</p>
+<p><em class="em2">Foxpaw:</em> Err.. hemm. I've hit a brick wall. Apparently, the Unreal Engine doesn't like certain combinations of Materials. If I put the scriptedtexture directly into a finalblend I can use FB_Brighten with no problems. If I put it into a combiner with CO_Subtract, then put that into a final blend, all the blend modes <em class="em1">except</em> for FB_Brighten and FB_Darken work. I tried to get around this by simply using DrawTile to put the Combiner onto a second scriptedtexture, but that seems to cause GPFs.</p>
+<p>FB_Translucent does work, but it's not quite the same effect. I've tried using a combiner to add the combiner to the original st, and then displaying that with FB_Overwrite, which works, but there doesn't appear to be any way to get the "blur" effect, which is of course essential, otherwise it just makes the bright areas look washed out. I tried just using a ton of combiners and TexOscillators to get the blur effect, but that just gave me the default texture, which says to me that the maximum length of a shader program has been reached. (255 lines in Shader Model 2.0, which is what UnrealEngine2 uses.)</p>
+<p>So, I'm somewhat at a loss for what to do there. The FB_Brighten is important to get the desired effect. FB_Translucent gives hard edges and some of the detail on the light for instance (detail textures and such) spill over onto the "glow" area.</p>
+<p><em class="em2">Foxpaw:</em> Blech. I had an idea to work around the previous issue by taking another DrawPortal of the partially filtered image.. but that didn't work out. It appeared to be working, but it turns out that only the coronas were working because the coronas take time to fade out and so were getting in the frame unintentionally.</p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> Eureka, i got the Combiner working by turning on Modulate2X and Modulate4X. The effect is certainly there even with FB_Brighten, but it is quite dim. </p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> Hm, strike that maybe, i'm not sure if it was this, or some other changes in the code, that made it running.</p>
+<p><em class="em2">Tarquin:</em> it's best to generall avoid subpages. 'Bloom' is a perfectly good title &ndash; 'lighting bloom' or 'bloom effect' if you guys think that's better. Could someone with a decent text editor please promote all the headings by one level? thanks <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">DJPaul:</em> Clever chaps, if I implement this code as is from the top of the page, if you come up with any changes to improve it or fix issues, will I end up ripping it all out or will it most likely be a change of just one class?  I'm deciding whether to implement it now or put it in later.</p>
+<p><em class="em2">Foxpaw:</em> The current system I've been using is quite different from the original code, but the original code is enough to see how it is done. The original code used a finalblend with FB_Darken, which doesn't work the way we expected, and produced bands of color on areas that should have had smooth contours. The Combiner method I've used so far didn't seem to be working, and a slightly different method "worked" but made the colors look washed out. So, I'm still experimenting.</p>
+<p>I'll try playing around with Modulate2X and Modulate4X. I don't see why that would make any difference to the not drawing, but it might be useful anyway. The UDN says that it only works with CO_Multiply, and makes the result brighter. So, we may be able to multiply the filtered out light with a straight white texture and Modulate4X to make it brighter. I'll give it a shot.</p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> I'm currently cleaning up my code, so i can make an demonstration mutator. In case major spread is desired, someone should upload this to an official mirror, because my ISP's have limited bandwith.</p>
+<p><em class="em2">Foxpaw:</em> Modulate2X and Modulate4X was perfect for increasing the brightness of the filtered image, but I still can get it to actually draw onto the screen. Turns out that the problem I was having before that I attributed to the max shader length being reached was actually due to something else - I was using a ConstantColor material instead of a white bitmap, and mistakenly assumed that a ConstantColor still counted as a constant bitmap material. Now that I've fixed that I got a stage further, but FB_Brighten still doesn't seem to want to work. FB_Darken works though, so I'm left wondering if this is some bizarre behaviour of FB_Brighten (as in, remember how FB_Darken didn't actually directly subtract RGB values like we thought? Maybe FB_Brighten is doing something funny that's making it impossible to see.)</p>
+<p>Did you get your working using a combiner for the filter? If so I'd be interested to see where your code differs from mine.</p>
+<p><em class="em2">Foxpaw:</em> Huzzah! FinalBlend wouldn't draw FB_Brighten for me but using a Shader with OB_Brighten seems to. Now I'll see if I can tweak the dev and such to get the desired effect.</p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> Yeah, i got it working with a combiner(and without a shader). Well maybe your bitmap is just to bright, did you try a darker one?</p>
+<p><em class="em2">Foxpaw:</em> Well, when you upload the demo mutator I'll see how that effect compares to the one I got. The final effect that I got with the combiner and shader seems technically correct but looks a little exact for my liking, so I'm eager to see what you came up with.</p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> Well, used both approaches. The brighter one(which formerly uses only the FB) i called PowerBloom, but it also used the combiner with a black texture, which should make no difference, than using the FB alone. For a strange reason, the combiner eliminated all particle-errors, even if used with the pure black texture. </p>
+<p>The other method used the combiner with a very light gray, which makes a more "selective" bloom.</p>
+<p>I'd plan to implement a configuration menu for the mutator, where you can choose which method shall be used, along other options.</p>
+<p><em class="em2">Foxpaw:</em> I'm confused. You used only the FinalBlend, no combiners? How did you get rid of the banding?</p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> Of course i used combiners, but, when using PowerBloom, they are "disabled", by using a black texture. Yet, PowerBloom should only be used on maps where the banding-effect is not clearly visible, as DM-CBP2-Achilles (as in the screenshots.)</p>
+<p><em class="em2">Foxpaw:</em> So.. err, if you use a black texture with the combiner, no filtering would take place at all, so wouldn't you then end up with just a really blurry and very bright view?</p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> Yeah, but i still used the old Lightfilter on the ScriptedTexture too, so the bloom does not look "capped". So by using the both techniques it's a matter of the right individual settings for each map to look good.</p>
+<p><em class="em2">T1:</em> Up there it says something about needing a lens for a lens flare. It's true you can't see lens flares with the naked eye, but eyes still have lenses, so that's kind of inaccurate. Sorry for being nitpicky.</p>
+<p><em class="em2">Foxpaw:</em> Fixed. <img alt=":D" src="emoticons/biggrin.gif" align="middle"></p>
+<p><em class="em2">Graphik:</em> Glad you added a link to a demo mutator, but why so hidden in the page?</p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> Well, i didn't want it to post here in the comment area...</p>
+<p><em class="em2">Foxpaw:</em> Hmm. I like the demonstration mutator, though it looks a lot like the initial finalblend method you posted up here. The mutator still has the "see-through" weapons and has the banding, even with the "power bloom" turned off.</p>
+<p>As best I can tell, any FinalBlend using FB_Darken is going to cause that banding, as FB_Darken appears to do more of a division instead of a subtraction. This results in rounding making similar colors appear to be the same color. Maybe the banding could be fixed by hiding the skybox when you do the DrawPortal, that might cause HOMs, but it might not. Skyboxes seem to be the area where the banding is most noticeable as they often have smooth color gradients.</p>
+<p>Also the bloommesh doesn't adjust for different aspect ratios. This is <em class="em1">probrably</em> easy to accomplish, as I think that the Canvas has a function to get the resolution of the screen, so it'd be something like BloomMesh.SetDrawScale3D( Canvas.SizeX / 800, Canvas.SizeY / 600, 1 ); or something very similar. 800x600 is of course, only an example resolution, I don't know what resolution you designed it for.</p>
+<p>Also I noticed with the PowerBloom off the terrain gets all blotchy. (I noticed this with my own experimentations as well.) Maybe you could keep a linked list of terraininfos and make them all bHidden before doing the drawportal? That might cause HOMs or other undesireable behaviour though, but it's a shot.</p>
+<p>Except for the terrain issue and the banding in the skybox though, I think the bloom is very cool.</p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> Thanks. Hm, i think i can solve the transluent weapon problem, by disabling general HUD-Rendering and then use the interaction to call the HUD's PostRender() function. The Mesh was designed 1024*768.</p>
+<p><em class="em2">Mosquito:</em> With powerbloom it seems to had a level of desaturation and realism to the image, and the unsual effect on the terrain is actually very interesting, Could it could be recreated to create a kind of <a href="http://www.cs.wisc.edu/graphics/Gallery/NPRQuake/">[NPR]</a> (Non-PhotoRealistic Rendering) effect?</p>
+<p><em class="em2">Jarronis, The Vampiric Unicorn:</em> Interresting idea. I'm sure, NPR could be done this way. But i think the (usually) terrain issue is a bug of the DrawPortal-function of ScriptedTexture. Maybe it will be fixed in an future patch.</p>
+<p><em class="em2">Foxpaw:</em> The stuff on that NPR quake example would probrably be a little trickier to do. Pretty much all three methods rely on drawing things in wireframe mode (though with occlusion) and then tweaking the way that the wireframes are drawn. You might be able to do something like that with materials, but I'm not sure if you'd be able to do it on-the-fly like this, primarily as I don't know any way that you could get both wireframes drawn and still have proper z-buffering. The rendering methods used there look relatively simple to do, if you had access to the renderer, but unfortunately we don't. It might be possible to do that if you had the native headers.</p>
+<p>Not that I'm saying for sure that it's not possible, as it's always possible that someone might come up with a clever scheme to get a visual effect without accessing the renderer directly. (as was done here.)</p>
+<p><em class="em2">T1:</em> Is there anyway to make it so that those screenshots need a link to open up, here on 56k I hate to wait for them to load.</p>
+<p><em class="em2">Graphik:</em> The majority have broadband and would likely prefer things as they are. If you have a 56k you're going to be doing a lot of waiting. Get used to it. <img alt=";)" src="emoticons/wink.gif" align="middle"></p>
+<p><em class="em2">Tarquin:</em> you could feasibly crop the screenshots to show just a portion of the image.  would say about 300x300 pixels, and perhaps glue the before / after images side by side. The big advantage of this page not being a subpage any more is that we can make a <a href="bloom-screenshots.html">/Screenshots</a> page. <img alt=":)" src="emoticons/smile.gif" align="middle"> I'll repeat my request for the heading levels to be corrected <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">T1:</em> Thanks.</p>
+<p><em class="em2">Graphik:</em> Heading levels corrected.</p>
+<p><em class="em2">Uncommon:</em> The download link seems broken.</p>
+<p><em class="em2">Wormbo:</em> Works fine for me.</p>
+<p><em class="em2">Uncommon:</em> Ah, I see. My downloads window was in back, and the link also took me to an incomplete-looking page, so I got confused. Cool effects <img alt=":)" src="emoticons/smile.gif" align="middle">  I'm kind of surprised how little impact the motion blur has on performance.</p>
+<p><em class="em2">OlympusMons:</em> Havent read all of this, is it all relevant could use a <a href="refactor-me.html">Refactor Me</a></p>
+<p><em class="em2">Moron:</em> This is pretty good, I use a setting of 20 for the threshold and turn on the power bloom (it has nasty FX on the terrain for me otherwise). The only problem is that it seems to blur the terrain layers, regardless of whether whether they are bright or not. Has there been a fix for this yet (I'm not a coder, I only downloaded the mutator) or is it not possible?</p>
+<p><em class="em2">Jan:</em> Is there an alternate download?</p>
+<p><em class="em2">SuperApe:</em> Added category custom class tag.  The download link is broken. ("404 page not found")  It looks like we'd only need some specific info on the BloomMesh and DreamTex to reproduce the latest version.  On <a href="http://wiki.beyondunreal.com/wiki/Jarronis,_The_Vampiric_Unicorn">[Jarronis' page]</a>, it's mentioned the BloomMesh is a rectangle, so I assume a plane mesh.  It would be nice to see a download of the latest version.  This effect sure looks like what is being done in the next gen games; all the launch titles for XBox360 seems to have this effect (Call of Duty2, Quake4, Killzone, etc)  Really neat stuff. <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Jan:</em> Reproduced version:</p>
+<p><a href="http://files.ego-creations.de/ut2004/BloomEffect_Mutator.zip">http://files.ego-creations.de/ut2004/BloomEffect_Mutator.zip</a></p>
+<p><em class="em2">Olga</em> Updated download link. <a href="http://www.websamba.com/Jarronis/Dreamland.rar">[Original Link]</a></p>
+<p><em class="em2">GG-Xtreme:</em> For some reason, I can only use XBloom and DoubleBloom, but I would like to use the bloom shown in the screenshots. Is it the same one with a different name, or is that a different version of the mutator? I would really like the bloom in the screenshots because XBloom and DoubleBloom don't look anything like it.</p>
+<p><em class="em2">Ambershee:</em> It's pretty impressive. I find it amusing how it also applies it to the GUI though <img alt="=p" src="emoticons/tongue.gif" align="middle"></p>
+<hr class="thin"><p><a href="category-custom-class.html">Category Custom Class</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Code", "#0.1");
+menuItemAdd("Notes", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Problems", "#0.2.1");
+menuItemAdd("Comments", "#0.3");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Bloom">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Bloom">View other revisions</a><br>Last edited June 12, 2007 4:33 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Bloom">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Bloom">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Gah - a solution with more questions. (EntropicLqd)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

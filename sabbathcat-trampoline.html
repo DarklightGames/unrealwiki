@@ -1,0 +1,257 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: SabbathCat/Trampoline</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=SabbathCat/Trampoline; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="sabbathcat.html">SabbathCat</a>/<a href="http://wiki.beyondunreal.com/wiki?back=SabbathCat/Trampoline">Trampoline</a></h1>
+	<div class="wiki"><div class="classpath"><img src="shared//gameicons/icon-ut.png"> <a href="unreal-tournament.html">UT</a> :: <a href="actor-ut.html">Actor (UT)</a> &gt;&gt; <a href="triggers-ut.html">Triggers (UT)</a> &gt;&gt; <a href="trigger.html">Trigger</a> &gt;&gt; <a href="sabbathcat-trampoline.html">Trampoline</a> <br></div>
+<p>(Package: Custom - WIP)</p>
+<p>This is a UT actor.</p>
+<pre class="uscript"><span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// Trampoline</span>
+<span class="uscript-comment">// Bots hitting this will bounce 3* the Z falling speed upwards.</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">class</span> Trampoline <span class="uscript-keyword">extends</span> Trigger<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> vector KickVelocity<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span> bShowMe<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span> KickZMultiply<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">name</span> KickedClasses<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> sound KickMeSound<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span> bMakeNoise<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">bool</span> bRestrictVelocity<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> MaxVelocity<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> ExtraKick<span class="uscript-operator">;</span>
+
+
+<span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>bShowMe <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+          DrawType <span class="uscript-operator">=</span> DT_None<span class="uscript-operator">;</span>
+          bHidden <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+  <span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Touch<span class="uscript-operator">(</span> actor Other <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Actor A<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>Other<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span>KickedClasses<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+    PendingTouch <span class="uscript-operator">=</span> Other<span class="uscript-operator">.</span>PendingTouch<span class="uscript-operator">;</span>
+    Other<span class="uscript-operator">.</span>PendingTouch <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-keyword">Event</span> <span class="uscript-operator">!=</span> <span class="uscript-name">''</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span> <span class="uscript-keyword">class</span> <span class="uscript-name">'Actor'</span><span class="uscript-operator">,</span> A<span class="uscript-operator">,</span> <span class="uscript-keyword">Event</span> <span class="uscript-operator">)</span>
+            A<span class="uscript-operator">.</span>Trigger<span class="uscript-operator">(</span> Other<span class="uscript-operator">,</span> Other<span class="uscript-operator">.</span>Instigator <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostTouch<span class="uscript-operator">(</span> actor Other <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> bWasFalling<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> vector Push<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> PitchMeBounce<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> actor a<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> GravityThird<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">local</span> vector MyOldGravity<span class="uscript-operator">;</span>
+
+    bWasFalling <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>Physics <span class="uscript-operator">==</span> PHYS_Falling <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Bot'</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bWasFalling <span class="uscript-operator">)</span>
+                <span class="uscript-operator">{</span>
+            Bot<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>bJumpOffPawn <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+                        Bot<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>bTacticalDir <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+                        Bot<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>bJumpy <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+                    Bot<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>SetFall<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    Other<span class="uscript-operator">.</span>SetPhysics<span class="uscript-operator">(</span>PHYS_Falling<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+
+        GravityThird <span class="uscript-operator">=</span> Abs<span class="uscript-operator">(</span>Region<span class="uscript-operator">.</span>Zone<span class="uscript-operator">.</span>ZoneGravity<span class="uscript-operator">.</span>Z<span class="uscript-operator">/</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+
+    <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> bRestrictVelocity<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"              "</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"*********&gt;&gt;     EXTRA KICK   = TRUE ******&lt;&lt;"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"              "</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Push<span class="uscript-operator">.</span>Z <span class="uscript-operator">=</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Abs<span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>Velocity<span class="uscript-operator">.</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">+</span>ExtraKick<span class="uscript-operator">;</span>
+        
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">Else</span> <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bRestrictVelocity<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"              "</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"*********&gt;&gt;     EXTRA KICK   = FALSE ******&lt;&lt;"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"              "</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Push<span class="uscript-operator">.</span>Z <span class="uscript-operator">=</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Abs<span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>Velocity<span class="uscript-operator">.</span>Z<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span><span class="uscript-number">2.25</span><span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-number">10</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> Push<span class="uscript-operator">.</span>Z <span class="uscript-operator">&lt;=</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+        Push<span class="uscript-operator">.</span>Z <span class="uscript-operator">=</span> <span class="uscript-operator">-</span>Push<span class="uscript-operator">.</span>Z<span class="uscript-operator">;</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"          Push.Z = -Push.Z"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">Else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Push<span class="uscript-operator">.</span>Z <span class="uscript-operator">&lt;=</span> <span class="uscript-operator">(</span>GravityThird<span class="uscript-operator">+</span>ExtraKick<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+        Push<span class="uscript-operator">.</span>Z <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>GravityThird<span class="uscript-operator">+</span>ExtraKick<span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-number">128</span><span class="uscript-operator">;</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"          Push.Z = (GravityThird+ExtraKick)+128"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    MyOldGravity<span class="uscript-operator">=</span>Other<span class="uscript-operator">.</span>Velocity<span class="uscript-operator">;</span>
+    MyOldGravity<span class="uscript-operator">+=</span> Push<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> MyOldGravity<span class="uscript-operator">.</span>Z <span class="uscript-operator">&lt;</span><span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+        MyOldGravity<span class="uscript-operator">.</span>Z <span class="uscript-operator">=</span> <span class="uscript-operator">-</span>MyOldGravity<span class="uscript-operator">.</span>Z<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> bRestrictVelocity <span class="uscript-operator">&amp;&amp;</span> MyOldGravity<span class="uscript-operator">.</span>Z <span class="uscript-operator">&gt;</span> MaxVelocity <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+    MyOldGravity<span class="uscript-operator">.</span>Z<span class="uscript-operator">=</span>MaxVelocity<span class="uscript-operator">;</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"              "</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"MaxVelocity  : "</span><span class="uscript-operator">$</span>MaxVelocity<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"MyOldGravity : "</span><span class="uscript-operator">$</span>MyOldGravity<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">"              "</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+        Other<span class="uscript-operator">.</span>Velocity <span class="uscript-operator">=</span> MyOldGravity<span class="uscript-operator">;</span>
+        Log<span class="uscript-operator">(</span><span class="uscript-string">" MyOldGravity "</span><span class="uscript-operator">$</span>MyOldGravity<span class="uscript-operator">$</span><span class="uscript-string">"      &lt;&lt;  "</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    PlaySound <span class="uscript-operator">(</span>KickMeSound<span class="uscript-operator">,</span> <span class="uscript-operator">,</span> <span class="uscript-type">Float</span><span class="uscript-operator">(</span>SoundVolume<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">128</span><span class="uscript-operator">,</span> <span class="uscript-operator">,</span> <span class="uscript-type">Float</span><span class="uscript-operator">(</span>SoundRadius<span class="uscript-operator">)</span><span class="uscript-operator">*</span><span class="uscript-number">25</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    MakeNoise<span class="uscript-operator">(</span><span class="uscript-number">238</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">defaultproperties</span>
+
+<span class="uscript-operator">{</span>
+     KickedClasses<span class="uscript-operator">=</span>Pawn
+     RemoteRole<span class="uscript-operator">=</span>ROLE_SimulatedProxy
+     bDirectional<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     KickMeSound<span class="uscript-operator">=</span>Sound<span class="uscript-name">'AmbModern.OneShot.cscanE2'</span>
+     bMakeNoise<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+     DrawScale<span class="uscript-operator">=</span><span class="uscript-number">1.500000</span>
+  DrawType<span class="uscript-operator">=</span>DT_Mesh  
+  Mesh<span class="uscript-operator">=</span>LodMesh<span class="uscript-name">'Botpack.FastSprocket'</span>
+  bCollideWhenPlacing<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+  CollisionRadius<span class="uscript-operator">=</span><span class="uscript-number">64.00000</span>
+  CollisionHeight<span class="uscript-operator">=</span><span class="uscript-number">16.00000</span>
+  MultiSkins<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Texture<span class="uscript-name">'Botpack.Skins.Jlightcone11'</span>
+  MultiSkins<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Texture<span class="uscript-name">'Botpack.Skins.Jlightcone11'</span>
+  MultiSkins<span class="uscript-operator">(</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Texture<span class="uscript-name">'Botpack.Skins.Jlightcone11'</span>
+  bShowMe<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+  bEdShouldSnap<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+  bStatic<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+  bNoDelete<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+  bRestrictVelocity<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+  MaxVelocity<span class="uscript-operator">=</span><span class="uscript-number">2500</span>
+  ExtraKick<span class="uscript-operator">=</span><span class="uscript-number">256</span>
+<span class="uscript-operator">}</span></pre><p>The Trampoline will increase the players Z velocity each time it is hit, up until the point where the bot/player achives the speed determined by the MaxVelocity default property.</p>
+<h2><a name="0.1"></a>Using the Trampoline</h2>
+<p>Place somewhere with plenty of headroom, perhaps at the botom of a well, with a useful pick-up. Who knows? <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<ul><li><a href="pathing-kickers.html">Pathing Kickers</a> has more on using kickers</li>
+</ul>
+<h2><a name="0.2"></a>Properties</h2>
+<p>These are the properties and their default values:</p>
+<dl><dt>KickMeSound = Sound</dt><dd>Is the Sound made when the Trampoline is triggered. </dd></dl>
+<script type="text/javascript"><!--
+ menuItemAdd("Using the Trampoline", "#0.1");
+menuItemAdd("Properties", "#0.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="sabbathcat.html">SabbathCat</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=SabbathCat/Trampoline">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=SabbathCat/Trampoline">View other revisions</a><br>Last edited January 27, 2004 11:30 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=SabbathCat/Trampoline">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/SabbathCat/Trampoline">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I don't need to test my programs. I have an error-correcting modem.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

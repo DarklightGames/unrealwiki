@@ -1,0 +1,178 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Weapon Modeling With 3dsmax</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Weapon_Modeling_With_3dsmax; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Weapon Modeling With 3dsmax">Weapon Modeling With 3dsmax</a></h1>
+	<div class="wiki"><dl><dt>Tutorial Goal</dt><dd>This is an advanced tutorial that will walk you through taking a weapon model from <a href="3d-studio-max.html">3D Studio Max</a> to UT2004 and getting the weapon fully functional by using UnrealScript.</dd></dl>
+<p>Disclaimer: This tutorial was written using UT2004. Some code may not work properly in UT2003. You have been warned. <img alt=";)" src="emoticons/wink.gif" align="middle"></p>
+<p>Assumptions:</p>
+<ul><li>You know how to model in 3dsmax and can create your mesh and texture on your own or have one already made.</li>
+<li>You know the basics of 3dsmax</li>
+<li>You know the basics of UnrealScript and can compile</li>
+<li>Your weapon is similar to one of the weapons already in UT (for simplicity)</li>
+<li>You have all of the tools required<ul><li>A copy of <a href="3d-studio-max.html">3D Studio Max</a> and UT2004</li>
+<li>The <a href="http://udn.epicgames.com/Two/ActorX">[ActorX plugin]</a> for your version of 3dsmax</li>
+<li>A text editor to make UC files. (Notepad works, but <a href="wotgreal.html">WOTgreal</a> is recommended)</li>
+</ul>
+</li>
+</ul>
+<h2><a name="0.1"></a>First Decision:</h2>
+<p>Once you have your weapon model finished and textured, you must choose between two different animation types. Vertex animation is the simplest to create in 3dsmax, but UT2004 has complex import methods for this type of animation. Skeletal animation is done very similar to player models. You make bones relative to how you would like your weapon to animate. There is a catch here too: to animate a cocking motion, such as a pistol slide, you must use Inverse Kinematics (IK) to allow the slide bone to stretch and compress. Skeletal animation was used in the example. Here’s how to make the bones for the example:</p>
+<ol><li>Select the bones tool from the prefabs page, systems tab</li>
+<li>Click to place your first bone (the root) then click where you want each joint</li>
+<li>Be sure to place bone ends where you want the muzzle flash to go<ul><li>For the example there are only 4 bones: one root, one connector, one slide bone, and one flash bone.</li>
+<li>(link to example pic, bones)</li>
+</ul>
+</li>
+<li>Now you must rig your weapon to the bones in much the same way as a player model would be rigged<ul><li>See Player_Modeling/3dsmax_Tutorial<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Player_Modeling/3dsmax_Tutorial&referrerid=Weapon_Modeling_With_3dsmax">?</a> for specifics on rigging</li>
+<li>I would recommend using vertex assignment exclusively as envelope is meant for more organic movements</li>
+<li>The example was rigged in only 2 places: the bottom half was rigged to the root, while the slide was rigged to the flash bone ( this prevents the mesh from "squishing" when the slide bone is compressed)</li>
+</ul>
+</li>
+</ol>
+<h2><a name="0.2"></a>Inverse What?</h2>
+<ol><li>To get the slide to... slide you must apply a specific type of IK called History Dependant (HD)</li>
+<li>Select Animations menu &gt; IK &gt; HD</li>
+<li>Select the first bone you wish to apply IK to<ul><li>In the example the root bone was selected</li>
+</ul>
+</li>
+<li>Select the last bone in the chain<ul><li>The slide bone in the example</li>
+</ul>
+</li>
+<li>This makes these bones an IK chain and you can now drag the IK crosshair to place the end bones</li>
+<li>On the movers(?) page there is an IK rollout, use this to edit the IK properties of each bone in the chain<ul><li>The example locked all rotation axes and only allowed the slide bone to slide along the x axis</li>
+</ul>
+</li>
+</ol>
+<h2><a name="0.3"></a>Animating:</h2>
+<p>Because of the use of IK and Forward Kinematics (FK) on the root to simulate recoil, you weapon may appear to "fall apart" and leave the IK bones and rigged mesh behind. This is caused by 3dsmax trying to work in two different directions at once. Follow these steps to animate your weapon properly (all animations are at 30 frames per second):</p>
+<ol><li>The firing animation is typically the most complex and will be tackled first</li>
+<li>In the example the slide was animated alone first<ol><li>Change the animation slider to go from 0 - 7(?)</li>
+<li>Select the whole scene [ctrl+a] and click Set Key Frame(?)</li>
+<li>Click auto-key(?) and drag the animation slider to frame 3(?)</li>
+<li>Drag the IK crosshair to where the slide would be for fully cocked back</li>
+<li>Drag animation slider to frame 7</li>
+<li>Drag IK crosshair back to starting point</li>
+<li>test play the animation</li>
+</ol>
+</li>
+<li>You should see your slide kicking as if a shot were fired, but there is usually some recoil with weapons.</li>
+<li>To animate the recoil rotate the root so your weapon rocks back as if fired on the last frame of your slide animation<ul><li>You can also have the weapon move back and a little up fore more kick</li>
+</ul>
+</li>
+<li>Expand the animation slider range to fit how long you wish your fire animation to be</li>
+<li>Place more key frames for the recovery and place the weapon back in the starting position on the last frame</li>
+<li>The slide will likely position itself strangely during these animations as you have not adjusted the crosshair for the recoil</li>
+<li>Simply move the crosshair with auto-key on and adjust your key frames accordingly</li>
+</ol>
+<p>Any alternate fires that require animations are created in much the same way. The other animations UT2004 uses for weapons are Select (when the weapon is selected), Idle, and PutDown (when another weapon is selected). These animations can be done on the same animation slider, just use later frames.</p>
+<h2><a name="0.4"></a>Exporting the mesh and animation:</h2>
+<p><em class="em2">TO DO</em></p>
+<h2><a name="0.5"></a>Comments</h2>
+<p><em class="em2">Tarquin:</em> It's best to only use subpages for groups of pages that are part of one document. I suggest renaming this to <a href="weapon-modeling-with-3dsmax.html">Weapon Modeling with 3dsmax</a>, and doing the same for the player modelling tute.</p>
+<p><em class="em2">Syntax_Error:</em> Will do Tarquin. Thanks for the suggestion.</p>
+<hr class="thin"><p><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("First Decision:", "#0.1");
+menuItemAdd("Inverse What?", "#0.2");
+menuItemAdd("Animating:", "#0.3");
+menuItemAdd("Exporting the mesh and animation:", "#0.4");
+menuItemAdd("Comments", "#0.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Weapon_Modeling_With_3dsmax">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Weapon_Modeling_With_3dsmax">View other revisions</a><br>Last edited March 2, 2005 12:06 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Weapon_Modeling_With_3dsmax">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Weapon_Modeling_With_3dsmax">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I search for solutions in this order: Past Code, Unreal Source, Wiki, BUF, groups.yahoo, google, screaming at monitor. (RegularX)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

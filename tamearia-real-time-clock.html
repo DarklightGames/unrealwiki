@@ -1,0 +1,187 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Tamearia Real Time Clock</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Tamearia_Real_Time_Clock; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Tamearia Real Time Clock">Tamearia Real Time Clock</a></h1>
+	<div class="wiki"><p>This is a real time clock that I created.  With some minor changes it can probably be used in a normal UT2004 map, although I haven't tested it online.</p>
+<p>First up is the clock itself:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> Clock <span class="uscript-keyword">extends</span> Actor
+    <span class="uscript-keyword">placeable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> ClockHand HourHand<span class="uscript-operator">,</span> MinuteHand<span class="uscript-operator">,</span> SecondHand<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> vector HourHandScale<span class="uscript-operator">,</span> MinuteHandScale<span class="uscript-operator">,</span> SecondHandScale<span class="uscript-operator">;</span>        <span class="uscript-comment">// Since the hands are spawned by the clock,</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> texture HourHandTexture<span class="uscript-operator">,</span> MinuteHandTexture<span class="uscript-operator">,</span> SecondHandTexture<span class="uscript-operator">;</span> <span class="uscript-comment">// need a way for the mapper to customize the hands.</span>
+<span class="uscript-keyword">var</span> rotator Hour<span class="uscript-operator">,</span> Minute<span class="uscript-operator">,</span> Second<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> vector NewDrawScale3D<span class="uscript-operator">,</span> MyDrawScale<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    HourHand <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'ClockHand'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span>Location<span class="uscript-operator">,</span>Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    MinuteHand <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'ClockHand'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span>Location<span class="uscript-operator">,</span>Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    SecondHand <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'ClockHand'</span><span class="uscript-operator">,</span> <span class="uscript-keyword">self</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span>Location<span class="uscript-operator">,</span>Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    MyDrawScale<span class="uscript-operator">.</span>X <span class="uscript-operator">=</span> DrawScale <span class="uscript-operator">*</span> DrawScale3D<span class="uscript-operator">.</span>X<span class="uscript-operator">;</span>
+    MyDrawScale<span class="uscript-operator">.</span>Y <span class="uscript-operator">=</span> DrawScale <span class="uscript-operator">*</span> DrawScale3D<span class="uscript-operator">.</span>Y<span class="uscript-operator">;</span>
+    MyDrawScale<span class="uscript-operator">.</span>Z <span class="uscript-operator">=</span> DrawScale <span class="uscript-operator">*</span> DrawScale3D<span class="uscript-operator">.</span>Z<span class="uscript-operator">;</span>
+
+    NewDrawScale3D <span class="uscript-operator">=</span> HourHandScale<span class="uscript-operator">*</span>MyDrawScale<span class="uscript-operator">;</span>  <span class="uscript-comment">// Scale the hands according to my scale.</span>
+    HourHand<span class="uscript-operator">.</span>SetDrawScale3D<span class="uscript-operator">(</span>NewDrawScale3D<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    NewDrawScale3D <span class="uscript-operator">=</span> MinuteHandScale<span class="uscript-operator">*</span>MyDrawScale<span class="uscript-operator">;</span>
+    MinuteHand<span class="uscript-operator">.</span>SetDrawScale3D<span class="uscript-operator">(</span>NewDrawScale3D<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    NewDrawScale3D <span class="uscript-operator">=</span> SecondHandScale<span class="uscript-operator">*</span>MyDrawScale<span class="uscript-operator">;</span>
+    SecondHand<span class="uscript-operator">.</span>SetDrawScale3D<span class="uscript-operator">(</span>NewDrawScale3D<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    HourHand<span class="uscript-operator">.</span>Skins<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> HourHandTexture<span class="uscript-operator">;</span>
+    MinuteHand<span class="uscript-operator">.</span>Skins<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> MinuteHandTexture<span class="uscript-operator">;</span>
+    SecondHand<span class="uscript-operator">.</span>Skins<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> SecondHandTexture<span class="uscript-operator">;</span>
+
+    Hour<span class="uscript-operator">.</span>Yaw <span class="uscript-operator">=</span> Rotation<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">;</span>  <span class="uscript-comment">// If I'm rotated, turn the hands to my rotation.</span>
+    Minute<span class="uscript-operator">.</span>Yaw <span class="uscript-operator">=</span> Rotation<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">;</span>
+    Second<span class="uscript-operator">.</span>Yaw <span class="uscript-operator">=</span> Rotation<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">;</span>
+
+    Hour<span class="uscript-operator">.</span>Pitch <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">5461.333333</span> <span class="uscript-operator">*</span> Level<span class="uscript-operator">.</span>Hour<span class="uscript-operator">;</span>  <span class="uscript-comment">// Set the hands to their starting point (current time).</span>
+    Minute<span class="uscript-operator">.</span>Pitch <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">1092.266667</span> <span class="uscript-operator">*</span> Level<span class="uscript-operator">.</span>Minute<span class="uscript-operator">;</span>
+    Second<span class="uscript-operator">.</span>Pitch <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">1092.266667</span> <span class="uscript-operator">*</span> Level<span class="uscript-operator">.</span>Second<span class="uscript-operator">;</span>
+
+    HourHand<span class="uscript-operator">.</span>SetRotation<span class="uscript-operator">(</span>Hour<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    MinuteHand<span class="uscript-operator">.</span>SetRotation<span class="uscript-operator">(</span>Minute<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    SecondHand<span class="uscript-operator">.</span>SetRotation<span class="uscript-operator">(</span>Second<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    SetTimer<span class="uscript-operator">(</span><span class="uscript-number">0.1</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Setting it to one second makes the hands act screwy, so set it to less than a second.</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> rotator Hour<span class="uscript-operator">,</span> Minute<span class="uscript-operator">,</span> Second<span class="uscript-operator">;</span>
+
+    Hour<span class="uscript-operator">.</span>Pitch <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">5461.333333</span> <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Hour <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Minute<span class="uscript-operator">/</span><span class="uscript-number">60</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// Smooth rotation for the hour hand</span>
+    Minute<span class="uscript-operator">.</span>Pitch <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">1092.266667</span> <span class="uscript-operator">*</span> Level<span class="uscript-operator">.</span>Minute<span class="uscript-operator">;</span>
+    Second<span class="uscript-operator">.</span>Pitch <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">1092.266667</span> <span class="uscript-operator">*</span> <span class="uscript-type">int</span><span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Second <span class="uscript-operator">+</span> <span class="uscript-number">0.1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    HourHand<span class="uscript-operator">.</span>SetRotation<span class="uscript-operator">(</span>Hour<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    MinuteHand<span class="uscript-operator">.</span>SetRotation<span class="uscript-operator">(</span>Minute<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    SecondHand<span class="uscript-operator">.</span>SetRotation<span class="uscript-operator">(</span>Second<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    HourHandScale<span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">0.60</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">1.00</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">0.60</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span>
+    MinuteHandScale<span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">1.00</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">1.00</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">1.00</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span>
+    SecondHandScale<span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">0.40</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">1.00</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">1.00</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span>
+    HourHandTexture<span class="uscript-operator">=</span>Texture<span class="uscript-name">'UCGeneric.SolidColours.Black'</span>
+    MinuteHandTexture<span class="uscript-operator">=</span>Texture<span class="uscript-name">'UCGeneric.SolidColours.Black'</span>
+    SecondHandTexture<span class="uscript-operator">=</span>Texture<span class="uscript-name">'UCGeneric.SolidColours.Black'</span>
+    DrawType<span class="uscript-operator">=</span>DT_StaticMesh
+    StaticMesh<span class="uscript-operator">=</span>StaticMesh<span class="uscript-name">'TameariaMeshes.TheClock'</span>
+    bShadowCast<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bEdShouldSnap<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-operator">}</span></pre><p>The actual clock hands just have default properties.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> ClockHand <span class="uscript-keyword">extends</span> Actor<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    DrawType<span class="uscript-operator">=</span>DT_StaticMesh
+    StaticMesh<span class="uscript-operator">=</span>StaticMesh<span class="uscript-name">'TameariaMeshes.TheClockHand'</span>
+<span class="uscript-operator">}</span></pre><p>The clock mesh has the center of the clock at (0,0,0), and the clock hands are pointing straight up from (0,0,0) to make the code easier.</p>
+<p><img alt="[AngelMapperClock]" src="images/angelmapperclock.jpeg" class="image-inline"></p>
+</div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Tamearia_Real_Time_Clock">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Tamearia_Real_Time_Clock">View other revisions</a><br>Last edited May 14, 2005 20:38 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Tamearia_Real_Time_Clock">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Tamearia_Real_Time_Clock">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Once I get that upgrade to 36-hour days, I will tackle that. (Mychaeel)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

@@ -1,0 +1,471 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Dma/JetPack</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Dma/JetPack; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="dma.html">Dma</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Dma/JetPack">JetPack</a></h1>
+	<div class="wiki"><p>I was just writing this to see how hard it would be...</p>
+<p>Known bugs:</p>
+<ul><li>No HUD notification of the fuel status.</li>
+<li>Expire message doesn't disappear.</li>
+<li>You can't see your own trails in first-person mode.</li>
+<li>There isn't any physical jetpack attached to shoulder or spine bones.</li>
+<li>Client-side simulation isn't right.</li>
+</ul>
+<p><em class="em2">Dma:</em> I just realized that PostNetBeginPlay is used to catch variable replications.  And I was the one who posted it at <a href="creating-actors-and-objects.html">Creating Actors And Objects</a>.  Looks like I forgot. <img alt=":-)" src="emoticons/smile.gif" align="middle"></p>
+<p>If you have any hints about the proper method of replicating the acceleration caused by the jet pack so as to avoid ClientAdjustPosition calls (the jerkiness that results when the authoritative server tells the client where the pawn should be), I would be <b>very</b> grateful.  The calls seem to have changed since UT1.</p>
+<p>Also, feel free to make comments on this page.  Feel free to chastise me for my overuse of the <b>simulated</b> keyword.  Perhaps I should use an autonomous proxy or something.</p>
+<p>This whole "project" is actually my excercise in understanding the player movement commands under lag and packet-loss conditions, not to mention the pitfalls of the visibility of attached objects and changing relevance of actors.</p>
+<pre class="uscript"><span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// JetPack</span>
+<span class="uscript-comment">// http://www.coe.uncc.edu/~danderse/</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">class</span> JetPack <span class="uscript-keyword">extends</span> Powerups<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">replication</span> <span class="uscript-operator">{</span>
+
+    <span class="uscript-comment">// Send these variables to the client.</span>
+    <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Role<span class="uscript-operator">==</span>ROLE_Authority<span class="uscript-operator">)</span>
+        Strength<span class="uscript-operator">,</span> AmbJetSound<span class="uscript-operator">,</span> JetTrailClass<span class="uscript-operator">,</span> JetTrail<span class="uscript-operator">,</span> SoundActor<span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Server calls these functions on the client.</span>
+    <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Role<span class="uscript-operator">==</span>ROLE_Authority<span class="uscript-operator">)</span>
+        ClientGotoState<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">var</span> xEmitter JetTrail<span class="uscript-operator">;</span>                  <span class="uscript-comment">// The Jet Trail.</span>
+<span class="uscript-keyword">var</span> JetPackInteraction OurInteraction<span class="uscript-operator">;</span>  <span class="uscript-comment">// Our hud stuff!</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bGotOwner<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>xEmitter<span class="uscript-operator">&gt;</span> JetTrailClass<span class="uscript-operator">;</span>    <span class="uscript-comment">// This isn't used yet.</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> sound AmbJetSound<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> Strength<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> JetPackSound SoundActor<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> TickCount<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// This little piece of garbage waits until the owner is successfully</span>
+<span class="uscript-comment">// replicated to the client.  This is a bizarre way to fix accessed nones.</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">state</span> ActivateWhenGetOwner <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> BeginState<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Owner <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+            log<span class="uscript-operator">(</span><span class="uscript-string">"ActivateWhenGetOwner.  Owner="</span> <span class="uscript-operator">$</span> Owner<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            bNetNotify<span class="uscript-operator">=</span><span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+            GotoState<span class="uscript-operator">(</span><span class="uscript-name">'Activated'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostNetReceive<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostNetReceive<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        log<span class="uscript-operator">(</span><span class="uscript-string">"Got PostNetReceive.  Owner="</span> <span class="uscript-operator">$</span> Owner<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Owner <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+            bNetNotify<span class="uscript-operator">=</span><span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+            GotoState<span class="uscript-operator">(</span><span class="uscript-name">'Activated'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// I hate this.  'Activate' is not simulated so it must manually</span>
+<span class="uscript-comment">// instruct the client to ALSO go into the 'Activated' state.  </span>
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">// However, Owner (and probably some other properties) are not </span>
+<span class="uscript-comment">// valid for the first few ticks.  Therefore, I must instruct the </span>
+<span class="uscript-comment">// client to go to the intermediate state of 'ActivateWhenGetOwner',</span>
+<span class="uscript-comment">// which uses the new PostNetReceive() notification function that </span>
+<span class="uscript-comment">// is enabled when bNetNotify=true.  Since the 'Activated' state must</span>
+<span class="uscript-comment">// have access to Owner, I make the client wait until it gets an Owner</span>
+<span class="uscript-comment">// before activating.  </span>
+
+<span class="uscript-comment">// This usually only takes a few ticks.</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ClientGotoState<span class="uscript-operator">(</span><span class="uscript-type">name</span> NewState<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    log<span class="uscript-operator">(</span><span class="uscript-string">"ClientGotoState: "</span> <span class="uscript-operator">$</span> <span class="uscript-type">String</span><span class="uscript-operator">(</span>NewState<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    GotoState<span class="uscript-operator">(</span>NewState<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">function</span> PerformMove<span class="uscript-operator">(</span>PlayerController PC<span class="uscript-operator">,</span> vector Accel<span class="uscript-operator">,</span> <span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> SavedMove sm<span class="uscript-operator">;</span>
+
+    sm <span class="uscript-operator">=</span> PC<span class="uscript-operator">.</span>getFreeMove<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    sm<span class="uscript-operator">.</span>SetMoveFor<span class="uscript-operator">(</span>PC<span class="uscript-operator">,</span> DeltaTime<span class="uscript-operator">,</span> Accel<span class="uscript-operator">,</span> PC<span class="uscript-operator">.</span>DoubleClickDir<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    sm<span class="uscript-operator">.</span>SavedLocation <span class="uscript-operator">=</span> PC<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>Location<span class="uscript-operator">;</span>
+    sm<span class="uscript-operator">.</span>SavedVelocity <span class="uscript-operator">=</span> PC<span class="uscript-operator">.</span>Pawn<span class="uscript-operator">.</span>Velocity<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+
+<span class="uscript-keyword">state</span> Activated <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> BeginState<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">local</span> Pawn P<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">local</span> PlayerController PC<span class="uscript-operator">;</span>
+
+        <span class="uscript-comment">// Be sure that we are no longer being distracted by</span>
+        <span class="uscript-comment">// notifications of replication events.</span>
+        bNetNotify<span class="uscript-operator">=</span><span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+        P <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+            <span class="uscript-comment">// Give the player's spinebone an effect.  Make sure this works.</span>
+            JetTrail <span class="uscript-operator">=</span> spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'SpeedTrail'</span><span class="uscript-operator">,</span> P<span class="uscript-operator">,</span><span class="uscript-operator">,</span> P<span class="uscript-operator">.</span>Location<span class="uscript-operator">,</span> P<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span> 
+
+            JetTrail<span class="uscript-operator">.</span>SetPhysics<span class="uscript-operator">(</span>PHYS_None<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            JetTrail<span class="uscript-operator">.</span>bSuspendWhenNotVisible<span class="uscript-operator">=</span><span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>P <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+                P<span class="uscript-operator">.</span>AttachToBone<span class="uscript-operator">(</span>JetTrail<span class="uscript-operator">,</span> <span class="uscript-name">'Bip01 Spine2'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                JetTrail<span class="uscript-operator">.</span>SetRelativeLocation<span class="uscript-operator">(</span><span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-operator">-</span><span class="uscript-number">10</span><span class="uscript-operator">,</span><span class="uscript-number">50</span><span class="uscript-operator">,</span><span class="uscript-operator">-</span><span class="uscript-number">50</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+            log<span class="uscript-operator">(</span><span class="uscript-string">"Calling spawn..."</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            SoundActor <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'JetPackSound'</span><span class="uscript-operator">,</span>P<span class="uscript-operator">,</span><span class="uscript-operator">,</span>P<span class="uscript-operator">.</span>Location<span class="uscript-operator">,</span> P<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            log<span class="uscript-operator">(</span><span class="uscript-string">"Spawn got: "</span> <span class="uscript-operator">$</span> SoundActor<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+      
+
+        <span class="uscript-comment">// Add some stuff to the HUD.</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">!=</span> NM_DedicatedServer<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+            PC <span class="uscript-operator">=</span> PlayerController<span class="uscript-operator">(</span>P<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>PC <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> Viewport<span class="uscript-operator">(</span>PC<span class="uscript-operator">.</span>Player<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+                <span class="uscript-comment">// Player is being controlled locally at the time of activation!</span>
+                <span class="uscript-comment">// Pre-existing Global Interactions:</span>
+                <span class="uscript-comment">// GUIController'Package.InteractionMaster0.GUIController0'</span>
+                <span class="uscript-comment">// ExtendedConsole'Package.InteractionMaster0.ExtendedConsole0'</span>
+
+                <span class="uscript-comment">// Create a local interaction.</span>
+                OurInteraction <span class="uscript-operator">=</span> JetPackInteraction<span class="uscript-operator">(</span>
+                    PC<span class="uscript-operator">.</span>Player<span class="uscript-operator">.</span>InteractionMaster<span class="uscript-operator">.</span>AddInteraction<span class="uscript-operator">(</span><span class="uscript-string">"JetPack.JetPackInteraction"</span><span class="uscript-operator">,</span> PC<span class="uscript-operator">.</span>Player<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+
+        <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>BeginState<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> EndState<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority <span class="uscript-operator">&amp;&amp;</span> JetTrail <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+            JetTrail<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>SoundActor <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+            SoundActor<span class="uscript-operator">.</span>SetSound<span class="uscript-operator">(</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            SoundActor<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+        <span class="uscript-comment">// Get rid of our HUD interaction.</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>OurInteraction <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+            OurInteraction<span class="uscript-operator">.</span>DieAlready<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            OurInteraction <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+      
+        <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>EndState<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">local</span> PlayerController PC<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">local</span> Pawn P<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">local</span> vector X<span class="uscript-operator">,</span>Y<span class="uscript-operator">,</span>Z<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">local</span> vector Accel<span class="uscript-operator">;</span>
+
+        P <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>Owner<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        PC <span class="uscript-operator">=</span> PlayerController<span class="uscript-operator">(</span>P<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>PC <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>P <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>PC<span class="uscript-operator">.</span>bDuck <span class="uscript-operator">!=</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>P<span class="uscript-operator">.</span>Physics <span class="uscript-operator">==</span> PHYS_Falling<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+
+                <span class="uscript-comment">// Turn on the Jet Trail.  Unpause the xEmitter.</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>JetTrail <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+                    JetTrail<span class="uscript-operator">.</span>mRegenPause<span class="uscript-operator">=</span><span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+                <span class="uscript-operator">}</span>
+
+                <span class="uscript-comment">// Thrust the player.</span>
+                GetAxes<span class="uscript-operator">(</span>PC<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">,</span> X<span class="uscript-operator">,</span> Y<span class="uscript-operator">,</span> Z<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-comment">// Z = Normal(Z);</span>
+                Accel <span class="uscript-operator">=</span> Z<span class="uscript-operator">*</span>Strength<span class="uscript-operator">;</span>
+<span class="uscript-comment">/*
+                // Try to replicate client movement to server.
+                if (Role &lt; ROLE_Authority) {
+                    PerformMove(PC, Accel, DeltaTime);
+                }
+*/</span>
+                P<span class="uscript-operator">.</span>AddVelocity<span class="uscript-operator">(</span>Z<span class="uscript-operator">*</span>Strength<span class="uscript-operator">*</span>DeltaTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Role <span class="uscript-operator">&lt;</span> ROLE_Authority<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+                    PC<span class="uscript-operator">.</span>ShortServerMove<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>TimeSeconds<span class="uscript-operator">,</span> P<span class="uscript-operator">.</span>Location<span class="uscript-operator">,</span> PC<span class="uscript-operator">.</span>bRun<span class="uscript-operator">!=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> PC<span class="uscript-operator">.</span>bDuck<span class="uscript-operator">!=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> PC<span class="uscript-operator">.</span>bJumpStatus<span class="uscript-operator">,</span> P<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">.</span>Roll <span class="uscript-operator">/</span> <span class="uscript-number">256</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//              log("Would replicate move - accel = " $ String(-4*Accel));</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">!=</span> NM_DedicatedServer<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-comment">//                  log("Replicating move - accel = " $ String(-4*Accel));</span>
+<span class="uscript-comment">//                  PC.ReplicateMove(DeltaTime, -4*Accel, PC.DoubleClickDir, rot(0,0,0));</span>
+                <span class="uscript-operator">}</span>
+
+                <span class="uscript-comment">// Turn on the jetpack sound.</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>SoundActor <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+                    SoundActor<span class="uscript-operator">.</span>SetSound<span class="uscript-operator">(</span>AmbJetSound<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-operator">}</span>
+
+                <span class="uscript-comment">// Make it burn fuel.</span>
+                Charge <span class="uscript-operator">-=</span> <span class="uscript-operator">(</span>DeltaTime <span class="uscript-operator">*</span> <span class="uscript-number">100</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Charge <span class="uscript-operator">&lt;=</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+                    UsedUp<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-operator">}</span>
+
+            <span class="uscript-operator">}</span> <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+
+                <span class="uscript-comment">// Turn off the Jet Trail.  Pause the xEmitter.</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>JetTrail <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+                    JetTrail<span class="uscript-operator">.</span>mRegenPause<span class="uscript-operator">=</span><span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+                <span class="uscript-operator">}</span>
+
+                <span class="uscript-comment">// Turn off the jetpack sound.  </span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>SoundActor <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+                    SoundActor<span class="uscript-operator">.</span>SetSound<span class="uscript-operator">(</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-operator">}</span>
+            <span class="uscript-operator">}</span> <span class="uscript-comment">// if (not) thrusting</span>
+            <span class="uscript-comment">// ...</span>
+        <span class="uscript-operator">}</span>
+<span class="uscript-comment">//      Global.Tick(DeltaTime);</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// We are no longer being held.</span>
+<span class="uscript-keyword">function</span> Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    GotoState<span class="uscript-operator">(</span><span class="uscript-name">''</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+    <span class="uscript-comment">// Get rid of our HUD interaction.</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>OurInteraction <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        OurInteraction<span class="uscript-operator">.</span>DieAlready<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        OurInteraction <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">// Remove from player's inventory.</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Activate<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bActivatable <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        GoToState<span class="uscript-operator">(</span><span class="uscript-name">'Activated'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-comment">// I suppose the first part is redundant below.</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">!=</span> NM_ListenServer<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+            <span class="uscript-comment">// The client is being told to activate once it gets an owner.</span>
+            ClientGotoState<span class="uscript-operator">(</span><span class="uscript-name">'ActivateWhenGetOwner'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+   Enable<span class="uscript-operator">(</span><span class="uscript-name">'Tick'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+   <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+   RemoteRole<span class="uscript-operator">=</span>ROLE_SimulatedProxy
+   ExpireMessage<span class="uscript-operator">=</span><span class="uscript-string">"Your jetpack ran out of gas."</span>
+   bAutoActivate<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+   bActivatable<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+   bNetNotify<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+   PickupClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'JetPackPickup'</span>
+   Charge<span class="uscript-operator">=</span><span class="uscript-number">10000</span>
+   Strength<span class="uscript-operator">=</span><span class="uscript-number">3000</span>
+   AmbJetSound<span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.BaseGunTech.BTranslocatorHoverModule'</span>
+   JetTrailClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'RocketTrailSmoke'</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><pre class="uscript"><span class="uscript-keyword">class</span> JetPackInteraction <span class="uscript-keyword">extends</span> Interaction<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> Fuel<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> GetFuelFromViewTarget<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Pawn VT<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> JetPack JP<span class="uscript-operator">;</span>
+    VT <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>ViewportOwner<span class="uscript-operator">.</span>Actor<span class="uscript-operator">.</span>ViewTarget<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>VT <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-comment">// Viewport is looking at a pawn.</span>
+        JP <span class="uscript-operator">=</span> JetPack<span class="uscript-operator">(</span>VT<span class="uscript-operator">.</span>FindInventoryType<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'JetPack'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>JP <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+            Fuel <span class="uscript-operator">=</span> JP<span class="uscript-operator">.</span>Charge<span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> Initialized<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    log<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">@</span><span class="uscript-string">"I'm alive"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> PostRender<span class="uscript-operator">(</span> canvas Canvas <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Pawn VT<span class="uscript-operator">;</span>
+    VT <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>ViewportOwner<span class="uscript-operator">.</span>Actor<span class="uscript-operator">.</span>ViewTarget<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    GetFuelFromViewTarget<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span><span class="uscript-number">20</span><span class="uscript-operator">,</span><span class="uscript-number">300</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>Style <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>SetDrawColor<span class="uscript-operator">(</span><span class="uscript-number">255</span><span class="uscript-operator">,</span><span class="uscript-number">255</span><span class="uscript-operator">,</span><span class="uscript-number">255</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Canvas<span class="uscript-operator">.</span>DrawText<span class="uscript-operator">(</span><span class="uscript-string">"Fuel remaining: "</span> <span class="uscript-operator">$</span> <span class="uscript-type">String</span><span class="uscript-operator">(</span>Fuel<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-comment">// Stops the magic.</span>
+<span class="uscript-keyword">function</span> DieAlready<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    log<span class="uscript-operator">(</span><span class="uscript-string">"JPI: Dying!"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Dunno why.</span>
+    bVisible<span class="uscript-operator">=</span><span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+    bActive<span class="uscript-operator">=</span><span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+    bNativeEvents<span class="uscript-operator">=</span><span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+    bRequiresTick<span class="uscript-operator">=</span><span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// Remove ourself.</span>
+    Master<span class="uscript-operator">.</span>RemoveInteraction<span class="uscript-operator">(</span><span class="uscript-keyword">Self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">// Called when level changes.</span>
+<span class="uscript-keyword">function</span> NotifyLevelChange<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    DieAlready<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    bVisible<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+    bActive<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-operator">}</span></pre><pre class="uscript"><span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-comment">// JetPackSound.</span>
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">class</span> JetPackSound <span class="uscript-keyword">extends</span> Actor<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">replication</span> <span class="uscript-operator">{</span>
+   <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Role <span class="uscript-operator">&lt;</span> ROLE_Authority<span class="uscript-operator">)</span>
+      ServerSetSound<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+  
+<span class="uscript-keyword">function</span> ServerSetSound<span class="uscript-operator">(</span>Sound S<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+   AmbientSound<span class="uscript-operator">=</span>S<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> SetSound<span class="uscript-operator">(</span>Sound S<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+   AmbientSound<span class="uscript-operator">=</span>S<span class="uscript-operator">;</span>
+   ServerSetSound<span class="uscript-operator">(</span>S<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+   RemoteRole<span class="uscript-operator">=</span>ROLE_None
+   Physics<span class="uscript-operator">=</span>PHYS_Trailer
+   SoundVolume<span class="uscript-operator">=</span><span class="uscript-number">200</span>
+   SoundPitch<span class="uscript-operator">=</span><span class="uscript-number">56</span>
+   bAlwaysRelevant<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+   bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">true</span>
+<span class="uscript-operator">}</span></pre><ul><li><a href="category-custom-class.html">Category Custom Class</a></li>
+</ul>
+<h3><a name="0.0.1"></a>Comments</h3>
+<p><em class="em2">SocratesJohnson</em>:  WRT ClientAdjustPosition() jerkiness, I experienced the same thing while working on my <a href="socratesjohnson-freefall.html">Freefall</a> mutator.  It seems to happen when a client explicitly tries to set the velocity of the Pawn.  Try just working with Acceleration i.e. change the P.AddVelocity(Z*Strength*DeltaTime) line to adjust acceleration instead, for a start, perhaps make it decay over time.  I don't have the Pawn source in front of me but just modifying P.Acceleration seemed to work in my case and that gets replicated back to the server when the physics engine does its thing.  I'm pretty new to UnrealScript so your milage may vary. <img alt=":D" src="emoticons/biggrin.gif" align="middle">  I'd love to see this in action!</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Comments", "#0.0.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="dma.html">Dma</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Dma/JetPack">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Dma/JetPack">View other revisions</a><br>Last edited January 17, 2004 20:41 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Dma/JetPack">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Dma/JetPack">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Mostly Harmless
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

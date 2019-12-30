@@ -1,0 +1,159 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Working With Volumes</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Working_With_Volumes; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Working With Volumes">Working With Volumes</a></h1>
+	<div class="wiki"><p><em class="em2">Volumes</em> are a concept new to <a href="unreal-tournament-2003.html">UT2003</a>. A <a href="volume.html">Volume</a> defines an area of space whose properties, such as gravity, friction, and area level velocity (zone velocity in UT) can be altered from the level defaults.  This approach has been taken because <a href="zone-portal.html">zone portal</a>s are used far more to break up a level for performant rendering.  Using zone portals to define things like water and areas of differing gravity was seen as a waste.  Volumes may also be used to name areas of the map (e.g. Blue flag room, Red flag room).</p>
+<p><a href="zone.html">Zone</a>s enclosed by <a href="zone-portal.html">zone portal</a>s are still used within levels to enclose named areas (Blue base, Red base for example), and they are heavily used for level optimization (see also <a href="antiportal.html">Antiportal</a>s).  The <a href="zoneinfo.html">ZoneInfo</a> class is still used to name areas enclosed by zone portals.</p>
+<p>A Volume can be any 3D shape, from a cube right through to a hollow cylinder.  Making volumes overly complex should be avoided if possible as it will increase the load on the engine for no real benefit.</p>
+<p>Volumes may overlap into solid space (stick passed the edge of the world) without any adverse effects.  However, if you want a volume within your level it must touch at least part of the subtracted space otherwise it will be discarded when the level is built. If you put antiportals in solid space, they will not go away when the level is built.  Volumes also have a priority number assigned to them.  This is used to determine which volume should take precedence should two volumes overlap.</p>
+<p>The properties of the Volume are applied to all objects contained within it.  See <a href="volume.html">Volume</a> for info on the class properties, subclasses, and events it recieves (such as entry and exit events).</p>
+<h2><a name="0.1"></a>Volume Techniques</h2>
+<ul><li>Volumes can overlap.  The volume with the higher priority is effective where they do.</li>
+<li>Volumes cannot be attached to movers unless you first set their bStatic property to false, which may cause problems in net play (see <a href="attaching-actors.html">Attaching Actors</a>).</li>
+<li>See <a href="fluid-surfaces.html">Fluid Surfaces</a> for how to set the texture a lava or water volume displays.</li>
+<li>You can associate an actor (a <a href="trigger.html">Trigger</a>, for instance) with a Volume by connecting the Volume and the actor via the Volume's AssociatedActorTag and the actor's Event property.  The associated actor gets Touch and UnTouch events when something enters or leaves the Volume. To do this, set the volume's AssociatedActor property to the Events &rarr; <a href="tag.html">Tag</a> of the trigger to fire.</li>
+<li>Unlike zones, volumes don't fundamentally change the way the <a href="bsp-tree.html">BSP tree</a> is built.  Use zones for level optimization and volumes for effects.</li>
+<li>You can use a shape created in an external 3D editing application like Maya PLE as a volume by importing it as a static mesh, converting it to BSP, <a href="intersect.html">intersect</a>ing it and adding the intersected builder brush as a volume.  Keep in mind though that you'll hardly ever need high-poly volumes in the first place.</li>
+</ul>
+<h2><a name="0.2"></a>Related Topics</h2>
+<ul><li>Basic procedure tutorial: <a href="add-a-volume.html">Add A Volume</a></li>
+</ul>
+<hr class="thin"><p>old discussion: please pick out info &amp; refactor</p>
+<p><em class="em2">EntropicLqd:</em> Please note that the above comments are speculative and based largely on the contents of the <a href="http://dynamic.gamespy.com/~polycount/ubb/Forum1/HTML/006636.html">[UT modelling thread]</a> over at polycount.</p>
+<p><em class="em2">the G.o.a.T:</em> <a href="xiiied.html">XIIIEd</a> has volumes. To be specific, it has these:</p>
+<ul><li>LadderVolume</li>
+<li>PhysicsVolume</li>
+<li>Volume</li>
+<li>DefaultPhysicsVolume</li>
+<li>AudioTrigger</li>
+<li>BlockingVolume (allegedly used to make complex static meshes solid (e.g. those on slants or to give complex meshes simple collision boundaries).  This has the effect of allowing players to travel through parts of a mesh.  NOTE: Apparently the solidity of meshes is optional - some are, some are not.  See Mapping_With_Static_Meshes<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Mapping_With_Static_Meshes&referrerid=Working_With_Volumes">?</a> for a bit more information.</li>
+<li>WaterVolume</li>
+<li>SixSenseForcedVolume</li>
+<li>LethalVolume</li>
+</ul>
+<p>So far I've only tested BlockingVolume and WaterVolume though <img alt=";)" src="emoticons/wink.gif" align="middle"></p>
+<p><em class="em2">DJPaul:</em> Explain how I add one.</p>
+<p><em class="em2">the G.o.a.T:</em> It's quite simple actually. Assume for example you want to add water somewhere. Make the <a href="red-builder-brush.html">red builder brush</a> take the general shape of what need to be filled with water. I used simple cubes in my test maps as they seem to cause no trouble in passing trough level-construct <img alt=":)" src="emoticons/smile.gif" align="middle">. Click the button "Add Volume" &rarr; select WaterVolume. Done <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p>You'll have to add a <a href="sheet.html">sheet</a> if you want the water to have a visible water-surface <img alt=":/" src="emoticons/hmm.gif" align="middle"> A watervolume just contains the physics of water, nothing more.</p>
+<p><em class="em2">Birelli:</em> I noticed when I tried adding one it colored the sides of the area it was filling slightly blue. It made it look more like it was underwater. Does anyone know if this is an actual effect in the game or is it just a way for the Ed to show you you're in a volume?</p>
+<p><em class="em2">the G.o.a.T:</em> A watervolume might show up blueish due to the fact of the blue fogging they use in the water.</p>
+<p><em class="em2">Tarquin:</em> Is the old zoning method still possible? This is going to be such a pain with things like curved pipes. It's Quake<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Quake&referrerid=Working_With_Volumes">?</a>1-style.</p>
+<p><em class="em2">EntropicLqd:</em>  I have a source that claims that it is ... I've put the question to eepers on the Polycount message board so we'll see what he comes back with.  He is a modelling/prefab guru by default btw.  And indeed Tarquin - it is very reminiscient of Quake 1 mapping (oh the pain).</p>
+<p><em class="em2">the G.o.a.T:</em> Not without scripting. I found no <a href="waterzone.html">WaterZone</a>Info in there. The only zone-actors in there are <a href="levelinfo.html">LevelInfo</a>, SkyInfo<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=SkyInfo&referrerid=Working_With_Volumes">?</a> and <a href="warpzoneinfo.html">WarpZoneInfo</a>.</p>
+<p><em class="em2">Mychaeel:</em> If you manage to have a hollow curved pipe, you obviously have the inside of that pipe as a shape already (de-/intersect).  Using that as a base for a volume shouldn't be a problem.  Never forget that we're still working with CSG here, not purely additive geometry like Quake does...</p>
+<p><em class="em2">Highlander:</em> And if this tube is a static mesh would it act like BSP that it uh.. "blocks" zones ? (hmmm theres a thought do static meshes act as zone boundarys? ) so making a water pipe would be hard in that respect. You would need to model the static mesh, then create the water inside the static mesh as a volume.</p>
+<p><em class="em2">Tarquin:</em> Yes, I see &ndash; if architecture is made with static meshes, then that can't be divided up into zones &ndash; because they are a <a href="bsp.html">BSP</a> construction.</p>
+<p><em class="em2">Mychaeel:</em> Highlander:  Static meshes don't work as zone portals; as tarquin says, only BSP does.  (And since zones are much more heavily relied on for level optimization than ever before, "wasting" them for water effects and the like doesn't seem appropriate.)</p>
+<p><em class="em2">EntropicLqd:</em>  Mychaeel - that may not be the case if your hollow pipe is actually constructed from a static mesh.  You may then additionally have to add a "pipe shaped" BlockingVolume taking up the space of your pipe, and still have to "model" the pipe interior for your WaterVolume.</p>
+<p><em class="em2">Mychaeel:</em> That's right, but firstly you couldn't have used your static mesh pipe for zoning anyway and secondly you <em class="em1">can</em> convert static meshes to BSP, at least temporarily, deintersect to get your WaterVolume's shape and remove the temporary BSP afterwards again.</p>
+<p><em class="em2">SaxxonPike</em> Physics volumes are for defining gravity and other physics.  I'm not quite sure about the DefaultPhysicsVolume thing yet.</p>
+<p><em class="em2">Highlander:</em> The Default Physics volume is the volume that controls the gravity etc when your not in a regular physics volume... it is the default settings.</p>
+<p><em class="em2">Ragdoll:</em> Ive found some very interesting uses for physics volumes. Say you have an open manhole cover and you want players that fall into it to die, simply add a physics volume (about 500 units in height is usually suffice) and set its "damagepersec" option (under physics volume) to 1000 or something. Also very useful if you have a tank of acid that should slowly degrade the health of players who fall in, you can make a physics volume the same size as the water volume and set the damge per sec to 20 or something, depending on how quickly you want them to die.</p>
+<p><em class="em2">Wormbo:</em> A <a href="watervolume.html">WaterVolume</a> already is a subclass of <a href="physicsvolume.html">PhysicsVolume</a>, so why add two things of the same kind if one can do the trick as well? You can even use that WaterVolume to give the tank's inside area a location name and trigger an event when a player enters it.</p>
+<p><em class="em2">Ragdoll:</em> Ok thanks for that, im sure it will come in very handy (open holes in the ground are always a laugh in multiplayer, so are tanks of acid)</p>
+<hr class="thin"><p><em class="em2">KungFu Hampster:</em> Can someone who knows how to track playerposition using volumes please post some info on this?  I've found a lack of info out there about this and I've had a heck of a time figureing it out.  I'm sure there are other people who are having the same problem.</p>
+<p><em class="em2">Solid Snake:</em> Boo hoo, so what if there is NO info on this. All you do is add a pawn to an array, and then do log the changes to its location. Surely it can't be *that* hard.</p>
+<p><em class="em2">KungFu Hampster:</em> It becomes more difficult when you want to track the location and have something appear that diplays the player location on the HUD</p>
+<p><em class="em2">KungFu Hampster:</em> I've just written a bsic tutorial on using a <a href="capturevolume.html">CaptureVolume</a>.  Click the link ta check it out!</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Volume Techniques", "#0.1");
+menuItemAdd("Related Topics", "#0.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Working_With_Volumes">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Working_With_Volumes">View other revisions</a><br>Last edited April 7, 2006 3:33 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Working_With_Volumes">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Working_With_Volumes">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I search for solutions in this order: Past Code, Unreal Source, Wiki, BUF, groups.yahoo, google, screaming at monitor. (RegularX)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

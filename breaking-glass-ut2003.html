@@ -1,0 +1,199 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Breaking Glass UT2003</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Breaking_Glass_UT2003; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Breaking Glass UT2003">Breaking Glass UT2003</a></h1>
+	<div class="wiki"><p>This tutorial applies to UT2003/2004.</p>
+<h2><a name="0.1"></a>The Concept</h2>
+<p>To make a window that breaks in your map, you need two things. A movable brush that represents the window in its whole state, and an <a href="emitter.html">Emitter</a> to spawn in for the shattering glass fragments that spill out when the window gets "Broken".</p>
+<p>You will need to understand the basic use of <a href="mover.html">Mover</a>s, <a href="trigger.html">Trigger</a>s and <a href="scriptedtrigger.html">ScriptedTrigger</a>s</p>
+<h2><a name="0.2"></a>The Mover</h2>
+<p>If you don't already have a nice glass material set up, make one now. I suggest reading about <a href="shader.html">Shader</a>s, using Opacity in your shader, and maybe Specularity if you want it to look really nice.</p>
+<p>In 2003/2004 movers may only be made with <a href="static-mesh.html">static mesh</a>es, so we will use <a href="bsp.html">BSP</a> to create our window to start with. Apply your window texture to a thin additive brush that fits as your window. Right click on the additive brush after you create it, and choose Convert &rarr; To Static Mesh. Enter myLevel as your package, and give it whatever name you wish. Now if you look in the static mesh browser, you should see your window mesh.</p>
+<p>Back in the edit, click on the Add Mover button to add your window mesh as a movable brush. Move it into place, and set this as the base with Mover &rarr; Key 0.  Now right click the mover and choose Mover &rarr; Key 1, then move the window somewhere out of view, preferably completely outside the level, right click it again and choose Mover &rarr; Key 0 (Base). The window should snap back into its base position.</p>
+<p>We need to set up some properties in our mover to make it dissapear from view when shot. So open the properties window for the mover.</p>
+<p>We will change:</p>
+<ul><li><em class="em2">Object &rarr; InitialState</em> to <em class="em2">TriggerOpenTimed</em></li>
+<li><em class="em2">Mover &rarr; MoveTime</em> to <em class="em2">0</em></li>
+<li><em class="em2">Mover &rarr; StayOpenTime</em> to however long you want your window to stay broken before respawning. This value is in seconds.</li>
+<li><em class="em2">Mover &rarr; bDamageTriggered</em> to <em class="em2">True</em></li>
+<li><em class="em2">Mover &rarr; DamageThreshold</em> to <em class="em2">1</em></li>
+<li><em class="em2">Display &rarr; bShadowCast</em> to <em class="em2">False</em> or else the window will cast a shadow, and look bad when it breaks.</li>
+</ul>
+<p>Now hopefully we have a pane of glass that when shot, moves (In 0 seconds) off the map, giving the illusion that it has been destroyed.</p>
+<p>But now we need shattering fragments of glass to complete the illusion.</p>
+<h4><a name="0.2.0.1"></a>The Special Effects</h4>
+<p>This section is a compilation of several different resources on creating breaking glass.  Many of them had 90% of the information necessary but none had 100%.  So everyone who made a breaking glass tut, your stuff is used in here, thanks, you rock.</p>
+<p>The falling shards of glass require you to set up an emitter to produce the shards, and a second custom actor class to spawn them.  First: the emitter:</p>
+<p>Select "Emitter" from the actor classes (or Network Emitter" to make it playable online), and place it in your level.  There are certain things that must be set up correctly for the breaking glass to spawn the way you want it to:</p>
+<ul><li>Advanced &rarr; bDirectional = True.  This is necessary to align the shards with the window.</li>
+<li>Advanced &rarr; bNoDelete = <em class="em2">FALSE</em>.  This is required for the emitter to be spawned when called by the "spawner" actor.</li>
+<li>Emitter &rarr;<ul><li>Acceleration &rarr; Acceleration - Z = -950.  This simulates normal gravity in allowing the shards to fall.</li>
+<li>Collision &rarr; DampingFactorRange - X Max/Min = .9 / .8  Y Max/Min = .5  Z Max/Min = .3 / .2  (<em class="em1">It's important to note that in 2004 range properties windows, Max is <em class="em2">first</em>, then Min.</em>, even though they are displayed as min/max at the top of the listing.)</li>
+<li>Collision &rarr; UseCollision = True.  Else your shards will fall through the floor and keep going.  <img alt="o_O" src="emoticons/ohoh.gif" align="middle"></li>
+<li>General &rarr; MaxParticles = ~2000.  This is variable depending on the size of your window and of yuur shards.  Once you get more than 5000 or so particles at once, it starts to drag down your average PC, so if your level has 7 breakable windows, don't give them 4000 particles each.  If necessary, spawn a fewer number of larger shards to save CPU cycles.</li>
+<li>Local &rarr; RespawnDeadParticles = False.  You want a broken window, not a glass fountain.</li>
+<li>Location &rarr; StartLocationRange &rarr; Y Max/Min = +/- half the width of your window.  Example, if your window is 512UU wide, Y range is 256 / -256.  Same for Z range, Max/Min = +/- half the height of your window.</li>
+<li><em class="em2">Rotation &rarr; UseRotationFrom = PTRS_Actor.</em>  This is critical if you wish to have more than one breaking glass in your level, from different angles.</li>
+<li>Spawning &rarr; AutomaticInitialSpawning = False.  It is going to be triggered.</li>
+<li>Spawning &rarr; InitialParticlesPerSecond = 50000.  This releases all particles in a fraction of a second.</li>
+<li>Spawning &rarr; ParticlesPerSecond = 0.  Again, not a fountain.</li>
+<li>Texture &rarr; DrawStyle = PTDS_Transluscent</li>
+<li>Texture &rarr; Texture - Select the shard texture from your texture browser window, then return here and click "Use" to insert it into your texture line.</li>
+<li>Texture &rarr; TextureUSubdivisions &amp; TextureVSubdivisions&rarr; Divide your texture up by shards. For example, if your texture is two shards wide by two shards high, your U and V subdivions are 2 each.</li>
+<li>Time &rarr; LifetimeRange = Set this to whatever.  If your window respawns, set it to no more than the "Open Time" of your window mover.  Else, set it to whatever you wish, 100000 to stay forever, but remember that particles eat up resources as long as they remain in your level.</li>
+<li>Velocity &rarr; StartVelocityRange - X Max/Min = 200 / -200.  Y Max/Min = 100 / -100</li>
+</ul>
+</li>
+</ul>
+<p>At this point, the effect of the emitter should be visible in any 3d views you have open.  You can use this to tweak the settings of your emitter to get the look you want.</p>
+<p>Once you've created your emitter, align it with your window, and use rotation to point the directional arrow in the desired direction, I recommend an angle somewhat downward and away from the window, to make sure your axis rotation is set up properly.</p>
+<p>Now, its time to set it up to be spawned when someone shoots your window.  Leave your emitter properties window open for now.</p>
+<p>Go back to your Actor browser window, right-click on Emitter, and click New to create a new custom subclass of Emitter.<br>In the creation window, change MyPackage to MyLevel (this is a must), set a group if you wish, and set the name however you wish.  For reference, I will use BreakingGlassEmitter.</p>
+<p>An UnrealScript window will pop open.  You can click "Compile Changed" now if you wish, or later when we create the spawner.  Either way, close this window.</p>
+<p>Now expand the Emitters section and right-click on BreakingGlassEmitter.  If it is not visible in your window, simply uncheck the "Placeable Only" box and it will appear.  Click on Default Properties, and a properties window will appear similar to the one for your emitter.  Open up the Emitters section of your BreakingGlassEmitter, and click the Add button.  Now go to the Emitters section of the properties window of your emitter, and copy the full name from the Emitters &rarr; 0 field, "SpriteEmitter'myLevel.SpriteEmitter0" or something similar.  Paste it into the corresponding field in your BreakingGlassEmitter and hit Enter.  All the properties of your emitter will be copied into this actor subclass.</p>
+<p>Now change a few settings:</p>
+<ul><li>Advanced &rarr; bDirectional = True</li>
+<li>Advanced &rarr; bNoDelete = FALSE</li>
+</ul>
+<p>Now close all these properties windows and delete your template emitter, it is no longer needed.</p>
+<p>Go back to your Actors browser window, right click on Emitter, and click New to create your second custom subclass.  Package is still myLevel, Group is completely up to you, Name is whatever, we will use BreakingGlassSpawner for reference.</p>
+<p>When the UnrealScript window pops up, type or copy / paste this into the script:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> BreakingGlassSpawner <span class="uscript-keyword">extends</span> Actor
+     <span class="uscript-keyword">placeable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">event</span> Trigger<span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">,</span> Pawn EventInstigator<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'myLevel.BreakingGlassEmitter'</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-keyword">Self</span><span class="uscript-operator">.</span>Location<span class="uscript-operator">,</span><span class="uscript-keyword">Self</span><span class="uscript-operator">.</span>Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span><span class="uscript-operator">}</span></pre><p>Now compile changed scripts and close your window.  In the Actor browser, you should be able to see both your custom subclasses, BreakingGlassEmitter and BreakingGlassSpawner.  Right-click on BreakingGlassSpawner, click Default Properties, and check the following settings:</p>
+<ul><li>Advanced &rarr; bDirectional = True</li>
+<li><em class="em2">Advanced &rarr; bNoDelete = True</em> (this is where you must do this)</li>
+</ul>
+<p>Now Add your BreakingGlassSpawner actor to the level, and align it with the window where you had placed the emitter previously.  Set the Event &rarr; Event of your window mover to something like Window1 or BreakGlass or whatever, then set the Event &rarr; Tag of your BreakingGlassSpawner to match.  Save, rebuild, save, give it a go!</p>
+<p><em class="em1">(Note: some of the steps taken here are very likely redundant, for example, setting the directional to True for the Emitter AND BOTH actor subclasses, if someone can verify that this will still function with certain steps excluded, feel free to remove them.)</em></p>
+<hr class="thin"><p>Now the UDN page gives a very vague explanation of creating an actor to spawn this emitter. I followed more of Robo's excellent instructions and instead used a <a href="scriptedtrigger.html">ScriptedTrigger</a> to accomplish this.</p>
+<hr class="thin"><p>The UDN says to make a spawner class but I used a ScriptedTrigger for spawning my emitters. The advantages of using a ScriptedTrigger are that you can spawn your emitter class at the location of ANY ScriptedTrigger without having to have location and rotation data for the emitter class. You can also add a breaking glass sound effect to play within the ScriptedTrigger.</p>
+<ol><li>Add your glass window mover to your map. For its key1, move it away out of the map so it will be hidden when it's shot.</li>
+<li>Expand the "MoverEvents" section and set the following values..</li>
+</ol>
+<p>OpeningEvent = breakglass1</p>
+<ol><li>Expand the "Object" section and set its InitialState to "TriggerOpenTimed".</li>
+<li>Add a ScriptedTrigger to your map and move it to be in the same position as your mover. Also rotate it so it's facing the right way for when your glass breaks.</li>
+<li>Open the ScriptedTriggers properties, expand its Events section, and set its tag to "breakglass1".</li>
+<li>Now for the meat. Expand its AIScript" section...</li>
+</ol>
+<ul><li>Add a new event of Action_WAITFOREVENT type, and in its ExternalEvent = breakglass1</li>
+<li>Add a new event of Action_SpawnActor and select your emitter class as the actor to spawn.</li>
+<li>Add a new event of type Action_PLAYSOUND. Set its sound to be a breaking glass sound. We are using this method because it gives you better control over the sound than the mover does.</li>
+<li>Add a new event of type Action_GOTOACTION. Leave its setting at 0</li>
+</ul>
+<p>Ok that should do it. Rebuild your map and test it out. When you shoot the mover it should immediatly move out of view, the breaking glass emitter will be spawned, showering broken glass from where the ScriptedTrigger is, and play a breaking glass noise.</p>
+<p>This method should work well and it has the added bonus that you can add more breaking glass movers and ScriptedTriggers to have a whole glasshouse of breakable glass windows. Even better they respawn after the time you set in your movers "StayOpenTime' value.</p>
+<p>Hopefully that helps you out </p>
+<hr class="thin"><p>It certainly helped me out, and as any good mapper should, im adding what ive learned to the wiki <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">LionsPhil:</em> This is neat, but if a player is standing on the glass (e.g. because you want other players to be able to shoot that player's footing away &gt;=) ), it will fling them in the direction of the mover's 'broken' position. Is there really no generic "breakable" smesh-based actor (think Half-Life 1's brush-based <a href="http://collective.valve-erc.com/index.php?ent=func_breakable">[func_breakable]</a>, or <a href="destroyableobjective-sm.html">DestroyableObjective SM</a> without the objective ties) in UT?</p>
+<p><em class="em2">Foxpaw:</em> I believe destroyable <a href="decoration.html">Decoration</a>s behave in this manner. If not you could easily code such an actor.</p>
+<p><em class="em2">Bonehed316:</em> I've got some code for breakable objects which...I could distribute.  It doesnt use the old mover hack, but actually a StaticMeshActor which is destroyed (or possibly hidden/collisions disabled).  Maybe I'll clean it up for distribution.  I used to host a breakable glass script which worked with the mover method, but that has long since been lost.</p>
+<p><em class="em2">Messiah:</em> It says in the script extends Actor, but this should be Emitter. Atleast this script doesn't work this way. </p>
+<p><em class="em2">VitalOverdose</em>: I cant see anything about replication does this work online?</p>
+<hr class="thin"><p><a href="category-mapping.html">Category Mapping</a><br><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("The Concept", "#0.1");
+menuItemAdd("The Mover", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>The Special Effects", "#0.2.0.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Breaking_Glass_UT2003">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Breaking_Glass_UT2003">View other revisions</a><br>Last edited May 30, 2006 12:44 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Breaking_Glass_UT2003">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Breaking_Glass_UT2003">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Gah - a solution with more questions. (EntropicLqd)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

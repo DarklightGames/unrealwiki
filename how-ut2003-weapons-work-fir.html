@@ -1,0 +1,165 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: How UT2003 Weapons Work/Firing A Weapon</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=How_UT2003_Weapons_Work/Firing_A_Weapon; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="how-ut2003-weapons-work.html">How UT2003 Weapons Work</a>/<a href="http://wiki.beyondunreal.com/wiki?back=How+UT2003+Weapons+Work/Firing+A+Weapon">Firing A Weapon</a></h1>
+	<div class="wiki"><p><a href="how-ut2003-weapons-work.html">How UT2003 Weapons Work</a>: Firing A Weapon</p>
+<h2><a name="0.1"></a>Intro</h2>
+<p>While it's relatively easy to make a custom weapon by taking an existing one and monkeying about with the parameters, it's much harder to figure out the chain of events that cause a weapon to get fired.  The reason for this is twofold: first, much of the actual flow of control is done natively, so is not visible to the person browsing the UnrealScript code; secondly, there is a visible chain of method calls which looks right, until the trail suddenly peters out.</p>
+<p>Trystan did excellent work deciphering this in the case of projectile weapons.  Although not originally intended to show the general case, this diagram shows important steps missing from the visible UnrealScript code:</p>
+<h3><a name="0.1.1"></a>Flow of control</h3>
+<div class="floatimages"><table border=0 cellspacing=0 cellpadding=0 align=center width=1><tr valign=top><td class="floatimages-block"><div><img alt="[projectilefireflow]" src="images/projectilefireflow.jpeg"><p>Projectile Fire Flowchart</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<p><em class="em2">Note:</em> There's a small error above.  The ProcessTouch function isn't called by the engine. Instead the engine calls the Touch function which calculates the exact hitlocation and calls ProcessTouch.</p>
+<h3><a name="0.1.2"></a>In English</h3>
+<p>The player hits the Fire button.  The engine then executes the alias attached to Fire.  The alias fire is set to Button bFire, and the exec command Fire().  Check <a href="binding-keys.html">aliases</a> for more information on how this works but basically bFire is a boolean variable that is automatically set by the engine to true when the fire button is being held down, and false when the fire button is released.  The engine has a native event set such that when bFire is held down the Pawn.Weapons.WeaponFire.ModeDoFire() is called.  As well PlayerController.Fire() is called.  It's important to note that these are two distinctly separate chains of events.  </p>
+<p>See <a href="how-firing-doesnt-work.html">How Firing Doesn't Work</a> for an explanation of the "decoy" chain of events.</p>
+<p>The flow of control is picked up at the <a href="weaponfire-ut2003.html">WeaponFire (UT2003)</a> class found in the weapon's array of fire modes. </p>
+<p><a href="weaponfire-ut2003.html">WeaponFire (UT2003)</a> is responsible for creating the visual effects and applying damage. There are two main weapon fire types:</p>
+<ul><li><a href="projectilefire.html">ProjectileFire</a> - <a href="firing-projectile-weapons.html">Firing Projectile weapons</a></li>
+<li><a href="instantfire.html">InstantFire</a> - <a href="firing-instantfire-weapons.html">Firing InstantFire weapons</a></li>
+</ul>
+<p>We will go on with the instant fire weapons; So, click that link! <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<h2><a name="0.2"></a>Comments</h2>
+<p><em class="em2">CDeath:</em> This is my first Wiki post.  My appoligies for any improper formatting.</p>
+<p>I have been looking at the engine.  I think I understand how the UT2K4 firing stuff works.  Natively, what happens is that the engine calls the native TickAuthoritiative() function for every actor.  For weapons, this native function is called AWeapon::TickAuthoritative().</p>
+<p>AWeapon::TickAuthoritative() does several test to make sure that the weapon should be ticked, is owned by a pawn, and stuff like that.  If everything looks good, then the native AWeapon::eventWeaponTick() is called.  eventWeaponTick() calls the uScript <a href="weapon.html">Weapon</a>.WeaponTick() function.</p>
+<p>Next, AWeapon::TickAuthoritative() loops through the weapon&#8217;s FireMode array (each FireMode is a <a href="weaponfire-ut2003.html">WeaponFire (UT2003)</a> object) and depending on a lot of flags will call some of the following functions:</p>
+<ul><li>UWeaponFire::ModeTick() (a native function)</li>
+<li>AWeapon::eventServerStartFire() (calls uScript <a href="weapon.html">Weapon</a>.ServerStartFire())</li>
+<li>AWeapon::eventServerStopFire() (calls uScript <a href="weapon.html">Weapon</a>.ServerStopFire())</li>
+<li>AWeapon::eventClientStartFire() (calls uScript <a href="weapon.html">Weapon</a>.ClientStartFire())</li>
+<li>AWeapon::eventClientStopFire() (calls uScript <a href="weapon.html">Weapon</a>.ClientStopFire())</li>
+</ul>
+<p>The native UWeaponFire::ModeTick() function calls UWeaponFire::eventTimer() (which calls the uScript <a href="weaponfire-ut2003.html">WeaponFire (UT2003)</a>.Timer() function).  Then based on a lot of flags it will call some of the following functions:</p>
+<ul><li>UWeaponFire::eventModeTick() (calls uScript <a href="weaponfire-ut2003.html">WeaponFire (UT2003)</a>.ModeTick())</li>
+<li>UWeaponFire::eventModeDoFire() (calls uScript <a href="weaponfire-ut2003.html">WeaponFire (UT2003)</a>.ModeDoFire())</li>
+<li>UWeaponFire::eventModeHoldFire() (calls uScript <a href="weaponfire-ut2003.html">WeaponFire (UT2003)</a>.ModeHoldFire())</li>
+</ul>
+<p>So for a weapon, it looks like the sequence is:</p>
+<ul><li>Weapon.WeaponTick();</li>
+<li>Weapon.FireMode[0].Timer()</li>
+<li>Weapon.FireMode[0].ModeTick()</li>
+<li>Weapon.FireMode[0].ModeDoFire()/ModeHoldFire()</li>
+<li>Weapon.FireMode[1].Timer()</li>
+<li>Weapon.FireMode[1].ModeTick()</li>
+<li>Weapon.FireMode[1].ModeDoFire()/ModeHoldFire()</li>
+<li>Weapon.ServerStartFire()/ServerStopFire()</li>
+<li>Weapon.ClientStartFire()/ClientStopFire()</li>
+</ul>
+<p>What exactly gets called depends upon all sorts of things like your Role, TimerInterval, NextTimerPop, TimeSeconds, bIsFiring, bInstantStop, bFireOnRelease, HoldTime, MaxHoldTime, NextFireTime&#8230;</p>
+<p><em class="em2">Wormbo:</em> Thanks for the insights. I'd like to add, that the native UWeaponFire class corresponds to the <a href="weaponfire-ut2003.html">WeaponFire (UT2003)</a> Unrealscript class and AWeapon corresponds to UnrealScript's <a href="weapon.html">Weapon</a> class. It's kinda obvious, but just to prevent confusion... <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">CDeath:</em> Good catch.  I changed AWeapon to Weapon.  Internally, the engine prepends most native objects with either an 'A' or a 'U'.  The 'A' means that the object descends from <a href="actor.html">Actor</a>.</p>
+<p><em class="em2">Sweavo:</em> refactored some, it still has a way to go, but that diagram was the Holy Grail for me, and I agree with other contributors it needs to be front and center!</p>
+<p><em class="em2">Tarquin:</em> If you want to do an editable version of the diagram, tree markup might be useful:</p>
+<PRE class="tree">User fires weapon
+  +- this happens
+  |    +- and then this
+  +- that happens too</PRE><hr class="thin"><p><a href="refactor-me.html">Refactor Me</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Intro", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Flow of control", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>In English", "#0.1.2");
+menuItemAdd("Comments", "#0.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="how-ut2003-weapons-work.html">How UT2003 Weapons Work</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=How_UT2003_Weapons_Work/Firing_A_Weapon">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=How_UT2003_Weapons_Work/Firing_A_Weapon">View other revisions</a><br>Last edited August 9, 2005 20:11 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=How_UT2003_Weapons_Work/Firing_A_Weapon">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/How_UT2003_Weapons_Work/Firing_A_Weapon">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Worst-case scenario: the UEd Goblin wipes the map and burns down your house.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

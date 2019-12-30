@@ -1,0 +1,419 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: CaptureVolume</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=CaptureVolume; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=CaptureVolume">CaptureVolume</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Linking Volumes and Control points</h2>
+<p><em class="em1">Or, how I learned to stop worrying and love my volume!</em></p>
+<blockquote><p>Goes without saying, but if you sample any of this code please give me credit somewhere in your script.  Also, note that I'm not the cleanest coder in the world, so be sure to check and double check!  Share the love baby!</p>
+</blockquote><p>The origin of this page comes from a project I'm currently working. For the mod, it was necessary to track player position and then have an icon fade in and out on the hud.  I'm not going to go into the fades right now since that's a whole monster to itself.  What I'm going to focus on is how to link a control point to a capture volume and, using the two, get it to display icons onto the HUD.</p>
+<blockquote><p>Props go to the Adster.  Visit his page @ <a href="http://www.speakerprojects.com/index.html">http://www.speakerprojects.com/index.html</a> and tell him he's sexy.</p>
+</blockquote><h2><a name="0.2"></a>Writing the code</h2>
+<p>You need to create some new UnrealScript classes. You can either:</p>
+<ul><li><a href="create-a-subclass.html">Create a subclass</a> in UnrealEd for each of the following scripts,</li>
+<li>or [Create a package]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Create_A_Package&referrerid=CaptureVolume">?</a> containing all these classes.</li>
+</ul>
+<p>The first thing you want to do it create your <a href="volume.html">volume</a> subclass. The volume will be used to track when a player enters the space.</p>
+<pre class="uscript"><span class="uscript-comment">/*
+Extended Volmue Class
+
+Graham Ross 9/21/04
+
+An extended volume class to help display the names of
+rooms on the HUD
+
+*/</span>
+<span class="uscript-comment">//Graham Ross (thanks Adster!!!)</span>
+<span class="uscript-comment">//An interactive volume to trigger elements on the HUD</span>
+<span class="uscript-comment">// 10/13/04</span>
+<span class="uscript-comment">//=============================================================================</span>
+
+<span class="uscript-keyword">class</span> captureVolume <span class="uscript-keyword">extends</span> PhysicsVolume<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span> <span class="uscript-operator">)</span> <span class="uscript-type">Int</span> captureVolumeNumber<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> CapturePoint ourCapturePoint<span class="uscript-operator">;</span>
+
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> volumeNumber<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> inVolume<span class="uscript-operator">;</span>
+
+
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span> <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> NavigationPoint nP<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">for</span><span class="uscript-operator">(</span> nP <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>NavigationPointList<span class="uscript-operator">;</span> nP <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span> nP <span class="uscript-operator">=</span> nP<span class="uscript-operator">.</span>NextNavigationPoint <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-operator">!</span>nP<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span> <span class="uscript-name">'CapturePoint'</span> <span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+            <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> CapturePoint<span class="uscript-operator">(</span> nP <span class="uscript-operator">)</span><span class="uscript-operator">.</span>capturePointNumber <span class="uscript-operator">==</span> captureVolumeNumber <span class="uscript-operator">)</span>
+
+        <span class="uscript-operator">{</span>
+            ourCapturePoint <span class="uscript-operator">=</span> CapturePoint<span class="uscript-operator">(</span> nP <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            ourCapturePoint<span class="uscript-operator">.</span>SetMaster<span class="uscript-operator">(</span> <span class="uscript-keyword">self</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+
+
+<span class="uscript-operator">}</span>
+
+
+
+<span class="uscript-keyword">event</span> PawnEnteredVolume<span class="uscript-operator">(</span> Pawn other <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> <span class="uscript-operator">(</span> other<span class="uscript-operator">.</span>IsPlayerPawn<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span> ourCapturePoint <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>other<span class="uscript-operator">.</span>PlayerReplicationInfo <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>   <span class="uscript-comment">//is the problem that the capt. point is none?</span>
+
+    <span class="uscript-operator">{</span>
+
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> customPawn<span class="uscript-operator">(</span> other <span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+            rscPRI<span class="uscript-operator">(</span>other<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">)</span><span class="uscript-operator">.</span>cVolumeNumber <span class="uscript-operator">=</span> captureVolumeNumber<span class="uscript-operator">;</span>
+
+ 
+
+        ourCapturePoint<span class="uscript-operator">.</span>Touched<span class="uscript-operator">(</span> other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+     <span class="uscript-operator">}</span>
+
+
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">event</span> PawnLeavingVolume<span class="uscript-operator">(</span> Pawn other <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>  other  <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span><span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span> ourCapturePoint <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span><span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>other<span class="uscript-operator">.</span>PlayerReplicationInfo <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> customPawn<span class="uscript-operator">(</span> other <span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">none</span> <span class="uscript-operator">)</span>
+             rscPRI<span class="uscript-operator">(</span>other<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">)</span><span class="uscript-operator">.</span>cVolumeNumber <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+
+        ourCapturePoint<span class="uscript-operator">.</span>Untouched<span class="uscript-operator">(</span> other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    captureVolumeNumber<span class="uscript-operator">=</span><span class="uscript-number">255</span>
+    volumeNumber <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+
+<span class="uscript-operator">}</span></pre><p>So you'll notice there are a few things I'm keeping track of.  First, in the PostBeginPlay, I'm cycling through all the NavigationPoints in the scene.  If it's a "capture point", I proceed forward and match up the number of the capture points to the number of the volume, two attributes I've custom set.  You'll also notice I have two checks for whether the pawn enters or leaves a volume.  This is the most important part of the code.  When a player enters the volume, it calls "touched" or "untouched" from the capture point.  We'll get into that part shortly.</p>
+<p>Also, notice that I've set captureVolumeNumber and Volume number to 255 and -1, two out of range types.</p>
+<p>Now, let's create a control point to link it to</p>
+<pre class="uscript"><span class="uscript-comment">//  Graham Ross (Thanks Adster!!!)</span>
+<span class="uscript-comment">// class for altering the function of GameObjective.</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">//=============================================================================</span>
+
+<span class="uscript-keyword">class</span> CapturePoint <span class="uscript-keyword">extends</span> GameObjective
+    <span class="uscript-keyword">Placeable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span> <span class="uscript-operator">)</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">String</span> captureName<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span> <span class="uscript-operator">)</span> <span class="uscript-type">Name</span> captureEvent<span class="uscript-operator">;</span> 
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span> <span class="uscript-operator">)</span> <span class="uscript-type">Int</span> capturePointNumber<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> CaptureVolume captureVolume<span class="uscript-operator">;</span>
+
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span> <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-keyword">function</span> SetMaster<span class="uscript-operator">(</span> CaptureVolume ourCaptureVolume <span class="uscript-operator">)</span>
+
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> ourCaptureVolume <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        captureVolume <span class="uscript-operator">=</span> ourCaptureVolume<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+
+<span class="uscript-keyword">function</span> Touched<span class="uscript-operator">(</span> Pawn other<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+<span class="uscript-operator">}</span>
+
+
+
+<span class="uscript-keyword">function</span> Untouched<span class="uscript-operator">(</span> Pawn other<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+<span class="uscript-operator">}</span>
+
+
+
+
+<span class="uscript-keyword">function</span> ResetPoint<span class="uscript-operator">(</span> <span class="uscript-type">Bool</span> bEnabled <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+
+<span class="uscript-operator">}</span>
+
+
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    bHidden<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+    capturePointNumber<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span>
+    captureName<span class="uscript-operator">=</span><span class="uscript-string">"A Capture Point"</span>
+    bUseCylinderCollision<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    RemoteRole<span class="uscript-operator">=</span>ROLE_SimulatedProxy
+    bAlwaysRelevant<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bStasis<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+    bStatic<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+    bNoDelete<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bNetNotify<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    CollisionRadius<span class="uscript-operator">=</span><span class="uscript-number">60.000000</span>
+    CollisionHeight<span class="uscript-operator">=</span><span class="uscript-number">40.000000</span>
+    DrawScale<span class="uscript-operator">=</span><span class="uscript-number">0.60000</span>
+    bCollideActors<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+    bBlockActors<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+    bBlockPlayers<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+    NetUpdateFrequency<span class="uscript-operator">=</span><span class="uscript-number">8</span>
+    ObjectiveName<span class="uscript-operator">=</span><span class="uscript-string">"Capture Point"</span>
+
+<span class="uscript-operator">}</span></pre><p>You'll notice there's not much there.  Basically the only thing I want is the touched and untouched function.  This will allow me to interact easily with the <a href="hud.html">HUD</a> and draw upon it.  I personally wasn't able to find a way to interact solely using the volume and the HUD.  It's also helpful to note that the triggering is not done by the conrol point, but done by the volume who then interacts with the point.</p>
+<p>Also, you must create a custom PRI<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=PRI&referrerid=CaptureVolume">?</a>(Player Replication Info) for your player to hold a single variable that will track the volume number.</p>
+<pre class="uscript"><span class="uscript-comment">// Graham Ross</span>
+<span class="uscript-comment">// 10/13/04</span>
+<span class="uscript-comment">//</span>
+<span class="uscript-comment">// Custom PRI to use with my volume and my hud</span>
+
+
+<span class="uscript-keyword">class</span> rscPRI <span class="uscript-keyword">extends</span> xPlayerReplicationInfo<span class="uscript-operator">;</span>
+
+
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> cVolumeNumber<span class="uscript-operator">;</span>
+
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+       cVolumeNumber <span class="uscript-operator">=</span> <span class="uscript-number">0</span>
+
+ <span class="uscript-operator">}</span></pre><p>The last code you got to put in is some way to draw on the HUD obviously!  I'm using a HUD interaction here, in my opinion the best way to draw on the HUD.</p>
+<p>At the top, decalre something like this:</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> <span class="uscript-keyword">enum</span> volumeNo
+<span class="uscript-operator">{</span>
+    VN_None<span class="uscript-operator">,</span>
+    VN_Bal1<span class="uscript-operator">,</span>
+    VN_Bal2
+<span class="uscript-operator">}</span>  VNStatus<span class="uscript-operator">;</span></pre><p>Later, do something like this...</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> checkGlowVariable<span class="uscript-operator">(</span>canvas c<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+
+
+    <span class="uscript-keyword">switch</span><span class="uscript-operator">(</span>rscPRI<span class="uscript-operator">(</span>pOwner<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">)</span><span class="uscript-operator">.</span>cVolumeNumber<span class="uscript-operator">)</span>
+      <span class="uscript-operator">{</span>
+         <span class="uscript-keyword">case</span> <span class="uscript-number">0</span>:
+               VNStatus <span class="uscript-operator">=</span> VN_None<span class="uscript-operator">;</span>  fadeout <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+               <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+
+         <span class="uscript-keyword">case</span> <span class="uscript-number">1</span>:
+               VNStatus <span class="uscript-operator">=</span> VN_Bal1<span class="uscript-operator">;</span>    fadeout <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+               <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+
+         <span class="uscript-keyword">case</span> <span class="uscript-number">2</span>:
+               VNStatus <span class="uscript-operator">=</span> VN_Bal2<span class="uscript-operator">;</span>     fadeout <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+               <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+
+         <span class="uscript-keyword">default</span>:
+
+        <span class="uscript-operator">}</span>
+
+<span class="uscript-operator">}</span></pre><p>then later do soemthing like this in drawhud() or a separate function:</p>
+<pre class="uscript"> 
+
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> checkGlowInfo<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+
+    <span class="uscript-keyword">local</span> <span class="uscript-type">byte</span> tempStyle<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> color tempColor<span class="uscript-operator">;</span>
+
+
+
+    glowMoveX <span class="uscript-operator">=</span> shiftX<span class="uscript-operator">;</span>
+    glowMoveY <span class="uscript-operator">=</span> ShiftY<span class="uscript-operator">;</span>
+
+
+
+    tempStyle <span class="uscript-operator">=</span> Cv<span class="uscript-operator">.</span>Style<span class="uscript-operator">;</span>
+    tempcolor <span class="uscript-operator">=</span> Cv<span class="uscript-operator">.</span>DrawColor<span class="uscript-operator">;</span>
+
+
+      cv<span class="uscript-operator">.</span>SetDrawColor<span class="uscript-operator">(</span><span class="uscript-number">255</span><span class="uscript-operator">,</span> <span class="uscript-number">255</span><span class="uscript-operator">,</span> <span class="uscript-number">255</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      cv<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span><span class="uscript-operator">(</span>cv<span class="uscript-operator">.</span>ClipX <span class="uscript-operator">-</span> xpos <span class="uscript-operator">*</span> HUDscaleX<span class="uscript-operator">)</span><span class="uscript-operator">,</span> <span class="uscript-operator">(</span>cv<span class="uscript-operator">.</span>ClipY <span class="uscript-operator">-</span> ypos <span class="uscript-operator">*</span> HUDScaley<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      cv<span class="uscript-operator">.</span>DrawIcon<span class="uscript-operator">(</span> LastRoom<span class="uscript-operator">,</span> sizeIcon <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>hudScaleX <span class="uscript-operator">+</span> hudScaleY<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+
+      cv<span class="uscript-operator">.</span>SetDrawColor<span class="uscript-operator">(</span><span class="uscript-number">255</span><span class="uscript-operator">,</span> <span class="uscript-number">255</span><span class="uscript-operator">,</span> <span class="uscript-number">255</span><span class="uscript-operator">,</span> fade<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      cv<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span><span class="uscript-operator">(</span>cv<span class="uscript-operator">.</span>ClipX <span class="uscript-operator">-</span> xpos <span class="uscript-operator">*</span> HUDscaleX<span class="uscript-operator">)</span><span class="uscript-operator">,</span> <span class="uscript-operator">(</span>cv<span class="uscript-operator">.</span>ClipY <span class="uscript-operator">-</span> ypos <span class="uscript-operator">*</span> HUDScaley<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      cv<span class="uscript-operator">.</span>DrawIcon<span class="uscript-operator">(</span> pLastRoom<span class="uscript-operator">,</span> sizeIcon <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>hudScaleX <span class="uscript-operator">+</span> hudScaleY<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+      cv<span class="uscript-operator">.</span>SetDrawColor<span class="uscript-operator">(</span><span class="uscript-number">255</span><span class="uscript-operator">,</span> <span class="uscript-number">255</span><span class="uscript-operator">,</span> <span class="uscript-number">255</span><span class="uscript-operator">,</span> mapOp<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      cv<span class="uscript-operator">.</span>SetPos<span class="uscript-operator">(</span><span class="uscript-operator">(</span>cv<span class="uscript-operator">.</span>CLipX  <span class="uscript-operator">-</span> <span class="uscript-operator">(</span>xGlow<span class="uscript-operator">-</span>glowMoveX<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> HUDScaleX<span class="uscript-operator">)</span><span class="uscript-operator">,</span> <span class="uscript-operator">(</span>cv<span class="uscript-operator">.</span>ClipY <span class="uscript-operator">-</span> <span class="uscript-operator">(</span>yGlow<span class="uscript-operator">-</span>glowMoveY<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> HUDScaleY<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      cv<span class="uscript-operator">.</span>DrawIcon<span class="uscript-operator">(</span> pLastGlow<span class="uscript-operator">,</span>  sizeGlow <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>hudScaleX <span class="uscript-operator">+</span> hudScaleY<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+   
+    <span class="uscript-keyword">switch</span> <span class="uscript-operator">(</span>VNStatus<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+
+
+
+            <span class="uscript-keyword">case</span> VN_None:
+                 resetfade<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                 <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+
+            <span class="uscript-keyword">case</span> VN_Bal1:
+                 plastRoom <span class="uscript-operator">=</span> blank<span class="uscript-operator">;</span>   lastVolume <span class="uscript-operator">=</span> <span class="uscript-number">12</span><span class="uscript-operator">;</span>    pLastGlow <span class="uscript-operator">=</span> Bal1_g<span class="uscript-operator">;</span> ShiftX <span class="uscript-operator">=</span> <span class="uscript-number">5</span><span class="uscript-operator">;</span>  ShiftY <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+                 <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+
+            <span class="uscript-keyword">case</span> VN_Bal2:
+                 plastRoom <span class="uscript-operator">=</span> blank<span class="uscript-operator">;</span>  lastVolume <span class="uscript-operator">=</span> <span class="uscript-number">13</span><span class="uscript-operator">;</span>   pLastGlow <span class="uscript-operator">=</span> Bal2_g<span class="uscript-operator">;</span> ShiftX <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">5</span><span class="uscript-operator">;</span> ShiftY <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+                  <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+
+
+            <span class="uscript-keyword">default</span>:
+                 pLastRoom <span class="uscript-operator">=</span> blank <span class="uscript-operator">;</span>
+                 pLastGlow <span class="uscript-operator">=</span> Hall_g <span class="uscript-operator">;</span>
+                 resetfade<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                 <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+         <span class="uscript-operator">}</span>
+
+
+<span class="uscript-operator">}</span></pre><p>Please note that the reason I'm doing it this way is becuase of my fades.  I faked my fades by having them come in on top of each other, so I needed to track the last icon that came up, then draw it and have it stay to give the appearance of a cross-fade.  You could easily track player position and then have it just pop instantly onto the screen...</p>
+<h2><a name="0.3"></a>Linking through Unreal Ed</h2>
+<p>Okay, hopefully you can just hand this off to a level designer and say "Link the numbers slave of GUI!".  But for those less fortunate of us, here's how you link the two together.</p>
+<ol><li><ul><li>If you've created a package, after you've compiled all your scripts, go to the <a href="actor-overview.html">actor browser</a> and load the package under the actor classes tab. This will bring your scripts into UEd and allow you to access them and place them on your level. </li>
+<li>If you've created classes within UnrealEd, they should already be in the <a href="actor-overview.html">actor browser</a> once you compile in he <a href="script-editor.html">Script Editor</a> window.</li>
+</ul>
+</li>
+<li><a href="add-an-actor.html">Add an Actor</a> &gt;&gt; <a href="navigationpoint.html">NavigationPoint</a> &gt;&gt; <a href="jumpdest.html">JumpDest</a> &gt;&gt; <a href="gameobjective.html">GameObjective</a> &gt;&gt; CapturePoint. </li>
+<li><a href="add-a-volume.html">Add a Volume</a> of the new class, CaptureVolume.</li>
+<li>Now comes the tricky part. Select your capturepoint. Open the actor ptoperites window and set the capturePointNum to a valid number, like 1.  The, go under the events rollout and give it a tag, like MED_CP or something.</li>
+<li>Select the corresponding volume.  Give the volume the name number as the capture point (1) and then under the events rollout set the event name to the tag of the capture point (MED_CP).  This will effectively link the two. Here's a brief overview on how to better <a href="match-these-tags.html">match these tags</a></li>
+</ol>
+<p>That's about it.  If you have problems, make sure your tags match between the two.  Also, another trick I've found is to set the draw coords to somehting like 500 by 500, so you can make sure it's actually drawing and not getting covered by something.</p>
+<p>Confused about what 'trigger' means?  Here's a good definition of <a href="triggered.html">triggered</a></p>
+<hr class="thin"><p><em class="em2">Kungfu Hampster:</em> Let me know if u have any problems understanding this. <img alt=";)" src="emoticons/wink.gif" align="middle"></p>
+<p><em class="em2">Tarquin:</em> Looks good. I've added a few tutorial links: you can maybe rewrite your text a bit to make use of them <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Kungfu Hampster:</em> Thanks Tarquin.  Still a little new ta using the markup!  On a side notw, I would not reccomend making the scripts in UnrealEd.  Use UDN or WotGreal.  UnrealEd's scripting is way to figety for me.</p>
+<hr class="thin"><p><a href="category-custom-class.html">Category Custom Class</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Linking Volumes and Control points", "#0.1");
+menuItemAdd("Writing the code", "#0.2");
+menuItemAdd("Linking through Unreal Ed", "#0.3");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=CaptureVolume">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=CaptureVolume">View other revisions</a><br>Last edited January 12, 2005 10:04 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=CaptureVolume">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/CaptureVolume">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Worst-case scenario: the UEd Goblin wipes the map and burns down your house.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

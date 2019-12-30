@@ -1,0 +1,145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Config Vars And .Ini Files</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Config_Vars_And_.Ini_Files; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Config Vars And .Ini Files">Config Vars And .Ini Files</a></h1>
+	<div class="wiki"><p>Often it is desireable to preserve the output of a program after it has terminated. Other times, it may be desirable to be able to read external files for user settings, etcetera. Games, of course, are no different. Unfortunately, <a href="unrealscript.html">UnrealScript</a>s file system functions are somewhat limited. There are no file streams or other sorts of low-level file interaction, but you can usually still do what you want within the constraints of the file system functions that are availible.</p>
+<h2><a name="0.1"></a>Write-Only and Read-Write Operations</h2>
+<p>There are several reasons why one might want to write to the hard drive from within <a href="unrealscript.html">UnrealScript</a>. The most common, of course, is for logging and debugging, but data is also often written to the hard drive for later recovery by some reading function. There are three known ways to write data to the hard drive: the <a href="log-file.html">log file</a>, config variables/ini files, and the savepackage suite of functions.</p>
+<h3><a name="0.1.1"></a>Config Variables and .Ini Files</h3>
+<p>.Ini files are the closest to a two way (read/write) operation that Unrealscript can perform. .Ini files are read when the class they are associated with is first loaded. After that, they can only be written to, but the values from their reading remains in memory. .Ini files are very closely tied to config variables, and they work by changing the default properties of those variables. For instance, if you have a string that is a config variable, and you change it's value in the .Ini file, it's default value for that string will have updated when that class' package is next loaded. This is a very good method of having settings persist on something that has only one instance.</p>
+<p>Writing to an .ini file is a two-step process, but it is simple to do. First, you must set the value of the variables you wish to write to disk. Usually if you are using .ini files to create persistant settings this will likely already be done. Once that is done, simply have your class call either the <a href="function-syntax.html">native final</a> <em class="em2">SaveConfig()</em> or <a href="function-syntax.html">native static final</a> <em class="em2">StaticSaveConfig()</em>, defined in <a href="object.html">Object</a>.  SaveConfig() will write the contents of all the config variables in the instance of the class you call it from to the .Ini file assigned to that class. This defaults to User.Ini, but can be changed in the class declaration. (See <a href="class-syntax.html">Class Syntax</a>) StaticSaveConfig() is similar to SaveConfig(), but instead saves the default values of the config variables to disk.</p>
+<p>Note that every subclass will have it's own version of the config variables stored in the .Ini file. If you want all subclasses to share the same persistent value, you should declare your variable as <em class="em2">globalconfig</em> instead of <em class="em2">config</em>. See <a href="variable-syntax.html">Variable Syntax</a>.</p>
+<p>Also bear in mind that due to the nature of config variables, they will rarely be the same on both server and client. The server also will not automatically replicate it's config variables, unless they are replicated variables, in which case they will be replicated when they change or when a relevant actor replication takes place. See <a href="replication.html">Replication</a>.</p>
+<p>There appears to be a limit on the amount of data that can be written to the .Ini file, though it appears to be fairly great. Anything over about a kilobyte of data (such as a large struct) stored in a single variable may not be written properly.</p>
+<p>Note also that there is an interesting quirk when saving structs in this way. Members of the struct, will be stored, but members of the struct declared as transient will not be stored. However, not only will they not be stored, but they will be reset to their initialization values when you call SaveConfig() or StaticSaveConfig(). You should back this information up before saving if you do not want it to be lost during the save.</p>
+<h3><a name="0.1.2"></a>SavePackage</h3>
+<p>See <a href="dataobject.html">DataObject</a>.</p>
+<h3><a name="0.1.3"></a>Saved Games</h3>
+<p>You can save the entire world context via the <em class="em2">savegame</em> console command. The syntax is simple:</p>
+<div class="classpath">savegame <em class="em1">&lt;number&gt;</em><br></div>
+<p>Where the number is the number of the saved world state. The "number" of the saved world state determines it's filename on disk, and is required to later restore the world state.</p>
+<p>The restore the world state, you "load" it just as you would load a level. Instead of indicating a level name, however, simply load the level:</p>
+<div class="classpath">?load=<em class="em1">&lt;number&gt;</em><br></div>
+<p>Saving and loading does not work in UT2003, but is an engine feature and should work in other Unreal Engine titles, including UT2004.</p>
+<h2><a name="0.2"></a>Read-Only Operations</h2>
+<p>Read-only operations may not sound as useful, but can in some ways be even more useful for certain applications. These are often referred to as INT files, though there is more to them than they are usually given credit for. There are two main ways to use <a href="int-file.html">INT file</a>s:</p>
+<h3><a name="0.2.1"></a>Localized Strings</h3>
+<p>Behaving very much like an .Ini file, any string variable may be declared as <em class="em2">localized</em> in the same was as a variable could be declared as a config variable. A localized variable will be loaded from the INT file when the package is first loaded into memory. However, localized strings are tied into the lanugage preference setting in the Unreal Engine, so the INT file is not always used. INT is the <em class="em1">international</em> version of the localized information files. There are numerous other files with different extensions, and the extension indicates which language the file is intended for. If your Unreal Engine is set up for french, the FRT file will be used instead, etc. The INT file is always used as a fallback if there is no file for your language or if the file for your language of choice does not contain a value for a localized string. See <a href="localization.html">Localization</a>.</p>
+<h3><a name="0.2.2"></a>Meta Information</h3>
+<p>You can read lots of stuff from these and parse it out to get whatever information you need. See <a href="int-file.html">INT File</a>.</p>
+<h2><a name="0.3"></a>Related Topics </h2>
+<ul><li><a href="dataobject.html">DataObject</a></li>
+<li><a href="perobjectconfig.html">PerObjectConfig</a></li>
+<li><a href="file-format.html">File Format</a></li>
+</ul>
+<hr class="thin"><p><em class="em2">Foxpaw:</em> This page should probrably be renamed to something more generic about saving and loading data, since it's the page with all the info about various forms of persistent data.</p>
+<p><em class="em2">Sweavo:</em> I agree, and the ini file and savepackage stuff should have a page each (especially while we can't make links to internal anchors)</p>
+<p><em class="em2">Fyfe:</em> <a href="dataobject.html">DataObject</a> and <a href="int-file.html">INT File</a> already have their own pages. I suggest stripping out the sections of <a href="dataobject.html">DataObject</a> and <a href="int-file.html">INT File</a>, then move [Save Games]<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Save_Games&referrerid=Config_Vars_And_.Ini_Files">?</a> to it's own page. Each page can then link back to each other in the related topics section.</p>
+<hr class="thin"><p><a href="refactor-me.html">Refactor Me</a> &ndash; Contains more info than the page title describes.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Write-Only and Read-Write Operations", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Config Variables and .Ini Files", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>SavePackage", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Saved Games", "#0.1.3");
+menuItemAdd("Read-Only Operations", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Localized Strings", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Meta Information", "#0.2.2");
+menuItemAdd("Related Topics ", "#0.3");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Config_Vars_And_.Ini_Files">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Config_Vars_And_.Ini_Files">View other revisions</a><br>Last edited November 26, 2006 8:36 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Config_Vars_And_.Ini_Files">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Config_Vars_And_.Ini_Files">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I love the smell of UnrealEd crashing in the morning. (tarquin)</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

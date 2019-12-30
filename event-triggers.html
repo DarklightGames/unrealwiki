@@ -1,0 +1,158 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Event Triggers</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Event_Triggers; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Event Triggers">Event Triggers</a></h1>
+	<div class="wiki"><p>There is some low-level link between the key bindings and the UI events. For example, in User.ini, under [Engine.input], we have the following line:</p>
+<pre class="paraverbatim"> Escape=SendEvent ShowMenus</pre><p>This states that pressing escape will trigger ShowMenus. This relates to the following in U2Menus.ui</p>
+<pre class="paraverbatim"> [Root]
+ Class=MultiStateComponent
+ State=NonMain
+ State=Main
+ Transition=ResetMenus,0,0,0,NULL
+ <em class="em2">Transition=ShowMenus,1,1,0,NULL</em>
+ TriggerEvent=0,0.0,CodeMonkey,UnPause
+ TriggerEvent=1,0.0,CodeMonkey,Pause
+ TriggerEvent=1,0.0,Event,MenuBackgroundBlurry.FadeOut
+ TriggerEvent=1,0.0,Event,MainMenuBackgroundLarge.Grow
+ TriggerEvent=1,0.0,Event,MainMenuBackgroundSmall.Show
+ DrawOrder=99
+ Localize=true</pre><p>The line:</p>
+<pre class="paraverbatim"> Transition=ShowMenus,1,1,0,NULL</pre><p>defines this particular event.</p>
+<p>I tested this by creating a useless event, which does the same thing as notifying you of a new objective. In U2HUD.ui, this defines the ObjectiveNotify component:</p>
+<pre class="paraverbatim"> [ObjectiveNotify]
+ Class=MultiStateComponent
+ State=NULL
+ State=ObjectiveNotifyText
+ Transition=NewObjective,1,0,4.0,ObjectiveNotifyText:NewObjective
+ <em class="em2">Transition=Honestly,1,0,4.0,ObjectiveNotifyText:Honestly</em>
+ Transition=ObjectiveCompleted,1,0,4.0,ObjectiveNotifyText:ObjectiveCompleted
+ Transition=ObjectiveFailed,1,0,4.0,ObjectiveNotifyText:ObjectiveFailed
+ TweenLocation=false
+ TweenAlpha=true
+ DrawOrder=1</pre><p>I added the line in bold here. Then, I entered the corresponding keybinding in User.ini:</p>
+<pre class="paraverbatim"> F3=SendEvent Honestly</pre><p>Finally, in U2HUD.int, the text is defined:</p>
+<pre class="paraverbatim"> [General]
+ AutoTurret=Auto Turret
+ RocketTurret=Rocket Turret
+ FieldGenerator=Field Generator
+ ProximitySensor=Proximity Sensor
+ XMP_Unknown=Unknown
+ Objectives=OBJECTIVES
+ NewObjective=F4 - New Objective
+ <em class="em2">Honestly=Honestly!</em>
+ ObjectiveCompleted=F4 - Objective Completed
+ ObjectiveFailed=F4 - Objective Failed
+ EndGame_LoadMenu=Load menu
+ EndGame_QuickLoad=Quick load
+ EndGame_RestartLevel=Restart
+ EndGame_Quit=QUIT
+ Confirmation_Ok=Ok
+ Confirmation_Cancel=Cancel
+ Confirmation_QuickLoad=REALLY LOAD?</pre><p>Thus, when I press F3 during the game, "Honestly!" appears in the bottom left corner of the screen.</p>
+<p>Normally, Objective notify events will be triggered from UnrealScript - the U2GameInfo class, in function UpdateObjective()</p>
+<pre class="uscript"><span class="uscript-keyword">switch</span><span class="uscript-operator">(</span>Status<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">case</span> OBJECTIVE_Incomplete: <span class="uscript-keyword">class</span><span class="uscript-name">'UIConsole'</span><span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>SendEvent<span class="uscript-operator">(</span><span class="uscript-string">"NewObjective"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">case</span> OBJECTIVE_Completed: <span class="uscript-keyword">class</span><span class="uscript-name">'UIConsole'</span><span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>SendEvent<span class="uscript-operator">(</span><span class="uscript-string">"ObjectiveCompleted"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">case</span> OBJECTIVE_Failed: <span class="uscript-keyword">class</span><span class="uscript-name">'UIConsole'</span><span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>SendEvent<span class="uscript-operator">(</span><span class="uscript-string">"ObjectiveFailed"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>This acheives exactly the same result, and the same native function must be called, if not from UnrealScript, in the first case I described.</p>
+<p><em class="em2">MythOpus:</em> I believe EventTriggers<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=EventTriggers&referrerid=Event_Triggers">?</a> are only used in Unreal 2 am I right?</p>
+</div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Event_Triggers">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Event_Triggers">View other revisions</a><br>Last edited September 17, 2003 8:44 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Event_Triggers">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Event_Triggers">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>The three virtues of a programmer: Laziness, Impatience, and Hubris. (Larry Wall)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

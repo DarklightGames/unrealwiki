@@ -1,0 +1,175 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Making An Interpolation Path</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Making_An_Interpolation_Path; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Making An Interpolation Path">Making An Interpolation Path</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Definition</h2>
+<p>What the heck is an interpolation path? Quite simply, a triggered path that sends the player to diferrent points in it, in a specific order.  An interpolation path was used for Unreal Tournament's CityIntro map that starts up when you first load UT.  Some of the editable variables include skipping the next point, speed of the game (this makes cool matrix-like scenes possible if you know what you're doing), speed of the camera, etc.</p>
+<p>An interpolated curve doesn't actually touch the points at all. It is pulled towards the points, but without actually going through them. (It is not the same as splining. A spline is a smoothed line that goes through all of the points in the path. This is commonly used for smooth paths, but not in Unreal.)</p>
+<h2><a name="0.2"></a>Laying the path</h2>
+<p>The path points are defined with <a href="actor.html">Actor</a> &gt;&gt; <a href="keypoint-ut.html">Keypoint (UT)</a> &gt;&gt; <a href="interpolationpoint.html">InterpolationPoint</a>. Set:</p>
+<table class="paratable-border" border=0 cellspacing=0 cellpadding=0><tr valign=top><td>Events &rarr; Tag</td>
+<td>Tie all the points with the name</td>
+</tr>
+<tr valign=top><td>InterpolationPoint &rarr; Position</td>
+<td>order of each poit in the path, starting with 0</td>
+</tr>
+<tr valign=top><td>InterpolationPoint &rarr; bEndOfPath</td>
+<td>This value in the last point determines whether the path is open or closed</td>
+</tr>
+</table>
+<p>You need at least 3 points for a closed path, 4 for an open path. When any point of the path is selected, UnreaEd shows the path as a curved white line, with little axes glyphs at intervals. These don't actually mean anything, and they will never rotate.</p>
+<p>First of all, lay out your path. Find Actor &gt;&gt; Keypoint &gt;&gt; <a href="interpolationpoint.html">InterpolationPoint</a> in the <a href="actor-class-browser.html">Actor Classes Browser</a>.  The camera will travel in a straight line from one point to the next, so set your path up accordingly.  </p>
+<p>Define the order of the points with the InterpolationPoint &rarr; Position property. This must be set to 0,1,2... etc.</p>
+<p><em class="em2">Tarquin:</em> No-one mentioned the freaky lines and circle that appears in UEd at this point! <img alt="O_o" src="emoticons/ohoh.gif" align="middle"> Or that you need a minimum of 3. And bEndOfPath makes the lines disappear.</p>
+<p><em class="em2">EntropicLqd:</em>  And how the heck do you figure out which way the camera is actually pointing?  I've spent hours trying to figure out how to get my <em class="em1">InterpolatingSkyZone</em> to actually travel the path I want without any crazy rotations but to no avail.  It's fine most of the way around and then it suddenly goes wacky and spins randomly.</p>
+<p><em class="em2">Tarquin:</em> I've just got this to work. Doesnt seem any way to take the player <em class="em1">off</em> the path again. The direction of each IP gives the directio the player will point in, but the path glyphs in UEd dont show this. I've just made myself seasick.,,, urg</p>
+<p><em class="em2">Mychaeel:</em> No, it doesn't spin randomly.  It interpolates the angles numerically, so if one of your interpolation points is set to 355° and the next to 5° (a 10° difference, you'd think), it'll not rotate 355°...359°...0°...5° but <em class="em1">backwards</em>.  To make it behave as you want it to, you'd have to set the second InterpolationPoint's rotation to 365° rather than 5°.</p>
+<h2><a name="0.3"></a>The dynamics</h2>
+<p>The main use of a path is to make the player follow it. This is done with a <a href="specialevent.html">SpecialEvent</a>.</p>
+<p>(what about making movers folow paths?)</p>
+<p>Match the following to iniate the path</p>
+<ul><li>SpecialEvent's Events &rarr; Event </li>
+<li>All the IP's Events &rarr; Tag</li>
+</ul>
+<p><em class="em2">Question</em>: How does one set the object which will take the path?</p>
+<p>Set up a <a href="trigger.html">Trigger</a> to trigger the SpecialEVent to set off the whole process.</p>
+<p>Once you have your path laid out, right click on one of the points and select "Select All Interpolation Point".  Now open the actor properties and change their Event Tags to "Path1" or, if you'd like, a diferrent  name of your choice.  Just make sure that you use that name instead of "Path1" wherever we mention it, if you do use something diferrent.</p>
+<p>Now add a regular <a href="trigger.html">Trigger</a> (Actor &gt;&gt; Triggers &gt;&gt; Trigger) wherever you like &ndash; just make sure you'll be able to find it. To see it in game, either</p>
+<ul><li>set it to display the trigger's sprite in game with Advanced &rarr; bHidden = True </li>
+<li>set it to cast a small circle of light (set Lighting &rarr; LightType and LightColor properties)</li>
+</ul>
+<p>Now, anywhere you like (it can be literally anywhere in the map, doesn't matter where), add a <a href="specialevent.html">SpecialEvent</a> from the same menu.  Change its event tag to "PathStart", and its Event to "Path1".  Now open up the regular Trigger's properties and change its Event to "PathStart".</p>
+<p><em class="em2">Flopsy:</em> Just a comment you need to set the Default State of the Special Event actor to PlayerPath under Object&gt;&gt;InitialState.</p>
+<h4><a name="0.3.0.1"></a>Setting up the path's parameters</h4>
+<p>In the properties for each point are modifiers for Game Speed (the speed of everything going on, including that of the camera - bullets will move slower based on this value, for example) and Camera Speed (the actual speed of the camera.  This rate of movement depends on the value in the game speed property).  Note that these are not the actual names of the properties - again my memory is foggy.  It should, however, be pretty obvious.  You'll just have to experiment with the values and se what speed works best for you.  Start with low numbers however.</p>
+<h4><a name="0.3.0.2"></a>Finally</h4>
+<p>While the interpolation path should now work in any game mode, playing it in, say, DM, will show your weapon as you move along the path.  You probably don't want this, unless you're making some sort of ride for the player (in single player for example).  In order to make the player appear without any HUD or weaponry of any kind, you'll have to set the default game type (under level properties) to the appropriate actor.  You can find these under Info&gt;GameInfo.  Again I forget the proper name (sorry about all this folks, it's been over a month since I've messed with interpol points), but it should have something to do with "intro" and will be fairly obvious.  Finally, you will need a playerstart in any case, of course, and rebuilding is just as mandatory as ever.  Unless you're doing something special, you'll probably just want to start the player hovering in the air over the trigger, so that they drop onto upon start, triggering your cutscene.</p>
+<p>Please note that interpol points can be rotated just like playerstarts.  Whatever direction they are facing is the direction the camera will rotate to.</p>
+<p>If I missed anything important, or if anybody wants to look up what the proper names are, feel free to edit it into this page.</p>
+<p><em class="em1">The following pages also have tutorial-style information on making paths. Merging those into this might be a good idea:</em></p>
+<ul><li><a href="ums-interpolationtutorial.html">UMS/InterpolationTutorial</a></li>
+<li><a href="interpolationpoint.html">InterpolationPoint</a></li>
+</ul>
+<hr class="thin"><p>content from other pages... refactoring &amp; mergine needed.</p>
+<h3><a name="0.3.1"></a>Adding Interpolation Points to your map</h3>
+<ol><li>InterpolationPoints (hereafter called IP's) can be found under <em class="em2">Keypoint &gt;&gt; InterpolationPoint</em> in the <a href="actor-class-browser.html">Actor Classes</a> Browser. The first thing to do is to add one to your level where you want the Interpolation path to start. IPs show a  directional arrow in UnrealEd, which defines (funnily enough) the direction that the actor on the path will be pointing. Set their direction with the <a href="brush-rotate.html">Brush Rotate</a> tool or the Movement &rarr; Rotation property.</li>
+<li>In InterpolationPoint Properties &rarr; InterpolationPoint &rarr; Position, you should put the number that defines what point in the path this IP is at. This should start at 0, and I have been informed that the upper limit is 127 (thanks to TheMapper for that). </li>
+<li>I think the best thing to do, is to first add the IP's to your level, in aproximately the right places. Then you can get the path set up correctly, before changing the speed. </li>
+<li>Once you have got all your IP's in, there are two more that you have to put in. At the last point, you need to have two IP's. Then, put another one in the same position as the first, and give it the next Position after the last one. This is because IP paths actually loop, and the only way to get the path to go through a point is to put two IP's on top of each other. The reason the highest number IP is at the beginning of the path is because the actor following the path will start half way between the first and last IP's. </li>
+</ol>
+<h3><a name="0.3.2"></a>Setting the speed of the Interpolation Points</h3>
+<ol><li>Once you have your path correct, you may want to play around with the speed. You will find that it looks a lot nicer if the speed does vary. Knowing when to vary the speed isn't something that I can teach you. </li>
+<li>To change the speed, go to <em class="em2">InterpolationPoint Properties &rarr; InterpolationPoint &rarr; RateModifier</em>. Again, it is a matter of trial and error to find a series of values which you like. On each IP, the rate will be at that point, and it will change between the two points. If you want to change the rate very quickly, have two IPs very close to each other with different rate values.</li>
+<li>You can, if you want, change the speed of the game with the <em class="em2">GameSpeedModifier</em>, but this works seperately from <em class="em2">SetSpeed</em>. If you do use <em class="em2">GameSpeedModifier</em>, then make sure that it is reset back to 1 for the end of the IP path. </li>
+</ol>
+<hr class="thin"><ul><li>Note: Most of the content from this page is adapted from a tutorial for <a href="ums.html">UMS</a> that <a href="hugh.html">Hugh</a> wrote, and this section certainly isn't complete - the specifics of how to get an actor to actually follow the Interpolation path without using UMS I'm not clear on, maybe someone else could help out there &ndash; <em class="em1">Birelli</em></li>
+</ul>
+<p>This tutorial I'm only going to tell you the basic technical things you need to do to set up a regular interpolation path.  I'm not expert in this area, but I do know how to create one.  Please note that the terminal I am typing this up at is not equipped with Ued, so I may not tell you the exact name of things.  An interpolation point is actually "InterpolPoint" or something like that, it should be pretty obvious when you're staring at the Keypoint menu.</p>
+<hr class="thin"><p><a href="category-tutorial.html">Category Tutorial</a>, <a href="category-to-do.html">Category To Do</a>: mucho refactoring to do.</p>
+<p><a href="http://www.planetdeusex.com/tack/InterpolationPoints.html">http://www.planetdeusex.com/tack/InterpolationPoints.html</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Definition", "#0.1");
+menuItemAdd("Laying the path", "#0.2");
+menuItemAdd("The dynamics", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Setting up the path's parameters", "#0.3.0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Finally", "#0.3.0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Adding Interpolation Points to your map", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Setting the speed of the Interpolation Points", "#0.3.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Making_An_Interpolation_Path">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Making_An_Interpolation_Path">View other revisions</a><br>Last edited January 13, 2005 22:07 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Making_An_Interpolation_Path">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Making_An_Interpolation_Path">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I love the smell of UnrealEd crashing in the morning. (tarquin)</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

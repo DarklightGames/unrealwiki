@@ -1,0 +1,262 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: VitalOverdose/SFX Healing</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=VitalOverdose/SFX_Healing; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="vitaloverdose.html">VitalOverdose</a>/<a href="http://wiki.beyondunreal.com/wiki?back=VitalOverdose/SFX+Healing">SFX Healing</a></h1>
+	<div class="wiki"><div class="classpath"><img src="shared//gameicons/icon-ut2004.png"> <a href="unreal-tournament-2004.html">UT2004</a> :: <a href="actor.html">Actor</a> &gt;&gt; <a href="emitter.html">Emitter</a> &gt;&gt; SFX Healing (Package: custom)<br></div>
+<pre class="paraverbatim"> </pre><p>by <a href="vitaloverdose.html">VitalOverdose</a></p>
+<p>Part of  <a href="vitaloverdose-vitals-pro-ma.html">Vital'sPMT</a></p>
+<h3><a name="0.0.1"></a>Overview</h3>
+<p>In this script the mapper can set different levels of pain for pawns,vehicles and monsters.</p>
+<h4><a name="0.0.1.1"></a>Global Variables</h4>
+<pre class="paraverbatim"> <em class="em2">TotalParticles</em>      - Internal variable not available to the mapper.
+ <em class="em2">TimerFrequency</em>      - Rate at which the particles are scanned.
+ <em class="em2">ScanSize</em>            - the radius of the scan to perform at each particle.
+ <em class="em2">HealthToPawn</em>        - Health to cause a pawn on contact.
+ <em class="em2">HealthToVec</em>         - Health to cause a vec on contact.
+ <em class="em2">HealthToMonster</em>     - Health to cause a Monster on contact.</pre><h3><a name="0.0.2"></a>Function PostBeginPlay();</h3>
+<p>In this function the <em class="em2">.super command</em> has been put before the modified code so we get anything from the parent class gets dealt with right away and leaves the rest of the function free for whatever code we need to add to it.</p>
+<p>We are using the <em class="em2">PostbeginPlay()</em> function to check some of the data entered by the mapper before we start scanning the particle locations.</p>
+<ul><li>First the <em class="em2">MaxParticles</em> on the active emitter is checked to see if it is higher than the Limit of 20. if it is it gets set to 20.</li>
+<li>The <em class="em2">scansize</em> Radius is checked to see it hasn't been set to low. If it is then it gets set to 64.</li>
+<li>Then the <em class="em2">timerfrequency</em> is checked to see if it lower &lt; then 0.1 if it is, it gets set to 0.1.</li>
+<li>Finally the Timer is set on a continuous loop to be called every <em class="em2">TimerFrequency</em> seconds.</li>
+</ul>
+<pre class="uscript"><span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">Function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> Emitters<span class="uscript-operator">[</span>ActiveEmitterNumb<span class="uscript-operator">]</span><span class="uscript-operator">.</span>MaxParticles <span class="uscript-operator">&gt;</span> <span class="uscript-number">20</span><span class="uscript-operator">)</span>
+      Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ 
+ <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> ScanSize <span class="uscript-operator">&lt;</span> <span class="uscript-number">1</span> <span class="uscript-operator">)</span>
+      ScanSize<span class="uscript-operator">=</span><span class="uscript-number">64</span><span class="uscript-operator">;</span>
+ 
+ <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> TimerFrequency<span class="uscript-operator">&lt;</span><span class="uscript-number">0.1</span><span class="uscript-operator">)</span>
+      TimerFrequency <span class="uscript-operator">=</span> <span class="uscript-number">0.1</span><span class="uscript-operator">;</span>
+ 
+ SetTimer<span class="uscript-operator">(</span> TimerFrequency <span class="uscript-operator">,</span> <span class="uscript-keyword">True</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.3"></a>Function Timer()</h3>
+<p>The <em class="em2">timer</em> function is rather like an alarm clock. we can set it to go off after a certain amount of time. Whats really handy about this is we can also set it to run continuously which means any code we put inside it will get called every <em class="em2">timerfrequency</em> seconds. </p>
+<p>The reason for using <em class="em2">timer()</em> rather than <em class="em2">tick()</em> is to give the mapper some type of control over the amount of cpu strain that scanning the particles may cause.</p>
+<ul><li>fist a local variable of type <em class="em2">pawn</em> is made to store the valid ref of any <em class="em2">pawn</em> that the iterator finds when scanning.</li>
+<li>A local variable of type Int is created to use as a counter in the for next loop that will cycle though the emitted particles currently being scanned.</li>
+<li>If a valid pawn gets found its valid actor ref is first stored in the variable <em class="em1">FoundPawn</em> and then passed to the function <em class="em2">ProcessContact()</em> along with the <em class="em2">velocity</em> of the particle that caused the collision x 500;</li>
+</ul>
+<pre class="uscript"><span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">Function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> pawn           foundPawn<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">Local</span> <span class="uscript-type">Int</span>            Counter<span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> Counter<span class="uscript-operator">=</span><span class="uscript-number">0</span> <span class="uscript-operator">;</span> Counter <span class="uscript-operator">&lt;</span> Emitters<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Particles<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">;</span> Counter<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>
+     <span class="uscript-operator">{</span>
+      <span class="uscript-keyword">foreach</span> visiblecollidingActors<span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-name">'pawn'</span><span class="uscript-operator">,</span> foundPawn <span class="uscript-operator">,</span> ScanSize <span class="uscript-operator">,</span> Emitters<span class="uscript-operator">[</span>ActiveEmitterNumb<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Particles<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Location <span class="uscript-operator">)</span>
+              <span class="uscript-operator">{</span>
+               ProcessCollision <span class="uscript-operator">(</span>foundPawn <span class="uscript-operator">,</span>Emitters<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Particles<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Velocity<span class="uscript-operator">*</span><span class="uscript-number">500</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+              <span class="uscript-operator">}</span>
+     <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.0.4"></a>Function ProcessCollision()</h3>
+<p>In this function is where we do the hurting. </p>
+<ul><li>A local variable of type int is created so we can calculate the amount of pain to deliver.</li>
+<li>The variable <em class="em2">collidedwith</em> which contains the valid ref of what the particle touched is checked to see if its;-<ul><li>A vec + the value stored in the variable <em class="em2">HealthTovec</em> is not equal to 0. If it is then <em class="em2">thehealth</em> is set to that value.     </li>
+<li>If not a vec it gets checked to see if it is a <em class="em2">monster</em>. if it is and the variable <em class="em2">HealthTomonster doesnt equal 0 </em>thehealth<em class="em2"> gets set to that value.</em></li>
+<li>If not a <em class="em2">Vehicle</em>, it gets checked to see if it is a <em class="em2">pawn</em>. if it is and the variable <em class="em2">HealthTopawn</em> doesnt equal 0 <em class="em2">thehealth</em> gets set to that value.</li>
+<li>Function <em class="em2">TakeHealth()</em> is called on the pawn that the particle collided with using the details passed to this function when it was called.</li>
+</ul>
+</li>
+</ul>
+<pre class="uscript"><span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">Function</span> ProcessCollision<span class="uscript-operator">(</span>Pawn CollidedWith<span class="uscript-operator">,</span> Vector ParticleMomentum<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-keyword">Local</span> <span class="uscript-type">Int</span> thehealth<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">If</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>CollidedWith<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Vehicle'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>HealthTovec<span class="uscript-operator">!=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>     
+     TheHealth <span class="uscript-operator">=</span> HealthTovec<span class="uscript-operator">;</span>
+<span class="uscript-keyword">else</span>
+<span class="uscript-keyword">If</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>CollidedWith<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'monster'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>HealthToMonster<span class="uscript-operator">!=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> 
+     TheHealth <span class="uscript-operator">=</span> HealthTomonster<span class="uscript-operator">;</span>
+<span class="uscript-keyword">else</span>
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>CollidedWith<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Pawn'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>    <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>HealthToPawn<span class="uscript-operator">!=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>    
+     TheHealth <span class="uscript-operator">=</span> HealthToPawn<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> TheHealth <span class="uscript-operator">&lt;=</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+     CollidedWith<span class="uscript-operator">.</span>Health<span class="uscript-operator">(</span> HealthToPawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><pre class="uscript"><span class="uscript-keyword">class</span> SFx_Healing <span class="uscript-keyword">Extends</span> emitter
+<span class="uscript-keyword">placeable</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span>         <span class="uscript-type">bool</span>                   bafectsMonsters<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span>            <span class="uscript-type">int</span>                    TotalParticles<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span>         <span class="uscript-type">int</span>                    ActiveEmitterNumb<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span>         <span class="uscript-type">int</span>                    TimerFrequency<span class="uscript-operator">;</span>
+<span class="uscript-keyword">Var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span>         <span class="uscript-type">float</span>                  ScanSize<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span>         <span class="uscript-type">float</span>                  HealthTovec<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span>         <span class="uscript-type">float</span>                  HealthTomonster<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span>         <span class="uscript-type">float</span>                  HealthTopawn<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span>         <span class="uscript-type">float</span>                  healthadjustment<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span>         sound                  countactsound<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">(</span><span class="uscript-operator">)</span>         sound                  rejectsound<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">function</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> Emitters<span class="uscript-operator">[</span>ActiveEmitterNumb<span class="uscript-operator">]</span><span class="uscript-operator">.</span>MaxParticles <span class="uscript-operator">&gt;</span> <span class="uscript-number">20</span><span class="uscript-operator">)</span>           <span class="uscript-comment">//active particles capped to max20</span>
+      Destroyed<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>TimerFrequency <span class="uscript-operator">&lt;</span> <span class="uscript-number">0.1</span><span class="uscript-operator">)</span>
+     TimerFrequency <span class="uscript-operator">=</span> <span class="uscript-number">0.1</span><span class="uscript-operator">;</span>
+
+ SetTimer<span class="uscript-operator">(</span> TimerFrequency <span class="uscript-operator">,</span> <span class="uscript-keyword">True</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">Function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">local</span> pawn            FoundActor<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">Local</span> <span class="uscript-type">Int</span>             Counter<span class="uscript-operator">;</span>
+
+ <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> Counter<span class="uscript-operator">=</span><span class="uscript-number">0</span> <span class="uscript-operator">;</span> Counter <span class="uscript-operator">&lt;</span> Emitters<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>Particles<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">;</span> Counter<span class="uscript-operator">++</span> <span class="uscript-operator">)</span>
+     <span class="uscript-operator">{</span>
+      <span class="uscript-keyword">foreach</span> visiblecollidingActors<span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-name">'Pawn'</span><span class="uscript-operator">,</span> FoundPawn <span class="uscript-operator">,</span> ScanSize <span class="uscript-operator">,</span> Emitters<span class="uscript-operator">[</span>ActiveEmitterNumb<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Particles<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Location <span class="uscript-operator">)</span>
+              <span class="uscript-operator">{</span>
+               <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>foundpawn<span class="uscript-operator">.</span>isa<span class="uscript-operator">(</span><span class="uscript-name">'vehicle'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>foundpawn<span class="uscript-operator">.</span>monster<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>bAfectsmonsters<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+                     ProcessCollision<span class="uscript-operator">(</span>foundpawn<span class="uscript-operator">,</span>emitters<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>particles<span class="uscript-operator">[</span>Counter<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Velocity<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+              <span class="uscript-operator">}</span>
+     <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">Simulated</span> <span class="uscript-keyword">function</span> ProcessCollision<span class="uscript-operator">(</span>pawn CollidedWith<span class="uscript-operator">,</span> vector Particlemomentum<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-keyword">Local</span> <span class="uscript-type">Int</span> thehealth<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>CollidedWith<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Vehicle'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>HealthTovec    <span class="uscript-operator">!=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>     
+     TheHealth <span class="uscript-operator">=</span> HealthTovec<span class="uscript-operator">;</span>
+<span class="uscript-keyword">else</span>
+<span class="uscript-keyword">If</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>CollidedWith<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'monster'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>HealthTomonster<span class="uscript-operator">!=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> 
+     TheHealth <span class="uscript-operator">=</span> HealthTomonster<span class="uscript-operator">;</span>
+<span class="uscript-keyword">else</span>
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>CollidedWith<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'pawn'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>    <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>HealthTopawn   <span class="uscript-operator">!=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>    
+     TheHealth <span class="uscript-operator">=</span> HealthTopawn<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> TheHealth <span class="uscript-operator">&lt;=</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+   CollidedWith<span class="uscript-operator">.</span>Health<span class="uscript-operator">(</span> HealthToPawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>countactsound<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    foundpawn<span class="uscript-operator">.</span>playsound<span class="uscript-operator">(</span>contactsound<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+makenoise<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><pre class="paraverbatim"> </pre><h3><a name="0.0.5"></a>Related</h3>
+<ul><li><a href="vitaloverdose-sfx-painful.html">VitalOverdose/SFX Painful</a></li>
+<li><a href="vitaloverdose-sfx-vectelepo.html">VitalOverdose/SFX VecTeleporting</a></li>
+<li><a href="vitaloverdose-sfx-pawntelep.html">VitalOverdose/SFX PawnTeleporting</a></li>
+<li><a href="vitaloverdose-sfx-triggerin.html">VitalOverdose/SFX Triggering</a></li>
+<li><a href="vitaloverdose-sfx-boosting.html">VitalOverdose/SFX Boosting</a></li>
+<li><a href="vitaloverdose-sfx-ejecting.html">VitalOverdose/SFX Ejecting</a></li>
+<li>SFX_MonsterSpawning<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=SFX_MonsterSpawning&referrerid=VitalOverdose/SFX_Healing">?</a></li>
+<li>SFX_Healing<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=SFX_Healing&referrerid=VitalOverdose/SFX_Healing">?</a></li>
+<li><a href="vitaloverdose-inventoryflar.html">VitalOverdose/InventoryFlare</a></li>
+</ul>
+<pre class="paraverbatim">  </pre><h2><a name="0.1"></a>discusion</h2>
+<hr class="thin"><p><a href="category-custom-class.html">Category Custom Class</a> </p>
+<script type="text/javascript"><!--
+ menuItemAdd("Overview", "#0.0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Global Variables", "#0.0.1.1");
+menuItemAdd("Function PostBeginPlay();", "#0.0.2");
+menuItemAdd("Function Timer()", "#0.0.3");
+menuItemAdd("Function ProcessCollision()", "#0.0.4");
+menuItemAdd("Related", "#0.0.5");
+menuItemAdd("discusion", "#0.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="vitaloverdose.html">VitalOverdose</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=VitalOverdose/SFX_Healing">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=VitalOverdose/SFX_Healing">View other revisions</a><br>Last edited June 15, 2006 14:35 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=VitalOverdose/SFX_Healing">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/VitalOverdose/SFX_Healing">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Once I get that upgrade to 36-hour days, I will tackle that. (Mychaeel)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

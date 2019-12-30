@@ -1,0 +1,250 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: BruteForce/AST</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=BruteForce/AST; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="bruteforce.html">BruteForce</a>/<a href="http://wiki.beyondunreal.com/wiki?back=BruteForce/AST">AST</a></h1>
+	<div class="wiki"><h2><a name="0.1"></a>Example tree</h2>
+<p>It's wise to write a function to draw the current AST, this way you can easily spot errors.</p>
+<p>The PrintTree() below gives the following tree for this piece of code:</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> <span class="uscript-type">int</span> x<span class="uscript-operator">;</span>          
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> y<span class="uscript-operator">;</span>          
+x <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-number">+2</span><span class="uscript-operator">*</span><span class="uscript-number">3</span><span class="uscript-number">-5</span><span class="uscript-operator">;</span>        
+y <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>x<span class="uscript-number">+2</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">5</span><span class="uscript-operator">;</span>        
+print<span class="uscript-operator">(</span><span class="uscript-string">""</span><span class="uscript-operator">+</span>x<span class="uscript-operator">+</span><span class="uscript-string">" "</span><span class="uscript-operator">+</span>y<span class="uscript-operator">)</span><span class="uscript-operator">;</span>  </pre><pre class="paraverbatim"> +&ndash; var              
+ |   +&ndash; int          
+ |   +&ndash; x            
+ +&ndash; var              
+ |   +&ndash; int          
+ |   +&ndash; y            
+ +&ndash; =                
+ |   +&ndash; x            
+ |   +&ndash; -            
+ |   |   +&ndash; +        
+ |   |   |   +&ndash; 1    
+ |   |   |   +&ndash; *    
+ |   |   |   |   +&ndash; 2
+ |   |   |   |   +&ndash; 3
+ |   |   +&ndash; 5        
+ +&ndash; =                
+ |   +&ndash; y            
+ |   +&ndash; /            
+ |   |   +&ndash; +        
+ |   |   |   +&ndash; x    
+ |   |   |   +&ndash; 2    
+ |   |   +&ndash; 5        
+ +&ndash; print            
+ |   +&ndash; +            
+ |   |   +&ndash; +        
+ |   |   |   +&ndash; +    
+ |   |   |   |   +&ndash;  
+ |   |   |   |   +&ndash; x
+ |   |   |   +&ndash;      
+ |   |   +&ndash; y        </pre><h2><a name="0.2"></a>The code</h2>
+<pre class="uscript"><span class="uscript-comment">/**
+  The compiled code ready to be executed
+*/</span>
+<span class="uscript-keyword">class</span> AST <span class="uscript-keyword">extends</span> Object <span class="uscript-keyword">config</span><span class="uscript-operator">(</span>BruteForce<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">enum</span> NodeType
+<span class="uscript-operator">{</span>
+  NT_Keyword<span class="uscript-operator">,</span>
+  NT_Identifier<span class="uscript-operator">,</span>
+  NT_String<span class="uscript-operator">,</span>
+  NT_Integer<span class="uscript-operator">,</span>
+  NT_Float<span class="uscript-operator">,</span>
+  NT_Boolean<span class="uscript-operator">,</span>
+  NT_Function<span class="uscript-operator">,</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span></pre><p>These are the kind of tree nodes we have in the tree. The most important is the NT_Keyword, this defines a piece of code to execute, it's usualy a root node.</p>
+<pre class="uscript"><span class="uscript-keyword">struct</span> Node
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">var</span> NodeType type<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">var</span> <span class="uscript-type">string</span> value<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">var</span> <span class="uscript-type">int</span> parent<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span><span class="uscript-type">int</span><span class="uscript-operator">&gt;</span> children<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">config</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>Node<span class="uscript-operator">&gt;</span> Tree<span class="uscript-operator">;</span></pre><p>A tree is simply an array with all nodes, each node has pointers to it's children and a pointer to it's parent. These pointers are actualy just the index in the array.</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> <span class="uscript-keyword">private</span> <span class="uscript-type">int</span> currentNode<span class="uscript-operator">;</span></pre><p>The current root node</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> Create<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  Tree<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+  currentNode <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/**
+  The real add node
+*/</span>
+<span class="uscript-keyword">private</span> <span class="uscript-keyword">function</span> <span class="uscript-type">int</span> AddNode<span class="uscript-operator">(</span>NodeType inType<span class="uscript-operator">,</span> <span class="uscript-type">string</span> inValue<span class="uscript-operator">,</span> <span class="uscript-type">int</span> inParent<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+  i <span class="uscript-operator">=</span> Tree<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">;</span>
+  Tree<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">=</span> i<span class="uscript-number">+1</span><span class="uscript-operator">;</span>
+  Tree<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>type <span class="uscript-operator">=</span> inType<span class="uscript-operator">;</span>
+  Tree<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>value <span class="uscript-operator">=</span> inValue<span class="uscript-operator">;</span>
+  Tree<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>parent <span class="uscript-operator">=</span> inParent<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>inParent <span class="uscript-operator">&gt;</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    Tree<span class="uscript-operator">[</span>inParent<span class="uscript-operator">]</span><span class="uscript-operator">.</span>children<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">=</span> Tree<span class="uscript-operator">[</span>inParent<span class="uscript-operator">]</span><span class="uscript-operator">.</span>children<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-number">+1</span><span class="uscript-operator">;</span>
+    Tree<span class="uscript-operator">[</span>inParent<span class="uscript-operator">]</span><span class="uscript-operator">.</span>children<span class="uscript-operator">[</span>Tree<span class="uscript-operator">[</span>inParent<span class="uscript-operator">]</span><span class="uscript-operator">.</span>children<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-number">-1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> i<span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">return</span> i<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>This will add a node to the tree, and as child to it's parent (when set).</p>
+<pre class="uscript"><span class="uscript-comment">/**
+  Open a new Root to the tree
+*/</span>
+<span class="uscript-keyword">function</span> AddRoot<span class="uscript-operator">(</span>NodeType inType<span class="uscript-operator">,</span> <span class="uscript-type">string</span> inValue<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  currentNode <span class="uscript-operator">=</span> AddNode<span class="uscript-operator">(</span>inType<span class="uscript-operator">,</span> inValue<span class="uscript-operator">,</span> currentNode<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>This will add a new node and set the current root node to the newly added node.</p>
+<pre class="uscript"><span class="uscript-comment">/**
+  Close a Root node 
+*/</span>
+<span class="uscript-keyword">function</span> CloseRoot<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  currentNode <span class="uscript-operator">=</span> Tree<span class="uscript-operator">[</span>currentNode<span class="uscript-operator">]</span><span class="uscript-operator">.</span>parent<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Close the current root by setting the root node to the previous root node.</p>
+<pre class="uscript"><span class="uscript-comment">/**
+  Add a child to the current node, doesn't set a new root
+*/</span>
+<span class="uscript-keyword">function</span> AddChild<span class="uscript-operator">(</span>NodeType inType<span class="uscript-operator">,</span> <span class="uscript-type">string</span> inValue<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  AddNode<span class="uscript-operator">(</span>inType<span class="uscript-operator">,</span> inValue<span class="uscript-operator">,</span> currentNode<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/**
+  Move previous node down a notch
+*/</span>
+<span class="uscript-keyword">function</span> SwitchNode<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> lastSib<span class="uscript-operator">;</span>
+  <span class="uscript-comment">// set new parent</span>
+  lastSib <span class="uscript-operator">=</span> Tree<span class="uscript-operator">[</span>Tree<span class="uscript-operator">[</span>currentNode<span class="uscript-operator">]</span><span class="uscript-operator">.</span>parent<span class="uscript-operator">]</span><span class="uscript-operator">.</span>children<span class="uscript-operator">[</span>Tree<span class="uscript-operator">[</span>Tree<span class="uscript-operator">[</span>currentNode<span class="uscript-operator">]</span><span class="uscript-operator">.</span>parent<span class="uscript-operator">]</span><span class="uscript-operator">.</span>children<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-number">-2</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+  Tree<span class="uscript-operator">[</span>currentNode<span class="uscript-operator">]</span><span class="uscript-operator">.</span>children<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">=</span> Tree<span class="uscript-operator">[</span>currentNode<span class="uscript-operator">]</span><span class="uscript-operator">.</span>children<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-number">+1</span><span class="uscript-operator">;</span>
+  Tree<span class="uscript-operator">[</span>currentNode<span class="uscript-operator">]</span><span class="uscript-operator">.</span>children<span class="uscript-operator">[</span>Tree<span class="uscript-operator">[</span>currentNode<span class="uscript-operator">]</span><span class="uscript-operator">.</span>children<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-number">-1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> lastSib<span class="uscript-operator">;</span>
+  <span class="uscript-comment">// remove child pointer from previous parent</span>
+  Tree<span class="uscript-operator">[</span>Tree<span class="uscript-operator">[</span>lastSib<span class="uscript-operator">]</span><span class="uscript-operator">.</span>parent<span class="uscript-operator">]</span><span class="uscript-operator">.</span>children<span class="uscript-operator">.</span><span class="uscript-keyword">remove</span><span class="uscript-operator">(</span>Tree<span class="uscript-operator">[</span>Tree<span class="uscript-operator">[</span>lastSib<span class="uscript-operator">]</span><span class="uscript-operator">.</span>parent<span class="uscript-operator">]</span><span class="uscript-operator">.</span>children<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-number">-2</span> <span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>This will move the previous node added to a child of the last added root node</p>
+<pre class="uscript"><span class="uscript-comment">/**
+  Print the tree
+*/</span>
+<span class="uscript-keyword">function</span> PrintTree<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> Tree<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Tree<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>parent <span class="uscript-operator">==</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span> PrintSubTree<span class="uscript-operator">(</span>i<span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>This will make an ASCII drawing of the current state of the AST, as you can see above.</p>
+<pre class="uscript"><span class="uscript-comment">/**
+  Internal function for printing the tree
+*/</span>
+<span class="uscript-keyword">private</span> <span class="uscript-keyword">function</span> PrintSubTree<span class="uscript-operator">(</span><span class="uscript-type">int</span> root<span class="uscript-operator">,</span> <span class="uscript-type">int</span> depth<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> tmp<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> depth<span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span> tmp <span class="uscript-operator">=</span> tmp<span class="uscript-operator">$</span><span class="uscript-string">"|   "</span><span class="uscript-operator">;</span>
+  Log<span class="uscript-operator">(</span>tmp<span class="uscript-operator">$</span><span class="uscript-string">"+--"</span><span class="uscript-operator">@</span>Tree<span class="uscript-operator">[</span>root<span class="uscript-operator">]</span><span class="uscript-operator">.</span>value<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> Tree<span class="uscript-operator">[</span>root<span class="uscript-operator">]</span><span class="uscript-operator">.</span>children<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    PrintSubTree<span class="uscript-operator">(</span>Tree<span class="uscript-operator">[</span>root<span class="uscript-operator">]</span><span class="uscript-operator">.</span>children<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">,</span> depth<span class="uscript-number">+1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><script type="text/javascript"><!--
+ menuItemAdd("Example tree", "#0.1");
+menuItemAdd("The code", "#0.2");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="bruteforce.html">BruteForce</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=BruteForce/AST">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=BruteForce/AST">View other revisions</a><br>Last edited April 23, 2003 11:04 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=BruteForce/AST">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/BruteForce/AST">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Mostly Harmless
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

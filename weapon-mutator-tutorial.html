@@ -1,0 +1,329 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Weapon Mutator Tutorial</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Weapon_Mutator_Tutorial; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Weapon Mutator Tutorial">Weapon Mutator Tutorial</a></h1>
+	<div class="wiki"><p><em class="em1">This page is one of a series of <a href="unrealscript-lessons.html">UnrealScript Lessons</a>.</em></p>
+<p><em class="em1">The UT2003 version of this tutorial is available at <a href="weapon-mutator-tutorial-ut2.html">Weapon Mutator Tutorial (UT2003)</a>.  This version has been refactored and updated for UT2004.</em></p>
+<h2><a name="0.1"></a>A Weapon Mutator &ndash; Making a more explosive Minigun</h2>
+<p>In <a href="unreal-tournament-2004.html">UT2004</a>, the weapon code is more subdivided than in <a href="unreal-tournament.html">UT</a>, with seperate classes for the weapon, the weapon's pickup, the ammo, the fire, the damage, etc. At first, it's actually a bit annoying &ndash; but in practice quite flexible, since you get a lot of mileage out of subclassing only a few files. Here we will attempt to create a minigun that delivers a much more powerful alt fire.  Since all we want to do is change the alt-fire of the Minigun, we are going to extend the following classes: </p>
+<dl><dt><a href="minigun.html">Minigun</a> &gt;&gt; MinigunHE</dt><dd>The new weapon, to reference the new alt-fire and pickup class. </dd><dt><a href="minigunaltfire.html">MinigunAltFire</a> &gt;&gt; MinigunHEAltFire</dt><dd>The new explosive alt-fire. </dd><dt><a href="minigunpickup.html">MinigunPickup</a> &gt;&gt; MinigunHEPickup</dt><dd>The pickup class for the new weapon. </dd><dt><a href="mutator.html">Mutator</a> &gt;&gt; MutMinigunHE</dt><dd>A weapon/pickup substitution mutator that replaces the regular Minigun with our modified version. </dd></dl>
+<h2><a name="0.2"></a>MinigunHE.uc</h2>
+<pre class="uscript"><span class="uscript-keyword">class</span> MinigunHE <span class="uscript-keyword">extends</span> Minigun<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    FireModeClass<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'MinigunHEAltFire'</span>
+    PickupClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'MinigunHEPickup'</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.2.1"></a>defaultproperties</h3>
+<p>Since you generally cannot (or at the VERY least, SHOULD NOT) edit the existing classes and recompile, to make any changes you typically must subclass and override functions and properties to implement your changes.  So basically, this weapon class only serves as a vehicle to get our new alt-fire behavior into the Minigun.  To do this, we create a new weapon that inherits all the properties and behavior of Minigun, then override two <a href="default-properties.html">default properties</a>.</p>
+<table class="paratable-border" border=0 cellspacing=0 cellpadding=0><tr valign=top><td>FireModeClass(1)</td>
+<td>Each weapon in UT2004 has two FireModeClasses:  primary (0) and alt (1). Here, we substitute our new alt-fire class.</td>
+</tr>
+<tr valign=top><td>PickupClass</td>
+<td>The PickupClass defines the item you drop when you get killed and your weapon drops to the ground.  In this case, we override with our new pickup class.</td>
+</tr>
+</table>
+<h2><a name="0.3"></a>MinigunHEAltFire.uc</h2>
+<pre class="uscript"><span class="uscript-keyword">class</span> MinigunHEAltFire <span class="uscript-keyword">extends</span> MinigunAltFire<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Actor<span class="uscript-operator">&gt;</span> ExplosionClass<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Projector<span class="uscript-operator">&gt;</span> ExplosionDecalClass<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">function</span> BlowUp<span class="uscript-operator">(</span>vector HitLocation<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    Instigator<span class="uscript-operator">.</span>HurtRadius<span class="uscript-operator">(</span><span class="uscript-number">15</span><span class="uscript-operator">,</span> <span class="uscript-number">45</span><span class="uscript-operator">,</span> DamageType<span class="uscript-operator">,</span> <span class="uscript-number">250</span><span class="uscript-operator">,</span> HitLocation <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Instigator<span class="uscript-operator">.</span>MakeNoise<span class="uscript-operator">(</span><span class="uscript-number">1.0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Explode<span class="uscript-operator">(</span>vector HitLocation<span class="uscript-operator">,</span> vector HitNormal<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    Instigator<span class="uscript-operator">.</span>PlaySound<span class="uscript-operator">(</span>sound<span class="uscript-name">'WeaponSounds.BExplosion3'</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-number">2.5</span><span class="uscript-operator">*</span>TransientSoundVolume<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Instigator<span class="uscript-operator">.</span>EffectIsRelevant<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+
+    <span class="uscript-operator">{</span>
+        Instigator<span class="uscript-operator">.</span>Spawn<span class="uscript-operator">(</span>ExplosionClass<span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span>HitLocation <span class="uscript-operator">+</span> HitNormal<span class="uscript-operator">*</span><span class="uscript-number">16</span><span class="uscript-operator">,</span>rotator<span class="uscript-operator">(</span>HitNormal<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Instigator<span class="uscript-operator">.</span>Spawn<span class="uscript-operator">(</span>ExplosionDecalClass<span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span>HitLocation<span class="uscript-operator">,</span> rotator<span class="uscript-operator">(</span>HitNormal<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    BlowUp<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> SpawnBeamEffect<span class="uscript-operator">(</span>Vector Start<span class="uscript-operator">,</span> Rotator Dir<span class="uscript-operator">,</span> Vector HitLocation<span class="uscript-operator">,</span> Vector HitNormal<span class="uscript-operator">,</span> <span class="uscript-type">int</span> ReflectNum<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>SpawnBeamEffect<span class="uscript-operator">(</span> Start<span class="uscript-operator">,</span> Dir<span class="uscript-operator">,</span> HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> ReflectNum<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Explode<span class="uscript-operator">(</span> HitLocation<span class="uscript-operator">,</span> HitNormal <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    ExplosionClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'NewExplosionB'</span>
+    ExplosionDecalClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'RocketMark'</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.3.1"></a>defaultproperties</h3>
+<p>The ExplosionClass and ExplosionDecalClass properties simply indicate what explosion and decal scorchmark effects will be spawned on the hit surface in Explode().</p>
+<h3><a name="0.3.2"></a>SpawnBeamEffect() </h3>
+<p>A few levels up in the hierarchy, in the InstantFire class, DoTrace() is called to perform a raycast for an instant-hit (a.k.a hitscan) weapon fire.  Then SpawnBeamEffect(), an empty function in InstantFire, is called with several relevant values, including the hit location and the hit surface normal.  In this function, you can spawn hit effects, scorch-mark decals, alter reflected projectiles, etc.  In our version of this function, we simply pass these values to our new Explode() function, after calling the parent class (Super) version of the function, of course.</p>
+<h3><a name="0.3.3"></a>Explode()</h3>
+<p>Mimicking the other UT2004 fire classes, our Explode() function plays a sound, spawns explosion and decal FX on all clients which deem this hit location relevant, and call our BlowUp() to finish up.  Note that this function is simulated, meaning it will be called on each client (i.e. each client will hear and see the explosion, if relevant).</p>
+<p><em class="em2">Geist:</em> Hmmmm.  This part is a little fishy right now.  This whole mod needs to be fitted for networking, and I suspect this function and/or its description will change.  As-is, I don't think this function will ever be called client-side, because it is not called from another simulated function.  I will confirm and correct this soon.</p>
+<p><em class="em2">porkmanii:</em> In UT2004, WeaponFire is derived from Object, not Actor.  Non-Actor Objects have no concept of replication.  Any function of any non-Actor Object can be executed client-side with or without the simulated keyword.  It is also worth noting that the server and client have independant WeaponFire objects - being Objects, they cannot be replicated.</p>
+<h3><a name="0.3.4"></a>BlowUp()</h3>
+<p>Again, this function is merely mimicking other UT2004 firing code.  This function deals splash damage to nearby actors, then calls MakeNoise() to alert nearby AI of the racket you're making with this weapon.  Note that this function is NOT simulated (even though it is being called from a simulated function), meaning it will only be executed on the server.  This only makes sense, because only the server should be dealing damage, and the AI's only live on the server.</p>
+<h2><a name="0.4"></a>MinigunHEPickup.uc</h2>
+<pre class="uscript"><span class="uscript-keyword">class</span> MinigunHEPickup <span class="uscript-keyword">extends</span> MinigunPickup<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    InventoryType<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'MinigunHE'</span>
+    PickupMessage<span class="uscript-operator">=</span><span class="uscript-string">"You got the Minigun HE."</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.4.1"></a>defaultproperties</h3>
+<p>This pickup class is very similar to the new MinigunHE weapon class.  It simply inherits all the properties/behavior of MinigunPickup, but overrides a few properties.</p>
+<table class="paratable-border" border=0 cellspacing=0 cellpadding=0><tr valign=top><td>InventoryType</td>
+<td>An object of this class is spawned into your inventory when a player activates (touches) this pickup.</td>
+</tr>
+<tr valign=top><td>PickupMessage</td>
+<td><em class="em1">No-brainer.</em>  This is the message the player sees when activating/touching this pickup.</td>
+</tr>
+</table>
+<h2><a name="0.5"></a>MutMinigunHE.uc</h2>
+<pre class="uscript"><span class="uscript-keyword">class</span> MutMinigunHE <span class="uscript-keyword">extends</span> Mutator
+    <span class="uscript-keyword">config</span><span class="uscript-operator">(</span>user<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CheckReplacement<span class="uscript-operator">(</span> Actor Other<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> <span class="uscript-type">byte</span> bSuperRelevant <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> WeaponLocker L<span class="uscript-operator">;</span>
+
+    bSuperRelevant <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> xWeaponBase<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span> xWeaponBase<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>WeaponType <span class="uscript-operator">)</span> <span class="uscript-operator">~=</span> <span class="uscript-string">"XWeapons.Minigun"</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            xWeaponBase<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>WeaponType <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'MinigunHE'</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> WeaponPickup<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span><span class="uscript-keyword">Class</span><span class="uscript-operator">)</span> <span class="uscript-operator">~=</span> <span class="uscript-string">"XWeapons.MinigunPickup"</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            ReplaceWith<span class="uscript-operator">(</span> Other<span class="uscript-operator">,</span> <span class="uscript-string">"MinigunHEPickup"</span> <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> WeaponLocker<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        L <span class="uscript-operator">=</span> WeaponLocker<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> L<span class="uscript-operator">.</span>Weapons<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span> L<span class="uscript-operator">.</span>Weapons<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>WeaponClass <span class="uscript-operator">)</span> <span class="uscript-operator">~=</span> <span class="uscript-string">"XWeapons.Minigun"</span> <span class="uscript-operator">)</span>
+                L<span class="uscript-operator">.</span>Weapons<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>WeaponClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'MinigunHE'</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+     GroupName<span class="uscript-operator">=</span><span class="uscript-string">"Minigun HE"</span>
+     FriendlyName<span class="uscript-operator">=</span><span class="uscript-string">"Minigun HE"</span>
+     Description<span class="uscript-operator">=</span><span class="uscript-string">"Change Minigun alt-fire rounds to High Explosive rounds."</span>
+<span class="uscript-operator">}</span></pre><p>Finally, we add a mutator to replace that old Minigun with the shiny new one. </p>
+<h3><a name="0.5.1"></a>defaultproperties</h3>
+<p>These are fairly self-explanatory (i.e. you should know what these are by now!) ...</p>
+<table class="paratable-border" border=0 cellspacing=0 cellpadding=0><tr valign=top><td>GroupName</td>
+<td>The name of the group that this mutator belongs to.</td>
+</tr>
+<tr valign=top><td>FriendlyName</td>
+<td>The name displayed in the Mutators list.</td>
+</tr>
+<tr valign=top><td>Description</td>
+<td>The discription displayed when you highlight this mutator in the list.</td>
+</tr>
+</table>
+<h3><a name="0.5.2"></a>CheckReplacement()</h3>
+<p>This is a Mutator function which hits every actor as it initializes, and asks if it should be replaced. It's an extremely powerful call and if implemented incorrectly, it can completely crash your game. Here, it just looks for weapon bases, pickups, and weaponlockers that reference the Minigun and replaces them with our new classes.</p>
+<h2><a name="0.6"></a>Conclusion</h2>
+<p>Now compile the package and fire up UT2004, grab a MinigunHE and let loose on those hapless bots with the alt-fire.  Mmmmm, cuts like a hot knife through butter!</p>
+<h2><a name="0.7"></a>Related Topics</h2>
+<ul><li><a href="unrealscript-lessons.html">UnrealScript Lessons</a> &ndash; all the UnrealScript tutorials</li>
+<li><a href="unrealscript.html">UnrealScript</a> &ndash; all the reference pages</li>
+<li><a href="mutator-topics.html">Mutator Topics</a> &ndash; more on mutators</li>
+<li><a href="making-mods.html">Making Mods</a> &ndash; more on the organizational and social aspects</li>
+<li><a href="creating-a-new-weapontype.html">Creating A New Weapontype</a> &ndash; more on weapon creation/modification</li>
+</ul>
+<h2><a name="0.8"></a>Comments</h2>
+<p><em class="em2">Geist:</em>  In writing this UT2004 version, I tried to retain as much of the original UT2003 tutorial as I thought was relevant.  I think I got all the discussion refactored in, and this version does not depend on any xxxPak resource files.  It's not perfect, but it compiles and seems to work (in a local game, at least).  As mentioned above, this script is still likely to work less than 100% in a net game.  I will try to rectify this ASAP.  Comments and suggestions for improvement (or juet improve it yourself) are welcome!</p>
+<p><em class="em2">RegularX:</em> Good work.  I took the liberty of adjusting some of the intro paragraph to remove some of my original text about Freehold, etc., which made much more sense when these were just UTutes off my website.  The network problem with this gun turned out to be the fact that Epic here hands off the creation of such effects to the attachment class, I'm assuming because it has to be replicated  (to be seen in the pawn's hands).  I had based this code off my earlier UT version.  I have a network friendly version, but sadly it's for my unreleased mod UXL and contains tons of UXL references.  The gist would be something like adding the attachment class, with an AltFire effect:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MinigunHEAttachment <span class="uscript-keyword">extends</span> MinigunAttachment<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Actor<span class="uscript-operator">&gt;</span> AltEffect<span class="uscript-operator">;</span> </pre><p>And then down in <em class="em2">ThirdPersonEffects</em>, update it to be like:</p>
+<pre class="uscript">    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> FiringMode <span class="uscript-operator">==</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'HitEffect'</span><span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>GetHitEffect<span class="uscript-operator">(</span>mHitActor<span class="uscript-operator">,</span> mHitLocation<span class="uscript-operator">,</span> mHitNormal<span class="uscript-operator">)</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span> mHitLocation<span class="uscript-operator">,</span> Rotator<span class="uscript-operator">(</span>mHitNormal<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span> <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span> 
+            Spawn<span class="uscript-operator">(</span>AltEffect<span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span> mHitLocation<span class="uscript-operator">,</span> Rotator<span class="uscript-operator">(</span>mHitNormal<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span></pre><p>And then define AltEffect in the default props as something like AltEffect=class'XEffects.ExploWallHit' ... I can try compiling this tonight, but if you're around a computer today you might see if this works.  Cheers!</p>
+<p><em class="em2">Geist:</em>  I really wish they had saved all these in string/class properties to start with.  Then I wouldn't have to copy/paste that whole function just to substitute a new effect.  It would make maintenence easier too, if a patch and new script were to break things.  Ah well, not too much of a hassle, but still a hassle.  Thanks for the info, RegularX.  I'll probably try it out tomorrow (and track down any other non-netcode-friendly stuff).</p>
+<p><em class="em2">Stagger:<em class="em1">  This seems to have the following problems- (A) Explosion sound plays at location of person firing weapon, not at where hit occurs. (B) HurtRadius doesn't actually hurt anything. (C) Explosion decal isn't applied.</em></em></p>
+<p><em class="em2">RegularX:</em> I think A &amp; C could also be solved via the attachment class.  Are you sure about B?  i oculd have sworn that worked both on and offline before.  I can look at the UXL and see if there is a functional difference though.</p>
+<p><em class="em2">Geist:</em> I just cleaned this up a bit (e.g. rearranged the return values for logic clarity in CheckReplacement(), etc) and added support for Onslaught weapon lockers.  I've been a bit too busy at work to test/fix the netcode-relative stuff (i.e. to add the attachement class stuff), but that is still coming soon.  I will say that I've tried exaggerated values in HurtRadius(), and at least in a local bot game, it definitely <em class="em1">does</em> hurt them.  But as mentioned above, it probably doesn't work in a net game, because the chain of simulated functions is probably broken.  More soon, as time permits...</p>
+<p><em class="em2">Ferazel2001:</em> This is not compiling for me, "Error, Bad or missing expression in 'If'</p>
+<p>(this is referring to the first of the two if's)</p>
+<pre class="uscript"><span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>xWeaponBase<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span> xWeaponBase<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>WeaponType <span class="uscript-operator">)</span> <span class="uscript-operator">~=</span> <span class="uscript-string">"XWeapons.ShieldGun"</span> <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span></pre><p>I dunno... someone might have changed something, but this doesnt work... Thanks, <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Geist:</em> Hey Ferazel, make sure you didn't mistype the <em class="em1">Other</em> parameter in your <em class="em1">CheckReplacement()</em> declaration.  If the compiler doesn't recognize <em class="em1">xWeaponBase</em> or <em class="em1">Other</em>, you'll get that error message.  If <em class="em1">Other</em> is correct, then make sure it parses the <em class="em2">xGame</em> package when you compile (that's where <em class="em1">xWeaponBase</em> is defined).  As I mentioned before, all this script compiles.</p>
+<p><em class="em2">Bob_The_Beheader:</em> Umm...What would I do (or where would I look) if I wanted to use a different model for the MinigunHE? Also, wouldn't it be nice if there were some comments in this source code...</p>
+<p><em class="em2">RangerWhelk:</em> What code do i put in to make the mutator checkreplace ammo?</p>
+<p><em class="em2">porkmanii:</em> I've added a comment about WeaponFire Objects (not Actors!) in UT2004, their lack of replication, and the fact the simulated keyword has no effect.  Perhaps this tidbit of information could be better placed?</p>
+<p><em class="em2">Anonymous:</em> In response to your question RangerWhelk:</p>
+<pre class="uscript"><span class="uscript-operator">.</span><span class="uscript-operator">.</span><span class="uscript-operator">.</span>
+<span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> UTAmmoPickup<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span><span class="uscript-keyword">Class</span><span class="uscript-operator">)</span> <span class="uscript-operator">~=</span> <span class="uscript-string">"XWeapons.MinigunAmmoPickup"</span> <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            UTAmmoPickup<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Transmogrify<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'MinigunHEAmmoPickup'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span></pre><p>I've found that it works well enough, thought I'm not sure about its network compatability.</p>
+<p><em class="em2">RangerWhelk:</em> Yes that works. Thankyou very much. I've tested it and  it seems to work online and lan. Also heres some script that will replace the starting weapons.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> <span class="uscript-type">string</span> GetInventoryClassOverride<span class="uscript-operator">(</span><span class="uscript-type">string</span> InventoryClassName<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>InventoryClassName <span class="uscript-operator">==</span> <span class="uscript-string">"XWeapons.ShieldGun"</span><span class="uscript-operator">)</span>
+        InventoryClassName <span class="uscript-operator">=</span> <span class="uscript-string">"YourPackage.YourGun"</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>InventoryClassName <span class="uscript-operator">==</span> <span class="uscript-string">"XWeapons.AssaultRifle"</span><span class="uscript-operator">)</span>
+        InventoryClassName <span class="uscript-operator">=</span> <span class="uscript-string">"YourPackage.YourGun"</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>GetInventoryClassOverride<span class="uscript-operator">(</span>InventoryClassName<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">Raimian:</em> where can i get a full example script for replacing the starting weapons??</p>
+<p><a href="refactor-me.html">Refactor Me</a></p>
+<hr class="thin"><p><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("A Weapon Mutator &ndash; Making a more explosive Minigun", "#0.1");
+menuItemAdd("MinigunHE.uc", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>defaultproperties", "#0.2.1");
+menuItemAdd("MinigunHEAltFire.uc", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>defaultproperties", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>SpawnBeamEffect() ", "#0.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Explode()", "#0.3.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>BlowUp()", "#0.3.4");
+menuItemAdd("MinigunHEPickup.uc", "#0.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>defaultproperties", "#0.4.1");
+menuItemAdd("MutMinigunHE.uc", "#0.5");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>defaultproperties", "#0.5.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>CheckReplacement()", "#0.5.2");
+menuItemAdd("Conclusion", "#0.6");
+menuItemAdd("Related Topics", "#0.7");
+menuItemAdd("Comments", "#0.8");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Weapon_Mutator_Tutorial">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Weapon_Mutator_Tutorial">View other revisions</a><br>Last edited May 29, 2007 12:40 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Weapon_Mutator_Tutorial">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Weapon_Mutator_Tutorial">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Mostly Harmless
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

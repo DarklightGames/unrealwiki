@@ -1,0 +1,465 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: WUtils/WString</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=WUtils/WString; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="wutils.html">WUtils</a>/<a href="http://wiki.beyondunreal.com/wiki?back=WUtils/WString">WString</a></h1>
+	<div class="wiki"><pre class="uscript"><span class="uscript-comment">///////////////////////////////////////////////////////////////////////////////</span>
+<span class="uscript-comment">// filename:    wString.uc</span>
+<span class="uscript-comment">// revision:    103</span>
+<span class="uscript-comment">// authors:     various UnrealWiki members (http://wiki.beyondunreal.com)</span>
+<span class="uscript-comment">//              http://wiki.beyondunreal.com/WUtils</span>
+<span class="uscript-comment">///////////////////////////////////////////////////////////////////////////////</span>
+
+<span class="uscript-keyword">class</span> wString <span class="uscript-keyword">extends</span> Object<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">/** Shifts an element off a string                              &lt;br /&gt;
+    example (delim = ' '): 'this is a string' -&gt; 'is a string'  &lt;br /&gt;
+    if quotechar = " : '"this is" a string' -&gt; 'a string'       */</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> StrShift<span class="uscript-operator">(</span><span class="uscript-keyword">out</span> <span class="uscript-type">string</span> line<span class="uscript-operator">,</span> <span class="uscript-type">string</span> delim<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">string</span> quotechar<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> delimpos<span class="uscript-operator">,</span> quotepos<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> result<span class="uscript-operator">;</span>
+    
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> quotechar <span class="uscript-operator">!=</span> <span class="uscript-string">""</span> <span class="uscript-operator">&amp;&amp;</span> Left<span class="uscript-operator">(</span>line<span class="uscript-operator">,</span> Len<span class="uscript-operator">(</span>quotechar<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> quotechar <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">do</span> <span class="uscript-operator">{</span>
+            quotepos <span class="uscript-operator">=</span> InstrFrom<span class="uscript-operator">(</span>line<span class="uscript-operator">,</span> quotechar<span class="uscript-operator">,</span> quotepos <span class="uscript-operator">+</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span> <span class="uscript-keyword">until</span> <span class="uscript-operator">(</span>quotepos <span class="uscript-operator">==</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span> <span class="uscript-operator">||</span> quotepos <span class="uscript-operator">+</span> Len<span class="uscript-operator">(</span>quotechar<span class="uscript-operator">)</span> <span class="uscript-operator">==</span> Len<span class="uscript-operator">(</span>line<span class="uscript-operator">)</span>
+                <span class="uscript-operator">||</span> Mid<span class="uscript-operator">(</span>line<span class="uscript-operator">,</span> quotepos <span class="uscript-operator">+</span> len<span class="uscript-operator">(</span>quotechar<span class="uscript-operator">)</span><span class="uscript-operator">,</span> len<span class="uscript-operator">(</span>delim<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> delim<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> quotepos <span class="uscript-operator">!=</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        delimpos <span class="uscript-operator">=</span> InstrFrom<span class="uscript-operator">(</span>line<span class="uscript-operator">,</span> delim<span class="uscript-operator">,</span> quotepos<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+        delimpos <span class="uscript-operator">=</span> Instr<span class="uscript-operator">(</span>line<span class="uscript-operator">,</span> delim<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>delimpos <span class="uscript-operator">==</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        result <span class="uscript-operator">=</span> line<span class="uscript-operator">;</span>
+        line <span class="uscript-operator">=</span> <span class="uscript-string">""</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+        result <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>line<span class="uscript-operator">,</span>delimpos<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        line <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>line<span class="uscript-operator">,</span>delimpos<span class="uscript-operator">+</span>len<span class="uscript-operator">(</span>delim<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> quotechar <span class="uscript-operator">!=</span> <span class="uscript-string">""</span> <span class="uscript-operator">&amp;&amp;</span> Left<span class="uscript-operator">(</span>result<span class="uscript-operator">,</span> Len<span class="uscript-operator">(</span>quotechar<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> quotechar <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+      result <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>result<span class="uscript-operator">,</span> Len<span class="uscript-operator">(</span>quotechar<span class="uscript-operator">)</span><span class="uscript-operator">,</span> Len<span class="uscript-operator">(</span>result<span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-operator">(</span>Len<span class="uscript-operator">(</span>quotechar<span class="uscript-operator">)</span><span class="uscript-operator">*</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">return</span> result<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/** StrReplace using an array with replacements.
+    will return the changed string, will replace all occurences unless bOnlyFirst */</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> StrReplace<span class="uscript-operator">(</span><span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> target<span class="uscript-operator">,</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span><span class="uscript-type">string</span><span class="uscript-operator">&gt;</span> replace<span class="uscript-operator">,</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span><span class="uscript-type">string</span><span class="uscript-operator">&gt;</span> with<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">bool</span> bOnlyFirst<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">,</span>j<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> <span class="uscript-keyword">Input</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-comment">// cycle trough replacement list</span>
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> j <span class="uscript-operator">&lt;</span> replace<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">;</span> j<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">Input</span> <span class="uscript-operator">=</span> target<span class="uscript-operator">;</span>
+    target <span class="uscript-operator">=</span> <span class="uscript-string">""</span><span class="uscript-operator">;</span>
+    i <span class="uscript-operator">=</span> InStr<span class="uscript-operator">(</span><span class="uscript-keyword">input</span><span class="uscript-operator">,</span> Replace<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">while</span><span class="uscript-operator">(</span>i <span class="uscript-operator">!=</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span> 
+      target <span class="uscript-operator">=</span> target <span class="uscript-operator">$</span> Left<span class="uscript-operator">(</span><span class="uscript-keyword">Input</span><span class="uscript-operator">,</span> i<span class="uscript-operator">)</span> <span class="uscript-operator">$</span> With<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+      <span class="uscript-keyword">Input</span> <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span><span class="uscript-keyword">Input</span><span class="uscript-operator">,</span> i <span class="uscript-operator">+</span> Len<span class="uscript-operator">(</span>Replace<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bOnlyFirst<span class="uscript-operator">)</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span> <span class="uscript-comment">// only replace first occurance</span>
+      i <span class="uscript-operator">=</span> InStr<span class="uscript-operator">(</span><span class="uscript-keyword">Input</span><span class="uscript-operator">,</span> Replace<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    target <span class="uscript-operator">=</span> target <span class="uscript-operator">$</span> <span class="uscript-keyword">Input</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">return</span> target<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/** StrSubst will replace %s in target with r# where # is the place of %s in the string */</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> StrSubst<span class="uscript-operator">(</span><span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> target<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">string</span> r0<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">string</span> r1<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">string</span> r2<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">string</span> r3<span class="uscript-operator">,</span> 
+  <span class="uscript-keyword">optional</span> <span class="uscript-type">string</span> r4<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">string</span> r5<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">string</span> r6<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">string</span> r7<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">string</span> r8<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">string</span> r9<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span><span class="uscript-type">string</span><span class="uscript-operator">&gt;</span> replace<span class="uscript-operator">,</span> with<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+  replace<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">=</span><span class="uscript-number">10</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> replace<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span> replace<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-string">"%s"</span><span class="uscript-operator">;</span>
+  with<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">=</span><span class="uscript-number">10</span><span class="uscript-operator">;</span>
+  with<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>r0<span class="uscript-operator">;</span>
+  with<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>r1<span class="uscript-operator">;</span>
+  with<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>r2<span class="uscript-operator">;</span>
+  with<span class="uscript-operator">[</span><span class="uscript-number">3</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>r3<span class="uscript-operator">;</span>
+  with<span class="uscript-operator">[</span><span class="uscript-number">4</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>r4<span class="uscript-operator">;</span>
+  with<span class="uscript-operator">[</span><span class="uscript-number">5</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>r5<span class="uscript-operator">;</span>
+  with<span class="uscript-operator">[</span><span class="uscript-number">6</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>r6<span class="uscript-operator">;</span>
+  with<span class="uscript-operator">[</span><span class="uscript-number">7</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>r7<span class="uscript-operator">;</span>
+  with<span class="uscript-operator">[</span><span class="uscript-number">8</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>r8<span class="uscript-operator">;</span>
+  with<span class="uscript-operator">[</span><span class="uscript-number">9</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>r9<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">return</span> StrReplace<span class="uscript-operator">(</span>target<span class="uscript-operator">,</span> replace<span class="uscript-operator">,</span> with<span class="uscript-operator">,</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/** Turn a string to lower case &lt;br /&gt;
+    example: 'This Is A String' -&gt; 'this is a string' */</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> Lower<span class="uscript-operator">(</span><span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> Text<span class="uscript-operator">)</span> 
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> IndexChar<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>IndexChar <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> IndexChar <span class="uscript-operator">&lt;</span> Len<span class="uscript-operator">(</span>Text<span class="uscript-operator">)</span><span class="uscript-operator">;</span> IndexChar<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Mid<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> IndexChar<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">&gt;=</span> <span class="uscript-string">"A"</span> <span class="uscript-operator">&amp;&amp;</span>
+        Mid<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> IndexChar<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">&lt;=</span> <span class="uscript-string">"Z"</span><span class="uscript-operator">)</span>
+      Text <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> IndexChar<span class="uscript-operator">)</span> <span class="uscript-operator">$</span> Chr<span class="uscript-operator">(</span>Asc<span class="uscript-operator">(</span>Mid<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> IndexChar<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-number">32</span><span class="uscript-operator">)</span> <span class="uscript-operator">$</span> Mid<span class="uscript-operator">(</span>Text<span class="uscript-operator">,</span> IndexChar <span class="uscript-operator">+</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">return</span> Text<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/** Checks if a string is all uppercase */</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> IsUpper<span class="uscript-operator">(</span><span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> S<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> S <span class="uscript-operator">==</span> Caps<span class="uscript-operator">(</span>S<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/** Checks if a string is all lowercase */</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> IsLower<span class="uscript-operator">(</span><span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> S<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> S <span class="uscript-operator">==</span> Lower<span class="uscript-operator">(</span>S<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/** Trim leading spaces */</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> LTrim<span class="uscript-operator">(</span><span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> S<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span>Left<span class="uscript-operator">(</span>S<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-string">" "</span><span class="uscript-operator">)</span>
+        S <span class="uscript-operator">=</span> Right<span class="uscript-operator">(</span>S<span class="uscript-operator">,</span> Len<span class="uscript-operator">(</span>S<span class="uscript-operator">)</span> <span class="uscript-operator">-</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span> S<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/** Trim trailing spaces */</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> RTrim<span class="uscript-operator">(</span><span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> S<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span>Right<span class="uscript-operator">(</span>S<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-string">" "</span><span class="uscript-operator">)</span>
+        S <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>S<span class="uscript-operator">,</span> Len<span class="uscript-operator">(</span>S<span class="uscript-operator">)</span> <span class="uscript-operator">-</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span> S<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/** Trim leading and trailing spaces */</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> Trim<span class="uscript-operator">(</span><span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> S<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> LTrim<span class="uscript-operator">(</span>RTrim<span class="uscript-operator">(</span>S<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/** Internal function used for MaskedCompare */</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">private</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> _match<span class="uscript-operator">(</span><span class="uscript-keyword">out</span> <span class="uscript-type">string</span> mask<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> <span class="uscript-type">string</span> target<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> m<span class="uscript-operator">,</span> mp<span class="uscript-operator">,</span> cp<span class="uscript-operator">;</span>
+  m <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>mask<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>target <span class="uscript-operator">!=</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>m <span class="uscript-operator">!=</span> <span class="uscript-string">"*"</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>m <span class="uscript-operator">!=</span> Left<span class="uscript-operator">(</span>target<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>m <span class="uscript-operator">!=</span> <span class="uscript-string">"?"</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    mask <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>Mask<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    target <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>target<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    m <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>mask<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+
+  <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span>target <span class="uscript-operator">!=</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span> 
+  <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>m <span class="uscript-operator">==</span> <span class="uscript-string">"*"</span><span class="uscript-operator">)</span> 
+    <span class="uscript-operator">{</span>
+      mask <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>Mask<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>mask <span class="uscript-operator">==</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span> <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span> <span class="uscript-comment">// only "*" mask -&gt; always true</span>
+      mp <span class="uscript-operator">=</span> mask<span class="uscript-operator">;</span>
+      cp <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>target<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      m <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>mask<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span> 
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>m <span class="uscript-operator">==</span> Left<span class="uscript-operator">(</span>target<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>m <span class="uscript-operator">==</span> <span class="uscript-string">"?"</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> 
+    <span class="uscript-operator">{</span>
+      mask <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>Mask<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      target <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>target<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      m <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>mask<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span> 
+    <span class="uscript-keyword">else</span> 
+    <span class="uscript-operator">{</span>
+      mask <span class="uscript-operator">=</span> mp<span class="uscript-operator">;</span>
+      m <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>mask<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      target <span class="uscript-operator">=</span> cp<span class="uscript-operator">;</span>
+      cp <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>cp<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+  <span class="uscript-operator">}</span>
+
+  <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span>Left<span class="uscript-operator">(</span>mask<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-string">"*"</span><span class="uscript-operator">)</span> 
+  <span class="uscript-operator">{</span>
+    mask <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>Mask<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">return</span> <span class="uscript-operator">(</span>mask <span class="uscript-operator">==</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/** Compare a string with a mask              &lt;br /&gt;
+    Wildcards: * = X chars; ? = 1 char        &lt;br /&gt;
+    Wildcards can appear anywhere in the mask */</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> MaskedCompare<span class="uscript-operator">(</span><span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> target<span class="uscript-operator">,</span> <span class="uscript-type">string</span> mask<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">bool</span> casesensitive<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>casesensitive<span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    mask <span class="uscript-operator">=</span> Caps<span class="uscript-operator">(</span>mask<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    target <span class="uscript-operator">=</span> Caps<span class="uscript-operator">(</span>target<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>mask <span class="uscript-operator">==</span> <span class="uscript-string">"*"</span><span class="uscript-operator">)</span> <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">return</span> _match<span class="uscript-operator">(</span>mask<span class="uscript-operator">,</span> target<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/** InStr starting from an offset */</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">int</span> InStrFrom<span class="uscript-operator">(</span><span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> StrText<span class="uscript-operator">,</span> <span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> StrPart<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">int</span> OffsetStart<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> OffsetPart<span class="uscript-operator">;</span>
+
+  OffsetPart <span class="uscript-operator">=</span> InStr<span class="uscript-operator">(</span>Mid<span class="uscript-operator">(</span>StrText<span class="uscript-operator">,</span> OffsetStart<span class="uscript-operator">)</span><span class="uscript-operator">,</span> StrPart<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>OffsetPart <span class="uscript-operator">&gt;=</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+    OffsetPart <span class="uscript-operator">+=</span> OffsetStart<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">return</span> OffsetPart<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/**
+   Replace key=value sets: ?key=valye?otherkey=othervalue?...      &lt;br /&gt;
+   Options: the string containing these key=value sets             &lt;br /&gt;
+   Key: the key to replace/add                                     &lt;br /&gt;
+   NewValue: the new value of the Key                              &lt;br /&gt;
+   bAddIfMissing: add the key=value pair if it doesn't exist       &lt;br /&gt;
+   OldValue: this will contain the previous value                  &lt;br /&gt;
+   delim: the delimiter of the key=value pairs, by default: ?      &lt;br /&gt;
+*/</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> ReplaceOption<span class="uscript-operator">(</span> <span class="uscript-keyword">out</span> <span class="uscript-type">string</span> Options<span class="uscript-operator">,</span> <span class="uscript-type">string</span> Key<span class="uscript-operator">,</span> <span class="uscript-type">string</span> NewValue<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">bool</span> bAddIfMissing<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-keyword">out</span> <span class="uscript-type">string</span> OldValue<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">string</span> delim<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span><span class="uscript-type">string</span><span class="uscript-operator">&gt;</span> OptionsArray<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> CurrentKey<span class="uscript-operator">,</span> CurrentValue<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> bReplaced<span class="uscript-operator">;</span>
+  bReplaced <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>delim <span class="uscript-operator">==</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span> delim <span class="uscript-operator">=</span> <span class="uscript-string">"?"</span><span class="uscript-operator">;</span> <span class="uscript-comment">// default delim is ?</span>
+  Split2<span class="uscript-operator">(</span> Options<span class="uscript-operator">,</span> delim<span class="uscript-operator">,</span> OptionsArray <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-comment">// find the key</span>
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> OptionsArray<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    Divide<span class="uscript-operator">(</span> OptionsArray<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">,</span> <span class="uscript-string">"="</span><span class="uscript-operator">,</span> CurrentKey<span class="uscript-operator">,</span> CurrentValue <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> CurrentKey <span class="uscript-operator">~=</span> Key <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+      OldValue <span class="uscript-operator">=</span> CurrentValue<span class="uscript-operator">;</span>
+      OptionsArray<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> CurrentKey<span class="uscript-operator">$</span><span class="uscript-string">"="</span><span class="uscript-operator">$</span>NewValue<span class="uscript-operator">;</span>
+      bReplaced <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-comment">// add if missing</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bReplaced <span class="uscript-operator">&amp;&amp;</span> bAddIfMissing <span class="uscript-operator">)</span> OptionsArray<span class="uscript-operator">[</span>OptionsArray<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Key<span class="uscript-operator">$</span><span class="uscript-string">"="</span><span class="uscript-operator">$</span>NewValue<span class="uscript-operator">;</span>
+  <span class="uscript-comment">// join the strings</span>
+  Options <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'wArray'</span><span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>Join<span class="uscript-operator">(</span>OptionsArray<span class="uscript-operator">,</span> delim<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">return</span> bReplaced<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/** Capitalize a string. &lt;br /&gt;
+    example: 'this is a STRING' -&gt; 'This Is A String' */</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> Capitalize<span class="uscript-operator">(</span><span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> S<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span><span class="uscript-type">string</span><span class="uscript-operator">&gt;</span> parts<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+  Split2<span class="uscript-operator">(</span>s<span class="uscript-operator">,</span> <span class="uscript-string">" "</span><span class="uscript-operator">,</span> parts<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> parts<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    parts<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Caps<span class="uscript-operator">(</span>Left<span class="uscript-operator">(</span>parts<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">$</span>Lower<span class="uscript-operator">(</span>Mid<span class="uscript-operator">(</span>parts<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">return</span> <span class="uscript-keyword">class</span><span class="uscript-name">'wArray'</span><span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>join<span class="uscript-operator">(</span>parts<span class="uscript-operator">,</span> <span class="uscript-string">" "</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/**
+   Fixed split method                        &lt;br /&gt;
+   no problems when it starts with a delim   &lt;br /&gt;
+   no problems with ending spaces            &lt;br /&gt;
+   delim can be a string                     &lt;br /&gt;
+*/</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">int</span> Split2<span class="uscript-operator">(</span><span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> src<span class="uscript-operator">,</span> <span class="uscript-type">string</span> delim<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span><span class="uscript-type">string</span><span class="uscript-operator">&gt;</span> parts<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">bool</span> ignoreEmpty<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">string</span> quotechar<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> temp<span class="uscript-operator">;</span>
+  Parts<span class="uscript-operator">.</span><span class="uscript-keyword">Remove</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> Parts<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>delim <span class="uscript-operator">==</span> <span class="uscript-string">""</span> <span class="uscript-operator">||</span> Src <span class="uscript-operator">==</span> <span class="uscript-string">""</span> <span class="uscript-operator">)</span> <span class="uscript-keyword">return</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span>src <span class="uscript-operator">!=</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    temp <span class="uscript-operator">=</span> StrShift<span class="uscript-operator">(</span>src<span class="uscript-operator">,</span> delim<span class="uscript-operator">,</span> quotechar<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>temp <span class="uscript-operator">==</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>ignoreEmpty<span class="uscript-operator">)</span>
+      <span class="uscript-operator">{</span>
+        parts<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">=</span> parts<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-number">+1</span><span class="uscript-operator">;</span>
+        parts<span class="uscript-operator">[</span>parts<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-number">-1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> temp<span class="uscript-operator">;</span>
+      <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>
+      parts<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">=</span> parts<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-number">+1</span><span class="uscript-operator">;</span>
+      parts<span class="uscript-operator">[</span>parts<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-number">-1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> temp<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">return</span> parts<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/** Replaces part of a string with a new string. &lt;br /&gt;
+    ReplaceInString("A stupid string.", 2, 6, "good") == "A good string."  */</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> ReplaceInString<span class="uscript-operator">(</span><span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> src<span class="uscript-operator">,</span> <span class="uscript-type">int</span> from<span class="uscript-operator">,</span> <span class="uscript-type">int</span> <span class="uscript-keyword">length</span><span class="uscript-operator">,</span> <span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> with<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">return</span> Left<span class="uscript-operator">(</span>src<span class="uscript-operator">,</span> from<span class="uscript-operator">)</span><span class="uscript-operator">$</span>with<span class="uscript-operator">$</span>Mid<span class="uscript-operator">(</span>src<span class="uscript-operator">,</span> from<span class="uscript-operator">+</span><span class="uscript-keyword">length</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/** Moves NUM lements from Source to Dest */</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> Eat<span class="uscript-operator">(</span><span class="uscript-keyword">out</span> <span class="uscript-type">string</span> Dest<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> <span class="uscript-type">string</span> Source<span class="uscript-operator">,</span> <span class="uscript-type">int</span> Num<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  Dest <span class="uscript-operator">=</span> Dest <span class="uscript-operator">$</span> Left<span class="uscript-operator">(</span>Source<span class="uscript-operator">,</span> Num<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  Source <span class="uscript-operator">=</span> Mid<span class="uscript-operator">(</span>Source<span class="uscript-operator">,</span> Num<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/** Converts a float to a string representation */</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">string</span> FloatToString<span class="uscript-operator">(</span><span class="uscript-type">float</span> Value<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">int</span> Precision<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> IntPart<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> FloatPart<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">string</span> IntString<span class="uscript-operator">,</span> FloatString<span class="uscript-operator">;</span>
+  
+  Precision <span class="uscript-operator">=</span> Max<span class="uscript-operator">(</span>Precision<span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// otherwise a simple int cast should be used</span>
+  
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Value <span class="uscript-operator">&lt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    IntString <span class="uscript-operator">=</span> <span class="uscript-string">"-"</span><span class="uscript-operator">;</span>
+    Value <span class="uscript-operator">*=</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  IntPart <span class="uscript-operator">=</span> <span class="uscript-type">int</span><span class="uscript-operator">(</span>Value<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  FloatPart <span class="uscript-operator">=</span> Value <span class="uscript-operator">-</span> IntPart<span class="uscript-operator">;</span>
+  IntString <span class="uscript-operator">=</span> IntString <span class="uscript-operator">$</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>IntPart<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  FloatString <span class="uscript-operator">=</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span><span class="uscript-type">int</span><span class="uscript-operator">(</span>FloatPart <span class="uscript-operator">*</span> <span class="uscript-number">10</span> <span class="uscript-operator">*</span><span class="uscript-operator">*</span> Precision<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span>Len<span class="uscript-operator">(</span>FloatString<span class="uscript-operator">)</span> <span class="uscript-operator">&lt;</span> Precision<span class="uscript-operator">)</span>
+    FloatString <span class="uscript-operator">=</span> <span class="uscript-string">"0"</span> <span class="uscript-operator">$</span> FloatString<span class="uscript-operator">;</span>
+  
+  <span class="uscript-keyword">return</span> IntString<span class="uscript-operator">$</span><span class="uscript-string">"."</span><span class="uscript-operator">$</span>FloatString<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-keyword">static</span> <span class="uscript-type">string</span> AlignLeft<span class="uscript-operator">(</span><span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> line<span class="uscript-operator">,</span> <span class="uscript-type">int</span> <span class="uscript-keyword">length</span><span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">string</span> padchar<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>padchar <span class="uscript-operator">==</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span> padchar <span class="uscript-operator">=</span> <span class="uscript-string">" "</span><span class="uscript-operator">;</span>
+  i <span class="uscript-operator">=</span> <span class="uscript-keyword">length</span><span class="uscript-operator">-</span>Len<span class="uscript-operator">(</span>line<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    line <span class="uscript-operator">=</span> line<span class="uscript-operator">$</span>padchar<span class="uscript-operator">;</span>
+    i<span class="uscript-operator">--</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">&lt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span> line <span class="uscript-operator">=</span> Left<span class="uscript-operator">(</span>line<span class="uscript-operator">,</span> <span class="uscript-keyword">length</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">return</span> line<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-keyword">static</span> <span class="uscript-type">string</span> AlignRight<span class="uscript-operator">(</span><span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> line<span class="uscript-operator">,</span> <span class="uscript-type">int</span> <span class="uscript-keyword">length</span><span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">string</span> padchar<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>padchar <span class="uscript-operator">==</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span> padchar <span class="uscript-operator">=</span> <span class="uscript-string">" "</span><span class="uscript-operator">;</span>
+  i <span class="uscript-operator">=</span> <span class="uscript-keyword">length</span><span class="uscript-operator">-</span>Len<span class="uscript-operator">(</span>line<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    line <span class="uscript-operator">=</span> padchar<span class="uscript-operator">$</span>line<span class="uscript-operator">;</span>
+    i<span class="uscript-operator">--</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">&lt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span> line <span class="uscript-operator">=</span> Right<span class="uscript-operator">(</span>line<span class="uscript-operator">,</span> <span class="uscript-keyword">length</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">return</span> line<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-keyword">static</span> <span class="uscript-type">string</span> AlignCenter<span class="uscript-operator">(</span><span class="uscript-keyword">coerce</span> <span class="uscript-type">string</span> line<span class="uscript-operator">,</span> <span class="uscript-type">int</span> <span class="uscript-keyword">length</span><span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">string</span> padchar<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">,</span> j<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>padchar <span class="uscript-operator">==</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span> padchar <span class="uscript-operator">=</span> <span class="uscript-string">" "</span><span class="uscript-operator">;</span>
+  i <span class="uscript-operator">=</span> Len<span class="uscript-operator">(</span>line<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">;</span>
+  j <span class="uscript-operator">=</span> Len<span class="uscript-operator">(</span>line<span class="uscript-operator">)</span><span class="uscript-operator">-</span>i<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">return</span> AlignRight<span class="uscript-operator">(</span>Left<span class="uscript-operator">(</span>line<span class="uscript-operator">,</span> i<span class="uscript-operator">)</span><span class="uscript-operator">,</span> <span class="uscript-keyword">length</span><span class="uscript-operator">-</span><span class="uscript-operator">(</span><span class="uscript-keyword">length</span><span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span> padchar<span class="uscript-operator">)</span><span class="uscript-operator">$</span>AlignLeft<span class="uscript-operator">(</span>Right<span class="uscript-operator">(</span>line<span class="uscript-operator">,</span> j<span class="uscript-operator">)</span><span class="uscript-operator">,</span> <span class="uscript-keyword">length</span><span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">,</span> padchar<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><hr class="thin"><p><a href="category-custom-class.html">Category Custom Class</a></p>
+</div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="wutils.html">WUtils</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=WUtils/WString">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=WUtils/WString">View other revisions</a><br>Last edited August 13, 2004 7:15 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=WUtils/WString">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/WUtils/WString">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Mostly Harmless
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

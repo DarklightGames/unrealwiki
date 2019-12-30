@@ -1,0 +1,293 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: MutTutorial</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=MutTutorial; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=MutTutorial">MutTutorial</a></h1>
+	<div class="wiki"><p>This Unreal Tournament 2004 Tutorial will take you through the basic process of creating a mutator that allows you to alter a players health and the number of multi-jumps they can perform.</p>
+<p>You can download the code from <a href="http://www.home.earthlink.net/~doodlethe1/MutNeedBetterName.zip">[19]</a>, but it might not be as up to date as the code on this page. For the original page check out <a href="muttutorial-code.html">MutTutorial code</a>.</p>
+<h2><a name="0.1"></a>Before You Start</h2>
+<p>As with the <a href="unrealscript-hello-world.html">UnrealScript Hello World</a> tutorial we need to create a directory to hold our mutator code.  The name of the directory determines the name of the package into which your code will be compiled.  To that end you need to <a href="set-up-package-folders.html">Set Up Package Folders</a>:</p>
+<ol><li>Create a directory <code>MutNeedBetterName</code> within your UT2004 directory</li>
+<li>Create a directory <code>Classes</code> within the <code>MutNeedBetterName</code> you just created.</li>
+</ol>
+<p>You should have the following folder tree:</p>
+<PRE class="tree">UT2004 
+  +- MutNeedBetterName
+       +- Classes</PRE><p>The <em class="em2">Mut</em> prefix is used as a convention within UT2004 to indicate all packages and classes that relate to mutators.  It is not mandatory to do this and we could have called our package (and therefore the directory) <code>NeedBetterName</code>.  It is recommended that you use the conventional Mut prefix though for organisations sake.</p>
+<h2><a name="0.2"></a>Writing the Mutator</h2>
+<p>Now to actually write some code that can be compiled.</p>
+<p>Within your <code>/UT2004/MutNeedBetterName/Classes</code> directory create a file called <code>MutNeedBetterName.uc</code>.  All Unreal Script class files have an extension of <em class="em2">.uc</em>.  They <em class="em2">must</em> also be named after the class file they are contained within.</p>
+<p>Add the following code to the file.  The code is described after each logical block.</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> MutNeedBetterName <span class="uscript-keyword">extends</span> Mutator<span class="uscript-operator">;</span></pre><p>This is the class declaration.  We are essentially telling the game that this is a new class called <code>MutNeedBetterName</code> and that it is a type of (it extends, or subclasses) <a href="mutator.html">Mutator</a>. And finally, like all good things in life, the class declaration is terminated with a semi-colon.  You can see <a href="class-syntax.html">Class Syntax</a> for more information.</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> <span class="uscript-type">int</span> MultiJumpCount<span class="uscript-operator">,</span> MultiJumpBoost<span class="uscript-operator">,</span> StartingHealth<span class="uscript-operator">,</span> MaximumHealth<span class="uscript-operator">,</span> SuperDuberMaximumHealth<span class="uscript-operator">;</span> <span class="uscript-comment">// The number of multi-jumps allowed</span>
+<span class="uscript-comment">//The boost the player gets from a multi-jump and the player's starting health</span></pre><p>The section above defines three variables (all integers - see <a href="variable-type.html">Variable Type</a>s) that are all properties of the class being defined.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> ModifyPlayer<span class="uscript-operator">(</span>Pawn Other<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> xPawn x<span class="uscript-operator">;</span> <span class="uscript-comment">//x is a variable</span>
+  x <span class="uscript-operator">=</span> xPawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span> 
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>x <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    x<span class="uscript-operator">.</span>MaxMultiJump <span class="uscript-operator">=</span> MultiJumpCount<span class="uscript-operator">;</span>
+    x<span class="uscript-operator">.</span>MultiJumpBoost <span class="uscript-operator">=</span> MultiJumpBoost<span class="uscript-operator">;</span>
+    x<span class="uscript-operator">.</span>Health <span class="uscript-operator">=</span> StartingHealth<span class="uscript-operator">;</span>
+    x<span class="uscript-operator">.</span>HealthMax <span class="uscript-operator">=</span> MaximumHealth<span class="uscript-operator">;</span>
+    x<span class="uscript-operator">.</span>SuperHealthMax <span class="uscript-operator">=</span> SuperDuberMaximumHealth<span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+  <span class="uscript-comment">// YOU FORGOT TO CALL THE SUPERCLASS! THIS BREAKS THE MUTATOR CHAIN</span>
+
+<span class="uscript-operator">}</span></pre><p>The first line declares the function (see <a href="function-syntax.html">Function Syntax</a>).  This is the function that actually updates the player's attributes.  Because our class is a type of Mutator the <code>ModifyPlayer()</code> function will be called automatically for every player in the game as they spawn.</p>
+<p>The next two lines of code (ignoring the braces) do the following.</p>
+<ul><li>Declare a local (only visible within the function) variable of type xPawn (<a href="xpawn.html">xPawn</a> is a type of <a href="pawn.html">Pawn</a>, and can be found in the xGame package).</li>
+<li>Assign a value to our local variable after <a href="typecasting.html">Typecasting</a> the value passed in the <code>Other</code> function parameter.  Note that if <code>Other</code> is not a type of (or subclass) xPawn our local variable will contain <code>None</code>.</li>
+</ul>
+<p>The <code>if</code> statement checks to see if the local variable has a value by comparing it to the "empty value" <code>None</code> using the not equal to (<code>!=</code>) operator.  See <a href="operators.html">Operators</a> for more information.  Remember - if the object referenced by <code>Other</code> is not an xPawn our local variable will be equal to (<code>==</code>) None.</p>
+<p>The block of code within the <code>if</code> statement adjusts the player's jump and health properties using the values from our mutator's configurable properties.</p>
+<pre class="uscript"><span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+  MultiJumpCount<span class="uscript-operator">=</span><span class="uscript-number">10</span>
+  MultiJumpBoost<span class="uscript-operator">=</span><span class="uscript-number">50</span>
+  StartingHealth<span class="uscript-operator">=</span><span class="uscript-number">250</span>
+  MaximumHealth<span class="uscript-operator">=</span><span class="uscript-number">250</span>
+  SuperDuberMaximumHealth<span class="uscript-operator">=</span><span class="uscript-number">500</span>
+  GroupName<span class="uscript-operator">=</span><span class="uscript-string">"MutNeedBetterName"</span>
+  FriendlyName<span class="uscript-operator">=</span><span class="uscript-string">"What ever you want the Mutator to be called"</span> <span class="uscript-comment">//This is the name of the Mutator that will display in game</span>
+  Description<span class="uscript-operator">=</span><span class="uscript-string">"Changes your initial health and Multi-Jumping ability"</span>
+<span class="uscript-operator">}</span></pre><p>This block of code allows you to specify default values for all of your class properties.  If a class property is declared as configurable then the value within the mutator's ini file will be used if available instead of the value specified here.  The <a href="default-properties.html">Default Properties</a> page contains much more information about how default values should be specified.</p>
+<h2><a name="0.3"></a>Compiling and Using the Mutator</h2>
+<p>Next add this code to the file UT2004.ini: "EditPackages=MutNeedBetterName"</p>
+<p>Move the folder MutNeedBetterName into C:\UT2004 (or where ever you installed UT2004)</p>
+<p>Move the file MutNeedBetterName.int into UT2004\system</p>
+<p>Open Command line (a quick way to do this is to open "run" and type cmd)</p>
+<p>type in "C:\UT2004\System\ucc make" press enter and wait.</p>
+<p>Ucc will go through all the folders and if you edited your UT2004[or 3 i think].ini right it should go through your folder.</p>
+<p>Hopefully it will say success, there were no errors. If it does run Unreal Tourney and you will see under mutators Mutation Tutorial.</p>
+<h2><a name="0.4"></a>Adding a Configuration Window</h2>
+<p>If you want to allow your mutator's configurable parameters to be changed from the standard UT2004 mutator config window then please see the <a href="mutator-config-gui-ut2004.html">Mutator Config GUI (UT2004)</a> reference.</p>
+<h2><a name="0.5"></a>Useful Pages</h2>
+<ul><li><a href="compiler-errors.html">Compiler Errors</a></li>
+</ul>
+<hr class="thin"><h2><a name="0.6"></a>Conclusion</h2>
+<p>You should now have code that looks like this (without the comments): <a href="muttutorial-code.html">MutTutorial Code</a></p>
+<h2><a name="0.7"></a>Discussion</h2>
+<p><em class="em2">Tarquin:</em> I don't understand what this is trying to show, or why there is no text on that page, only script. Secondly, in your script comments there are a number of questions you've left, and a few misconceptions. I suggest you get wait for feedback on it first before adding it to the chain of lessons.</p>
+<p><em class="em2">EntropicLqd:</em> Imagine you are completely new to Unreal Script.  Is this page going to actually help you in <a href="setting-up-unrealscript.html">Setting Up UnrealScript</a> or how to <a href="set-up-package-folders.html">Set Up Package Folders</a>.  There's no set of pre-requisites mentioned anywhere or even any real explanation of what is going on (note to self - must add them to my tut. page).  To my mind the worst thing about the tutorial is that you've assumed that someone has downloaded your code.  Try and fit your tutorial into a similar structure to the other tutorials on the Wiki.  At least that way all of the tutorials will be in a similar form.  Also one of your stated commands will not work under Windows XP, and one of them is redundant - but maybe I'm just being picky in my old age.</p>
+<p><em class="em2">Mr.bob</em> Uhhhhhhhhhh... what are pre-requisites (I mean in  ucode context). Also that is kind of weird because I just used this mut in windows xp and it compiled and then worked flawlessly. Also what does redundant mean. About the prompt command I think you are talking about, I'm surprised it didn't work. Maybe I misspelled it but when I type "prompt $1 into command line in windows XP it gives me a blank prompt which is what I want. Finally there is a smiley I've been wanting to try out...<br> <img alt=":stupid:" src="emoticons/stupid.gif" align="middle"></p>
+<p>Oh ya, most importantly this tutorial was not meant for reading, it was meant for downloading as folders a .uc file and a .int file. However that didn't seem to work out. In response to Tarquin (who seems to really enjoy messing with and moving around my things ... this gives me an idea <img alt=":cheesy:" src="emoticons/cheesy.gif" align="middle"> ) this code is trying to give newbs some code that they can mess around with and understand. The very first step people do when they are learning to mess with code is to do things like replace the word health with shield, and this code lets them do that.</p>
+<p>Later: Just discovered that all the links I had previously posted to the .zip file were broken. Here is one that has to work: <a href="http://www.home.earthlink.net/~doodlethe1/MutNeedBetterName">[THE FILE]</a></p>
+<p>Tarquin, why don't you tell me what the misconceptions are so I can fix them, you people should really give me a lot more input, although the problem is you can't because there are no links to this page.</p>
+<p><em class="em2">Tarquin:</em> things like "says that there is a local variable that applies only to Xpawns, and that varaible is x." Please also take care to spell correctly. And please remove your tutorial from the list &ndash; you can put the link further down the page if you like. You can get it linked by addding a category tag to this page.</p>
+<p><em class="em2">EntropicLqd:</em> The redundant command is indeed the prompt one.  You might not like to see where you are in the directory structure but I'm betting most people (like me) do.  Not only that, but the command is irrelevant.  You don't need it to compile any Unreal Script at all - but that's not explained.</p>
+<p class="indent1">The one I thought wouldn't work under XP was running "command".  It does work but gives you the old Win9x DOS shell.  The XP version (like NT) is <em class="em1">cmd</em>.</p>
+<p class="indent1">Pre-requisites in Unreal Script terms are the basic things someone needs to know before they can starting writing code.  I linked to them in my previous post.  Also, simply downloading some code and then tweaking the values to see what they do is a very inefficient way of learning.  A good tutorial does the following:</p>
+<p class="indent1">* Explains what the tutorial will cover and what the person is supposed to learn from doing it.</p>
+<p class="indent1">* Explains what the person doing the tutorial needs to know in order to complete it.  That is - the assumed <em class="em1">base knowledge</em> or as we like to say <em class="em1">prerequisites</em>.</p>
+<p class="indent1">* Explain in simple steps what must be done to accomplish the goal of the tutorial.  At this point explaining why things are done (in this case why ModifyPlayer() was used) in a lot of detail is necessary.  Your description of ModifyPlayer() is somewhat vague &ndash; and could even be misleading.  And also, you should never ever leave questions unanswered in a tutorial.</p>
+<p class="indent1">* Conclude with a summary of what the person is supposed to have learned from the tutorial.</p>
+<p class="indent1">So to reiterate my original point, simply providing people with some code they can mess about with is not a tutorial.  It's also unlikely to help them write their own code in the future as it provides no method for understanding why something was done in a specific way.</p>
+<p><em class="em2">Mr.bob:</em> At this point I am once again forced to admit to my newbishness (is that even a word?) and bow down to your superior knowledge. Putting the tutorial on the front page was reckless and hasty (what do you expect, I'm 14). I will delete it from the front page and start working on one worthy of this terrific site, thx for the advice <a href="entropiclqd.html">EntropicLqd</a> and sorry for bugging you by posting so much junk <a href="tarquin.html">Tarquin</a>. A few more points, command, while not as good a cmd still works, but thx anyway for the update. Just saying it would help if you included a description of what modify player does, considering my description was very incorrect.</p>
+<p>Growing up in the age of spell checkers has severely damaged my spelling capabilities.</p>
+<p>My brother is insisting that I keep the things in progress section intact with my link in it, but I'm telling him <a href="tarquin.html">Tarquin</a> isn't going to be happy.</p>
+<p>Whew, that should do it, the tutorial isn't perfect yet, but it is much better then before. It is still not in traditional tutorial format, but I don't really like the traditional tutorial format.</p>
+<p><em class="em2">Foxpaw:</em> I put some more comments in there to explain some stuff that was a bit misleading. However, as you can now see, the comments take up so much space it's hard to see the code. What you might consider doing is listing the code in it's entirety (without the play by play comments) and then below that take each line and show it dissected.</p>
+<p><em class="em2">Tarquin:</em> "I was sick of lessons like the regeneration mutator that would tell you to modify some code you found without telling you what that code meant." &ndash; I think that is an <em class="em1">excellent</em> point! We should look into adding a "How it works" or "What's going on" section to our scripting tutorial pages!</p>
+<p><em class="em2">Mr.Bob's brother:</em>  a simple note about the prompt $1 thing. we use it because in Windows XP home edition you start in this part of the directory structure: <tt>C:/Documents and settings/~username&gt;</tt> and the UT2004 directory is <tt>C:/UT2004</tt> so we need to make the directory structure become blank to go down to C:/.</p>
+<p>PS. call me Doodle77 because it is my username for a bunch of games</p>
+<p><em class="em2">EntropicLqd:</em> The <em class="em1">prompt</em> command simply changes the DOS prompt.  It <em class="em1">does not</em> change the directory you are in.  I suspect you actually meant <code>cd c:\UT2004</code>.  If you wanted to make the directory structure blank then <code>format C:\</code> is the command you are after.</p>
+<p><em class="em2">Mr.bob:</em> Never mind, you can type in the file path without typing in prompt $1 first, i have changed the script apropratly in light of this new discovery.</p>
+<p>Wow this tutorial is really something now. Now i think it can add it to the chain. I will update the .zip file with the new code, and add it to the top of the Uscript lessons. The full exspanation of what the code means will REALLY help out people who are compleate newbs to programing.</p>
+<p><em class="em2">Tarquin:</em> Please could you:</p>
+<ul><li>make links in your text</li>
+<li>add a few headings perhaps</li>
+<li>fix spelling mistakes</li>
+<li>explain what the variables you have modified mean</li>
+<li>I think it would be better to remove the explanations from the script entirely, it would make then easier to read &ndash; instead of comments within script, a section of text with script extracts within it.</li>
+</ul>
+<p><em class="em2">EntropicLqd:</em> Right then Mr.Bob.  Please finish off your tutorial in the style it has started in.  If you do a good job maybe I'll come back and extend it with information regarding constructing a configuration GUI for it.</p>
+<p><em class="em2">Mr.bob:</em> This is what I like about the wiki, it is not me writing this tutorial anymore, it is the whole wiki community. It's very much like open source code, that is what makes open source programs so good and flawless, there is a large amount of people who can look at the code and change things.</p>
+<p><em class="em2">EntropicLqd:</em> Maybe, maybe not.  I'm just showing you how you should have written it in the first place.  I won't be finishing it off for you (and I doubt whether anyone else will) as I don't have time.  I certainly won't be restructuing any more of your tutorials if they are presented in the manner similar to the way this one was.</p>
+<p><em class="em2">RegularX:</em> While I like that more verbal tutes like this are getting written - it should be noted that because this is the wiki, tutes like Regen mutator can be appended to describe the inner workings of the tutorial itself...</p>
+<p><em class="em2">Mr.bob:</em> You said that you wouldn't be finishing it off. Personally I have seen much less polished tutorials then this. I think it is finished, what more does it need?</p>
+<p>arg i read it and there is some sloppy coding, i changed it, Please don't change it back, it is acutally really bad. And this is a newb telling you this. First of all the config part is junk, second of all you repeated a lot of parts you didn't have to repeat, third of all the pre-requisites are MUCH steeper then what i had in mind ... ok it is so bad i am sequencering (&lt;-spelling bad) the whole new section and making one that doesn't suck so much later. Please don't put it back, the code is very misleading and wasteful. I can't do anything too soon becuase my mouse is broken, sry.</p>
+<p><em class="em2">EntropicLqd:</em></p>
+<p class="indent1">Firstly - Thanks Foxpaw.  I was in a hurry and didn't bother to read what I'd actually written.  Apologies to Mr Bob. for introducing <em class="em1">junk</em> into his perfect tutorial, and also to Foxpaw for making him come in here and fix it.</p>
+<p class="indent1">Mr Bob, just because there are much less polished tutorials than this doesn't mean that is one is finished.  It just means that the other tutorials are not as good.  While I agree I repeated a lot of the stuff that is covered within the <a href="unrealscript-hello-world.html">UnrealScript Hello World</a> tutorial I felt it was necessary to make the tutorial complete.  You could also argue that this would be a better <em class="em1">Hello World</em> style tutorial than the existing one as it actually does something.</p>
+<p class="indent1">Yes I agree the pre-requisites are fairly heavy.  However there is actually a fair amount of stuff that you need to know, and get right before you even start writing any code.</p>
+<p class="indent1">I'm also fairly sure that the code is broken around the "health" area but I've not had time to actually compile it and check (I'm relatively sure the player's health will get reset to 100 should thep layer actually run over a standard health pickup).</p>
+<p class="indent1">I've essentially left the compilation and use section for you to complete.  When that's done I'll add the GUI elements unless you also fill those in.</p>
+<p><em class="em2">Mr.bob:</em> New tutorial, in traditional format (me don't like tradition) and the coding is awful, I will make a major revision after I get my mouse fixed. I'm just glad entropiclqd didn't delete anything important. I thought he was skilled, and maybe he is, but it looks like he was trying to make a 2004 GUI and didn't quite complete it. You should know that when changing a public page you don't present new incomplete code that you haven't even complied and tested. If I complied this code, it probably would compile and even if it did, it would be very sloppy wasteful code that might glitch the program in a worst case scenario. I don't like the traditional format that much, but if you people insist that my tutorial look like everyone else's then it shall be. If you complete the 2004 GUI soon enough I will forgive you entopiclqd, but if you don't, I'm scraping all your work, or at least sequestering it.</p>
+<p>One more point, the pre-requisites are completely ridiculous, you don't need the unreal script source code, you don't need to have read any of those pages, and I haven't glanced at the terminology page. The installed UT2004/3 on your computer is way too obvious. I also don't like how you changed it to MutPlayerTweak. NO ONE CHANGE THE ORIGANAL PAGE SECTION, good I made my self clear.</p>
+<p>I just turned 15 today <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">EntropicLqd:</em></p>
+<ul><li>This isn't a public page yet.</li>
+<li>Tutorials should be written for people to follow and understand.  Tradition has nothing to do with it.</li>
+<li>Thankyou for scrapping all my work. I look forward to seeing your alternative offering.</li>
+<li>MutTutorial is a crap name for the muator.</li>
+<li>I am indeed an <em class="em1">old geezer</em>.</li>
+<li>Happy birthday.</li>
+<li>Oh dear - I just changed the original page section.</li>
+</ul>
+<p><em class="em2">Mr.bob:</em> Damn, i thought I deleted the old geezer part, (I did, you just looked at the history) i was in a bad mood. Your right, both the names are stupid, we need a good name. And I didn't scrap all your work yet, i will in five minutes. Your right about the part about tradition, the whole time i've been trying to create a downloadable tutorial, so you don't need to copy and paste too much, that is what my origanal structure was about. Thank you for the happy birthday. Now to look at the origanal page section ... YOU DELETED IT!!! <img alt=":Pissed:" src="emoticons/pissed.gif" align="middle"> that is very annoying, now I need to harvest it from the history. Are you mad at me for calling you an old geezer <img alt=":cheesy:" src="emoticons/cheesy.gif" align="middle"> (i deleted it i tell you). But comeon, that was just pointless. Now to scrap most of your changes (i was going to wait a while, but you deleted the origanal page, and i have nothing better to do).</p>
+<p>"sigh", you could have just taken the compiling instructions from the origanal code, but i seems that you were too lazy.</p>
+<p>I didn't compleatly scrap everything and a lot of the things you said were pretty good, all i ask is that you make a seperate page for the 2004 GUI, although i really want you to make one.</p>
+<p><em class="em2">Tarquin:</em> We can leave the GUI part out &ndash; the <a href="mutator-config-gui-ut2004.html">Mutator Config GUI (UT2004)</a> tutorial should be generic enough to work with any mutator (and should be tweaked so it works like that). MrBob, if people are too lazy to copy &amp; paste instead of downloading, then modding <em class="em1">really isn't for them</em>. <img alt=":D" src="emoticons/biggrin.gif" align="middle"> I really don't think it's much of a timesaver, you still need to compile, and it's harder for us to maintain it here.</p>
+<p><em class="em2">Mr.bob:</em> Ok fine I'll take the download part out.</p>
+<p>Entopiclqd, if you are interested in making a GUI for 2004 then look at this .uc file, if you have UT2004 then you probably have it, but for your convinance you can download it here: <a href="http://home.earthlink.net/~theultimatebob/air_control.zip">[Air Control]</a>. As you can tell the file is the air control mutator for UT2004, which is vaguly similer to the mutator above. I was not able to make any sense of it, or figure out how to tweak it enough to work with health instead of air control, but you know much more about Uscript then I do.</p>
+<p><em class="em2">EntropicLqd:</em> Please see the <a href="mutator-config-gui-ut2004.html">Mutator Config GUI (UT2004)</a> reference page for instructions on how to add GUI configuration to your mutator.  I will add a discussion section at the bottom of that page should you have additional questions.  If you find youself struggling with the page then I suggest referring to the set of pre-requisites I originally added to the tutorial.  Calling me an <em class="em1">old geezer</em> is in no way offensive - I am over twice you age.</p>
+<p><em class="em2">Mr.bob:</em> Kewl, about the whole GUI thing, the above link doesn't help me, makes no sense at all. Also the volume control mutator, helped a bit more, but doesn't have enough comments in the GUI section. So far my most useful resource has been air control.</p>
+<p><em class="em2">Tarquin:</em> Like I said above, <a href="mutator-config-gui-ut2004.html">Mutator Config GUI (UT2004)</a> should give you a template to create a GUI for any given mutator, I hope. Since I don't have UT2004 I can't try it for myself. Now as for this page's name.... I have altered the listing on the Lessons page to be a bit clearer, and I want to do the same to the name. Since the main thing this does is alter jumping, how about "SuperJump Mutator Tutorial"?</p>
+<p><em class="em2">Tarquin:</em> Message for ppp-62-235-110-208.tiscali.be &ndash; thanks for your typo corrections, much appreciated! But please don't introduce "smart quotes" into the wiki text (the &amp;#8217; things) &ndash; either turn them off in MS Word or use a text editor. Thanks!</p>
+<p><em class="em2">Random Guest:</em> Sorry about that.. I don't know how that happened, maybe because i'm using IE 5.0. Anyway, this script isn't working when I try to compile it. Says MaxHealth isn't a member of xPawn. The code-page doesn't use MaxHealth. Maybe this page, or the other needs some updating. I deleted the maxhealth thing, since it didn't work. There's HealthMax in Pawn, but setting Other.HealtMax gives me another error. I don't know why, I'm a newbie. I also had to take it out of the defaultproperties. Now it works.</p>
+<p><em class="em2">MythOpus:</em>  I don't have the time to test this Mut out but...  have you tried x.HealthMax instead of just deleteing it completely?  I think it's a critical part in the mutator...  I think without changing the HealthMax property, the health can't be set over it's max... which is... 199 I believe?  And why use Other when you can use x <img alt=":)" src="emoticons/smile.gif" align="middle"> </p>
+<p><em class="em2">Tarquin:</em> The variable I think you want is <a href="pawn.html">Pawn</a>.HealthMax. MrBob, did you actually TEST this????</p>
+<p><em class="em2">Mr.bob:</em> Ya, i tested it, three times, but not sense the most recent changes. sry. I'll test it now, and update the zip file.</p>
+<p>Yay it compiled <img alt=":)" src="emoticons/smile.gif" align="middle">, now to update the zip file.</p>
+<p>Wait those aren't the problem. I see the problem now. The problem is that it is "healthmax", not "maxhealth". I have edited the code.</p>
+<p><em class="em2">Random Guest:</em> That was indeed the problem. The code as it is now works, but there's one small problem. Taking health vials (the +5 things) only boosts your health till 199, not till 250 of whatever. Regular health packs do get you to 250! Therefore, i would propose this code:</p>
+<pre class="uscript">    x<span class="uscript-operator">.</span>Health <span class="uscript-operator">=</span> StartingHealth<span class="uscript-operator">;</span>
+    x<span class="uscript-operator">.</span>HealthMax <span class="uscript-operator">=</span> StartingHealth<span class="uscript-operator">;</span>
+    x<span class="uscript-operator">.</span>SuperHealthMax <span class="uscript-operator">=</span> HealthMax<span class="uscript-operator">;</span></pre><p>This sets the paws starting health, as discussed before, says the normal health you can reach is the same starting health, and the super health (normally 199) is set to the maximum.</p>
+<p>I also made gui-code (mutator settings in the configuration-screen), should i post them or is that overkill for this example?</p>
+<p><em class="em2">EntropicLqd:</em> It's a little overkill for this example.  Also, if the <a href="mutator-config-gui-ut2004.html">Mutator Config GUI (UT2004)</a> page isn't good enough then it is that page that should be updated.  In terms of the smart-quotes - if you edit the tutorial text in Word, they will be added in automatically.  And if you use Notepad remember to turn <em class="em1">wordwrap</em> off.</p>
+<p><em class="em2">Mr.bob:</em> Greetings from saratoga! I've been on vacation and i havn't had acess to a computer. Right now I am using the library computer, unfortanatly I don't have a apointment and i'm in the childrens section computers (the adult comps were full). So they could kick me off at any time.</p>
+<p>Ok, I'm going to change the code so there is super health max. Also random guest, if you have this mut with the GUI zip the .uc file(s), put them on your website (you have a website right?) and put a link to them. You can also make an extention tutorial on the wiki that tells you how to add a GUI to this mutator. Put it under the currently existing "Adding a Configuration Window" heading.</p>
+<p>arg the : p_i_s_s_e_d : (ignore the underscores, they have a bunch of wierd filtering software on this computer which makes it so I can't write words like p_i_s_s. just don't ask) smily is broke! (or is it the filtering software on the kidy computers?).</p>
+<p><em class="em2">Tarquin:</em> I don't think SuperHealthMax = SuperMaxHealth is  a good choice of variable names.........</p>
+<p><em class="em2">Mr.bob:</em> Greating from independent lake camp! Can't think of a better var name sry. Also when is random guest going to show me how to make a GUI? Hope it is soon <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Tarquin:</em> well TRY. Having variables called SuperHealthMax and SuperMaxHealth  is just horribly confusing. What is the difference between these two vars? How do their names tell me of this difference? If you're going to write tutorials, you HAVE to think of this. Also, I don't think this tute should contain the GUI &ndash; see what Ent said above.</p>
+<p><em class="em2">MythOpus:</em> Instead of using 'x' as a variable.  Couldn't you make life easier by using:</p>
+<pre class="uscript"><span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>xPawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+            xPawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>MaxMultiJump <span class="uscript-operator">=</span> MultiJumpCount<span class="uscript-operator">;</span>
+            xPawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>MultiJumpBoost <span class="uscript-operator">=</span> MultiJumpBoost<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+Other<span class="uscript-operator">.</span>Health <span class="uscript-operator">=</span> StartingHealth<span class="uscript-operator">;</span>
+Other<span class="uscript-operator">.</span>HealthMax <span class="uscript-operator">=</span> MaximumHealth
+Other<span class="uscript-operator">.</span>SuperHealthMax <span class="uscript-operator">=</span> SuperMaxHealth</pre><p><em class="em2">EntropicLqd:</em> Mr Bob have you not read what has been written in the comments section?  RandomGuest has been specifically asked not to add a section on creating a GUI for the mutator as this is covered on the <a href="mutator-config-gui-ut2004.html">Mutator Config GUI (UT2004)</a> page.  If you do not understand the information on that page then you should post some questions there.</p>
+<p><em class="em2">Mr.bob:</em> You said that he shouldn't add it on to this <u>page</u>. I am asking him to make a seperate page. I know you are proud of the <a href="mutator-config-gui-ut2004.html">Mutator Config GUI (UT2004)</a> page. But I have looked at it and tried some things and ....</p>
+<p><em class="em2">EntropicLqd:</em>....Comments moved to <a href="mutator-config-gui-ut2004.html">Mutator Config GUI (UT2004)</a> page as originally requested....</p>
+<p><em class="em2">Mr.bob:</em> <img alt=":confused:" src="emoticons/confused.gif" align="middle"> I didn't request it to be moved to that page <img alt=":confused:" src="emoticons/confused.gif" align="middle"> .</p>
+<p>Random guest, at some point I would like to see this mut customized with a GUI somewhere. Don't worry, I wo't get inpatiant until I get back to NYC.</p>
+<p><em class="em2">Random Guest:</em> I've already put it on the wiki, but i haven't linked yet, since i don't know if i may, it's at <a href="muttutorial-code-with-gui.html">MutTutorial Code With GUI</a>. Read the <a href="recent-changes.html">Recent Changes</a> <img alt=";)" src="emoticons/wink.gif" align="middle"></p>
+<p><em class="em2">Tarquin:</em> MR Bob, have you actually read the comments above? Have you read my note about variable names? If you want to have a hand in writing a tutorial here, please take note of these things instead of asking for more help. </p>
+<p><em class="em2">Mr.bob:</em> Sorry about my laziness tarquin. I'll change the bad var name now.</p>
+<p>You are the coolest random guest. Thank you so much. <img alt=":D" src="emoticons/biggrin.gif" align="middle"> <img alt=":)" src="emoticons/smile.gif" align="middle"> <img alt=":D" src="emoticons/biggrin.gif" align="middle"></p>
+<p>I tested the mutator with the GUI, it works perfectly. After I tweak it and make it bigger, i'm going to make a tutorial for it (unless random guest wants to first).</p>
+<p><em class="em2">Tarquin:</em> I thought this tutorial was meant to be <em class="em2">simple</em>.</p>
+<p><em class="em2">Random Guest:</em> Be my guest Mr. bob, make all you like. I don't like typing tutorials <img alt=":-)" src="emoticons/smile.gif" align="middle"> You can use wotgreal (don't know the link to the page), that expands a menu when you type a dot.</p>
+<p><em class="em2">Mr.bob:</em> I meant I would make a different tutorial for this, one that would say that it was harder.</p>
+<p>Does anyone know what other modifiable things are a part of the class Xpawn, besides the ones used above?</p>
+<p><em class="em2">Mr.bob:</em> It's been about 2 months, and the Mut turorial code with GUI hasn't been updated. And no one ahs responded to my question. <img alt=":(" src="emoticons/sad.gif" align="middle"></p>
+<p>The mut tutorial with GUI has some confusing variable names, for example multijumpboost = multijumpboost and healthmax = healthmax , and superhealthmax = superhealthmax. They should be changed, in my opinion at least, (Behind my back my brother is compaining that those names make it easier and i'm wrong.</p>
+<p><em class="em2">GRAF1K:</em> Your question either is confusingly stated or assumes something incorrect, so people are unlikely to respond. Rephrase it and you'll have better luck.</p>
+<p><em class="em2">Tarquin:</em> With the variable names, I think you need to adopt a scheme that makes it clear which xPawn variable it relates to. Eg, </p>
+<pre class="paraverbatim"> x.MultiJumpBoost = myMultiJumpBoost ;</pre><p>and so on.</p>
+<p><em class="em2">SuperApe:</em> I'm just guessing by the sheer volume of discussion entries that this page needs a RefactorMe tag.  If not, (or if refactored) please remove.</p>
+<hr class="thin"><p><a href="refactor-me.html">Refactor Me</a></p>
+<p><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("Before You Start", "#0.1");
+menuItemAdd("Writing the Mutator", "#0.2");
+menuItemAdd("Compiling and Using the Mutator", "#0.3");
+menuItemAdd("Adding a Configuration Window", "#0.4");
+menuItemAdd("Useful Pages", "#0.5");
+menuItemAdd("Conclusion", "#0.6");
+menuItemAdd("Discussion", "#0.7");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=MutTutorial">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=MutTutorial">View other revisions</a><br>Last edited April 6, 2006 18:17 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=MutTutorial">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/MutTutorial">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>The three virtues of a programmer: Laziness, Impatience, and Hubris. (Larry Wall)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

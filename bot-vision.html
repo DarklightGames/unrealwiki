@@ -1,0 +1,238 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Bot Vision</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Bot_Vision; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Bot Vision">Bot Vision</a></h1>
+	<div class="wiki"><p>Bots can snipe through pea-soup fog... </p>
+<p><em class="em2">EntropicLqd:</em> I have a problem - my bots can snipe me from a mile away in dense fog.  This is somewhat unfair since I can't actually see them (nor they me).  I've tried reducing the bot's sight radius but that has had no effect.  Anyone have any other thoughts on making the bots only able to see very close targets?  I've included the code (from my mutator subclass) I'm using to adjust the sight radius below.</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> ModifyPlayer<span class="uscript-operator">(</span> Pawn Other <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>Controller <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other<span class="uscript-operator">.</span>Controller<span class="uscript-operator">.</span>bIsPlayer <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>Other<span class="uscript-operator">.</span>IsHumanControlled<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+            Log<span class="uscript-operator">(</span><span class="uscript-string">"Sight radius adjusted"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-comment">// repEndDist is the end distance of the fog</span>
+            Other<span class="uscript-operator">.</span>SightRadius <span class="uscript-operator">=</span> repEndDist <span class="uscript-operator">/</span> <span class="uscript-number">8</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p class="indent1"><em class="em2">I'm still stuck on this one.</em></p>
+<p><em class="em2">ZxAnPhOrIaN:</em> I need that code for my level, wich uses dense fog.</p>
+<p><em class="em2">EntropicLqd:</em> The SightRadius is reset within the function Bot.ResetSkill().  This in turn is called from Bot.Possess(), Bot.InitialiseSkill(), and Bot.Restart().  My guess is that the SightRadius value is being reset to it's original value after the ModifyPlayer() function is called.  I'll have a go at proving that tonight if I get time.</p>
+<p class="indent1">What are the implicatons of changing the <em class="em1">Bot.Default.SightRadius</em> value within the mutator?  Will it screw up subsequent normal games or will the value be reset with each new game?</p>
+<p><em class="em2">Mychaeel:</em> In Unreal Tournament changes to a class's default properties persisted over level switches.  I'm not so sure about that in UT2003 &ndash; it would be worth finding out for sure.</p>
+<p><em class="em2">EntropicLqd:</em> In UT2003 changes to a class's default properties persist not only over level changes, but also for the life of that instance of UT2003 - the value is not reset until you quit and re-load UT2003.  Not only that but the SightRadius has bugger all effect on how far the bots can see to attack things - irrespective of what the code claims.  I suspect the real problem lies within the AI attack code being able to pick out targets that the bot's <em class="em1">can't see</em> as it were.</p>
+<p><em class="em2">Foxpaw:</em> You could make a mutator that would subclass the bots - not the most compatible solution but maybe someone could find a better way. What you really want to do is to modify the Controller's PickTarget function... but you can't do that because it's native and final. So modify whatever calls it. Picktarget can take an argument that gives a maximum range for selecting a target. I'm not sure where it's called from. You could maybe call PickTarget every X amount of time (much more frequently than the bot's normally would) though that would not be very elegant. If you could find when the function is called you could maybe modify that function to pass an arbitrary maximum range to target people through the fog.</p>
+<h2><a name="0.1"></a>Bot Vision - Better than X-Ray</h2>
+<p>If you've ever spent any time attempting to make a mod that restricts the distance players can see, or their peripheral vision then you'll know that getting the Bots to behave in a believable manner is hard.  This page will describe my on-going thoughts and musings on how to get things working in the manner you wish.</p>
+<h3><a name="0.1.1"></a>Finding Objects and General Navigation</h3>
+<p>Now, in general a Bot's view of the world is a network of nodes.  Some of the paths between the nodes are "more expensive" than others, and a Bot will generally try and take the easiest path to wherever it is trying to get to.  Generally, this may be armour, health, a weapon, or another pick up.  Left to it's own devices a Bot will quite happily run around a level collecting stuff.  The Bot knows where everything on the level is - because it can navigate through the network of nodes to find any object in the level.  Remember, the nodes are placed on the level as <a href="pathnode.html">PathNode</a> objects, Inventory items, and other such stuff.</p>
+<p>When a Bot has decided to go somewhere it stores information about it's route through the level in its Controller.  This makes sense - the controller is responsible to directing the Bot, and the pawn (representing the Bot in game) is responsible for the animation.  This distinction is more or less true.  I'm not convinced that it is as cut and dried as that.  It's best to think of the Controller as the Bot's brain, and the Pawn as the Bot's representation in the world.</p>
+<p>The Controller class has some useful attributes to support this navigation, reproduced below for your pleasure and enjoyment.</p>
+<pre class="uscript"><span class="uscript-keyword">var</span> Actor     RouteCache<span class="uscript-operator">[</span><span class="uscript-number">16</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span> <span class="uscript-comment">// A cache of pathnodes the Bot needs to travel along to reach its goal?</span>
+<span class="uscript-keyword">var</span> <span class="uscript-operator">[</span><span class="uscript-operator">[</span>ReachSpec<span class="uscript-operator">]</span><span class="uscript-operator">]</span> CurrentPath<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> vector    CurrentPathDir<span class="uscript-operator">;</span> <span class="uscript-comment">// Direction the bot needs to travel to remain on it's "path"</span>
+<span class="uscript-keyword">var</span> Actor     RouteGoal<span class="uscript-operator">;</span>      <span class="uscript-comment">// final destination for current route</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span>     RouteDist<span class="uscript-operator">;</span>      <span class="uscript-comment">// total distance for current route</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span>     LastRouteFind<span class="uscript-operator">;</span>  <span class="uscript-comment">// time at which last route finding occured</span>
+
+<span class="uscript-comment">// Some useful functions for Bot navigation are:</span>
+<span class="uscript-comment">//Navigation functions - return the next path toward the goal</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">518</span><span class="uscript-operator">)</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> Actor FindPathTo<span class="uscript-operator">(</span>vector aPoint<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">517</span><span class="uscript-operator">)</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> Actor FindPathToward<span class="uscript-operator">(</span>actor anActor<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">bool</span> bWeightDetours<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> Actor FindPathToIntercept<span class="uscript-operator">(</span>Pawn P<span class="uscript-operator">,</span> Actor RouteGoal<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">bool</span> bWeightDetours<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> Actor FindPathTowardNearest<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>NavigationPoint<span class="uscript-operator">&gt;</span> GoalClass<span class="uscript-operator">,</span> <span class="uscript-keyword">optional</span> <span class="uscript-type">bool</span> bWeightDetours<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">525</span><span class="uscript-operator">)</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> NavigationPoint FindRandomDest<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><h3><a name="0.1.2"></a>Seeing Enemies and Shooting at Them</h3>
+<p>So, how do Bots see other players?  Well, there are a few functions and attributes that would appear to affect this part of the Bot's behaviour.  In my experience none of them seem to work well in low visibility conditions.  I've listed all the ones I can find below.</p>
+<pre class="uscript"><span class="uscript-comment">// From the Controller class</span>
+<span class="uscript-type">float</span> FovAngle<span class="uscript-operator">;</span> <span class="uscript-comment">// The Field of View from the player's (human or bot) point of view</span>
+
+<span class="uscript-comment">// Enemy information</span>
+<span class="uscript-keyword">var</span> Pawn   Enemy<span class="uscript-operator">;</span>         <span class="uscript-comment">// A reference to the current Enemy of the bot</span>
+<span class="uscript-keyword">var</span> Actor  Target<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> vector LastSeenPos<span class="uscript-operator">;</span>   <span class="uscript-comment">// enemy position when I last saw enemy (auto updated if EnemyNotVisible() enabled)</span>
+<span class="uscript-keyword">var</span> vector LastSeeingPos<span class="uscript-operator">;</span> <span class="uscript-comment">// position where I last saw enemy (auto updated if EnemyNotVisible enabled)</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">float</span>  LastSeenTime<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// LineOfSightTo() returns true if any of several points of Other is visible (origin, top, bottom)</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">514</span><span class="uscript-operator">)</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> LineOfSightTo<span class="uscript-operator">(</span>actor Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// CanSee() similar to line of sight, but also takes into account Pawn's peripheral (how big is that?) vision</span>
+<span class="uscript-keyword">native</span><span class="uscript-operator">(</span><span class="uscript-number">533</span><span class="uscript-operator">)</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CanSee<span class="uscript-operator">(</span>Pawn Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span> 
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> WouldReactToSeeing<span class="uscript-operator">(</span>Pawn Seen<span class="uscript-operator">)</span>
+<span class="uscript-keyword">event</span> HearNoise<span class="uscript-operator">(</span> <span class="uscript-type">float</span> Loudness<span class="uscript-operator">,</span> Actor NoiseMaker<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">event</span> SeePlayer<span class="uscript-operator">(</span> Pawn Seen <span class="uscript-operator">)</span><span class="uscript-operator">;</span>   <span class="uscript-comment">// called when a player (bIsPlayer==true) pawn is seen</span>
+<span class="uscript-keyword">event</span> SeeMonster<span class="uscript-operator">(</span> Pawn Seen <span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// called when a non-player (bIsPlayer==false) pawn is seen</span>
+<span class="uscript-keyword">event</span> EnemyNotVisible<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+
+<span class="uscript-comment">// From the ScriptedController class</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CheckIfNearPlayer<span class="uscript-operator">(</span><span class="uscript-type">float</span> Distance<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+
+<span class="uscript-comment">// From the Bot class</span>
+<span class="uscript-comment">// Calls the CanAttack() function of the current weapon to see if Other is in range</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CanAttack<span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">event</span> SeePlayer<span class="uscript-operator">(</span>Pawn SeenPlayer<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Called when a player has been seen</span>
+<span class="uscript-keyword">function</span> SetPeripheralVision<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// Set's the peripheral vision of a Bot based on skill</span>
+
+<span class="uscript-comment">// SetAlertness()</span>
+<span class="uscript-comment">// Change creature's alertness, and appropriately modify attributes used by engine for</span>
+<span class="uscript-comment">// determining seeing and hearing.  SeePlayer() is affected by PeripheralVision, and</span>
+<span class="uscript-comment">// also by SightRadius and the target's visibility HearNoise() is affected by HearingThreshold</span>
+<span class="uscript-keyword">function</span> SetAlertness<span class="uscript-operator">(</span><span class="uscript-type">float</span> NewAlertness<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// Attempts to determine if Bot has line of sight to Target deltatime from now.</span>
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> CheckFutureSight<span class="uscript-operator">(</span><span class="uscript-type">float</span> deltatime<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>Irritatingly the control for the Bot's "sight" does not solely rest with the Controller.  There are some attributes of the <a href="pawn.html">Pawn</a> class that have an impact.  The most obvious one of these is <em class="em2">SightRadius</em>, which is allegdly the Bot's maximum seeing distance.  However, as I have proved conclusively the Bot's maximum seeing distance != the Bot's attacking distance.</p>
+<h2><a name="0.2"></a>The SightRadius variable and its effect within the game:</h2>
+<p>I've experimented a lot with AI and this SightRadius variable while developing AI for CasterMod. I found out, that the suggestions on this page are not completely right about this variable and the AI function. <em class="em2">THE SIGHTRADIUS VARIABLE DOES DETERMINE HOW FAR A BOT CAN SEE OPPONENTS. </em></p>
+<h3><a name="0.2.1"></a>The Problem:</h3>
+<p>The real problem here is that, once it has an enemy assigned, it tries to attack if possible. There are as mentioned above a load of functions to tell the bot what it can see. Three of them are of major importance. These are <em class="em2">LineOfSightTo()</em>, <em class="em2">CanSee()</em> and <em class="em2">SeePlayer()</em>.</p>
+<ul><li><em class="em2">LineOfSightTo()</em> <ul><li>LineOfSightTo() sais whether anything (solid as world geometry) blocks the direct view to the enemy. It does not consider FOV or SightRadius of the bot. </li>
+</ul>
+</li>
+<li><em class="em2">CanSee()</em><ul><li>CanSee() goes a step further. It checks the LineOfSightTo() and then checks whether the enemy is in the bots FOV. It still does not use the SightRadius for calculation. </li>
+</ul>
+</li>
+<li><em class="em2">SeePlayer()</em><ul><li>Now in contrast to the two functions above SeePlayer() takes everything , means LineOfSight, FOV and SightRadius into account, but as you can see it is not a boolean function, but an event called natively. What it does is to assign an enemy it sees just now. This can also be done by HearNoise() without being able to see the enemy or by getting hit by an enemy. After that assignment of an enemy the bot only uses LineOfSight() and CanSee() to check whether it can still see the enemy. That is the main problem.</li>
+</ul>
+</li>
+</ul>
+<h3><a name="0.2.2"></a>Solutions:</h3>
+<p>I worked out some solutions which I currently implement into CasterMod. For one thing enemies should only be assigned if the bot does see them, so if it hears a noise it should not take on the enemy that produced it, but instead turn to the source of the noise. If it can now properly see the enemy SeePlayer() gets called by the engine. Problem 1 solved.</p>
+<p>Now to keep the bot from shooting at enemies it can't see we have to create a new function for check if it can see them properly. My experiments with this variable and the SeePlayer() function had the following result. SightRadius is the maximum range a bot can see some player with the Visibility==128 (default). So it can see someone with Visibility==255 almost twice as wide. </p>
+<p>This results in a simple UScript function for the check:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> IsVisibleToMe<span class="uscript-operator">(</span>Pawn ThisPawn<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+      <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> Distance<span class="uscript-operator">;</span>         <span class="uscript-comment">//Distance between my pawn and pawn in question</span>
+      <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> VisFactor<span class="uscript-operator">;</span>        <span class="uscript-comment">//converted visibility of enemy in float ranging from 0-2</span>
+
+      <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>CanSee<span class="uscript-operator">(</span>ThisPawn<span class="uscript-operator">)</span><span class="uscript-operator">)</span>        <span class="uscript-comment">//view blocked or looking in other direction</span>
+             <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+      Distance <span class="uscript-operator">=</span> VSize<span class="uscript-operator">(</span>ThisPawn<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> Pawn<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+      VisFactor <span class="uscript-operator">=</span> ThisPawn<span class="uscript-operator">.</span>Visibility <span class="uscript-operator">/</span> <span class="uscript-number">128</span><span class="uscript-operator">;</span>
+
+      <span class="uscript-keyword">If</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Distance<span class="uscript-operator">/</span>VisFactor<span class="uscript-operator">)</span> <span class="uscript-operator">&lt;=</span> Pawn<span class="uscript-operator">.</span>SightRadius<span class="uscript-operator">)</span> <span class="uscript-comment">//can see enemy</span>
+             <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+      <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Now you'd have to replace the CanSee() and LineOfSightTo() calls everywhere you feel it's necessary with this function, e.g. before shooting someone. Notice that you may have to go very deeply into the bot code in order to do this.</p>
+<p>Then you'd have to change SightRadius accordingly to the conditions in the Zone the bot is in. If there's distance fog in closer range then SightRadius, set SightRadius to fog distance. Anyway, you should change the default SightRadius value from 12000 to sth., well, about 3000-4000. This is about as far away as you could usually notice an opponent in game as a human being without sniperrifle. Hope this contribution helped you understanding how bot vision basically works in Ut200x.<img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><i>(by Hazard.ep)</i></p>
+<p><em class="em2">ZxAnPhOrIaN:</em> Is sight radius how far the bot can see weapons, powerups, triggers, etc?</p>
+<p><em class="em2">Wormbo:</em> It would be possible to reset the bot's target to None from an external actor if the distance to the enemy gets too big. The Tick function might be handy (and hacky <img alt=";)" src="emoticons/wink.gif" align="middle">) here.</p>
+<p><em class="em2">UArch</em> would be intresting to expand this and add light/shadow detection into it, could be useful for stealth based games (like thievery for ut), i created a small mutator which adjusts pawns visibility so you can be stealthy in unreal/ut against the monsters (fun in coop)</p>
+<h2><a name="0.3"></a>SeePlayer function</h2>
+<p>This function is called by the engine on the AI when it can see a pawn where bIsPlayer == true. It is not called every tick, but instead at a rate based on the visibility of the pawn being seen and the distance between the AI and the pawn compared to the sightradius value of the AI's pawn. This is not a steady rate, but a rather sporadic one, especially near the lower threshold (I'm not sure how this rate is calculated).</p>
+<p>There is a simple threshold to this function. It is only called if the distance/sighradius &lt;= visibility/128. This means that by changing the visibility of a pawn the range at which the AI can see it can be decreased or increased. </p>
+<p>i.e. if a pawn's visibility is 64, it can only be seen when closer than half the AI's sightradius.</p>
+<h2><a name="0.4"></a>Discussion</h2>
+<p><em class="em2">SuperApe:</em> This page looks to be exclusively related to modding with bots in mind.  I do not think this should be refactored into the bot navigation family of pages.  This should be linked by and grouped with Mod-related pages only.</p>
+<hr class="thin"><p><a href="category-custom-class.html">Category Custom Class</a></p>
+<p><a href="refactor-me.html">Refactor Me</a> &ndash; Find a place for this in terms of Modding for bots.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Bot Vision - Better than X-Ray", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Finding Objects and General Navigation", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Seeing Enemies and Shooting at Them", "#0.1.2");
+menuItemAdd("The SightRadius variable and its effect within the game:", "#0.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>The Problem:", "#0.2.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Solutions:", "#0.2.2");
+menuItemAdd("SeePlayer function", "#0.3");
+menuItemAdd("Discussion", "#0.4");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Bot_Vision">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Bot_Vision">View other revisions</a><br>Last edited December 31, 2006 12:47 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Bot_Vision">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Bot_Vision">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Once I get that upgrade to 36-hour days, I will tackle that. (Mychaeel)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

@@ -1,0 +1,469 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Projectile Aiming</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Projectile_Aiming; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Projectile Aiming">Projectile Aiming</a></h1>
+	<div class="wiki"><p>The following code can be used to accurately determine the direction that a projectile should be fired at in order to collide with the target.</p>
+<p>This code is capable of accurately targetting moving targets, falling targets, and projectiles uniformly accelerating in any direction.  It was originally written for use in Deathball by <a href="usaar33.html">UsAaR33</a></p>
+<h2><a name="0.1"></a>The Code</h2>
+<pre class="uscript"><span class="uscript-keyword">struct</span> QuartSolution<span class="uscript-operator">{</span>        <span class="uscript-comment">//solutions to quart!</span>
+  <span class="uscript-keyword">var</span> <span class="uscript-type">float</span> u<span class="uscript-operator">[</span><span class="uscript-number">4</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//quadratic solver (using everybody's favorite algebra formula)</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">function</span> calculateQuadRoots<span class="uscript-operator">(</span><span class="uscript-type">float</span> a<span class="uscript-operator">,</span> <span class="uscript-type">float</span> b<span class="uscript-operator">,</span> <span class="uscript-type">float</span> c<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> QuartSolution Q<span class="uscript-operator">)</span><span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> sqterm<span class="uscript-operator">;</span>
+    sqterm <span class="uscript-operator">=</span> b<span class="uscript-operator">*</span>b <span class="uscript-operator">-</span> <span class="uscript-number">4</span><span class="uscript-operator">*</span>a<span class="uscript-operator">*</span>c<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>sqterm<span class="uscript-operator">&lt;</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">{</span> <span class="uscript-comment">//imaginary root. return t=1</span>
+        Q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+        Q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span><span class="uscript-operator">{</span>
+        sqterm<span class="uscript-operator">=</span>sqrt<span class="uscript-operator">(</span>sqterm<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        a<span class="uscript-operator">*=</span><span class="uscript-number">2</span><span class="uscript-operator">;</span>
+        b<span class="uscript-operator">*=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+        Q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>b<span class="uscript-operator">+</span>sqterm<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-operator">(</span>a<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">(</span>b<span class="uscript-operator">-</span>sqterm<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-operator">(</span>a<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//Solve a 4th Degree Polynomial (Quartic) equation for 0s.</span>
+<span class="uscript-comment">//taken from a javascript webpage (Explicitly states in source that source may be reused in any way)</span>
+<span class="uscript-comment">//uses the quartic formula! :)</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">function</span> calculateQ<span class="uscript-operator">(</span><span class="uscript-type">float</span> aq<span class="uscript-operator">,</span> <span class="uscript-type">float</span> bq<span class="uscript-operator">,</span> <span class="uscript-type">float</span> cq<span class="uscript-operator">,</span> <span class="uscript-type">float</span> dq<span class="uscript-operator">,</span> <span class="uscript-type">float</span> eqin<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> QuartSolution Q<span class="uscript-operator">)</span><span class="uscript-operator">{</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> eq<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> fq<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> gq<span class="uscript-operator">;</span>
+<span class="uscript-comment">//local float hq;</span>
+
+
+<span class="uscript-comment">// These are the squares of the local floatiables used to calculate the 4 roots--&gt;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> kq<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> lq<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> mq<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> nq<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> mq2<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> compsw<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> kqsw<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> lqsw<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> mqsw<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// Switch used in calculating REAL quartic roots)--&gt;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> sw<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// local floatiables for calculating REAL quartic roots)--&gt;</span>
+
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> kans<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> lans<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> theta<span class="uscript-operator">;</span>
+
+
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> x1<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> x2<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> x3<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> x4<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> x2a<span class="uscript-operator">,</span> x2b<span class="uscript-operator">,</span> x2c<span class="uscript-operator">,</span> x2d<span class="uscript-operator">;</span>
+<span class="uscript-comment">//local float x1b, x1b2, x2b2, x3b, x3b2, x4b, x4b2;</span>
+<span class="uscript-comment">//more:</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> dnm<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> a<span class="uscript-operator">,</span> b<span class="uscript-operator">,</span> c<span class="uscript-operator">,</span> d<span class="uscript-operator">,</span> f<span class="uscript-operator">,</span> g<span class="uscript-operator">,</span> h<span class="uscript-operator">,</span> k<span class="uscript-operator">,</span> m<span class="uscript-operator">,</span> m2<span class="uscript-operator">,</span>n<span class="uscript-operator">,</span>n2<span class="uscript-operator">,</span>r<span class="uscript-operator">,</span>rc<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> calcy<span class="uscript-operator">,</span> calcp<span class="uscript-operator">,</span> calcr<span class="uscript-operator">,</span> calcq<span class="uscript-operator">,</span> calcx<span class="uscript-operator">,</span> calcmod<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">float</span> dnmsw<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// the 'q' suffix  denotes local floatiables used in the quartic equation</span>
+<span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span><span class="uscript-number">4</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span> 
+    Q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1.0</span><span class="uscript-operator">;</span> <span class="uscript-comment">//set to complex solutions</span>
+compsw<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+kqsw<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+lqsw<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+mqsw<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+dnmsw<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+sw<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+
+
+dnm<span class="uscript-operator">=</span>aq<span class="uscript-operator">;</span>      <span class="uscript-comment">//note: this assumes aq is non-zero.  Of course it should be (eval 0.25g!)</span>
+
+<span class="uscript-comment">//Simplifying by dividing all terms by the aq term called 'dnm' meaning denominator</span>
+aq<span class="uscript-operator">=</span>bq<span class="uscript-operator">/</span>dnm<span class="uscript-operator">;</span>
+bq<span class="uscript-operator">=</span>cq<span class="uscript-operator">/</span>dnm<span class="uscript-operator">;</span>
+cq<span class="uscript-operator">=</span>dq<span class="uscript-operator">/</span>dnm<span class="uscript-operator">;</span>
+dq<span class="uscript-operator">=</span>eqin<span class="uscript-operator">/</span>dnm<span class="uscript-operator">;</span>
+<span class="uscript-comment">//Which yields an equation of the form X^4 + AX^3 + BX^2 + CX + D = 0</span>
+
+eq<span class="uscript-operator">=</span> bq<span class="uscript-operator">-</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">*</span>aq<span class="uscript-operator">*</span>aq<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">8</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+fq<span class="uscript-operator">=</span> cq<span class="uscript-operator">+</span> <span class="uscript-operator">(</span>aq<span class="uscript-operator">*</span>aq<span class="uscript-operator">*</span>aq<span class="uscript-operator">/</span><span class="uscript-number">8</span><span class="uscript-operator">)</span> <span class="uscript-operator">-</span><span class="uscript-operator">(</span>aq<span class="uscript-operator">*</span>bq<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+gq<span class="uscript-operator">=</span> dq<span class="uscript-operator">-</span> <span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">*</span>aq<span class="uscript-operator">*</span>aq<span class="uscript-operator">*</span>aq<span class="uscript-operator">*</span>aq<span class="uscript-operator">/</span><span class="uscript-number">256</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>aq<span class="uscript-operator">*</span>aq<span class="uscript-operator">*</span>bq<span class="uscript-operator">/</span><span class="uscript-number">16</span><span class="uscript-operator">)</span> <span class="uscript-operator">-</span> <span class="uscript-operator">(</span>aq<span class="uscript-operator">*</span>cq<span class="uscript-operator">/</span><span class="uscript-number">4</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// SOLVING THE RESULTANT CUBIC EQUATION</span>
+<span class="uscript-comment">// EVALUATING THE 'f'TERM</span>
+
+a<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">;</span> b<span class="uscript-operator">=</span>eq<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">;</span> c<span class="uscript-operator">=</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>eq<span class="uscript-operator">*</span>eq<span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-operator">(</span><span class="uscript-number">4</span><span class="uscript-operator">*</span>gq<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">16</span><span class="uscript-operator">;</span> d<span class="uscript-operator">=</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>fq<span class="uscript-operator">*</span>fq<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">64</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+
+f <span class="uscript-operator">=</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">*</span>c<span class="uscript-operator">)</span><span class="uscript-operator">/</span>a<span class="uscript-operator">)</span> <span class="uscript-operator">-</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>b<span class="uscript-operator">*</span>b<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-operator">(</span>a<span class="uscript-operator">*</span>a<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">3</span><span class="uscript-operator">;</span>
+<span class="uscript-comment">//EVALUATING THE 'g'TERM</span>
+
+g <span class="uscript-operator">=</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-number">2</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>b<span class="uscript-operator">*</span>b<span class="uscript-operator">*</span>b<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-operator">(</span>a<span class="uscript-operator">*</span>a<span class="uscript-operator">*</span>a<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-operator">(</span><span class="uscript-number">9</span><span class="uscript-operator">*</span>b<span class="uscript-operator">*</span>c<span class="uscript-operator">/</span><span class="uscript-operator">(</span>a<span class="uscript-operator">*</span>a<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-number">27</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span>d<span class="uscript-operator">/</span>a<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">27</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">//EVALUATING THE 'h'TERM</span>
+h <span class="uscript-operator">=</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>g<span class="uscript-operator">*</span>g<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">4</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>f<span class="uscript-operator">*</span>f<span class="uscript-operator">*</span>f<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">27</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>h <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">{</span>
+compsw<span class="uscript-operator">=</span><span class="uscript-number">2</span><span class="uscript-operator">;</span>
+m <span class="uscript-operator">=</span> <span class="uscript-operator">(</span><span class="uscript-operator">-</span><span class="uscript-operator">(</span>g<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">+</span> <span class="uscript-operator">(</span>sqrt<span class="uscript-operator">(</span>h<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-comment">// K is used because math.pow cannot compute negative cube roots?</span>
+k<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>m <span class="uscript-operator">&lt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span> k<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">else</span> k<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+m2 <span class="uscript-operator">=</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>m<span class="uscript-operator">*</span>k<span class="uscript-operator">)</span><span class="uscript-operator">*</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span><span class="uscript-number">1.0</span><span class="uscript-operator">/</span><span class="uscript-number">3.0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+m2 <span class="uscript-operator">=</span> m2<span class="uscript-operator">*</span>k<span class="uscript-operator">;</span>
+k<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+n <span class="uscript-operator">=</span> <span class="uscript-operator">(</span><span class="uscript-operator">-</span><span class="uscript-operator">(</span>g<span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span> <span class="uscript-operator">(</span>sqrt<span class="uscript-operator">(</span>h<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>n <span class="uscript-operator">&lt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+  k<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">else</span>
+  k<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+
+n2 <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>n<span class="uscript-operator">*</span>k<span class="uscript-operator">)</span><span class="uscript-operator">*</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span><span class="uscript-number">1.0</span><span class="uscript-operator">/</span><span class="uscript-number">3.0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+n2 <span class="uscript-operator">*=</span>k<span class="uscript-operator">;</span>
+k<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+kq<span class="uscript-operator">=</span>  <span class="uscript-operator">(</span><span class="uscript-operator">(</span>m2 <span class="uscript-operator">+</span> n2<span class="uscript-operator">)</span> <span class="uscript-operator">-</span> <span class="uscript-operator">(</span>b<span class="uscript-operator">/</span><span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">*</span>a<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+kq<span class="uscript-operator">=</span>sqrt<span class="uscript-operator">(</span>kq<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-comment">// ((S+U)     - (b/(3*a)))</span>
+calcmod<span class="uscript-operator">=</span> sqrt<span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span>m2 <span class="uscript-operator">+</span> n2<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">2</span> <span class="uscript-operator">-</span> <span class="uscript-operator">(</span>b<span class="uscript-operator">/</span><span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">*</span>a<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span>m2 <span class="uscript-operator">+</span> n2<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">2</span> <span class="uscript-operator">-</span> <span class="uscript-operator">(</span>b<span class="uscript-operator">/</span><span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">*</span>a<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">+</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>m2 <span class="uscript-operator">-</span> n2<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>sqrt<span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>m2 <span class="uscript-operator">-</span> n2<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>sqrt<span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+calcy<span class="uscript-operator">=</span>sqrt<span class="uscript-operator">(</span><span class="uscript-operator">(</span>calcmod<span class="uscript-operator">-</span><span class="uscript-operator">(</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span>m2 <span class="uscript-operator">+</span> n2<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">2</span> <span class="uscript-operator">-</span> <span class="uscript-operator">(</span>b<span class="uscript-operator">/</span><span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">*</span>a<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+calcx<span class="uscript-operator">=</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>m2 <span class="uscript-operator">-</span> n2<span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>sqrt<span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-operator">(</span><span class="uscript-number">2</span><span class="uscript-operator">*</span>calcy<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+calcp<span class="uscript-operator">=</span>calcx<span class="uscript-operator">+</span>calcy<span class="uscript-operator">;</span>
+calcq<span class="uscript-operator">=</span>calcx<span class="uscript-operator">-</span>calcy<span class="uscript-operator">;</span>
+calcr<span class="uscript-operator">=</span>kq<span class="uscript-operator">;</span>
+
+nq<span class="uscript-operator">=</span><span class="uscript-operator">(</span>aq<span class="uscript-operator">/</span><span class="uscript-number">4</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+x1<span class="uscript-operator">=</span>kq<span class="uscript-operator">+</span>calcp<span class="uscript-operator">+</span>calcq<span class="uscript-operator">-</span>nq<span class="uscript-operator">;</span>
+x4<span class="uscript-operator">=</span>kq<span class="uscript-operator">-</span>calcp<span class="uscript-operator">-</span>calcq<span class="uscript-operator">-</span>nq<span class="uscript-operator">;</span>
+
+
+Q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">-</span>x1<span class="uscript-operator">;</span> <span class="uscript-comment">//appearently was incorrect by a factor of -1</span>
+Q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span> <span class="uscript-comment">//complex</span>
+Q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span> <span class="uscript-comment">//complex</span>
+Q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span><span class="uscript-number">3</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span><span class="uscript-operator">-</span>x4<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+
+<span class="uscript-comment">// FOR H &lt; 0</span>
+
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>h<span class="uscript-operator">&lt;=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">{</span>
+r <span class="uscript-operator">=</span> sqrt<span class="uscript-operator">(</span><span class="uscript-operator">(</span>g<span class="uscript-operator">*</span>g<span class="uscript-operator">/</span><span class="uscript-number">4</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span>h<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+k<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>r<span class="uscript-operator">&lt;</span><span class="uscript-number">0</span><span class="uscript-operator">)</span>
+  k<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+<span class="uscript-comment">// rc is the cube root of 'r'</span>
+
+rc <span class="uscript-operator">=</span> <span class="uscript-operator">(</span><span class="uscript-operator">(</span>r<span class="uscript-operator">*</span>k<span class="uscript-operator">)</span><span class="uscript-operator">*</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span><span class="uscript-number">1.0</span><span class="uscript-operator">/</span><span class="uscript-number">3.0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>k<span class="uscript-operator">;</span>
+k<span class="uscript-operator">=</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+theta <span class="uscript-operator">=</span>acos<span class="uscript-operator">(</span><span class="uscript-operator">(</span><span class="uscript-operator">-</span>g<span class="uscript-operator">/</span><span class="uscript-operator">(</span><span class="uscript-number">2</span><span class="uscript-operator">*</span>r<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+kq<span class="uscript-operator">=</span> <span class="uscript-operator">(</span><span class="uscript-number">2</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span>rc<span class="uscript-operator">*</span>cos<span class="uscript-operator">(</span>theta<span class="uscript-operator">/</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-operator">(</span>b<span class="uscript-operator">/</span><span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">*</span>a<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+x2a<span class="uscript-operator">=</span>rc<span class="uscript-operator">*</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+x2b<span class="uscript-operator">=</span> cos<span class="uscript-operator">(</span>theta<span class="uscript-operator">/</span><span class="uscript-number">3.0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+x2c<span class="uscript-operator">=</span> sqrt<span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span>sin<span class="uscript-operator">(</span>theta<span class="uscript-operator">/</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+x2d<span class="uscript-operator">=</span> <span class="uscript-operator">(</span>b<span class="uscript-operator">/</span><span class="uscript-number">3.0</span><span class="uscript-operator">*</span>a<span class="uscript-operator">)</span><span class="uscript-operator">*</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+
+lq<span class="uscript-operator">=</span><span class="uscript-operator">(</span>x2a<span class="uscript-operator">*</span><span class="uscript-operator">(</span>x2b <span class="uscript-operator">+</span> x2c<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-operator">(</span>b<span class="uscript-operator">/</span><span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">*</span>a<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+mq<span class="uscript-operator">=</span><span class="uscript-operator">(</span>x2a<span class="uscript-operator">*</span><span class="uscript-operator">(</span>x2b <span class="uscript-operator">-</span> x2c<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span><span class="uscript-operator">(</span>b<span class="uscript-operator">/</span><span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">*</span>a<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+nq<span class="uscript-operator">=</span><span class="uscript-operator">(</span>aq<span class="uscript-operator">/</span><span class="uscript-number">4.0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>h<span class="uscript-operator">&lt;=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">{</span>
+
+<span class="uscript-comment">// psudo-fix 0 bug.. not the best.. but works</span>
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>abs<span class="uscript-operator">(</span>kq<span class="uscript-operator">)</span><span class="uscript-operator">&lt;</span><span class="uscript-number">1.0</span><span class="uscript-operator">/</span><span class="uscript-operator">(</span><span class="uscript-number">10000.0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  kq<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>abs<span class="uscript-operator">(</span>lq<span class="uscript-operator">)</span><span class="uscript-operator">&lt;</span><span class="uscript-number">1.0</span><span class="uscript-operator">/</span><span class="uscript-operator">(</span><span class="uscript-number">10000.0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  lq<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>abs<span class="uscript-operator">(</span>mq<span class="uscript-operator">)</span><span class="uscript-operator">&lt;</span><span class="uscript-operator">-</span><span class="uscript-number">1.0</span><span class="uscript-operator">/</span><span class="uscript-operator">(</span><span class="uscript-number">10000.0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+  mq<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>kq<span class="uscript-operator">&lt;</span><span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span><span class="uscript-keyword">return</span><span class="uscript-operator">;</span><span class="uscript-operator">}</span> <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>kq<span class="uscript-operator">=</span>sqrt<span class="uscript-operator">(</span>kq<span class="uscript-operator">)</span><span class="uscript-operator">;</span><span class="uscript-operator">}</span>
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>lq<span class="uscript-operator">&lt;</span><span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span><span class="uscript-keyword">return</span><span class="uscript-operator">;</span><span class="uscript-operator">}</span> <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>lq<span class="uscript-operator">=</span>sqrt<span class="uscript-operator">(</span>lq<span class="uscript-operator">)</span><span class="uscript-operator">;</span><span class="uscript-operator">}</span>
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>mq<span class="uscript-operator">&lt;</span><span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span><span class="uscript-keyword">return</span><span class="uscript-operator">;</span><span class="uscript-operator">}</span> <span class="uscript-keyword">else</span> <span class="uscript-operator">{</span>mq<span class="uscript-operator">=</span>sqrt<span class="uscript-operator">(</span>mq<span class="uscript-operator">)</span><span class="uscript-operator">;</span><span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>kq<span class="uscript-operator">*</span>lq<span class="uscript-operator">&gt;</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">{</span>mq2<span class="uscript-operator">=</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>fq<span class="uscript-operator">*</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-operator">(</span><span class="uscript-number">8</span><span class="uscript-operator">*</span>kq<span class="uscript-operator">*</span>lq<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>kans<span class="uscript-operator">=</span>kq<span class="uscript-operator">;</span>lans<span class="uscript-operator">=</span>lq<span class="uscript-operator">;</span><span class="uscript-operator">}</span>
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>kq<span class="uscript-operator">*</span>mq<span class="uscript-operator">&gt;</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">{</span>mq2<span class="uscript-operator">=</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>fq<span class="uscript-operator">*</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-operator">(</span><span class="uscript-number">8</span><span class="uscript-operator">*</span>kq<span class="uscript-operator">*</span>mq<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>kans<span class="uscript-operator">=</span>kq<span class="uscript-operator">;</span>lans<span class="uscript-operator">=</span>mq<span class="uscript-operator">;</span><span class="uscript-operator">}</span>
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>lq<span class="uscript-operator">*</span>mq<span class="uscript-operator">&gt;</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">{</span>mq2<span class="uscript-operator">=</span><span class="uscript-operator">(</span><span class="uscript-operator">(</span>fq<span class="uscript-operator">*</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span><span class="uscript-operator">(</span><span class="uscript-number">8</span><span class="uscript-operator">*</span>lq<span class="uscript-operator">*</span>mq<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>kans<span class="uscript-operator">=</span>lq<span class="uscript-operator">;</span>lans<span class="uscript-operator">=</span>mq<span class="uscript-operator">;</span><span class="uscript-operator">}</span>
+
+
+
+
+<span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>compsw<span class="uscript-operator">==</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">{</span>
+  x1<span class="uscript-operator">=</span>kans<span class="uscript-operator">+</span>lans<span class="uscript-operator">+</span>mq2<span class="uscript-operator">-</span>nq<span class="uscript-operator">;</span>
+  Q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>x1<span class="uscript-operator">;</span>
+  x2<span class="uscript-operator">=</span>kans<span class="uscript-operator">-</span>lans<span class="uscript-operator">-</span>mq2<span class="uscript-operator">-</span>nq<span class="uscript-operator">;</span>
+  Q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span><span class="uscript-number">1</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>x2<span class="uscript-operator">;</span>
+  x3<span class="uscript-operator">=</span><span class="uscript-operator">(</span>kans<span class="uscript-operator">*</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">+</span>lans<span class="uscript-operator">-</span>mq2<span class="uscript-operator">-</span>nq<span class="uscript-operator">;</span>
+  Q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span><span class="uscript-number">2</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>x3<span class="uscript-operator">;</span>
+  x4<span class="uscript-operator">=</span><span class="uscript-operator">(</span>kans<span class="uscript-operator">*</span><span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">-</span>lans<span class="uscript-operator">+</span>mq2<span class="uscript-operator">-</span>nq<span class="uscript-operator">;</span>
+  Q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span><span class="uscript-number">3</span><span class="uscript-operator">]</span><span class="uscript-operator">=</span>x4<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/*Calculate aiming ideal rotation for firing a projectile at a potentially moving target (assumes pawn physics)
+ IN:
+ -StartLoc = world location where projectile is starting at
+ -EndLoc = world Location we wish to Target (should lie in the targetted actor)
+ -ProjSpeed = speed of the projectile being fired
+ -Gravity = a vector describing the gravity
+ -Target = the actual targetted ACTOR
+ -bLeadTarget = Can we track the target?  (the entire point of this function)
+ OUT:
+ -dest: Location where the projectile will collide with Target
+ -returns vector describing direction for projectile to leave at
+*/</span>
+<span class="uscript-keyword">static</span> <span class="uscript-keyword">function</span> vector GetShootVect<span class="uscript-operator">(</span>vector StartLoc<span class="uscript-operator">,</span> vector EndLoc<span class="uscript-operator">,</span> <span class="uscript-type">float</span> ProjSpeed<span class="uscript-operator">,</span> vector Gravity<span class="uscript-operator">,</span> actor Target<span class="uscript-operator">,</span> <span class="uscript-type">bool</span> bLeadTarget<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> vector Dest<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-keyword">local</span> QuartSolution Q<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> best<span class="uscript-operator">,</span> speed2D<span class="uscript-operator">,</span> HitTime<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> vector Pr<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+  <span class="uscript-keyword">local</span> vector HitNorm<span class="uscript-operator">,</span> HitLoc<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> vector D<span class="uscript-operator">;</span> <span class="uscript-comment">//EndLoc-StartLoc</span>
+    <span class="uscript-keyword">local</span> vector V<span class="uscript-operator">;</span> <span class="uscript-comment">//Target.velocity</span>
+
+    D <span class="uscript-operator">=</span> EndLoc<span class="uscript-operator">-</span>StartLoc<span class="uscript-operator">;</span>
+    V <span class="uscript-operator">=</span> Target<span class="uscript-operator">.</span>Velocity<span class="uscript-operator">;</span>
+  <span class="uscript-comment">//track falling actors</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bLeadTarget <span class="uscript-operator">&amp;&amp;</span> Target<span class="uscript-operator">.</span>Physics<span class="uscript-operator">==</span>Phys_Falling<span class="uscript-operator">)</span><span class="uscript-operator">{</span>
+            calculateQuadRoots<span class="uscript-operator">(</span>V <span class="uscript-operator">dot</span> V <span class="uscript-operator">-</span> ProjSpeed<span class="uscript-operator">*</span>ProjSpeed<span class="uscript-operator">,</span>
+             <span class="uscript-number">2</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span>V <span class="uscript-operator">dot</span> D<span class="uscript-operator">)</span><span class="uscript-operator">,</span>D <span class="uscript-operator">dot</span> D<span class="uscript-operator">,</span>Q<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//use quadratic formula</span>
+            <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span><span class="uscript-number">2</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>best<span class="uscript-operator">&lt;=</span><span class="uscript-number">0</span><span class="uscript-operator">||</span><span class="uscript-operator">(</span>q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">&gt;</span><span class="uscript-number">0</span> <span class="uscript-operator">&amp;&amp;</span> q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">&lt;</span>best<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+                best<span class="uscript-operator">=</span>q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+            Pr <span class="uscript-operator">=</span> normal<span class="uscript-operator">(</span>D<span class="uscript-operator">/</span>best <span class="uscript-operator">+</span> V<span class="uscript-operator">)</span><span class="uscript-operator">*</span>ProjSpeed<span class="uscript-operator">;</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>best<span class="uscript-operator">&lt;=</span><span class="uscript-number">0</span> <span class="uscript-operator">||</span> Target<span class="uscript-operator">.</span>Trace<span class="uscript-operator">(</span>HitLoc<span class="uscript-operator">,</span>HitNorm<span class="uscript-operator">,</span>EndLoc<span class="uscript-operator">+</span>V<span class="uscript-operator">*</span>best<span class="uscript-number">+0.5</span><span class="uscript-operator">*</span>Gravity<span class="uscript-operator">*</span>best
+             <span class="uscript-operator">*</span>best<span class="uscript-operator">,</span>EndLoc<span class="uscript-operator">+</span><span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>V<span class="uscript-operator">*</span>best<span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-keyword">none</span><span class="uscript-operator">)</span><span class="uscript-operator">{</span>
+              <span class="uscript-comment">//will be falling:</span>
+                Dest <span class="uscript-operator">=</span> StartLoc <span class="uscript-operator">+</span> PR<span class="uscript-operator">*</span>best<span class="uscript-number">+0.5</span><span class="uscript-operator">*</span>Gravity<span class="uscript-operator">*</span>best<span class="uscript-operator">*</span>best<span class="uscript-operator">;</span>
+              <span class="uscript-keyword">return</span> normal<span class="uscript-operator">(</span>PR<span class="uscript-operator">)</span><span class="uscript-operator">*</span>ProjSpeed<span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+            <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>best<span class="uscript-operator">&gt;</span><span class="uscript-number">0</span><span class="uscript-operator">)</span>  <span class="uscript-comment">//determine how long actor will be in air</span>
+                HitTime <span class="uscript-operator">=</span> vsize<span class="uscript-operator">(</span>HitLoc <span class="uscript-operator">-</span> <span class="uscript-operator">(</span>EndLoc<span class="uscript-operator">+</span><span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>V<span class="uscript-operator">*</span>best<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">/</span>vsize<span class="uscript-operator">(</span><span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>V<span class="uscript-operator">*</span>best<span class="uscript-number">+0.5</span><span class="uscript-operator">*</span>Gravity<span class="uscript-operator">*</span>best<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">else</span>
+                HitTime <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> <span class="uscript-comment">//assume most time not in air?</span>
+  <span class="uscript-operator">}</span>
+
+  <span class="uscript-comment">//ASSUME GROUND TRACKING</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bLeadTarget <span class="uscript-operator">&amp;&amp;</span> Target<span class="uscript-operator">.</span>Physics<span class="uscript-operator">==</span>Phys_Falling<span class="uscript-operator">)</span><span class="uscript-operator">{</span>   <span class="uscript-comment">//trace down from target to get ground normal</span>
+    Target<span class="uscript-operator">.</span>Trace<span class="uscript-operator">(</span>HitLoc<span class="uscript-operator">,</span>HitNorm<span class="uscript-operator">,</span>EndLoc<span class="uscript-operator">+</span>normal<span class="uscript-operator">(</span>Gravity<span class="uscript-operator">)</span><span class="uscript-operator">*</span><span class="uscript-number">5000</span><span class="uscript-operator">,</span>EndLoc<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        D<span class="uscript-operator">.</span>z<span class="uscript-operator">=</span>HitLoc<span class="uscript-operator">.</span>z<span class="uscript-operator">-</span>StartLoc<span class="uscript-operator">.</span>Z<span class="uscript-operator">;</span>  <span class="uscript-comment">//set destination.z to floor, wipe out velocity.z and re-eval assuming ground</span>
+        V<span class="uscript-operator">.</span>z<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>    <span class="uscript-comment">//no longer falling - view velcocity in 2D</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>HitTime<span class="uscript-operator">&gt;</span><span class="uscript-number">0.5</span><span class="uscript-operator">)</span><span class="uscript-operator">{</span>  <span class="uscript-comment">//True if likely in air most of time (in which case keep current V.X and V.y)</span>
+            V<span class="uscript-operator">.</span>z <span class="uscript-operator">-=</span> HitNorm<span class="uscript-operator">.</span>Z <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>V <span class="uscript-operator">dot</span> HitNorm<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        <span class="uscript-keyword">else</span><span class="uscript-operator">{</span> <span class="uscript-comment">//otherwise alter all of velocity vector, but keep current 2D speed</span>
+            speed2D <span class="uscript-operator">=</span> vsize<span class="uscript-operator">(</span>V<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            V<span class="uscript-operator">=</span>normal<span class="uscript-operator">(</span>V<span class="uscript-operator">)</span><span class="uscript-operator">*</span>speed2D<span class="uscript-operator">;</span> <span class="uscript-comment">//assume the same x and y speed if in air most time</span>
+            V <span class="uscript-operator">-=</span> HitNorm <span class="uscript-operator">*</span> <span class="uscript-operator">(</span>V <span class="uscript-operator">dot</span> HitNorm<span class="uscript-operator">)</span><span class="uscript-operator">;</span>   <span class="uscript-comment">//recalculate players velocity on a slope using hitnormal  (assumes v.x and v.y is "ground speed")</span>
+            V<span class="uscript-operator">=</span>normal<span class="uscript-operator">(</span>V<span class="uscript-operator">)</span><span class="uscript-operator">*</span>speed2D<span class="uscript-operator">;</span> <span class="uscript-comment">//assume the same x and y speed if in air most time</span>
+        <span class="uscript-operator">}</span>
+  <span class="uscript-operator">}</span>
+    <span class="uscript-comment">//todo: add traces to check side walls?</span>
+    <span class="uscript-comment">//note: walking velocity *should* factor in current slope</span>
+    best<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bLeadTarget <span class="uscript-operator">&amp;&amp;</span> V<span class="uscript-operator">!=</span><span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">{</span>
+        calculateQ<span class="uscript-operator">(</span><span class="uscript-number">0.25</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span>Gravity <span class="uscript-operator">dot</span> Gravity<span class="uscript-operator">)</span><span class="uscript-operator">,</span><span class="uscript-operator">(</span><span class="uscript-operator">-</span>Gravity<span class="uscript-operator">)</span> <span class="uscript-operator">dot</span> V<span class="uscript-operator">,</span><span class="uscript-operator">(</span><span class="uscript-operator">-</span>Gravity<span class="uscript-operator">)</span> <span class="uscript-operator">dot</span> D <span class="uscript-operator">+</span>
+          V <span class="uscript-operator">dot</span> V <span class="uscript-operator">-</span> ProjSpeed<span class="uscript-operator">*</span>ProjSpeed<span class="uscript-operator">,</span><span class="uscript-number">2</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span>V <span class="uscript-operator">dot</span> D<span class="uscript-operator">)</span><span class="uscript-operator">,</span>D <span class="uscript-operator">dot</span> D<span class="uscript-operator">,</span>Q<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span><span class="uscript-number">4</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>best<span class="uscript-operator">&lt;=</span><span class="uscript-number">0</span><span class="uscript-operator">||</span><span class="uscript-operator">(</span>q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">&gt;</span><span class="uscript-number">0</span> <span class="uscript-operator">&amp;&amp;</span> q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">&lt;</span>best<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+            best<span class="uscript-operator">=</span>q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span><span class="uscript-operator">{</span> <span class="uscript-comment">//don't lead. assume stationary target</span>
+            calculateQuadRoots<span class="uscript-operator">(</span><span class="uscript-number">0.25</span><span class="uscript-operator">*</span><span class="uscript-operator">(</span>Gravity <span class="uscript-operator">dot</span> Gravity<span class="uscript-operator">)</span><span class="uscript-operator">,</span><span class="uscript-operator">(</span><span class="uscript-operator">-</span>Gravity<span class="uscript-operator">)</span> <span class="uscript-operator">dot</span> D <span class="uscript-operator">-</span> ProjSpeed<span class="uscript-operator">*</span>ProjSpeed<span class="uscript-operator">,</span>D <span class="uscript-operator">dot</span> D<span class="uscript-operator">,</span>Q<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span><span class="uscript-number">2</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>best<span class="uscript-operator">&lt;=</span><span class="uscript-number">0</span><span class="uscript-operator">||</span><span class="uscript-operator">(</span>q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">&gt;</span><span class="uscript-number">0</span> <span class="uscript-operator">&amp;&amp;</span> q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">&lt;</span>best<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+                best<span class="uscript-operator">=</span>q<span class="uscript-operator">.</span>u<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>best<span class="uscript-operator">&gt;</span><span class="uscript-number">0</span><span class="uscript-operator">)</span>
+                best<span class="uscript-operator">=</span>sqrt<span class="uscript-operator">(</span>best<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>best<span class="uscript-operator">&lt;=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">{</span>   <span class="uscript-comment">//projectile is out of range</span>
+      <span class="uscript-comment">//Warning: Out of range adjustments assume gravity is parallel to the z axis and pointed downward!!</span>
+        Pr<span class="uscript-operator">.</span>z <span class="uscript-operator">=</span>ProjSpeed<span class="uscript-operator">/</span>sqrt<span class="uscript-operator">(</span><span class="uscript-number">2.0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//determine z direction of firing</span>
+        best <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">2</span><span class="uscript-operator">*</span>Pr<span class="uscript-operator">.</span>z<span class="uscript-operator">/</span>Gravity<span class="uscript-operator">.</span>z<span class="uscript-operator">;</span>
+        best<span class="uscript-operator">+=</span><span class="uscript-operator">(</span>vsize<span class="uscript-operator">(</span>D<span class="uscript-operator">)</span><span class="uscript-operator">-</span>pr<span class="uscript-operator">.</span>Z<span class="uscript-operator">*</span>best<span class="uscript-operator">)</span><span class="uscript-operator">/</span>ProjSpeed<span class="uscript-operator">;</span> <span class="uscript-comment">//note p.z = 2D vsize(p)  (this assumes ball travels in a straight line after bounce)</span>
+        <span class="uscript-comment">//now recalculate PR to handle velocity prediction (so ball at least partially moves in direction of player)</span>
+    Pr <span class="uscript-operator">=</span> D<span class="uscript-operator">/</span>best <span class="uscript-operator">+</span> V <span class="uscript-operator">-</span> <span class="uscript-number">0.5</span><span class="uscript-operator">*</span>Gravity<span class="uscript-operator">*</span>best<span class="uscript-operator">;</span>
+        <span class="uscript-comment">//now force maximum height again:</span>
+        Pr<span class="uscript-operator">.</span>z<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+        Pr <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>ProjSpeed<span class="uscript-operator">/</span>sqrt<span class="uscript-operator">(</span><span class="uscript-number">2.0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>normal<span class="uscript-operator">(</span>Pr<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        Pr<span class="uscript-operator">.</span>z <span class="uscript-operator">=</span> ProjSpeed<span class="uscript-operator">/</span>sqrt<span class="uscript-operator">(</span><span class="uscript-number">2.0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//maxmimum</span>
+        Dest <span class="uscript-operator">=</span> StartLoc <span class="uscript-operator">+</span> PR<span class="uscript-operator">*</span>best<span class="uscript-number">+0.5</span><span class="uscript-operator">*</span>Gravity<span class="uscript-operator">*</span>best<span class="uscript-operator">*</span>best<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span> Pr<span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+
+  Pr <span class="uscript-operator">=</span> normal<span class="uscript-operator">(</span>D<span class="uscript-operator">/</span>best <span class="uscript-operator">+</span> V <span class="uscript-operator">-</span> <span class="uscript-number">0.5</span><span class="uscript-operator">*</span>Gravity<span class="uscript-operator">*</span>best<span class="uscript-operator">)</span><span class="uscript-operator">*</span>ProjSpeed<span class="uscript-operator">;</span>
+
+    Dest <span class="uscript-operator">=</span> StartLoc <span class="uscript-operator">+</span> PR<span class="uscript-operator">*</span>best<span class="uscript-number">+0.5</span><span class="uscript-operator">*</span>Gravity<span class="uscript-operator">*</span>best<span class="uscript-operator">*</span>best<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span> Pr<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.2"></a>How To Use It</h2>
+<p>Simply call the function GetShootVec() with the following parameters:</p>
+<p class="indent1">StartLoc is the world location where the projectile is going to be spawned at.</p>
+<p class="indent1">EndLoc is the world Location that is being targetted (it should lie within the targetted actor)</p>
+<p class="indent1">ProjSpeed is speed at which the projectile being fired at</p>
+<p class="indent1">Gravity is a vector describing any uniform acceleration the projectile is under (gravity, "english", etc.)</p>
+<p class="indent1">Target is the actor being targetted.  Generally it should be a pawn, but any class will work.</p>
+<p class="indent1">bLeadTarget. If this is true, then "velocity prediction" will occur (that is the projectile will be fired ahead of the target and still collide withit, assuming its velocity does not change in a nonpredictable way.  If false, the projectile is guarenteed to collide with the targetted location</p>
+<p>The function will return a vector in the direction the projectile be launched at and with a magnitude equal to the speed of the projectile (as passed in the parameters).</p>
+<p>In addition, a vector <em class="em2">dest</em> is returned.  This specifies the world location where the projectile will collide with the Target (if the target is moving and bLeadTarget is enabled this vector will differ from endloc).</p>
+<h2><a name="0.3"></a>Notes</h2>
+<h3><a name="0.3.1"></a>Speed</h3>
+<p>If the target is stationary or bLeadTarget is false, then the quadratic formula can be applied to the 4th degree polynomial that is the core of this algorithm. (the coefficients of t^3 and t^1 become 0).  The algorithm takes roughly 0.20 ms to complete (on an AMD Athlon XP 2100+ test machine), equivilent to a drop from 80.0 to 78.7 fps if this GetShootVec() is called once per frame.</p>
+<p>If velocity prediction is needed, then the quartic formula (calculateQ) must be applied.  This increases the algorithm's time to 0.28 ms (on an AMD Athlon XP 2100+ test machine),, equivilent to a drop from 80.0 to 78.2 fps if this GetShootVec() is called once per frame.</p>
+<h3><a name="0.3.2"></a>Falling Targets</h3>
+<p>If a target is falling, the algorithm will verify that the target will not land before the projectile reaches it.  If it is determined that the target will land, then the target's position will be re-evaluated, assuming any movement made on the ground is modeled under phys_walking. (thus, this algorithm likely will cause the fired projectile to miss a bBounce=true projectile target).</p>
+<p>Please note that it is assumed that the net acceleration of the target is equal to the gravity vector of the projectile.  If this is not the case, the code should not be too hard to modify.</p>
+<h3><a name="0.3.3"></a>Out of Range Targets</h3>
+<p>Should a target be out of range, this algorithm will attempt to bring the projectile as close as possible to the target.  It does make the "appoximate" assumption that the projectile being fired will travel in an "approximately" straight line at its specifified speed toward the target.  </p>
+<p>Furthermore, the out-of-range routine assumes that the projectile's acceleration direction passed is parallel to the Z axis and pointed downward.  It should not be too hard to extend this code to handle different acceleration.</p>
+<h3><a name="0.3.4"></a>Projectiles under constant acceleration</h3>
+<p>If you wish your projectile to undergo other constant acceleration (that is curving), this is entire possible.  Simply be sure that the gravity vector reflects this.  Please note though that the Out Of Range routine does not properly handle this.</p>
+<h3><a name="0.3.5"></a>That structure that has nothing more than an array</h3>
+<p>I was thinking of eventually adding other variables to that structure, but I'm not sure if that will ever be needed.  Feel free to remove the structure altogether and just make the variable the array.</p>
+<h3><a name="0.3.6"></a>The Quartic Equation solver</h3>
+<p>It is converted javascript code that is available on the internet (used with permission).  Note that the code is highly unoptimized.  Feel free to fix that.</p>
+<h2><a name="0.4"></a>How does this work?</h2>
+<h3><a name="0.4.1"></a>Physics</h3>
+<p>Basically nothing more than simple kinematics.</p>
+<p>Abbriviation notes:</p>
+<p>D=Displacement</p>
+<p>Vp=launch velocity of Projectile</p>
+<p>Vps = launch speed of projectile</p>
+<p>Va=velocity of target</p>
+<p>t=time</p>
+<p>G=acceleration of projectile</p>
+<p>The displacement of a projectile can be described with the following vector equation:</p>
+<p>D=Vp*t + 0.5*G*t^2</p>
+<p>The size of V must be the speed of the projectile.</p>
+<p>From this, two equations (four in scalar form) can be derived:</p>
+<p>vsize(Vp) = Vp</p>
+<p>Vp*t + 0.5*G*t^2 = Va*t + D</p>
+<p>(Note that in the case where the target is also falling (under the same acceleration as the projectile), G becomes 0.)</p>
+<p>After a bunch of math, the following equation pops out:</p>
+<p>0=0.25*(G dot G)*t^4+((-G) dot Va)*t^3 + ((Va dot Va) - Vps^2 + (-G) dot D) * t^2 + 2*(Va dot D)*t + (D^2)</p>
+<p>This is a 4th degree polynomial, which can be solved with the Quartic equation.</p>
+<p>In the case when Va = 0 (stationary or no leading), the t and t^3 terms become 0, allowing the much nicer quadratic equation to be used. (the result simply needs to be squarerooted).</p>
+<p>Once the time is found, the launch velocity is easily calculated (by using the above simultaneous equations):</p>
+<pre class="paraverbatim">  Vp= normal(D/lowestpostitivetime + Vp - 0.5*Gravity*lowestpostitivetime )*Vps</pre><p>And that's pretty much it.  The details of the code should be explained well enough through comments.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("The Code", "#0.1");
+menuItemAdd("How To Use It", "#0.2");
+menuItemAdd("Notes", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Speed", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Falling Targets", "#0.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Out of Range Targets", "#0.3.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Projectiles under constant acceleration", "#0.3.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>That structure that has nothing more than an array", "#0.3.5");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>The Quartic Equation solver", "#0.3.6");
+menuItemAdd("How does this work?", "#0.4");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Physics", "#0.4.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Projectile_Aiming">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Projectile_Aiming">View other revisions</a><br>Last edited July 27, 2004 5:37 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Projectile_Aiming">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Projectile_Aiming">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I love the smell of UnrealEd crashing in the morning. (tarquin)</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

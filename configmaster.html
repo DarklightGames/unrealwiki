@@ -1,0 +1,889 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: ConfigMaster</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=ConfigMaster; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=ConfigMaster">ConfigMaster</a></h1>
+	<div class="wiki"><div class="classpath"><img src="shared//gameicons/icon-ut2003.png"> <a href="unreal-tournament-2003.html">UT2003</a> :: <a href="object.html">Object</a> &gt;&gt; <a href="actor.html">Actor</a> &gt;&gt; <a href="info.html">Info</a> &gt;&gt; <a href="mutator.html">Mutator</a> &gt;&gt; ConfigMaster (ConfigManager)<br></div>
+<p>This is a custom class, which is part of the <a href="http://www.organized-evolution.com/ConfigManager/">[ConfigManager]</a> for UT2003.</p>
+<pre class="uscript"><span class="uscript-line">00001</span>  <span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-line">00002</span>  <span class="uscript-comment">// ConfigManager.ConfigMaster version 1.8</span>
+<span class="uscript-line">00003</span>  <span class="uscript-comment">// Allows for ServerActors &amp; Mutators to add to PlayInfo</span>
+<span class="uscript-line">00004</span>  <span class="uscript-comment">//</span>
+<span class="uscript-line">00005</span>  <span class="uscript-comment">// The latest version of ConfigManager is always available at</span>
+<span class="uscript-line">00006</span>  <span class="uscript-comment">// http://www.organized-evolution.com/ConfigManager/</span>
+<span class="uscript-line">00007</span>  <span class="uscript-comment">//-----------------------------------------------------------</span>
+<span class="uscript-line">00008</span>  
+<span class="uscript-line">00009</span>  <span class="uscript-keyword">class</span> ConfigMaster <span class="uscript-keyword">extends</span> Mutator <span class="uscript-keyword">DependsOn</span><span class="uscript-operator">(</span>AutoLoader<span class="uscript-operator">)</span> <span class="uscript-keyword">config</span><span class="uscript-operator">(</span>ConfigMaster<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00010</span>  
+<span class="uscript-line">00011</span>  <span class="uscript-comment">// If 2184 or earlier, crash the server</span>
+<span class="uscript-line">00012</span>  <span class="uscript-keyword">var</span> <span class="uscript-type">int</span>                     GameVersion<span class="uscript-operator">;</span>
+<span class="uscript-line">00013</span>  
+<span class="uscript-line">00014</span>  <span class="uscript-comment">// Contains previous values of modified IniEntries, unless there is already</span>
+<span class="uscript-line">00015</span>  <span class="uscript-comment">// a previous value for an IniEntry.  When a managed loader is de-activated,</span>
+<span class="uscript-line">00016</span>  <span class="uscript-comment">// the original value of the IniEntry is restored.</span>
+<span class="uscript-line">00017</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">config</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>AutoLoader<span class="uscript-operator">.</span>IniEntry<span class="uscript-operator">&gt;</span>   OriginalValues<span class="uscript-operator">;</span>
+<span class="uscript-line">00018</span>  
+<span class="uscript-line">00019</span>  <span class="uscript-comment">// Holder for properties which aren't needed - used by loaders that get activated at the end of the match</span>
+<span class="uscript-line">00020</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>Property<span class="uscript-operator">&gt;</span>         IrrelevantProperties<span class="uscript-operator">;</span>
+<span class="uscript-line">00021</span>  
+<span class="uscript-line">00022</span>  <span class="uscript-keyword">struct</span> SA
+<span class="uscript-line">00023</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00024</span>      <span class="uscript-keyword">var</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Info<span class="uscript-operator">&gt;</span>         SAClass<span class="uscript-operator">;</span>
+<span class="uscript-line">00025</span>      <span class="uscript-keyword">var</span> <span class="uscript-type">string</span>              SAName<span class="uscript-operator">;</span>
+<span class="uscript-line">00026</span>      <span class="uscript-keyword">var</span> <span class="uscript-type">string</span>              SADescription<span class="uscript-operator">;</span>
+<span class="uscript-line">00027</span>  <span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00028</span>  
+<span class="uscript-line">00029</span>  <span class="uscript-keyword">struct</span> AL
+<span class="uscript-line">00030</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00031</span>      <span class="uscript-keyword">var</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>AutoLoader<span class="uscript-operator">&gt;</span>   AutoLoaderClass<span class="uscript-operator">;</span>
+<span class="uscript-line">00032</span>      <span class="uscript-keyword">var</span> <span class="uscript-type">string</span>              AutoLoaderDesc<span class="uscript-operator">;</span>
+<span class="uscript-line">00033</span>  <span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00034</span>  
+<span class="uscript-line">00035</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>SA<span class="uscript-operator">&gt;</span>               ManagedActors<span class="uscript-operator">;</span>      <span class="uscript-comment">// Info about Loaders' ActorClasses</span>
+<span class="uscript-line">00036</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>AL<span class="uscript-operator">&gt;</span>               LoaderClasses<span class="uscript-operator">;</span>      <span class="uscript-comment">// All Loader Classes found</span>
+<span class="uscript-line">00037</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>AutoLoader<span class="uscript-operator">&gt;</span>       Loaders<span class="uscript-operator">;</span>            <span class="uscript-comment">// Active Loaders</span>
+<span class="uscript-line">00038</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span><span class="uscript-type">string</span><span class="uscript-operator">&gt;</span>           ActiveMutators<span class="uscript-operator">;</span>     <span class="uscript-comment">// Currently active mutator classes</span>
+<span class="uscript-line">00039</span>  <span class="uscript-keyword">var</span> <span class="uscript-type">bool</span>                    bInitialized<span class="uscript-operator">;</span>       <span class="uscript-comment">// Initialization</span>
+<span class="uscript-line">00040</span>  <span class="uscript-keyword">var</span> <span class="uscript-type">bool</span>                    bHangRestart<span class="uscript-operator">;</span>       <span class="uscript-comment">// Don't let server travel yet</span>
+<span class="uscript-line">00041</span>  
+<span class="uscript-line">00042</span>  <span class="uscript-keyword">var</span> GameEngine              GE<span class="uscript-operator">;</span>
+<span class="uscript-line">00043</span>  
+<span class="uscript-line">00044</span>  <span class="uscript-keyword">const</span> VERSION <span class="uscript-operator">=</span> <span class="uscript-number">1.71</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00045</span>  <span class="uscript-keyword">const</span> LOGNAME <span class="uscript-operator">=</span> <span class="uscript-name">'Config Manager'</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00046</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">const</span> <span class="uscript-type">bool</span>  DEBUG<span class="uscript-operator">;</span>
+<span class="uscript-line">00047</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">const</span> <span class="uscript-type">bool</span>  DEBUGPROPS<span class="uscript-operator">;</span>
+<span class="uscript-line">00048</span>  
+<span class="uscript-line">00049</span>  <span class="uscript-comment">// Localization</span>
+<span class="uscript-line">00050</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span> LoadSuccess<span class="uscript-operator">;</span>
+<span class="uscript-line">00051</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span> RequiredVersion<span class="uscript-operator">;</span>
+<span class="uscript-line">00052</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span> UpgradeOrDie<span class="uscript-operator">;</span>
+<span class="uscript-line">00053</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span> RemovalCancelled<span class="uscript-operator">;</span>
+<span class="uscript-line">00054</span>  
+<span class="uscript-line">00055</span>  <span class="uscript-comment">// Errors</span>
+<span class="uscript-line">00056</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span> InvalidLoaderClass<span class="uscript-operator">;</span>
+<span class="uscript-line">00057</span>  <span class="uscript-keyword">var</span> <span class="uscript-keyword">localized</span> <span class="uscript-type">string</span> InvalidPI<span class="uscript-operator">;</span>
+<span class="uscript-line">00058</span>  
+<span class="uscript-line">00059</span>  <span class="uscript-keyword">event</span> PreBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00060</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00061</span>      GameVersion <span class="uscript-operator">=</span> <span class="uscript-type">int</span><span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>EngineVersion<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00062</span>  
+<span class="uscript-line">00063</span>      log<span class="uscript-operator">(</span><span class="uscript-string">" -"</span><span class="uscript-operator">@</span>LOGNAME<span class="uscript-operator">@</span>VERSION<span class="uscript-operator">@</span>LoadSuccess<span class="uscript-operator">,</span>LOGNAME<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00064</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>GameVersion <span class="uscript-operator">&lt;</span> <span class="uscript-number">2199</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00065</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00066</span>          log<span class="uscript-operator">(</span>RequiredVersion<span class="uscript-operator">@</span>LOGNAME<span class="uscript-operator">$</span><span class="uscript-string">"."</span><span class="uscript-operator">,</span>LOGNAME<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00067</span>          log<span class="uscript-operator">(</span>UpgradeOrDie<span class="uscript-operator">,</span>LOGNAME<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00068</span>          log<span class="uscript-operator">(</span><span class="uscript-string">""</span><span class="uscript-operator">,</span><span class="uscript-name">'ConfigManager'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00069</span>          <span class="uscript-keyword">Assert</span><span class="uscript-operator">(</span><span class="uscript-keyword">False</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00070</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00071</span>  
+<span class="uscript-line">00072</span>      GetGameEngine<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00073</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00074</span>  
+<span class="uscript-line">00075</span>  <span class="uscript-keyword">event</span> PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00076</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00077</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+<span class="uscript-line">00078</span>  
+<span class="uscript-line">00079</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUG<span class="uscript-operator">)</span>
+<span class="uscript-line">00080</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00081</span>          log<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-operator">@</span><span class="uscript-string">"Beginning initialization"</span><span class="uscript-operator">,</span><span class="uscript-name">'PostBeginPlay'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00082</span>          log<span class="uscript-operator">(</span><span class="uscript-string">"START OF GAME SERVERACTORS"</span><span class="uscript-operator">,</span><span class="uscript-name">'PostBeginPlay'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00083</span>          <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> GE<span class="uscript-operator">.</span>ServerActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00084</span>              log<span class="uscript-operator">(</span><span class="uscript-string">"ServerActor["</span><span class="uscript-operator">$</span>i<span class="uscript-operator">$</span><span class="uscript-string">"]:"</span><span class="uscript-operator">$</span>GE<span class="uscript-operator">.</span>ServerActors<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">,</span><span class="uscript-name">'PostBeginPlay'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00085</span>  
+<span class="uscript-line">00086</span>          log<span class="uscript-operator">(</span><span class="uscript-string">"START OF GAME SERVERPACKAGES"</span><span class="uscript-operator">,</span><span class="uscript-name">'PostBeginPlay'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00087</span>          <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> GE<span class="uscript-operator">.</span>ServerPackages<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00088</span>              log<span class="uscript-operator">(</span><span class="uscript-string">"ServerPackages["</span><span class="uscript-operator">$</span>i<span class="uscript-operator">$</span><span class="uscript-string">"]:"</span><span class="uscript-operator">$</span>GE<span class="uscript-operator">.</span>ServerPackages<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">,</span><span class="uscript-name">'PostBeginPlay'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00089</span>  
+<span class="uscript-line">00090</span>          log<span class="uscript-operator">(</span><span class="uscript-string">""</span><span class="uscript-operator">,</span><span class="uscript-name">'PostBeginPlay'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00091</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00092</span>  <span class="uscript-comment">//  Level.Game.AddMutator("ConfigManagerGUI.ConfigManagerGUIMaster");</span>
+<span class="uscript-line">00093</span>  
+<span class="uscript-line">00094</span>      InitLoaders<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00095</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUG<span class="uscript-operator">)</span>
+<span class="uscript-line">00096</span>          log<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-operator">@</span><span class="uscript-string">"finished loading all actors and loaders"</span><span class="uscript-operator">,</span><span class="uscript-name">'PostBeginPlay'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00097</span>  
+<span class="uscript-line">00098</span>      <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PostBeginPlay<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00099</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00100</span>  
+<span class="uscript-line">00101</span>  <span class="uscript-comment">// Sends a list of currently active mutators to all loader classes</span>
+<span class="uscript-line">00102</span>  <span class="uscript-comment">// Loader classes may want to check if its mutator was loaded without using the loader</span>
+<span class="uscript-line">00103</span>  <span class="uscript-comment">// (added at command line, etc.)</span>
+<span class="uscript-line">00104</span>  <span class="uscript-keyword">function</span> GetGameEngine<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00105</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00106</span>      <span class="uscript-keyword">foreach</span> AllObjects<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Engine.GameEngine'</span><span class="uscript-operator">,</span> GE<span class="uscript-operator">)</span>
+<span class="uscript-line">00107</span>          <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00108</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00109</span>  
+<span class="uscript-line">00110</span>  <span class="uscript-keyword">function</span> AddMutator<span class="uscript-operator">(</span>Mutator M<span class="uscript-operator">)</span>
+<span class="uscript-line">00111</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00112</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+<span class="uscript-line">00113</span>  
+<span class="uscript-line">00114</span>      <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> ActiveMutators<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00115</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ActiveMutators<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">~=</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>M<span class="uscript-operator">.</span><span class="uscript-keyword">Class</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00116</span>              <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00117</span>  
+<span class="uscript-line">00118</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">==</span> ActiveMutators<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00119</span>          ActiveMutators<span class="uscript-operator">[</span>ActiveMutators<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>M<span class="uscript-operator">.</span><span class="uscript-keyword">Class</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00120</span>  
+<span class="uscript-line">00121</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUG<span class="uscript-operator">)</span>
+<span class="uscript-line">00122</span>          <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> ActiveMutators<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00123</span>              log<span class="uscript-operator">(</span><span class="uscript-string">"ActiveMutators["</span><span class="uscript-operator">$</span>i<span class="uscript-operator">$</span><span class="uscript-string">"]:"</span><span class="uscript-operator">@</span>ActiveMutators<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">,</span><span class="uscript-name">'AddMutator'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00124</span>  
+<span class="uscript-line">00125</span>      <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>AddMutator<span class="uscript-operator">(</span>M<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00126</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00127</span>  
+<span class="uscript-line">00128</span>  <span class="uscript-comment">// Do not show ConfigMaster in server browser as active mutator</span>
+<span class="uscript-line">00129</span>  <span class="uscript-keyword">function</span> GetServerDetails<span class="uscript-operator">(</span> <span class="uscript-keyword">out</span> GameInfo<span class="uscript-operator">.</span>ServerResponseLine ServerState <span class="uscript-operator">)</span>
+<span class="uscript-line">00130</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00131</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00132</span>  
+<span class="uscript-line">00133</span>  <span class="uscript-keyword">function</span> InitLoaders<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00134</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00135</span>      FindAllLoaders<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00136</span>      CreateLoaders<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00137</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00138</span>  
+<span class="uscript-line">00139</span>  <span class="uscript-keyword">function</span> FindAllLoaders<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00140</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00141</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">,</span> j<span class="uscript-operator">;</span>
+<span class="uscript-line">00142</span>      <span class="uscript-keyword">local</span> AL TempAL<span class="uscript-operator">;</span>
+<span class="uscript-line">00143</span>      <span class="uscript-keyword">local</span> SA TempSA<span class="uscript-operator">;</span>
+<span class="uscript-line">00144</span>  
+<span class="uscript-line">00145</span>      <span class="uscript-keyword">local</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>AutoLoader<span class="uscript-operator">&gt;</span> LoaderClass<span class="uscript-operator">;</span>
+<span class="uscript-line">00146</span>      <span class="uscript-keyword">local</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Info<span class="uscript-operator">&gt;</span>       ServerActorClass<span class="uscript-operator">;</span>
+<span class="uscript-line">00147</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">string</span>            LoaderClassName<span class="uscript-operator">,</span> LoaderClassDescription<span class="uscript-operator">,</span>
+<span class="uscript-line">00148</span>                              ActorClass<span class="uscript-operator">,</span> ServerActorName<span class="uscript-operator">,</span> ServerActorDesc<span class="uscript-operator">;</span>
+<span class="uscript-line">00149</span>  
+<span class="uscript-line">00150</span>      GetNextIntDesc<span class="uscript-operator">(</span><span class="uscript-string">"ConfigManager.AutoLoader"</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>LoaderClassName<span class="uscript-operator">,</span>LoaderClassDescription<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00151</span>      <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span>LoaderClassName <span class="uscript-operator">!=</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00152</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00153</span>          <span class="uscript-comment">// Hack to prevent Config Loader from being loaded</span>
+<span class="uscript-line">00154</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>LoaderClassName <span class="uscript-operator">~=</span> <span class="uscript-string">"ConfigManagerLoader.SampleLoader"</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00155</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00156</span>              GetNextIntDesc<span class="uscript-operator">(</span><span class="uscript-string">"ConfigManager.AutoLoader"</span><span class="uscript-operator">,</span><span class="uscript-operator">++</span>i<span class="uscript-operator">,</span>LoaderClassName<span class="uscript-operator">,</span>LoaderClassDescription<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00157</span>              <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00158</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00159</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUG<span class="uscript-operator">)</span>
+<span class="uscript-line">00160</span>              log<span class="uscript-operator">(</span><span class="uscript-string">"Found a new AutoLoader:"</span><span class="uscript-operator">@</span>LoaderClassName<span class="uscript-operator">@</span>LoaderClassDescription<span class="uscript-operator">,</span><span class="uscript-name">'FindAllLoaders'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00161</span>  
+<span class="uscript-line">00162</span>          LoaderClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>AutoLoader<span class="uscript-operator">&gt;</span><span class="uscript-operator">(</span>DynamicLoadObject<span class="uscript-operator">(</span>LoaderClassName<span class="uscript-operator">,</span><span class="uscript-keyword">Class</span><span class="uscript-name">'Class'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00163</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>LoaderClass <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00164</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00165</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ShouldAddLoaderClass<span class="uscript-operator">(</span>LoaderClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00166</span>              <span class="uscript-operator">{</span>
+<span class="uscript-line">00167</span>                  TempAL<span class="uscript-operator">.</span>AutoLoaderClass <span class="uscript-operator">=</span> LoaderClass<span class="uscript-operator">;</span>
+<span class="uscript-line">00168</span>                  TempAL<span class="uscript-operator">.</span>AutoLoaderDesc <span class="uscript-operator">=</span> LoaderClassDescription<span class="uscript-operator">;</span>
+<span class="uscript-line">00169</span>                  LoaderClasses<span class="uscript-operator">[</span>LoaderClasses<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> TempAL<span class="uscript-operator">;</span>
+<span class="uscript-line">00170</span>                  j <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00171</span>                  <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span>LoaderClass<span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>AddManagedActor<span class="uscript-operator">(</span>j<span class="uscript-operator">++</span><span class="uscript-operator">,</span> ActorClass<span class="uscript-operator">,</span> ServerActorName<span class="uscript-operator">,</span> ServerActorDesc<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00172</span>                  <span class="uscript-operator">{</span>
+<span class="uscript-line">00173</span>                      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ActorClass <span class="uscript-operator">!=</span> <span class="uscript-string">""</span> <span class="uscript-operator">&amp;&amp;</span> ServerActorName <span class="uscript-operator">!=</span> <span class="uscript-string">""</span> <span class="uscript-operator">&amp;&amp;</span> ServerActorDesc <span class="uscript-operator">!=</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00174</span>                      <span class="uscript-operator">{</span>
+<span class="uscript-line">00175</span>                          ServerActorClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Info<span class="uscript-operator">&gt;</span><span class="uscript-operator">(</span>DynamicLoadObject<span class="uscript-operator">(</span>ActorClass<span class="uscript-operator">,</span><span class="uscript-keyword">class</span><span class="uscript-name">'Class'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00176</span>                          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ServerActorClass <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00177</span>                          <span class="uscript-operator">{</span>
+<span class="uscript-line">00178</span>                              TempSA<span class="uscript-operator">.</span>SAClass <span class="uscript-operator">=</span> ServerActorClass<span class="uscript-operator">;</span>
+<span class="uscript-line">00179</span>                              TempSA<span class="uscript-operator">.</span>SAName <span class="uscript-operator">=</span> ServerActorName<span class="uscript-operator">;</span>
+<span class="uscript-line">00180</span>                              TempSA<span class="uscript-operator">.</span>SADescription <span class="uscript-operator">=</span> ServerActorDesc<span class="uscript-operator">;</span>
+<span class="uscript-line">00181</span>  
+<span class="uscript-line">00182</span>                              ManagedActors<span class="uscript-operator">[</span>ManagedActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> TempSA<span class="uscript-operator">;</span>
+<span class="uscript-line">00183</span>                          <span class="uscript-operator">}</span>
+<span class="uscript-line">00184</span>                      <span class="uscript-operator">}</span>
+<span class="uscript-line">00185</span>                  <span class="uscript-operator">}</span>
+<span class="uscript-line">00186</span>              <span class="uscript-operator">}</span>
+<span class="uscript-line">00187</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00188</span>          <span class="uscript-keyword">else</span> Warn<span class="uscript-operator">(</span>InvalidLoaderClass<span class="uscript-operator">@</span>LoaderClassName<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00189</span>  
+<span class="uscript-line">00190</span>          GetNextIntDesc<span class="uscript-operator">(</span><span class="uscript-string">"ConfigManager.AutoLoader"</span><span class="uscript-operator">,</span><span class="uscript-operator">++</span>i<span class="uscript-operator">,</span> LoaderClassName<span class="uscript-operator">,</span> LoaderClassDescription<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00191</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00192</span>  
+<span class="uscript-line">00193</span>      <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00194</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00195</span>  
+<span class="uscript-line">00196</span>  <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> ShouldAddLoaderClass<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>AutoLoader<span class="uscript-operator">&gt;</span> NewClass<span class="uscript-operator">)</span>
+<span class="uscript-line">00197</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00198</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+<span class="uscript-line">00199</span>  
+<span class="uscript-line">00200</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUG<span class="uscript-operator">)</span>
+<span class="uscript-line">00201</span>          log<span class="uscript-operator">(</span><span class="uscript-string">"Loader Class"</span><span class="uscript-operator">@</span>NewClass<span class="uscript-operator">,</span><span class="uscript-name">'ShouldAddLoaderClass'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00202</span>  
+<span class="uscript-line">00203</span>      <span class="uscript-comment">// Don't add if it's already in the list</span>
+<span class="uscript-line">00204</span>      <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>i <span class="uscript-operator">&lt;</span> LoaderClasses<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00205</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass <span class="uscript-operator">==</span> NewClass<span class="uscript-operator">)</span>
+<span class="uscript-line">00206</span>              <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00207</span>  
+<span class="uscript-line">00208</span>      <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00209</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00210</span>  
+<span class="uscript-line">00211</span>  <span class="uscript-keyword">function</span> CreateLoaders<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00212</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00213</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+<span class="uscript-line">00214</span>      <span class="uscript-keyword">local</span> AutoLoader Loader<span class="uscript-operator">;</span>
+<span class="uscript-line">00215</span>  
+<span class="uscript-line">00216</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUG<span class="uscript-operator">)</span>
+<span class="uscript-line">00217</span>          log<span class="uscript-operator">(</span><span class="uscript-string">"LoaderClasses"</span><span class="uscript-operator">@</span>LoaderClasses<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">,</span><span class="uscript-name">'CreateLoaders'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00218</span>  
+<span class="uscript-line">00219</span>      <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>LoaderClasses<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00220</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00221</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ShouldAddLoader<span class="uscript-operator">(</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00222</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00223</span>              Loader <span class="uscript-operator">=</span> AddLoader<span class="uscript-operator">(</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00224</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Loader <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00225</span>                  Loaders<span class="uscript-operator">[</span>Loaders<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> Loader<span class="uscript-operator">;</span>
+<span class="uscript-line">00226</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00227</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00228</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00229</span>  
+<span class="uscript-line">00230</span>  <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> LoaderNotActive<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>AutoLoader<span class="uscript-operator">&gt;</span> NewClass<span class="uscript-operator">)</span>
+<span class="uscript-line">00231</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00232</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+<span class="uscript-line">00233</span>  
+<span class="uscript-line">00234</span>      <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> Loaders<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00235</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Loaders<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span><span class="uscript-keyword">Class</span> <span class="uscript-operator">==</span> NewClass<span class="uscript-operator">)</span>
+<span class="uscript-line">00236</span>              <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00237</span>  
+<span class="uscript-line">00238</span>      <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00239</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00240</span>  
+<span class="uscript-line">00241</span>  <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> ShouldAddLoader<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>AutoLoader<span class="uscript-operator">&gt;</span> NewClass<span class="uscript-operator">)</span>
+<span class="uscript-line">00242</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00243</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> bShouldAdd<span class="uscript-operator">;</span>
+<span class="uscript-line">00244</span>  
+<span class="uscript-line">00245</span>      bShouldAdd <span class="uscript-operator">=</span> LoaderNotActive<span class="uscript-operator">(</span>NewClass<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> GE <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00246</span>  
+<span class="uscript-line">00247</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bShouldAdd<span class="uscript-operator">)</span>
+<span class="uscript-line">00248</span>          bShouldAdd <span class="uscript-operator">=</span> NewClass<span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>CheckStrayActors<span class="uscript-operator">(</span>GE<span class="uscript-operator">.</span>GetPropertyText<span class="uscript-operator">(</span><span class="uscript-string">"ServerActors"</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> NewClass<span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>IsActive<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00249</span>  
+<span class="uscript-line">00250</span>      bShouldAdd <span class="uscript-operator">=</span> bShouldAdd <span class="uscript-operator">&amp;&amp;</span> NewClass<span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>ValidateLoader<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00251</span>  
+<span class="uscript-line">00252</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUG<span class="uscript-operator">)</span>
+<span class="uscript-line">00253</span>          log<span class="uscript-operator">(</span>NewClass<span class="uscript-operator">@</span><span class="uscript-string">"will be added:"</span><span class="uscript-operator">$</span>bShouldAdd<span class="uscript-operator">,</span><span class="uscript-name">'ShouldAddLoader'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00254</span>  
+<span class="uscript-line">00255</span>      <span class="uscript-keyword">return</span> bShouldAdd<span class="uscript-operator">;</span>
+<span class="uscript-line">00256</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00257</span>  
+<span class="uscript-line">00258</span>  <span class="uscript-keyword">function</span> AutoLoader AddLoader<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>AutoLoader<span class="uscript-operator">&gt;</span> NewClass<span class="uscript-operator">)</span>
+<span class="uscript-line">00259</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00260</span>      <span class="uscript-keyword">local</span> AutoLoader Loader<span class="uscript-operator">;</span>
+<span class="uscript-line">00261</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>NewClass <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-keyword">return</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00262</span>  
+<span class="uscript-line">00263</span>      Loader <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span>NewClass<span class="uscript-operator">,</span><span class="uscript-keyword">Self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00264</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Loader <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> GE <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00265</span>          Loader<span class="uscript-operator">.</span>GE <span class="uscript-operator">=</span> GE<span class="uscript-operator">;</span>
+<span class="uscript-line">00266</span>  
+<span class="uscript-line">00267</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUG<span class="uscript-operator">)</span>
+<span class="uscript-line">00268</span>          log<span class="uscript-operator">(</span><span class="uscript-string">"Returning"</span><span class="uscript-operator">@</span>Loader<span class="uscript-operator">,</span><span class="uscript-name">'AddLoader'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00269</span>  
+<span class="uscript-line">00270</span>      <span class="uscript-keyword">return</span> Loader<span class="uscript-operator">;</span>
+<span class="uscript-line">00271</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00272</span>  
+<span class="uscript-line">00273</span>  <span class="uscript-comment">// Make sure to remain as Game.BaseMutator.NextMutator so we will know about every mutator that is added.</span>
+<span class="uscript-line">00274</span>  <span class="uscript-keyword">event</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span>
+<span class="uscript-line">00275</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00276</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+<span class="uscript-line">00277</span>  
+<span class="uscript-line">00278</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bInitialized <span class="uscript-operator">&amp;&amp;</span> Level <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> Level<span class="uscript-operator">.</span>NextURL <span class="uscript-operator">!=</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00279</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00280</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>bHangRestart<span class="uscript-operator">)</span>
+<span class="uscript-line">00281</span>              Level<span class="uscript-operator">.</span>NextSwitchCountdown <span class="uscript-operator">=</span> <span class="uscript-number">4.0</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00282</span>  
+<span class="uscript-line">00283</span>          <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Loaders<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00284</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00285</span>              bHangRestart <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00286</span>              SetTimer<span class="uscript-operator">(</span><span class="uscript-number">0.2</span><span class="uscript-operator">,</span><span class="uscript-keyword">False</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00287</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00288</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00289</span>  
+<span class="uscript-line">00290</span>      <span class="uscript-comment">// Do not replace BaseMutator, or DMMutator will show up in server browser as an active mutator</span>
+<span class="uscript-line">00291</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> Level<span class="uscript-operator">.</span>Game <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00292</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00293</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00294</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00295</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">!=</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00296</span>              <span class="uscript-operator">{</span>
+<span class="uscript-line">00297</span>              <span class="uscript-comment">// Some other ConfigManager as BaseMutator.NextMutator, but it isn't me????</span>
+<span class="uscript-line">00298</span>              <span class="uscript-comment">// Maybe added ConfigManager as a serveractor?</span>
+<span class="uscript-line">00299</span>              <span class="uscript-comment">// Disable or server will crash</span>
+<span class="uscript-line">00300</span>                  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>bInitialized <span class="uscript-operator">&amp;&amp;</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>NextMutator<span class="uscript-operator">.</span><span class="uscript-keyword">Class</span> <span class="uscript-operator">==</span> <span class="uscript-keyword">Class</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00301</span>                  <span class="uscript-operator">{</span>
+<span class="uscript-line">00302</span>                      Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00303</span>                      <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00304</span>                  <span class="uscript-operator">}</span>
+<span class="uscript-line">00305</span>  
+<span class="uscript-line">00306</span>                  <span class="uscript-comment">// We have been replaced by another mutator wanting</span>
+<span class="uscript-line">00307</span>                  <span class="uscript-comment">// to be the first mutator.</span>
+<span class="uscript-line">00308</span>                  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>NextMutator<span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">==</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00309</span>                  <span class="uscript-operator">{</span>
+<span class="uscript-line">00310</span>                      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>NextMutator <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00311</span>                          Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>NextMutator<span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">=</span> NextMutator<span class="uscript-operator">;</span>
+<span class="uscript-line">00312</span>                      <span class="uscript-keyword">else</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>NextMutator<span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00313</span>                  <span class="uscript-operator">}</span>
+<span class="uscript-line">00314</span>  
+<span class="uscript-line">00315</span>                  NextMutator <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>NextMutator<span class="uscript-operator">;</span>
+<span class="uscript-line">00316</span>                  Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">=</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00317</span>              <span class="uscript-operator">}</span>
+<span class="uscript-line">00318</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00319</span>  
+<span class="uscript-line">00320</span>          <span class="uscript-keyword">else</span> Level<span class="uscript-operator">.</span>Game<span class="uscript-operator">.</span>BaseMutator<span class="uscript-operator">.</span>NextMutator <span class="uscript-operator">=</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00321</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00322</span>  
+<span class="uscript-line">00323</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>bInitialized<span class="uscript-operator">)</span>
+<span class="uscript-line">00324</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00325</span>          <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> LoaderClasses<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00326</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00327</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>LoaderNotActive<span class="uscript-operator">(</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>CheckCurrentMutators<span class="uscript-operator">(</span>GetURLOption<span class="uscript-operator">(</span><span class="uscript-string">"Mutator"</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00328</span>              <span class="uscript-operator">{</span>
+<span class="uscript-line">00329</span>                  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUG<span class="uscript-operator">)</span>
+<span class="uscript-line">00330</span>                      log<span class="uscript-operator">(</span><span class="uscript-string">"Adding previously non-active loader"</span><span class="uscript-operator">@</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">,</span><span class="uscript-name">'Tick'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00331</span>                  Loaders<span class="uscript-operator">[</span>Loaders<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> AddLoader<span class="uscript-operator">(</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00332</span>              <span class="uscript-operator">}</span>
+<span class="uscript-line">00333</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00334</span>  
+<span class="uscript-line">00335</span>          bInitialized <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00336</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00337</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00338</span>  
+<span class="uscript-line">00339</span>  <span class="uscript-keyword">event</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00340</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00341</span>      <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00342</span>      ApplyLoaderSettings<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00343</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00344</span>  
+<span class="uscript-line">00345</span>  <span class="uscript-keyword">function</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>Property<span class="uscript-operator">&gt;</span> LoadProperties<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00346</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00347</span>      <span class="uscript-keyword">local</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>Property<span class="uscript-operator">&gt;</span>   AllProperties<span class="uscript-operator">;</span>
+<span class="uscript-line">00348</span>      <span class="uscript-keyword">local</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span><span class="uscript-keyword">class</span><span class="uscript-operator">&gt;</span>      RelevantActors<span class="uscript-operator">;</span>
+<span class="uscript-line">00349</span>      <span class="uscript-keyword">local</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span><span class="uscript-type">string</span><span class="uscript-operator">&gt;</span>     RelevantPropNames<span class="uscript-operator">;</span>
+<span class="uscript-line">00350</span>      <span class="uscript-keyword">local</span> <span class="uscript-keyword">class</span>             RelevantClass<span class="uscript-operator">;</span>
+<span class="uscript-line">00351</span>      <span class="uscript-keyword">local</span> Property P<span class="uscript-operator">;</span>
+<span class="uscript-line">00352</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">,</span> j<span class="uscript-operator">,</span> k<span class="uscript-operator">;</span>
+<span class="uscript-line">00353</span>  
+<span class="uscript-line">00354</span>      <span class="uscript-comment">// Build a array of properties which are relevant to the currently loaded loaders</span>
+<span class="uscript-line">00355</span>      <span class="uscript-comment">// so that the amount of time it will take each loader to update their settings will</span>
+<span class="uscript-line">00356</span>      <span class="uscript-comment">// be dramatically reduced -</span>
+<span class="uscript-line">00357</span>      <span class="uscript-comment">// Typical number of Property objects in the game: 200,000</span>
+<span class="uscript-line">00358</span>      <span class="uscript-comment">// Typical number of properties relevant to current loaders: 50</span>
+<span class="uscript-line">00359</span>  
+<span class="uscript-line">00360</span>  
+<span class="uscript-line">00361</span>      <span class="uscript-comment">// Start by first getting a list of actors/objects which will be relevant</span>
+<span class="uscript-line">00362</span>  
+<span class="uscript-line">00363</span>      <span class="uscript-comment">// All ManagedActors are relevant (Loader's ActorClass)</span>
+<span class="uscript-line">00364</span>      <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> ManagedActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00365</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00366</span>          <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> j <span class="uscript-operator">&lt;</span> RelevantActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> j<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00367</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>RelevantActors<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> ManagedActors<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SAClass<span class="uscript-operator">)</span>
+<span class="uscript-line">00368</span>                  <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00369</span>  
+<span class="uscript-line">00370</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">&lt;</span> RelevantActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00371</span>              <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00372</span>  
+<span class="uscript-line">00373</span>          RelevantActors<span class="uscript-operator">[</span>RelevantActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> ManagedActors<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SAClass<span class="uscript-operator">;</span>
+<span class="uscript-line">00374</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00375</span>  
+<span class="uscript-line">00376</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUG<span class="uscript-operator">)</span>
+<span class="uscript-line">00377</span>          log<span class="uscript-operator">(</span><span class="uscript-string">"Loaders"</span><span class="uscript-operator">@</span>LoaderClasses<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">,</span><span class="uscript-name">'LoadProperties'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00378</span>  
+<span class="uscript-line">00379</span>      <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> LoaderClasses<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00380</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00381</span>          <span class="uscript-comment">// If ActorClass was already added to list, skip it</span>
+<span class="uscript-line">00382</span>          <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> j <span class="uscript-operator">&lt;</span> RelevantActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> j<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00383</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-type">string</span><span class="uscript-operator">(</span>RelevantActors<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">)</span> <span class="uscript-operator">~=</span> LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>ActorClass<span class="uscript-operator">)</span>
+<span class="uscript-line">00384</span>                  <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00385</span>  
+<span class="uscript-line">00386</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">==</span> RelevantActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00387</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00388</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>ActorClass <span class="uscript-operator">!=</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00389</span>                  RelevantClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-operator">(</span>DynamicLoadObject<span class="uscript-operator">(</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>ActorClass<span class="uscript-operator">,</span><span class="uscript-keyword">class</span><span class="uscript-name">'Class'</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00390</span>  
+<span class="uscript-line">00391</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>RelevantClass <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00392</span>                  RelevantActors<span class="uscript-operator">[</span>RelevantActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> RelevantClass<span class="uscript-operator">;</span>
+<span class="uscript-line">00393</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00394</span>  
+<span class="uscript-line">00395</span>          <span class="uscript-comment">// Begin building a list of property names to mark as relevant</span>
+<span class="uscript-line">00396</span>          <span class="uscript-comment">// We'll match these names to the Property.Name variable later when we iterate AllObjects for class'Property'</span>
+<span class="uscript-line">00397</span>          <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> j <span class="uscript-operator">&lt;</span> LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>RequiredIniEntries<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> j<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00398</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00399</span>  
+<span class="uscript-line">00400</span>              <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>k <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> k <span class="uscript-operator">&lt;</span> RelevantPropNames<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> k<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00401</span>              <span class="uscript-operator">{</span>
+<span class="uscript-line">00402</span>                  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>RelevantPropNames<span class="uscript-operator">[</span>k<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>RequiredIniEntries<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">.</span>PropName<span class="uscript-operator">)</span>
+<span class="uscript-line">00403</span>                      <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00404</span>              <span class="uscript-operator">}</span>
+<span class="uscript-line">00405</span>  
+<span class="uscript-line">00406</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> k <span class="uscript-operator">==</span> RelevantPropNames<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">)</span>
+<span class="uscript-line">00407</span>              <span class="uscript-operator">{</span>
+<span class="uscript-line">00408</span>                  RelevantPropNames<span class="uscript-operator">[</span>RelevantPropNames<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>RequiredIniEntries<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">.</span>PropName<span class="uscript-operator">;</span>
+<span class="uscript-line">00409</span>                  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUGPROPS<span class="uscript-operator">)</span>
+<span class="uscript-line">00410</span>                      log<span class="uscript-operator">(</span><span class="uscript-string">"Added new Relevant Property Name:"</span><span class="uscript-operator">$</span>RelevantPropNames<span class="uscript-operator">[</span>k<span class="uscript-operator">]</span><span class="uscript-operator">,</span><span class="uscript-name">'LoadProperties'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00411</span>              <span class="uscript-operator">}</span>
+<span class="uscript-line">00412</span>  
+<span class="uscript-line">00413</span>              RelevantClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-operator">(</span>DynamicLoadObject<span class="uscript-operator">(</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>RequiredIniEntries<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ClassFrom<span class="uscript-operator">,</span><span class="uscript-keyword">Class</span><span class="uscript-name">'class'</span><span class="uscript-operator">,</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00414</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>RelevantClass <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00415</span>  
+<span class="uscript-line">00416</span>              <span class="uscript-comment">// Find out if this entry's associated class is already in the relevant actors list</span>
+<span class="uscript-line">00417</span>              <span class="uscript-comment">// If not, add it</span>
+<span class="uscript-line">00418</span>              <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>k <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> k <span class="uscript-operator">&lt;</span> RelevantActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> k<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00419</span>              <span class="uscript-operator">{</span>
+<span class="uscript-line">00420</span>                  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUGPROPS<span class="uscript-operator">)</span>
+<span class="uscript-line">00421</span>                      log<span class="uscript-operator">(</span><span class="uscript-string">"Compare"</span><span class="uscript-operator">@</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>RequiredIniEntries<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ClassFrom<span class="uscript-operator">@</span><span class="uscript-string">"to Relevant Actor"</span><span class="uscript-operator">@</span>k<span class="uscript-operator">$</span><span class="uscript-string">":"</span><span class="uscript-operator">@</span>RelevantActors<span class="uscript-operator">[</span>k<span class="uscript-operator">]</span><span class="uscript-operator">,</span><span class="uscript-name">'LoadProperties'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00422</span>  
+<span class="uscript-line">00423</span>                  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>RelevantActors<span class="uscript-operator">[</span>k<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> RelevantClass<span class="uscript-operator">)</span>
+<span class="uscript-line">00424</span>                      <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00425</span>              <span class="uscript-operator">}</span>
+<span class="uscript-line">00426</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUGPROPS<span class="uscript-operator">)</span>
+<span class="uscript-line">00427</span>                  log<span class="uscript-operator">(</span><span class="uscript-string">"Breaking on"</span><span class="uscript-operator">@</span>k<span class="uscript-operator">$</span><span class="uscript-string">", Total Relevant Actors:"</span><span class="uscript-operator">@</span>RelevantActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">,</span><span class="uscript-name">'LoadProperties'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00428</span>  
+<span class="uscript-line">00429</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>k <span class="uscript-operator">&lt;</span> RelevantActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00430</span>                  <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00431</span>  
+<span class="uscript-line">00432</span>              RelevantActors<span class="uscript-operator">[</span>RelevantActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> RelevantClass<span class="uscript-operator">;</span>
+<span class="uscript-line">00433</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUGPROPS<span class="uscript-operator">)</span>
+<span class="uscript-line">00434</span>                  log<span class="uscript-operator">(</span><span class="uscript-string">"Added new relevant actor:"</span><span class="uscript-operator">$</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>RequiredIniEntries<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ClassFrom<span class="uscript-operator">,</span><span class="uscript-name">'LoadProperties'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00435</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00436</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00437</span>  
+<span class="uscript-line">00438</span>      <span class="uscript-comment">// Finished building relevant actors and relevant names</span>
+<span class="uscript-line">00439</span>      <span class="uscript-comment">// Iterate AllObjects, looking for Property objects</span>
+<span class="uscript-line">00440</span>      <span class="uscript-keyword">foreach</span> AllObjects<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'Property'</span><span class="uscript-operator">,</span> P<span class="uscript-operator">)</span>
+<span class="uscript-line">00441</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00442</span>          RelevantClass <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00443</span>          <span class="uscript-comment">// Some property types should be skipped</span>
+<span class="uscript-line">00444</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> ValidProp<span class="uscript-operator">(</span>P<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+<span class="uscript-line">00445</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00446</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-operator">(</span>P<span class="uscript-operator">.</span>Outer<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> RelevantClass <span class="uscript-operator">=</span> <span class="uscript-keyword">Class</span><span class="uscript-operator">(</span>P<span class="uscript-operator">.</span>Outer<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00447</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>RelevantClass <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00448</span>              <span class="uscript-operator">{</span>
+<span class="uscript-line">00449</span>                  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> RelevantActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00450</span>                  <span class="uscript-operator">{</span>
+<span class="uscript-line">00451</span>                      <span class="uscript-comment">// The Outer variable for properties is the class that the property is contained in</span>
+<span class="uscript-line">00452</span>                      <span class="uscript-comment">// If this property's Outer is an object that is relevant, add it to the list</span>
+<span class="uscript-line">00453</span>                      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>RelevantClass <span class="uscript-operator">==</span> RelevantActors<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00454</span>                      <span class="uscript-operator">{</span>
+<span class="uscript-line">00455</span>                          <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> j <span class="uscript-operator">&lt;</span> RelevantPropNames<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> j<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00456</span>                              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>RelevantPropNames<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>P<span class="uscript-operator">.</span><span class="uscript-type">Name</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00457</span>                              <span class="uscript-operator">{</span>
+<span class="uscript-line">00458</span>                                  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUGPROPS<span class="uscript-operator">)</span>
+<span class="uscript-line">00459</span>                                      log<span class="uscript-operator">(</span><span class="uscript-string">"Adding Initial Relevant Property:"</span><span class="uscript-operator">$</span>P<span class="uscript-operator">.</span>Outer<span class="uscript-operator">$</span><span class="uscript-string">"."</span><span class="uscript-operator">$</span>P<span class="uscript-operator">.</span><span class="uscript-type">Name</span><span class="uscript-operator">,</span><span class="uscript-name">'LoadProperties'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00460</span>                                  AllProperties<span class="uscript-operator">[</span>AllProperties<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> P<span class="uscript-operator">;</span>
+<span class="uscript-line">00461</span>                                  <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00462</span>                              <span class="uscript-operator">}</span>
+<span class="uscript-line">00463</span>  
+<span class="uscript-line">00464</span>                          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">&lt;</span> RelevantPropNames<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00465</span>                              <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00466</span>                      <span class="uscript-operator">}</span>
+<span class="uscript-line">00467</span>                  <span class="uscript-operator">}</span>
+<span class="uscript-line">00468</span>              <span class="uscript-operator">}</span>
+<span class="uscript-line">00469</span>  
+<span class="uscript-line">00470</span>              <span class="uscript-comment">// OK, this property's Outer wasn't relevant</span>
+<span class="uscript-line">00471</span>              <span class="uscript-comment">// Check the property against the relevant name list</span>
+<span class="uscript-line">00472</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">==</span> RelevantActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00473</span>              <span class="uscript-operator">{</span>
+<span class="uscript-line">00474</span>                  <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> RelevantPropNames<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00475</span>                  <span class="uscript-operator">{</span>
+<span class="uscript-line">00476</span>                  <span class="uscript-comment">// If we find a match, then we should check the relevant objects list again,</span>
+<span class="uscript-line">00477</span>                  <span class="uscript-comment">// in case the relevant object is a superclass of the property's Outer</span>
+<span class="uscript-line">00478</span>                      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>RelevantPropNames<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>P<span class="uscript-operator">.</span><span class="uscript-type">Name</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00479</span>                      <span class="uscript-operator">{</span>
+<span class="uscript-line">00480</span>                          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUGPROPS<span class="uscript-operator">)</span>
+<span class="uscript-line">00481</span>                              log<span class="uscript-operator">(</span><span class="uscript-string">"Compare Property:"</span><span class="uscript-operator">@</span>i<span class="uscript-operator">@</span>RelevantPropNames<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">@</span><span class="uscript-string">"to"</span><span class="uscript-operator">@</span><span class="uscript-type">string</span><span class="uscript-operator">(</span>P<span class="uscript-operator">.</span><span class="uscript-type">Name</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span><span class="uscript-name">'LoadProperties'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00482</span>  
+<span class="uscript-line">00483</span>                          <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> j <span class="uscript-operator">&lt;</span> RelevantActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> j <span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00484</span>                          <span class="uscript-operator">{</span>
+<span class="uscript-line">00485</span>                              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>RelevantClass <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00486</span>  
+<span class="uscript-line">00487</span>                              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUGPROPS<span class="uscript-operator">)</span>
+<span class="uscript-line">00488</span>                                  log<span class="uscript-operator">(</span><span class="uscript-string">"Relevant Actor Check:"</span><span class="uscript-operator">@</span>j<span class="uscript-operator">@</span>RelevantActors<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">@</span><span class="uscript-string">"is child of"</span><span class="uscript-operator">@</span><span class="uscript-keyword">class</span><span class="uscript-operator">(</span>P<span class="uscript-operator">.</span>Outer<span class="uscript-operator">)</span><span class="uscript-operator">@</span><span class="uscript-string">":"</span><span class="uscript-operator">$</span>ClassIsChildOf<span class="uscript-operator">(</span>RelevantActors<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">,</span><span class="uscript-keyword">Class</span><span class="uscript-operator">(</span>P<span class="uscript-operator">.</span>Outer<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span><span class="uscript-name">'LoadProperties'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00489</span>  
+<span class="uscript-line">00490</span>                              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ClassIsChildOf<span class="uscript-operator">(</span>RelevantActors<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">,</span> RelevantClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00491</span>                              <span class="uscript-operator">{</span>
+<span class="uscript-line">00492</span>                                  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUGPROPS<span class="uscript-operator">)</span>
+<span class="uscript-line">00493</span>                                      log<span class="uscript-operator">(</span><span class="uscript-string">"Adding Additional Relevant Property:"</span><span class="uscript-operator">$</span>P<span class="uscript-operator">.</span>Outer<span class="uscript-operator">$</span><span class="uscript-string">"."</span><span class="uscript-operator">$</span>P<span class="uscript-operator">.</span><span class="uscript-type">Name</span><span class="uscript-operator">,</span><span class="uscript-name">'LoadProperties'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00494</span>  
+<span class="uscript-line">00495</span>                                  AllProperties<span class="uscript-operator">[</span>AllProperties<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> P<span class="uscript-operator">;</span>
+<span class="uscript-line">00496</span>                                  <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00497</span>                              <span class="uscript-operator">}</span>
+<span class="uscript-line">00498</span>                          <span class="uscript-operator">}</span>
+<span class="uscript-line">00499</span>  
+<span class="uscript-line">00500</span>                          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">&lt;</span> RelevantActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00501</span>                              <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00502</span>                      <span class="uscript-operator">}</span>
+<span class="uscript-line">00503</span>                  <span class="uscript-operator">}</span>
+<span class="uscript-line">00504</span>              <span class="uscript-operator">}</span>
+<span class="uscript-line">00505</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00506</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00507</span>  
+<span class="uscript-line">00508</span>      <span class="uscript-keyword">return</span> AllProperties<span class="uscript-operator">;</span>
+<span class="uscript-line">00509</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00510</span>  
+<span class="uscript-line">00511</span>  <span class="uscript-comment">// Update Properties array with newly loaded loaders</span>
+<span class="uscript-line">00512</span>  <span class="uscript-comment">// No longer used</span>
+<span class="uscript-line">00513</span>  <span class="uscript-keyword">function</span> CheckRelevantProperties<span class="uscript-operator">(</span>AutoLoader L<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>Property<span class="uscript-operator">&gt;</span> Props<span class="uscript-operator">)</span>
+<span class="uscript-line">00514</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00515</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">,</span> j<span class="uscript-operator">;</span>
+<span class="uscript-line">00516</span>      <span class="uscript-keyword">local</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span><span class="uscript-keyword">class</span><span class="uscript-operator">&gt;</span> Classes<span class="uscript-operator">,</span> Outers<span class="uscript-operator">;</span>
+<span class="uscript-line">00517</span>  
+<span class="uscript-line">00518</span>      <span class="uscript-keyword">local</span> <span class="uscript-keyword">class</span> TempClass<span class="uscript-operator">;</span>
+<span class="uscript-line">00519</span>      <span class="uscript-keyword">local</span> Property P<span class="uscript-operator">;</span>
+<span class="uscript-line">00520</span>  
+<span class="uscript-line">00521</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUGPROPS<span class="uscript-operator">)</span> log<span class="uscript-operator">(</span><span class="uscript-string">"Checking relevant properties for new loader"</span><span class="uscript-operator">@</span>L<span class="uscript-operator">,</span><span class="uscript-name">'CheckRelevantProperties'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00522</span>  
+<span class="uscript-line">00523</span>      <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> Props<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00524</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00525</span>          TempClass <span class="uscript-operator">=</span> <span class="uscript-keyword">Class</span><span class="uscript-operator">(</span>Props<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Outer<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00526</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>TempClass <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00527</span>  
+<span class="uscript-line">00528</span>          <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> j <span class="uscript-operator">&lt;</span> Outers<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> j<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00529</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>TempClass <span class="uscript-operator">==</span> Outers<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00530</span>                  <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00531</span>  
+<span class="uscript-line">00532</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">&lt;</span> Outers<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">)</span> <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00533</span>  
+<span class="uscript-line">00534</span>          Outers<span class="uscript-operator">[</span>Outers<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> TempClass<span class="uscript-operator">;</span>
+<span class="uscript-line">00535</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00536</span>  
+<span class="uscript-line">00537</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>L<span class="uscript-operator">.</span>bIncludeServerActor <span class="uscript-operator">&amp;&amp;</span> L<span class="uscript-operator">.</span>ActorClass <span class="uscript-operator">!=</span> <span class="uscript-string">""</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00538</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00539</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUGPROPS<span class="uscript-operator">)</span> log<span class="uscript-operator">(</span><span class="uscript-string">"Checking for existence of"</span><span class="uscript-operator">@</span>L<span class="uscript-operator">.</span>ActorClass<span class="uscript-operator">@</span><span class="uscript-string">"properties"</span><span class="uscript-operator">,</span><span class="uscript-name">'CheckRelevantProperties'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00540</span>  
+<span class="uscript-line">00541</span>          TempClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-operator">(</span>DynamicLoadObject<span class="uscript-operator">(</span>L<span class="uscript-operator">.</span>ActorClass<span class="uscript-operator">,</span><span class="uscript-keyword">class</span><span class="uscript-name">'Class'</span><span class="uscript-operator">,</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00542</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>TempClass <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00543</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00544</span>              <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> Outers<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00545</span>                  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>TempClass <span class="uscript-operator">==</span> Outers<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00546</span>                      <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00547</span>  
+<span class="uscript-line">00548</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">==</span> Outers<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00549</span>                  Classes<span class="uscript-operator">[</span>Classes<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> TempClass<span class="uscript-operator">;</span>
+<span class="uscript-line">00550</span>  
+<span class="uscript-line">00551</span>              <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUGPROPS<span class="uscript-operator">)</span>
+<span class="uscript-line">00552</span>                  log<span class="uscript-operator">(</span>TempClass<span class="uscript-operator">@</span><span class="uscript-string">"has already been added to the properties array."</span><span class="uscript-operator">,</span><span class="uscript-name">'CheckRelevantProperties'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00553</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00554</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00555</span>  
+<span class="uscript-line">00556</span>      <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> L<span class="uscript-operator">.</span>RequiredIniEntries<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00557</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00558</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUGPROPS<span class="uscript-operator">)</span> log<span class="uscript-operator">(</span><span class="uscript-string">"Checking for existence of relevant class"</span><span class="uscript-operator">@</span>L<span class="uscript-operator">.</span>RequiredIniEntries<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ClassFrom<span class="uscript-operator">,</span><span class="uscript-name">'CheckRelevantProperties'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00559</span>  
+<span class="uscript-line">00560</span>          TempClass <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-operator">(</span>DynamicLoadObject<span class="uscript-operator">(</span>L<span class="uscript-operator">.</span>RequiredIniEntries<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ClassFrom<span class="uscript-operator">,</span><span class="uscript-keyword">class</span><span class="uscript-name">'Class'</span><span class="uscript-operator">,</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00561</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>TempClass <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00562</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00563</span>              <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> j <span class="uscript-operator">&lt;</span> Classes<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> j<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00564</span>                  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Classes<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> TempClass<span class="uscript-operator">)</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00565</span>  
+<span class="uscript-line">00566</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">&lt;</span> Classes<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">)</span> <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00567</span>  
+<span class="uscript-line">00568</span>              <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> j <span class="uscript-operator">&lt;</span> Outers<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> j<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00569</span>                  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Outers<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> TempClass<span class="uscript-operator">)</span> <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00570</span>  
+<span class="uscript-line">00571</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">&lt;</span> Outers<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">)</span> <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00572</span>  
+<span class="uscript-line">00573</span>              Classes<span class="uscript-operator">[</span>Classes<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> TempClass<span class="uscript-operator">;</span>
+<span class="uscript-line">00574</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00575</span>          <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUGPROPS<span class="uscript-operator">)</span>
+<span class="uscript-line">00576</span>              log<span class="uscript-operator">(</span><span class="uscript-string">"Could not load RequiredIniEntry["</span><span class="uscript-operator">$</span>i<span class="uscript-operator">$</span><span class="uscript-string">"].ClassFrom:"</span><span class="uscript-operator">@</span>L<span class="uscript-operator">.</span>RequiredIniEntries<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ClassFrom<span class="uscript-operator">,</span><span class="uscript-name">'CheckRelevantProperties'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00577</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00578</span>  
+<span class="uscript-line">00579</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUGPROPS <span class="uscript-operator">&amp;&amp;</span> Classes<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">==</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00580</span>          log<span class="uscript-operator">(</span><span class="uscript-string">"All relevant classes from this loader already existed in properties array"</span><span class="uscript-operator">,</span><span class="uscript-name">'CheckRelevantProperties'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00581</span>  
+<span class="uscript-line">00582</span>      <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> Classes<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00583</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00584</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUGPROPS<span class="uscript-operator">)</span>
+<span class="uscript-line">00585</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00586</span>              log<span class="uscript-operator">(</span><span class="uscript-string">""</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00587</span>              log<span class="uscript-operator">(</span><span class="uscript-string">"Adding properties from class"</span><span class="uscript-operator">@</span>Classes<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">@</span><span class="uscript-string">"to properties array."</span><span class="uscript-operator">,</span><span class="uscript-name">'CheckRelevantProperties'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00588</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00589</span>  
+<span class="uscript-line">00590</span>          <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> j <span class="uscript-operator">&lt;</span> IrrelevantProperties<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> j<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00591</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00592</span>              P <span class="uscript-operator">=</span> IrrelevantProperties<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00593</span>              TempClass <span class="uscript-operator">=</span> <span class="uscript-keyword">Class</span><span class="uscript-operator">(</span>P<span class="uscript-operator">.</span>Outer<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00594</span>  
+<span class="uscript-line">00595</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>TempClass <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">||</span> TempClass <span class="uscript-operator">!=</span> Classes<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">)</span> <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00596</span>  
+<span class="uscript-line">00597</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUGPROPS<span class="uscript-operator">)</span> log<span class="uscript-operator">(</span><span class="uscript-string">"    Adding property"</span><span class="uscript-operator">@</span>P<span class="uscript-operator">.</span><span class="uscript-type">Name</span><span class="uscript-operator">,</span><span class="uscript-name">'CheckRelevantProperties'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00598</span>  
+<span class="uscript-line">00599</span>              Props<span class="uscript-operator">[</span>Props<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> P<span class="uscript-operator">;</span>
+<span class="uscript-line">00600</span>              IrrelevantProperties<span class="uscript-operator">.</span><span class="uscript-keyword">Remove</span><span class="uscript-operator">(</span>j<span class="uscript-operator">--</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00601</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00602</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00603</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00604</span>  
+<span class="uscript-line">00605</span>  <span class="uscript-comment">// TODO: Add support for structs</span>
+<span class="uscript-line">00606</span>  <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> ValidProp<span class="uscript-operator">(</span>Property P<span class="uscript-operator">)</span>
+<span class="uscript-line">00607</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00608</span>      <span class="uscript-keyword">return</span> P<span class="uscript-operator">.</span><span class="uscript-keyword">Class</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'ObjectProperty'</span> <span class="uscript-operator">&amp;&amp;</span>
+<span class="uscript-line">00609</span>             P<span class="uscript-operator">.</span><span class="uscript-keyword">Class</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'DelegateProperty'</span> <span class="uscript-operator">&amp;&amp;</span>
+<span class="uscript-line">00610</span>             P<span class="uscript-operator">.</span><span class="uscript-keyword">Class</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'PointerProperty'</span> <span class="uscript-operator">&amp;&amp;</span>
+<span class="uscript-line">00611</span>             P<span class="uscript-operator">.</span><span class="uscript-keyword">Class</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'MapProperty'</span> <span class="uscript-operator">&amp;&amp;</span>
+<span class="uscript-line">00612</span>             P<span class="uscript-operator">.</span><span class="uscript-keyword">Class</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'StructProperty'</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00613</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00614</span>  
+<span class="uscript-line">00615</span>  <span class="uscript-comment">// Fills PlayInfo for ServerActors</span>
+<span class="uscript-line">00616</span>  <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> CallManagedActorPlayInfo<span class="uscript-operator">(</span>PlayInfo PI<span class="uscript-operator">)</span>
+<span class="uscript-line">00617</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00618</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">,</span> j<span class="uscript-operator">;</span>
+<span class="uscript-line">00619</span>  
+<span class="uscript-line">00620</span>      <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> LoaderClasses<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00621</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00622</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUG<span class="uscript-operator">)</span>
+<span class="uscript-line">00623</span>              log<span class="uscript-operator">(</span><span class="uscript-string">"Checking for LoaderClass"</span><span class="uscript-operator">@</span>i<span class="uscript-operator">@</span><span class="uscript-string">"in playinfo:"</span><span class="uscript-operator">$</span>loaderclasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>autoloaderclass<span class="uscript-operator">,</span><span class="uscript-name">'ManagedActorFillPlayInfo'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00624</span>  
+<span class="uscript-line">00625</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>NotInPlayInfo<span class="uscript-operator">(</span>PI<span class="uscript-operator">,</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00626</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00627</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUG<span class="uscript-operator">)</span>
+<span class="uscript-line">00628</span>                  log<span class="uscript-operator">(</span><span class="uscript-string">"Calling FillPlayInfo() for LoaderClass"</span><span class="uscript-operator">@</span>i<span class="uscript-operator">$</span><span class="uscript-string">":"</span><span class="uscript-operator">$</span>loaderclasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>autoloaderclass<span class="uscript-operator">,</span><span class="uscript-name">'ManagedActorFillPlayInfo'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00629</span>  
+<span class="uscript-line">00630</span>              LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>FillPlayInfo<span class="uscript-operator">(</span>PI<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00631</span>              PI<span class="uscript-operator">.</span>PopClass<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00632</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00633</span>  
+<span class="uscript-line">00634</span>          <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>j <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> j <span class="uscript-operator">&lt;</span> ManagedActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> j<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00635</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00636</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">.</span><span class="uscript-keyword">default</span><span class="uscript-operator">.</span>ActorClass <span class="uscript-operator">!=</span> <span class="uscript-type">string</span><span class="uscript-operator">(</span>ManagedActors<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SAClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00637</span>                  <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00638</span>  
+<span class="uscript-line">00639</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUG<span class="uscript-operator">)</span>
+<span class="uscript-line">00640</span>                  log<span class="uscript-operator">(</span><span class="uscript-string">"Checking for ManagedActor"</span><span class="uscript-operator">@</span>j<span class="uscript-operator">@</span><span class="uscript-string">"in playinfo:"</span><span class="uscript-operator">$</span>ManagedActors<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SAClass<span class="uscript-operator">,</span><span class="uscript-name">'ManagedActorFillPlayInfo'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00641</span>  
+<span class="uscript-line">00642</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>IsActive<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00643</span>              <span class="uscript-operator">{</span>
+<span class="uscript-line">00644</span>                  ManagedActors<span class="uscript-operator">[</span>j<span class="uscript-operator">]</span><span class="uscript-operator">.</span>SAClass<span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>FillPlayInfo<span class="uscript-operator">(</span>PI<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00645</span>                  PI<span class="uscript-operator">.</span>PopClass<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00646</span>              <span class="uscript-operator">}</span>
+<span class="uscript-line">00647</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00648</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00649</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00650</span>  
+<span class="uscript-line">00651</span>  <span class="uscript-comment">// Only webadmin calls Mutator.MutatorFillPlayInfo()?</span>
+<span class="uscript-line">00652</span>  <span class="uscript-keyword">function</span> MutatorFillPlayInfo<span class="uscript-operator">(</span>PlayInfo PI<span class="uscript-operator">)</span>
+<span class="uscript-line">00653</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00654</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUG<span class="uscript-operator">)</span>
+<span class="uscript-line">00655</span>          log<span class="uscript-operator">(</span><span class="uscript-string">""</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00656</span>  
+<span class="uscript-line">00657</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUG<span class="uscript-operator">)</span>
+<span class="uscript-line">00658</span>          log<span class="uscript-operator">(</span><span class="uscript-string">"Checking URL Option:"</span><span class="uscript-operator">$</span>GetURLOption<span class="uscript-operator">(</span><span class="uscript-string">"Mutator"</span><span class="uscript-operator">)</span><span class="uscript-operator">,</span><span class="uscript-name">'MutatorFillPlayInfo'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00659</span>  
+<span class="uscript-line">00660</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>NextMutator <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00661</span>          NextMutator<span class="uscript-operator">.</span>MutatorFillPlayInfo<span class="uscript-operator">(</span>PI<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00662</span>  
+<span class="uscript-line">00663</span>      CallManagedActorPlayInfo<span class="uscript-operator">(</span>PI<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00664</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00665</span>  
+<span class="uscript-line">00666</span>  <span class="uscript-comment">// Allows Loaders to adjust game configuration parameters</span>
+<span class="uscript-line">00667</span>  <span class="uscript-comment">// Loaders provide info about which ini changes need to be made for the mod to work</span>
+<span class="uscript-line">00668</span>  <span class="uscript-comment">// This allows other programs (such as Ladder) to only include the ini modifications</span>
+<span class="uscript-line">00669</span>  <span class="uscript-comment">// which are applicable for the loaded packages</span>
+<span class="uscript-line">00670</span>  <span class="uscript-comment">//</span>
+<span class="uscript-line">00671</span>  <span class="uscript-comment">// (Ex: ServerActors, ServerPackages, QueryHandlerClasses, Applications)</span>
+<span class="uscript-line">00672</span>  <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> ApplyLoaderSettings<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00673</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00674</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span>               i<span class="uscript-operator">,</span> Index<span class="uscript-operator">;</span>
+<span class="uscript-line">00675</span>      <span class="uscript-keyword">local</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>Property<span class="uscript-operator">&gt;</span>   CurrentProperties<span class="uscript-operator">;</span>
+<span class="uscript-line">00676</span>      <span class="uscript-keyword">local</span> <span class="uscript-keyword">class</span> Temp<span class="uscript-operator">;</span>
+<span class="uscript-line">00677</span>  
+<span class="uscript-line">00678</span>      <span class="uscript-comment">// Checking for any loaders that have been enabled since last check</span>
+<span class="uscript-line">00679</span>      <span class="uscript-comment">// Otherwise, must wait 2 server restarts to apply new loader settings</span>
+<span class="uscript-line">00680</span>      <span class="uscript-comment">// (One to load loader and apply changes, another for changes to take effect)</span>
+<span class="uscript-line">00681</span>      FindAllLoaders<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00682</span>      CurrentProperties <span class="uscript-operator">=</span> LoadProperties<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00683</span>      <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> LoaderClasses<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00684</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00685</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUG<span class="uscript-operator">)</span>
+<span class="uscript-line">00686</span>              log<span class="uscript-operator">(</span><span class="uscript-string">"LoaderClass"</span><span class="uscript-operator">@</span>i<span class="uscript-operator">$</span><span class="uscript-string">":"</span><span class="uscript-operator">@</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">,</span><span class="uscript-name">'ApplyLoaderSettings'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00687</span>  
+<span class="uscript-line">00688</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ShouldAddLoader<span class="uscript-operator">(</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">)</span> <span class="uscript-operator">||</span> <span class="uscript-operator">(</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>CheckCurrentMutators<span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>NextURL<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>ValidateLoader<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00689</span>              Loaders<span class="uscript-operator">[</span>Loaders<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> AddLoader<span class="uscript-operator">(</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00690</span>  
+<span class="uscript-line">00691</span>          <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>LoaderNotActive<span class="uscript-operator">(</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00692</span>              AddLoader<span class="uscript-operator">(</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">)</span><span class="uscript-operator">.</span>AcceptRemoval<span class="uscript-operator">(</span>CurrentProperties<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00693</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00694</span>  
+<span class="uscript-line">00695</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUGPROPS<span class="uscript-operator">)</span>
+<span class="uscript-line">00696</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00697</span>          log<span class="uscript-operator">(</span><span class="uscript-string">"*** Relevant Property Listing ***"</span><span class="uscript-operator">,</span><span class="uscript-name">'ApplyLoaderSettings'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00698</span>          <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> CurrentProperties<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00699</span>          <span class="uscript-operator">{</span>
+<span class="uscript-line">00700</span>              <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-keyword">Class</span><span class="uscript-operator">(</span>CurrentProperties<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Outer<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> Temp <span class="uscript-operator">!=</span> <span class="uscript-keyword">Class</span><span class="uscript-operator">(</span>CurrentProperties<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Outer<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00701</span>              <span class="uscript-operator">{</span>
+<span class="uscript-line">00702</span>                  Temp <span class="uscript-operator">=</span> <span class="uscript-keyword">Class</span><span class="uscript-operator">(</span>CurrentProperties<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>Outer<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00703</span>                  log<span class="uscript-operator">(</span><span class="uscript-string">""</span><span class="uscript-operator">,</span><span class="uscript-name">'ApplyLoaderSettings'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00704</span>                  log<span class="uscript-operator">(</span><span class="uscript-string">"Relevant properties from class"</span><span class="uscript-operator">@</span>Temp<span class="uscript-operator">@</span><span class="uscript-string">"-"</span><span class="uscript-operator">,</span><span class="uscript-name">'ApplyLoaderSettings'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00705</span>              <span class="uscript-operator">}</span>
+<span class="uscript-line">00706</span>              log<span class="uscript-operator">(</span><span class="uscript-string">"    "</span><span class="uscript-operator">$</span>currentproperties<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span><span class="uscript-type">name</span><span class="uscript-operator">,</span><span class="uscript-name">'ApplyLoaderSettings'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00707</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00708</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00709</span>  
+<span class="uscript-line">00710</span>      <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span>Index <span class="uscript-operator">&lt;</span> Loaders<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00711</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00712</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUG<span class="uscript-operator">)</span>
+<span class="uscript-line">00713</span>              log<span class="uscript-operator">(</span><span class="uscript-string">"Loader"</span><span class="uscript-operator">@</span>Index<span class="uscript-operator">$</span><span class="uscript-string">":"</span><span class="uscript-operator">@</span>Loaders<span class="uscript-operator">[</span>Index<span class="uscript-operator">]</span><span class="uscript-operator">,</span><span class="uscript-name">'ApplyLoaderSettings'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00714</span>  
+<span class="uscript-line">00715</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Loaders<span class="uscript-operator">[</span>Index<span class="uscript-operator">]</span><span class="uscript-operator">.</span>ApplyUpdate<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00716</span>              Loaders<span class="uscript-operator">[</span>Index<span class="uscript-operator">]</span><span class="uscript-operator">.</span>UpdateConfiguration<span class="uscript-operator">(</span>CurrentProperties<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00717</span>  
+<span class="uscript-line">00718</span>          <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span><span class="uscript-operator">!</span>Loaders<span class="uscript-operator">[</span>Index<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AcceptRemoval<span class="uscript-operator">(</span>CurrentProperties<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00719</span>              log<span class="uscript-operator">(</span>RemovalCancelled<span class="uscript-operator">@</span>Loaders<span class="uscript-operator">[</span>Index<span class="uscript-operator">]</span><span class="uscript-operator">,</span><span class="uscript-name">'ConfigManager'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00720</span>  
+<span class="uscript-line">00721</span>          Index<span class="uscript-operator">++</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00722</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00723</span>  
+<span class="uscript-line">00724</span>      Disable<span class="uscript-operator">(</span><span class="uscript-name">'Tick'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00725</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>DEBUG<span class="uscript-operator">)</span>
+<span class="uscript-line">00726</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00727</span>          log<span class="uscript-operator">(</span><span class="uscript-string">""</span><span class="uscript-operator">,</span><span class="uscript-name">'ApplyLoaderSettings'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00728</span>          log<span class="uscript-operator">(</span><span class="uscript-string">"END OF GAME SERVERACTORS"</span><span class="uscript-operator">,</span><span class="uscript-name">'ApplyLoaderSettings'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00729</span>          <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> GE<span class="uscript-operator">.</span>ServerActors<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00730</span>              log<span class="uscript-operator">(</span><span class="uscript-string">"ServerActor["</span><span class="uscript-operator">$</span>i<span class="uscript-operator">$</span><span class="uscript-string">"]:"</span><span class="uscript-operator">$</span>GE<span class="uscript-operator">.</span>ServerActors<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">,</span><span class="uscript-name">'ApplyLoaderSettings'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00731</span>  
+<span class="uscript-line">00732</span>          log<span class="uscript-operator">(</span><span class="uscript-string">"END OF GAME SERVERPACKAGES"</span><span class="uscript-operator">,</span><span class="uscript-name">'ApplyLoaderSettings'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00733</span>          <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> GE<span class="uscript-operator">.</span>ServerPackages<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00734</span>              log<span class="uscript-operator">(</span><span class="uscript-string">"ServerPackages["</span><span class="uscript-operator">$</span>i<span class="uscript-operator">$</span><span class="uscript-string">"]:"</span><span class="uscript-operator">$</span>GE<span class="uscript-operator">.</span>ServerPackages<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">,</span><span class="uscript-name">'ApplyLoaderSettings'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00735</span>  
+<span class="uscript-line">00736</span>          log<span class="uscript-operator">(</span><span class="uscript-string">""</span><span class="uscript-operator">,</span><span class="uscript-name">'ApplyLoaderSettings'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00737</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00738</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00739</span>  
+<span class="uscript-line">00740</span>  <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> NotInPlayInfo<span class="uscript-operator">(</span>PlayInfo PI<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>Info<span class="uscript-operator">&gt;</span> NewInfo<span class="uscript-operator">)</span>
+<span class="uscript-line">00741</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00742</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+<span class="uscript-line">00743</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>PI <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00744</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00745</span>          Warn<span class="uscript-operator">(</span>InvalidPI<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00746</span>          <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00747</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00748</span>  
+<span class="uscript-line">00749</span>      <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>i<span class="uscript-operator">&lt;</span>PI<span class="uscript-operator">.</span>InfoClasses<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span>i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00750</span>      <span class="uscript-operator">{</span>
+<span class="uscript-line">00751</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>PI<span class="uscript-operator">.</span>InfoClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">==</span> NewInfo<span class="uscript-operator">)</span>
+<span class="uscript-line">00752</span>              <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00753</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00754</span>  
+<span class="uscript-line">00755</span>      <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00756</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00757</span>  
+<span class="uscript-line">00758</span>  <span class="uscript-keyword">function</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span><span class="uscript-type">string</span><span class="uscript-operator">&gt;</span> GetAllManagedActors<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00759</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00760</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+<span class="uscript-line">00761</span>      <span class="uscript-keyword">local</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span><span class="uscript-type">string</span><span class="uscript-operator">&gt;</span> Arr<span class="uscript-operator">;</span>
+<span class="uscript-line">00762</span>  
+<span class="uscript-line">00763</span>      <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> LoaderClasses<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00764</span>          Arr <span class="uscript-operator">=</span> AddS<span class="uscript-operator">(</span>Arr<span class="uscript-operator">,</span>LoaderClasses<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">.</span>AutoLoaderClass<span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>GetManagedActors<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00765</span>  
+<span class="uscript-line">00766</span>      <span class="uscript-keyword">return</span> Arr<span class="uscript-operator">;</span>
+<span class="uscript-line">00767</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00768</span>  
+<span class="uscript-line">00769</span>  <span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-type">float</span> GetConfigMasterVersion<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00770</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00771</span>      <span class="uscript-keyword">return</span> VERSION<span class="uscript-operator">;</span>
+<span class="uscript-line">00772</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00773</span>  
+<span class="uscript-line">00774</span>  <span class="uscript-comment">// following function copied from wUtils (El_Muerte[TDS])</span>
+<span class="uscript-line">00775</span>  <span class="uscript-keyword">static</span> <span class="uscript-keyword">final</span> <span class="uscript-keyword">function</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span><span class="uscript-type">string</span><span class="uscript-operator">&gt;</span> AddS<span class="uscript-operator">(</span><span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span><span class="uscript-type">string</span><span class="uscript-operator">&gt;</span> A<span class="uscript-operator">,</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span><span class="uscript-type">string</span><span class="uscript-operator">&gt;</span> B<span class="uscript-operator">)</span>
+<span class="uscript-line">00776</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00777</span>    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+<span class="uscript-line">00778</span>    <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> B<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00779</span>    <span class="uscript-operator">{</span>
+<span class="uscript-line">00780</span>      A<span class="uscript-operator">.</span><span class="uscript-keyword">length</span> <span class="uscript-operator">=</span> A<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-number">+1</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00781</span>      A<span class="uscript-operator">[</span>A<span class="uscript-operator">.</span><span class="uscript-keyword">length</span><span class="uscript-number">-1</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> B<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00782</span>    <span class="uscript-operator">}</span>
+<span class="uscript-line">00783</span>    <span class="uscript-keyword">return</span> A<span class="uscript-operator">;</span>
+<span class="uscript-line">00784</span>  <span class="uscript-operator">}</span></pre><p><a href="category-class-ut2003.html">Category Class (UT2003)</a><br><a href="category-custom-class.html">Category Custom Class</a></p>
+</div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=ConfigMaster">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=ConfigMaster">View other revisions</a><br>Last edited May 11, 2004 12:55 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=ConfigMaster">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/ConfigMaster">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>There is no spoon
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

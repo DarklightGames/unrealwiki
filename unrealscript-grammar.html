@@ -1,0 +1,327 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: UnrealScript Grammar</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=UnrealScript_Grammar; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=UnrealScript Grammar">UnrealScript Grammar</a></h1>
+	<div class="wiki"><p>This is a <span class="interwiki"><img 
+      alt="Wikipedia logo"
+      title="Wikipedia"
+      src="shared//InterWiki-Wikipedia.png">&nbsp;<a href="http://www.wikipedia.com/wiki/EBNF">EBNF</a></span> Specification of the <a href="unrealscript.html">UnrealScript</a> grammar.</p>
+<p>It can be useful if you are going to write a parser for the UnrealScript language.</p>
+<p><em class="em2">Note:</em> this is not the official specification, it's made by visitors of the UnrealWiki.</p>
+<p><em class="em3">Important note:</em> the stock UnrealScript compiler doesn't follow strict rules as usually specified by a grammar like this. It is very well possible that the compiler accepts constructions not documented here. See <a href="unrealscript-language-test.html">UnrealScript Language Test</a> for actual examples of various constructions.</p>
+<p><em class="em2">Edit guidelines:</em></p>
+<ul><li>all non-terminals should have all uppercase characters. Keep everything aligned. If you leave things <em class="em1">open</em> use '...' to make that clear. </li>
+<li>Always use as much brackets as needed, don't optimize because this can result in confusion.</li>
+<li>Terminals that are words can be used directly in the production rules, otherwise you must use a terminal rule.</li>
+</ul>
+<h2><a name="0.1"></a>Non-Terminals</h2>
+<pre class="uscript">PROGRAM                  <span class="uscript-operator">=</span> CLASSDECL 
+                           <span class="uscript-operator">(</span> DECLARATIONS <span class="uscript-operator">)</span><span class="uscript-operator">*</span>
+                           <span class="uscript-operator">(</span> REPLICATIONBLOCK <span class="uscript-operator">)</span>? 
+                           BODY 
+                           <span class="uscript-operator">(</span> DEFAULTPROPERTIESBLOCK <span class="uscript-operator">)</span>?
+
+CLASSDECL                <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span> IDENTIFIER <span class="uscript-operator">(</span> <span class="uscript-keyword">extends</span> PACKAGEIDENTIFIER <span class="uscript-operator">)</span>? 
+                           <span class="uscript-operator">(</span> CLASSPARAMS <span class="uscript-operator">)</span><span class="uscript-operator">*</span> SEMICOLON
+
+CLASSPARAMS              <span class="uscript-operator">=</span> CONSTCLASSPARAMS <span class="uscript-operator">|</span> <span class="uscript-keyword">within</span> PACKAGEIDENTIFIER <span class="uscript-operator">|</span> 
+                           <span class="uscript-keyword">dependson</span> LBRACK PACKAGEIDENTIFIER RBRACK <span class="uscript-operator">|</span>
+                           <span class="uscript-keyword">config</span> <span class="uscript-operator">(</span> LBRACK PACKAGEIDENTIFIER RBRACK <span class="uscript-operator">)</span>? <span class="uscript-operator">|</span>
+                           <span class="uscript-keyword">hidecategories</span> LBRACK IDENTIFIERLIST RBRACK <span class="uscript-operator">|</span>
+                           <span class="uscript-keyword">showcategories</span> LBRACK IDENTIFIERLIST RBRACK                           
+
+IDENTIFIER               <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> ALPHA <span class="uscript-operator">|</span> UNDERSCORE <span class="uscript-operator">)</span> <span class="uscript-operator">(</span> ALPHA <span class="uscript-operator">|</span> UNDERSCORE <span class="uscript-operator">|</span> DIGIT <span class="uscript-operator">)</span><span class="uscript-operator">*</span>
+                           <span class="uscript-comment">// packagename.classname or classname.structname</span>
+PACKAGEIDENTIFIER        <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> IDENTIFIER <span class="uscript-operator">DOT</span> <span class="uscript-operator">)</span>? IDENTIFIER
+QUALIFIEDIDENTIFIER      <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span> <span class="uscript-keyword">class</span> SQUOTE PACKAGEIDENTIFIER SQUOTE <span class="uscript-operator">DOT</span> <span class="uscript-keyword">default</span> <span class="uscript-operator">DOT</span> IDENTIFIER <span class="uscript-operator">)</span>
+                           <span class="uscript-operator">|</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span> IDENTIFIER <span class="uscript-operator">DOT</span> <span class="uscript-operator">)</span><span class="uscript-operator">*</span> IDENTIFIER <span class="uscript-operator">)</span> 
+                           <span class="uscript-operator">)</span>
+IDENTIFIERLIST           <span class="uscript-operator">=</span> IDENTIFIER <span class="uscript-operator">(</span> COMMA IDENTIFIER <span class="uscript-operator">)</span><span class="uscript-operator">*</span>
+
+STRINGVAL                <span class="uscript-operator">=</span> DQUOTE PRINTABLE DQUOTE
+INTVAL                   <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> DIGIT<span class="uscript-operator">+</span> <span class="uscript-operator">|</span> <span class="uscript-operator">(</span> <span class="uscript-name">'0x'</span> <span class="uscript-operator">(</span> HEXDIGIT <span class="uscript-operator">)</span><span class="uscript-operator">+</span> <span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+FLOATVAL                 <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> DIGIT <span class="uscript-operator">)</span><span class="uscript-operator">+</span> <span class="uscript-operator">DOT</span> <span class="uscript-operator">(</span> DIGIT <span class="uscript-operator">)</span><span class="uscript-operator">*</span></pre><h3><a name="0.1.1"></a>Declaration parts </h3>
+<pre class="uscript">DECLARATIONS             <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> CONSTDECL <span class="uscript-operator">|</span> VARDECL <span class="uscript-operator">|</span> ENUMDECL <span class="uscript-operator">|</span> STRUCTDECL <span class="uscript-operator">)</span> SEMICOLON
+
+CONSTDECL                <span class="uscript-operator">=</span> <span class="uscript-keyword">const</span> IDENTIFIER <span class="uscript-operator">=</span> CONSTVALUE
+CONSTVALUE               <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> STRINGVAL <span class="uscript-operator">|</span> INTVAL <span class="uscript-operator">|</span> FLOATVAL <span class="uscript-operator">|</span> BOOLVAL <span class="uscript-operator">)</span>
+
+VARDECL                  <span class="uscript-operator">=</span> <span class="uscript-keyword">var</span> <span class="uscript-operator">(</span> CONFIGGROUP <span class="uscript-operator">)</span>? <span class="uscript-operator">(</span> VARPARAMS <span class="uscript-operator">)</span><span class="uscript-operator">*</span> 
+                           VARTYPE VARIDENTIFIER <span class="uscript-operator">(</span> COMMA VARIDENTIFIER <span class="uscript-operator">)</span><span class="uscript-operator">*</span>
+CONFIGGROUP              <span class="uscript-operator">=</span> LBRACK <span class="uscript-operator">(</span> IDENTIFIER <span class="uscript-operator">)</span>? RBRACK
+VARTYPE                  <span class="uscript-operator">=</span> PACKAGEIDENTIFIER <span class="uscript-operator">|</span> ENUMDECL <span class="uscript-operator">|</span> STRUCTDECL <span class="uscript-operator">|</span> ARRAYDECL <span class="uscript-operator">|</span> CLASSTYPE <span class="uscript-operator">|</span> BASICTYPE
+VARIDENTIFIER            <span class="uscript-operator">=</span> IDENTIFIER <span class="uscript-operator">(</span> LSBRACK INTVAL RSBRACK <span class="uscript-operator">)</span>
+
+ARRAYDECL                <span class="uscript-operator">=</span> <span class="uscript-keyword">array</span> LABRACK <span class="uscript-operator">(</span>PACKAGEIDENTIFIER <span class="uscript-operator">|</span> CLASSTYPE <span class="uscript-operator">|</span> BASICTYPE<span class="uscript-operator">)</span> RABRACK
+CLASSTYPE                <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span> LABRACK PACKAGEIDENTIFIER RABRACK
+
+ENUMDECL                 <span class="uscript-operator">=</span> <span class="uscript-keyword">enum</span> IDENTIFIER LCBRACK ENUMOPTIONS RCBRACK
+ENUMOPTIONS              <span class="uscript-operator">=</span> IDENTIFIER <span class="uscript-operator">(</span> COMMA IDENTIFIER <span class="uscript-operator">)</span><span class="uscript-operator">*</span>
+
+STRUCTDECL               <span class="uscript-operator">=</span> <span class="uscript-keyword">struct</span> <span class="uscript-operator">(</span> STRUCTPARAMS <span class="uscript-operator">)</span><span class="uscript-operator">*</span> IDENTIFIER <span class="uscript-operator">(</span> <span class="uscript-keyword">extends</span> PACKAGEIDENTIFIER <span class="uscript-operator">)</span>? 
+                           LCBRACK STRUCTBODY RCBRACK
+STRUCTPARAMS             <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> <span class="uscript-keyword">native</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">export</span> <span class="uscript-operator">)</span>
+STRUCTBODY               <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> VARDECL SEMICOLON <span class="uscript-operator">)</span><span class="uscript-operator">+</span></pre><h3><a name="0.1.2"></a>Replication parts</h3>
+<pre class="uscript">REPLICATIONBLOCK         <span class="uscript-operator">=</span> <span class="uscript-keyword">replication</span> LCBRACK <span class="uscript-operator">(</span> REPLICATIONBODY <span class="uscript-operator">)</span><span class="uscript-operator">*</span> RCBRACK
+REPLICATIONBODY          <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> <span class="uscript-keyword">reliable</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">unreliable</span> <span class="uscript-operator">)</span> <span class="uscript-keyword">if</span> LBRACK EXPR RBRACK 
+                           IDENTIFIER <span class="uscript-operator">(</span> COMMA IDENTIFIER <span class="uscript-operator">)</span><span class="uscript-operator">*</span> SEMICOLON</pre><h3><a name="0.1.3"></a>Body parts</h3>
+<pre class="uscript">BODY                     <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> STATEDECL <span class="uscript-operator">|</span> FUNCTIONDECL <span class="uscript-operator">)</span><span class="uscript-operator">*</span></pre><h4><a name="0.1.3.1"></a>State parts</h4>
+<pre class="uscript">STATEDECL                <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> STATEPARAMS <span class="uscript-operator">)</span><span class="uscript-operator">*</span> <span class="uscript-keyword">state</span> IDENTIFIER <span class="uscript-operator">(</span> <span class="uscript-keyword">extends</span> IDENTIFIER <span class="uscript-operator">)</span>? STATEBODY
+STATEBODY                <span class="uscript-operator">=</span> LCBRACK <span class="uscript-operator">(</span> STATEIGNORE <span class="uscript-operator">)</span>? <span class="uscript-operator">(</span> FUNCTIONDECL <span class="uscript-operator">)</span><span class="uscript-operator">*</span> STATELABELS RCBRACK
+STATEIGNORE              <span class="uscript-operator">=</span> <span class="uscript-keyword">ignores</span> IDENTIFIER <span class="uscript-operator">(</span> COMMA IDENTIFIER <span class="uscript-operator">)</span><span class="uscript-operator">*</span> SEMICOLON
+STATELABELS              <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> IDENTIFIER COLON <span class="uscript-operator">(</span> CODELINE <span class="uscript-operator">)</span><span class="uscript-operator">*</span> <span class="uscript-operator">)</span><span class="uscript-operator">*</span></pre><h4><a name="0.1.3.2"></a>Function parts</h4>
+<pre class="uscript">                           <span class="uscript-comment">// operators require an set amouth of arguments</span>
+FUNCTIONDECL             <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> NORMALFUNC <span class="uscript-operator">|</span> OPERATORFUNC <span class="uscript-operator">)</span>
+
+NORMALFUNC               <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> FUNCTIONPARAMS <span class="uscript-operator">)</span><span class="uscript-operator">*</span> FUNCTIONTYPE <span class="uscript-operator">(</span> LOCALTYPE <span class="uscript-operator">)</span>? 
+                           IDENTIFIER LBRACK <span class="uscript-operator">(</span> FUNCTIONARGS <span class="uscript-operator">(</span> COMMA FUNCTIONARGS <span class="uscript-operator">)</span><span class="uscript-operator">*</span> <span class="uscript-operator">)</span>? RBRACK 
+                           FUNCTIONBODY
+
+FUNCTIONPARAMS           <span class="uscript-operator">=</span> CONSTFUNCPARAMS <span class="uscript-operator">|</span> <span class="uscript-keyword">native</span> <span class="uscript-operator">(</span> LBRACK INTVAL RBRACK <span class="uscript-operator">)</span>?
+
+OPERATORFUNC             <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> FUNCTIONPARAMS <span class="uscript-operator">)</span><span class="uscript-operator">*</span> OPERATORTYPE FUNCTIONBODY
+OPERATORTYPE             <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> BINARYOPERATOR <span class="uscript-operator">|</span> UNARYOPERATOR <span class="uscript-operator">)</span>
+                           <span class="uscript-comment">// requires two arguments</span>
+BINARYOPERATOR           <span class="uscript-operator">=</span> <span class="uscript-keyword">operator</span> LBRACK INTVAL RBRACK PACKAGEIDENTIFIER OPIDENTIFIER 
+                           LBRACK FUNCTIONARGS COMMA FUNCTIONARGS RBRACK  
+                           <span class="uscript-comment">// requires one argument</span>
+UNARYOPERATOR            <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> <span class="uscript-keyword">preoperator</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">postoperator</span> <span class="uscript-operator">)</span> PACKAGEIDENTIFIER OPIDENTIFIER 
+                           LBRACK FUNCTIONARGS RBRACK  
+OPIDENTIFIER             <span class="uscript-operator">=</span> IDENTIFIER <span class="uscript-operator">|</span> OPERATORNAMES
+
+FUNCTIONARGS             <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> <span class="uscript-keyword">optional</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">out</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">coerce</span> <span class="uscript-operator">)</span>? FUNCTIONARGTYPE IDENTIFIER
+FUNCTIONARGTYPE          <span class="uscript-operator">=</span> BASICTYPE <span class="uscript-operator">|</span> PACKAGEIDENTIFIER
+FUNCTIONBODY             <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> SEMICOLON <span class="uscript-operator">|</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span> LOCALDECL <span class="uscript-operator">)</span><span class="uscript-operator">*</span> <span class="uscript-operator">(</span> CODELINE <span class="uscript-operator">)</span><span class="uscript-operator">*</span> <span class="uscript-operator">)</span> <span class="uscript-operator">(</span> SEMICOLON <span class="uscript-operator">)</span>? <span class="uscript-operator">)</span>
+LOCALDECL                <span class="uscript-operator">=</span> <span class="uscript-keyword">local</span> LOCALTYPE IDENTIFIER <span class="uscript-operator">(</span> COMMA IDENTIFIER <span class="uscript-operator">)</span><span class="uscript-operator">*</span>
+LOCALTYPE                <span class="uscript-operator">=</span> PACKAGEIDENTIFIER <span class="uscript-operator">|</span> ARRAYDECL <span class="uscript-operator">|</span> CLASSTYPE <span class="uscript-operator">|</span> BASICTYPE</pre><h4><a name="0.1.3.3"></a>Code parts</h4>
+<pre class="uscript">CODELINE                 <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> STATEMENT <span class="uscript-operator">|</span> ASSIGNMENT <span class="uscript-operator">|</span> IFTHENELSE <span class="uscript-operator">|</span> WHILELOOP <span class="uscript-operator">|</span> DOLOOP 
+                           <span class="uscript-operator">|</span> SWITCHCASE <span class="uscript-operator">|</span> RETURNFUNC <span class="uscript-operator">|</span> FOREACHLOOP <span class="uscript-operator">|</span> FORLOOP <span class="uscript-operator">)</span>
+CODEBLOCK                <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> CODELINE <span class="uscript-operator">|</span> <span class="uscript-operator">(</span> LCBRACK <span class="uscript-operator">(</span> CODELINE <span class="uscript-operator">)</span><span class="uscript-operator">*</span> RCBRACK <span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+
+STATEMENT                <span class="uscript-operator">=</span> FUNCCALL SEMICOLON
+ASSIGNMENT               <span class="uscript-operator">=</span> IDENTIFIER EQUALS EXPR SEMICOLON
+IFTHENELSE               <span class="uscript-operator">=</span> <span class="uscript-keyword">if</span> LBRACK EXPR RBRACK CODEBLOCK <span class="uscript-operator">(</span> <span class="uscript-keyword">else</span> CODEBLOCK <span class="uscript-operator">)</span>?
+WHILELOOP                <span class="uscript-operator">=</span> <span class="uscript-keyword">while</span> LBRACK EXPR RBRACK CODEBLOCK
+DOLOOP                   <span class="uscript-operator">=</span> <span class="uscript-keyword">do</span> CODEBLOCK <span class="uscript-keyword">until</span> LBRACK EXPR RBRACK
+
+SWITCHCASE               <span class="uscript-operator">=</span> <span class="uscript-keyword">switch</span> LBRACK EXPR RBRACK LCBRACK <span class="uscript-operator">(</span> CASERULE <span class="uscript-operator">)</span><span class="uscript-operator">+</span> <span class="uscript-operator">(</span> DEFAULTRULE <span class="uscript-operator">)</span>? RCBRACK
+CASERULE                 <span class="uscript-operator">=</span> <span class="uscript-keyword">case</span> INTVAL COLON CODEBLOCK
+DEFAULTRULE              <span class="uscript-operator">=</span> <span class="uscript-keyword">default</span> CODEBLOCK
+
+RETURNFUNC               <span class="uscript-operator">=</span> <span class="uscript-keyword">return</span> <span class="uscript-operator">(</span> EXPR <span class="uscript-operator">)</span>? SEMICOLON
+FOREACHLOOP              <span class="uscript-operator">=</span> <span class="uscript-keyword">foreach</span> FUNCCALL CODEBLOCK
+FORLOOP                  <span class="uscript-operator">=</span> <span class="uscript-keyword">for</span> LBRACK ASSIGNMENT SEMICOLON EXPR SEMICOLON EXPR RBRACK CODEBLOCK
+
+EXPR                     <span class="uscript-operator">=</span> OPERAND <span class="uscript-operator">(</span> OPIDENTIFIER OPERAND <span class="uscript-operator">)</span><span class="uscript-operator">*</span>
+OPERAND                  <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> CONSTVALUE <span class="uscript-operator">|</span> QUALIFIEDIDENTIFIER <span class="uscript-operator">|</span> FUNCCALL <span class="uscript-operator">)</span>
+FUNCCALL                 <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span> <span class="uscript-keyword">class</span> SQUOTE PACKAGEIDENTIFIER SQUOTE <span class="uscript-operator">DOT</span> <span class="uscript-keyword">static</span> <span class="uscript-operator">DOT</span> <span class="uscript-operator">)</span> 
+                           <span class="uscript-operator">|</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span> IDENTIFIER <span class="uscript-operator">DOT</span> <span class="uscript-operator">)</span><span class="uscript-operator">+</span> <span class="uscript-operator">)</span>
+                           <span class="uscript-operator">)</span>? 
+                           IDENTIFIER LBRACK <span class="uscript-operator">(</span> EXPR <span class="uscript-operator">(</span> COMMA EXPR <span class="uscript-operator">)</span><span class="uscript-operator">*</span> <span class="uscript-operator">)</span>? RBRACK</pre><h3><a name="0.1.4"></a>Defaultproperties</h3>
+<pre class="uscript">DEFAULTPROPERTIESBLOCK   <span class="uscript-operator">=</span> <span class="uscript-keyword">defaultproperties</span> LCBRACK <span class="uscript-operator">(</span> DEFPROP <span class="uscript-operator">)</span><span class="uscript-operator">*</span> RCBRACK
+DEFPROP                  <span class="uscript-operator">=</span> DEFPROPIDENTIFIER EQUALS PRINTABLE
+DEFPROPIDENTIFIER        <span class="uscript-operator">=</span> IDENTIFIER <span class="uscript-operator">(</span> <span class="uscript-operator">(</span> LBRACK INTVAL RBRACK <span class="uscript-operator">)</span> <span class="uscript-operator">|</span> <span class="uscript-operator">(</span> LSBRACK INTVAL RSBRACK <span class="uscript-operator">)</span> <span class="uscript-operator">)</span>?</pre><h2><a name="0.2"></a>Terminals</h2>
+<pre class="uscript">PRINTABLE                <span class="uscript-operator">=</span> all printable characters
+ALPHA                    <span class="uscript-operator">=</span> <span class="uscript-name">'a'</span> <span class="uscript-operator">.</span><span class="uscript-operator">.</span> <span class="uscript-name">'z'</span>
+DIGIT                    <span class="uscript-operator">=</span> <span class="uscript-name">'0'</span> <span class="uscript-operator">.</span><span class="uscript-operator">.</span> <span class="uscript-name">'9'</span>
+HEXDIGIT                 <span class="uscript-operator">=</span> DIGIT <span class="uscript-operator">|</span> <span class="uscript-name">'a'</span> <span class="uscript-operator">.</span><span class="uscript-operator">.</span> <span class="uscript-name">'f'</span>
+SEMICOLON                <span class="uscript-operator">=</span> <span class="uscript-name">';'</span>
+COLON                    <span class="uscript-operator">=</span> <span class="uscript-name">':'</span>
+UNDERSCORE               <span class="uscript-operator">=</span> <span class="uscript-name">'_'</span>
+LBRACK                   <span class="uscript-operator">=</span> <span class="uscript-name">'('</span>
+RBRACK                   <span class="uscript-operator">=</span> <span class="uscript-name">')'</span>
+LABRACK                  <span class="uscript-operator">=</span> <span class="uscript-name">'&lt;'</span>
+RABRACK                  <span class="uscript-operator">=</span> <span class="uscript-name">'&gt;'</span>
+LCBRACK                  <span class="uscript-operator">=</span> <span class="uscript-name">'{'</span>
+RCBRACK                  <span class="uscript-operator">=</span> <span class="uscript-name">'}'</span>
+LSBRACK                  <span class="uscript-operator">=</span> <span class="uscript-name">'['</span>
+RSBRACK                  <span class="uscript-operator">=</span> <span class="uscript-name">']'</span>
+<span class="uscript-operator">DOT</span>                      <span class="uscript-operator">=</span> <span class="uscript-name">'.'</span>
+COMMA                    <span class="uscript-operator">=</span> <span class="uscript-name">','</span>
+SQUOTE                   <span class="uscript-operator">=</span> <span class="uscript-name">''</span><span class="uscript-name">'</span>
+DQUOTE                   <span class="uscript-operator">=</span> <span class="uscript-name">'"'</span>
+EQUALS                   <span class="uscript-operator">=</span> <span class="uscript-name">'='</span>
+
+CONSTCLASSPARAMS         <span class="uscript-operator">=</span> <span class="uscript-keyword">abstract</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">native</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">nativereplication</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">safereplace</span> <span class="uscript-operator">|</span>
+                           <span class="uscript-keyword">perobjectconfig</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">transient</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">noexport</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">exportstructs</span> <span class="uscript-operator">|</span>
+                           <span class="uscript-comment">// available from warfare and up:</span>
+                           <span class="uscript-keyword">collapsecategories</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">dontcollapsecategories</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">placeable</span> <span class="uscript-operator">|</span>
+                           <span class="uscript-keyword">notplaceable</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">editinlinenew</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">noteditinlinenew</span>
+BOOLVAL                  <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">false</span>
+VARPARAMS                <span class="uscript-operator">=</span> <span class="uscript-keyword">config</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">const</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">editconst</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">export</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">globalconfig</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">input</span> <span class="uscript-operator">|</span>
+                           <span class="uscript-keyword">localized</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">native</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">private</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">protected</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">transient</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">travel</span> <span class="uscript-operator">|</span>
+                           <span class="uscript-comment">// available from warfare and up:</span>
+                           <span class="uscript-keyword">editinline</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">deprecated</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">edfindable</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">editinlineuse</span>
+STATEPARAMS              <span class="uscript-operator">=</span> <span class="uscript-keyword">auto</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">simulated</span>
+CONSTFUNCTPARAMS         <span class="uscript-operator">=</span> <span class="uscript-keyword">final</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">iterator</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">latent</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">simulated</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">singular</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">static</span> <span class="uscript-operator">|</span>
+                           <span class="uscript-keyword">exec</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">protected</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">private</span> 
+BASICTYPE                <span class="uscript-operator">=</span> <span class="uscript-type">byte</span> <span class="uscript-operator">|</span> <span class="uscript-type">int</span> <span class="uscript-operator">|</span> <span class="uscript-type">float</span> <span class="uscript-operator">|</span> <span class="uscript-type">string</span> <span class="uscript-operator">|</span> <span class="uscript-type">bool</span> <span class="uscript-operator">|</span> <span class="uscript-type">name</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">class</span>
+FUNCTIONTYPE             <span class="uscript-operator">=</span> <span class="uscript-keyword">function</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">event</span> <span class="uscript-operator">|</span> <span class="uscript-keyword">delegate</span>
+OPERATORNAMES            <span class="uscript-operator">=</span> <span class="uscript-name">'~'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'!'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'@'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'#'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'$'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'%'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'^'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'&amp;'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'*'</span> <span class="uscript-operator">|</span> 
+                           <span class="uscript-name">'-'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'='</span> <span class="uscript-operator">|</span> <span class="uscript-name">'+'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'|'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'\'</span> <span class="uscript-operator">|</span> <span class="uscript-name">':'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'&lt;'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'&gt;'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'/'</span> <span class="uscript-operator">|</span>
+                           <span class="uscript-name">'?'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'`'</span> <span class="uscript-operator">|</span>
+                           <span class="uscript-name">'&lt;&lt;'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'&gt;&gt;'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'!='</span> <span class="uscript-operator">|</span> <span class="uscript-name">'&lt;='</span> <span class="uscript-operator">|</span> <span class="uscript-name">'&gt;='</span> <span class="uscript-operator">|</span> <span class="uscript-name">'++'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'?-'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'+='</span> <span class="uscript-operator">|</span> 
+                           <span class="uscript-name">'-='</span> <span class="uscript-operator">|</span> <span class="uscript-name">'*='</span> <span class="uscript-operator">|</span> <span class="uscript-name">'/='</span> <span class="uscript-operator">|</span> <span class="uscript-name">'&amp;&amp;'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'||'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'^^'</span> <span class="uscript-operator">|</span> <span class="uscript-name">'=='</span> <span class="uscript-operator">|</span> <span class="uscript-name">'**'</span> <span class="uscript-operator">|</span>
+                           <span class="uscript-name">'~='</span> <span class="uscript-operator">|</span> <span class="uscript-name">'@='</span> <span class="uscript-operator">|</span> <span class="uscript-name">'&gt;&gt;&gt;'</span></pre><h2><a name="0.3"></a>Notes</h2>
+<h3><a name="0.3.1"></a>Case</h3>
+<p>UnrealScript is case insensitive, so all terminals may be written in any case format. Because of this the uppercase variants for ALPHA and HEXDIGIT are omitted.</p>
+<h3><a name="0.3.2"></a>Unreal Engine</h3>
+<p>This grammar applies to the UnrealEngine 2. Older versions of the Unreal engine have a few diffirences. Here's a list of changes to this grammar to be applied for older versions.</p>
+<ul><li><em class="em1">extends</em> can be replaced with <em class="em1">expands</em></li>
+<li>The ARRAYDECL rule does not apply</li>
+<li>in the CLASSPARAMS rule the following do not apply:<ul><li><em class="em1">within PACKAGEIDENTIFIER</em></li>
+<li><em class="em1">dependson LBRACK PACKAGEIDENTIFIER RBRACK</em></li>
+<li><em class="em1">hidecategories LBRACK IDENTIFIERLIST RBRACK</em></li>
+<li><em class="em1">showcategories LBRACK IDENTIFIERLIST RBRACK</em></li>
+</ul>
+</li>
+<li>In CONSTCLASSPARAMS <em class="em1">nousercreate</em> is allowed</li>
+<li>STRUCTPARAMS does not apply</li>
+</ul>
+<h2><a name="0.4"></a>Related Topics </h2>
+<ul><li><a href="class-syntax.html">Class Syntax</a></li>
+<li><a href="function-syntax.html">Function Syntax</a></li>
+<li><a href="variable-syntax.html">Variable Syntax</a></li>
+<li><a href="http://mimesis.csc.ncsu.edu/Unreal/Syntax.htm">http://mimesis.csc.ncsu.edu/Unreal/Syntax.htm</a></li>
+<li><a href="unrealscript-language-test.html">UnrealScript Language Test</a></li>
+</ul>
+<h2><a name="0.5"></a>Discussion</h2>
+<p><em class="em2">El Muerte TDS:</em> As suggested in <a href="undox-revisited.html">UnDox Revisited</a> , so hell why not <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Tarquin:</em> Nice <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">Jerome-X</em> This can be very useful for the parser in the UCEditor plugin. Thanks <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p><em class="em2">El Muerte TDS:</em> The only <em class="em1">open</em> things are the class, var and function params, for the rest is should be done. So if anyone could verify the stuff I wrote down, I might have missed some things.</p>
+<p><em class="em2">El Muerte TDS:</em> done, no more open rules</p>
+<p><em class="em2">CaptainNuss:</em> Greetings, just added the local keyword for variable declarations. Btw, why aren't the basic built-in variable types listed in this specification?</p>
+<p><em class="em2">Mychaeel:</em> "local" is covered by LOCALDECL already.  In VARDECL it's a bug.</p>
+<p><em class="em2">CaptainNuss:</em> Oops, I'm sorry. Didn't see that. <img alt=":(" src="emoticons/sad.gif" align="middle"></p>
+<p><em class="em2">El Muerte TDS:</em> you're right about the basic types, added them now, also the function return type was incorrect (functions can also return arrays, etc..)</p>
+<p>The reson why <em class="em2">var</em> and <em class="em2">local</em> are diffirent is because inline enum and struct definitions are not allowed in <em class="em2">local</em> but are in <em class="em2">var</em>.</p>
+<p><em class="em2">Wormbo:</em> Is there a (free) program that can check a source code file against an EBNF definition?</p>
+<p><em class="em2">El Muerte TDS:</em> not that I know of. But there are programs that create a parser from a EBNF definition (needs some chaning tho): <a href="http://catalog.compilertools.net/lexparse.html">http://catalog.compilertools.net/lexparse.html</a> and one not in that list <a href="http://www.antlr.org">[ANTLR]</a></p>
+<p><em class="em2">Tarquin:</em> I've changed:</p>
+<pre class="paraverbatim"> CONFIGGROUP              = LBRACK IDENTIFIER RBRACK</pre><p>as the actual IDENTIFIER  is optional, right?</p>
+<p><em class="em2">El Muerte:</em> uh, yeah. there are a few other things that might also be changed, I've come across a couple of "hacks" that are apperently legal too <img alt=":(" src="emoticons/sad.gif" align="middle"> Not to speak of the things Unreal2 allows. Also there are a couple of new UT2004 keywords missing.</p>
+<p><em class="em2">Iainmcgin:</em> i changed FUNCTIONARGS so that the type of the parameter can include the basic types (int, float etc). I'm working on a SableCC grammar file for UnrealScript at the moment, so I'll note down other errors in this EBNF as i find them.</p>
+<p><em class="em2">sprfreak14:</em> Should comments be included in this EBNF?<br>Proposal:</p>
+<pre class="uscript">COMMENT                    <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> SINGLELINECOMMENT <span class="uscript-operator">|</span> DELIMITEDCOMMENT <span class="uscript-operator">)</span>
+SINGLELINECOMMENT          <span class="uscript-operator">=</span> <span class="uscript-name">'//'</span> <span class="uscript-operator">(</span> NOTNEWLINE <span class="uscript-operator">)</span><span class="uscript-operator">*</span>
+NOTNEWLINE                 <span class="uscript-operator">=</span> Any character except a <span class="uscript-keyword">new</span> line character
+DELIMITEDCOMMENT           <span class="uscript-operator">=</span> <span class="uscript-name">'/*'</span> <span class="uscript-operator">(</span> DELIMITEDCOMMENTCHARACTERS <span class="uscript-operator">)</span><span class="uscript-operator">*</span> <span class="uscript-name">'*/'</span>
+DELIMITEDCOMMENTCHARACTERS <span class="uscript-operator">=</span> <span class="uscript-operator">(</span> NOTASTERISK <span class="uscript-operator">|</span> <span class="uscript-name">'*'</span> NOTSLASH <span class="uscript-operator">)</span>
+NOTASTERISK                <span class="uscript-operator">=</span> Any character except <span class="uscript-name">'*'</span>
+NOTSLASH                   <span class="uscript-operator">=</span> Any character except <span class="uscript-name">'/'</span></pre><p><em class="em2">Sweavo:</em> the usual way (i.e. the way I would do it writing a C parser) to deal with comments is at the <a href="http://en.wikipedia.org/wiki/Lexer">[Lexing stage]</a>, i.e. there is a stage before parsing that recognizes tokens.  Comments are reduced to whitespace at that stage.  While the comment stuff above looks OK at a glance, the problem is that you then have to put <tt>COMMENT</tt> all over the place in the grammar to reflect all the valid places for a comment.  Pretty much destroys the usefulness of the grammar.  But I agree, if this is to be useful to people writing syntax highlighters, comments should be addressed.</p>
+<p><em class="em2">sprfreak14:</em> Is <tt>DOT default DOT IDENTIFIER</tt> in <tt>QUALIFIEDIDENTIFIER</tt> optional?</p>
+<script type="text/javascript"><!--
+ menuItemAdd("Non-Terminals", "#0.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Declaration parts ", "#0.1.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Replication parts", "#0.1.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Body parts", "#0.1.3");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>State parts", "#0.1.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Function parts", "#0.1.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;&nbsp;&nbsp;</tt>Code parts", "#0.1.3.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Defaultproperties", "#0.1.4");
+menuItemAdd("Terminals", "#0.2");
+menuItemAdd("Notes", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Case", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Unreal Engine", "#0.3.2");
+menuItemAdd("Related Topics ", "#0.4");
+menuItemAdd("Discussion", "#0.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=UnrealScript_Grammar">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=UnrealScript_Grammar">View other revisions</a><br>Last edited December 6, 2005 11:07 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=UnrealScript_Grammar">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/UnrealScript_Grammar">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Gah - a solution with more questions. (EntropicLqd)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

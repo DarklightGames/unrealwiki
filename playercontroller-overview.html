@@ -1,0 +1,292 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: PlayerController Overview</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=PlayerController_Overview; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=PlayerController Overview">PlayerController Overview</a></h1>
+	<div class="wiki"><p>A UT200x player is composed of a number of classes that all work together to accept and process input from the player and handle collision with the world.  Bots use much the same system, so processing of AI also takes place (for Bot-specific subclasses; more on that in a minute) within the same code.  What follows is an attempt to explain the different classes involved and how they interact.</p>
+<h2><a name="0.1"></a>A Quick Nod to the Controller Class </h2>
+<p>Here's what the class header of Controller has to say.</p>
+<blockquote><p>Controllers are non-physical actors that can be attached to a pawn to control its actions.  PlayerControllers are used by human players to control pawns, while AI Controllers implement the artificial intelligence for the pawns they control.  Controllers take control of a pawn using their Possess() method, and relinquish control of the pawn by calling UnPossess().</p>
+<p>Controllers receive notifications for many of the events occuring for the Pawn they are controlling.  This gives the controller the opportunity to implement the behavior in response to this event, intercepting the event and superceding the Pawn's default behavior.  </p>
+</blockquote><p>Although a full discussion of the properties of Controller is beyond the scope of this page there are a couple of interesting (to me anyway) properties defined at this level.</p>
+<ul><li>bGodMode - Set at this level it allows computer controlled players to enter god mode.</li>
+<li>FovAngle - The controller's field of view - allows bots to have wider FOV's.  There's potential here for some bot customisation for the competative, as some players use a non standard FOV.</li>
+</ul>
+<h2><a name="0.2"></a>PlayerController</h2>
+<p>The PlayerController class is where the real action happens as far as human players go.  This class determines what the player sees when in first person view and in third person view and how the "camera" behaves.  It handles things like view shaking and the display of fog.  There are also handling functions in there for force-feedback events and support for more console commands than you can shake a stick at.</p>
+<p>The most important thing to remember about the PlayerController is that it serves two purposes.  The controller's <em class="em2">ViewTarget</em> is responsible for driving the location and rotation of the scene the player sees.  The controller's <em class="em2">Pawn</em> is the pawn that is actually controlled by the PlayerController class.  They do not have to reference the same <a href="actor.html">Actor</a>.</p>
+<p class="indent1"><em class="em2">Mychaeel:</em> What do you mean by the last sentence?</p>
+<p class="indent1"><em class="em2">EntropicLqd:</em> When playing in the game the ViewTarget is normally the same object as the controlled Pawn.  This does not have to be the case though, and it would be quite possible to set the ViewTarget to an actor that's trailing the controller Pawn for example.  I say that ... but I've not tested it yet - hopefully I'll have the chance tonight.  I should be working on <a href="customising-the-player-view.html">Customising the Player View</a> tonight so I'll probably cover it off in there.  Watch this space so to speak.</p>
+<p class="indent1"><em class="em2">Mychaeel:</em> Ah, that.  Yes, it works.  <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<p>The PlayerController and the controlled Pawn are tied explicitly to each other.  The controller receives many events to do with the current state and actions of the Pawn it's controlling.  These <em class="em1">event functions</em> are actually invoked by the Pawn being controlled as it moves through the world and interacts with it's environment.  The following code is fairly typical of the Pawn callbacks on offer.  In the example below if the Pawn has a controller then it is up to the controller to return the view rotation.  By <em class="em1">default</em> this will actually be the rotation of the Pawn.</p>
+<pre class="uscript"><span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> rotator GetViewRotation<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Controller <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> Rotation<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span> Controller<span class="uscript-operator">.</span>GetViewRotation<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.3"></a>Views</h2>
+<p>The view you see as a player is driven by an event defined at the PlayerController level.  The function definition is shown below.</p>
+<pre class="uscript"><span class="uscript-keyword">event</span> PlayerCalcView<span class="uscript-operator">(</span><span class="uscript-keyword">out</span> actor ViewActor<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> vector CameraLocation<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> rotator CameraRotation <span class="uscript-operator">)</span></pre><p>The values passed in ViewActor, CameraLocation, and CameraRotation are derived from an alternate universe (I've not found where yet).  In essence this function performs the following steps.</p>
+<ul><li>Calls the <em class="em1">SpecialCalcView()</em> function on the Pawn (possibly the view target, possibly the currently possessed pawn).  This gives the Pawn an opportunity to construct a custom view based upon what it sees.  (used for remote control robots and stuff I guess - possibly even the 'deemer although I've not looked).  If this function calculates the view the player sees then it should return true.  NOTE: The Pawn's bSpecialCalcView property must be true for this function to be called.</li>
+<li>If a special view was not constructed by the pawn then the current view target of the controller is checked to make sure it still exists or is not about to be deleted from the world.  If deletion is pending then a new view target is obtained.</li>
+<li>If the current view target is the current "Pawn" associated with the controller then either CalcBehindView() or CalcFirstPersonView() is called to produce the camera location and rotation required.</li>
+<li>If the current view target is the controller itself then the controller's rotation is used as the camera rotation.</li>
+<li>If the current view target is a projectile then the camera location is set to the view target's collision height, and the camera rotation is set to that of the projectile being followed.</li>
+<li>If none of the above conditions are met then the view target is checked to see if it is a <a href="pawn.html">Pawn</a>.  If this is the case then the following happens:<ul><li>If we are a client of a networked game and our view target is a player pawn then we use the location of the view target and the rotation of the controller (it reduces the perception of lag and allows you to look around in behind view).</li>
+<li>If are the server (or running a standalone game) then both the location and rotation of the view target is used.</li>
+</ul>
+</li>
+<li>The Default Behaviour</li>
+</ul>
+<p>So, lets examine the PlayerCalcView() function.  I've reproduced it here in its entirety as there are a couple of things worth noting about it.  I've taken the liberty of adding some additional comments to the code in order to cover the things I think are important.</p>
+<pre class="uscript">  <span class="uscript-comment">// If desired, call the possessed pawn's own view calculation function.  If this function</span>
+  <span class="uscript-comment">// calculates the view the player should see then it must return true.  Otherwise the</span>
+  <span class="uscript-comment">// calculated view will be replaced by the usual view.</span>
+  <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Pawn <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> Pawn<span class="uscript-operator">.</span>bSpecialCalcView <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-comment">// try the 'special' calcview. This may return false if its not applicable, and we do the usual.</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Pawn<span class="uscript-operator">.</span>SpecialCalcView<span class="uscript-operator">(</span>ViewActor<span class="uscript-operator">,</span> CameraLocation<span class="uscript-operator">,</span> CameraRotation<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+      <span class="uscript-keyword">return</span><span class="uscript-operator">;</span> <span class="uscript-comment">// EXIT point from function.</span>
+  <span class="uscript-operator">}</span>
+
+  <span class="uscript-comment">// If the controller does not have a view target, or, it's view target is about to be removed from</span>
+  <span class="uscript-comment">// the level then we need to get one.</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>ViewTarget <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">||</span> ViewTarget<span class="uscript-operator">.</span>bDeleteMe <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bViewBot <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>CheatManager <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+      CheatManager<span class="uscript-operator">.</span>ViewBot<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Pawn <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>Pawn<span class="uscript-operator">.</span>bDeleteMe <span class="uscript-operator">)</span>
+      SetViewTarget<span class="uscript-operator">(</span>Pawn<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+      SetViewTarget<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+
+  ViewActor <span class="uscript-operator">=</span> ViewTarget<span class="uscript-operator">;</span>               <span class="uscript-comment">// Set the output variable ViewActor with the new view target</span>
+  CameraLocation <span class="uscript-operator">=</span> ViewTarget<span class="uscript-operator">.</span>Location<span class="uscript-operator">;</span> <span class="uscript-comment">// Set the output variable CameraLocation with the view targets location</span>
+
+  <span class="uscript-comment">// If the view target of the controller is the currently possessed pawn then the</span>
+  <span class="uscript-comment">// calculation of the view the player sees is deferred to the first person and</span>
+  <span class="uscript-comment">// behind view calculation functions.</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> ViewTarget <span class="uscript-operator">==</span> Pawn <span class="uscript-operator">)</span>
+  <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> bBehindView <span class="uscript-operator">)</span> <span class="uscript-comment">//up and behind</span>
+      CalcBehindView<span class="uscript-operator">(</span>CameraLocation<span class="uscript-operator">,</span> CameraRotation<span class="uscript-operator">,</span> CameraDist <span class="uscript-operator">*</span> Pawn<span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>CollisionRadius<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+      CalcFirstPersonView<span class="uscript-operator">(</span> CameraLocation<span class="uscript-operator">,</span> CameraRotation <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span><span class="uscript-operator">;</span> <span class="uscript-comment">// EXIT point from function</span>
+  <span class="uscript-operator">}</span>
+
+  <span class="uscript-comment">// When all else fails the view target of the controller is itself.  If the camera</span>
+  <span class="uscript-comment">// position is locked then a fixed rotation is used.  If not then the output variable</span>
+  <span class="uscript-comment">// is set to the controller's rotation. </span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> ViewTarget <span class="uscript-operator">==</span> <span class="uscript-keyword">self</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bCameraPositionLocked <span class="uscript-operator">)</span>
+      CameraRotation <span class="uscript-operator">=</span> CheatManager<span class="uscript-operator">.</span>LockedRotation<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+      CameraRotation <span class="uscript-operator">=</span> Rotation<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span><span class="uscript-operator">;</span> <span class="uscript-comment">// EXIT point from function</span>
+  <span class="uscript-operator">}</span>
+
+  <span class="uscript-comment">// If we are watching a projectile and we are in first person view then raise the camera</span>
+  <span class="uscript-comment">// vertically upwards by the projectiles collision height.  The camera rotation is set to</span>
+  <span class="uscript-comment">// the rotation of the controller.</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> ViewTarget<span class="uscript-operator">.</span>IsA<span class="uscript-operator">(</span><span class="uscript-name">'Projectile'</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>bBehindView <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    CameraLocation <span class="uscript-operator">+=</span> <span class="uscript-operator">(</span>ViewTarget<span class="uscript-operator">.</span>CollisionHeight<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    CameraRotation <span class="uscript-operator">=</span> Rotation<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">return</span><span class="uscript-operator">;</span> <span class="uscript-comment">// EXIT point from function</span>
+  <span class="uscript-operator">}</span>
+
+  <span class="uscript-comment">// Set the camera rotation to the rotation of the current view target.</span>
+  CameraRotation <span class="uscript-operator">=</span> ViewTarget<span class="uscript-operator">.</span>Rotation<span class="uscript-operator">;</span>
+
+  PTarget <span class="uscript-operator">=</span> Pawn<span class="uscript-operator">(</span>ViewTarget<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PTarget <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    <span class="uscript-comment">// If the view target is a pawn, and we are a client of a networked</span>
+    <span class="uscript-comment">// game then we need to do some additional processing</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Level<span class="uscript-operator">.</span>NetMode <span class="uscript-operator">==</span> NM_Client <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PTarget<span class="uscript-operator">.</span>IsPlayerPawn<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+        <span class="uscript-comment">// If we are looking at a player pawn then the view rotation</span>
+        <span class="uscript-comment">// is set to the TargetViewRotation (how the TargetViewRotation</span>
+        <span class="uscript-comment">// is set is a mystery).  The view target's rotation is also set</span>
+        <span class="uscript-comment">// to this value.</span>
+        PTarget<span class="uscript-operator">.</span>SetViewRotation<span class="uscript-operator">(</span>TargetViewRotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        CameraRotation <span class="uscript-operator">=</span> TargetViewRotation<span class="uscript-operator">;</span>
+      <span class="uscript-operator">}</span>
+
+      <span class="uscript-comment">// Adjust the view targets eye height.</span>
+      PTarget<span class="uscript-operator">.</span>EyeHeight <span class="uscript-operator">=</span> TargetEyeHeight<span class="uscript-operator">;</span>
+      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PTarget<span class="uscript-operator">.</span>Weapon <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+        PTarget<span class="uscript-operator">.</span>Weapon<span class="uscript-operator">.</span>PlayerViewOffset <span class="uscript-operator">=</span> TargetWeaponViewOffset<span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PTarget<span class="uscript-operator">.</span>IsPlayerPawn<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+      CameraRotation <span class="uscript-operator">=</span> PTarget<span class="uscript-operator">.</span>GetViewRotation<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// If we are not in behind view then the position the camera location</span>
+    <span class="uscript-comment">// at the view target's eye height.</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bBehindView <span class="uscript-operator">)</span>
+      CameraLocation <span class="uscript-operator">+=</span> PTarget<span class="uscript-operator">.</span>EyePosition<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+
+  <span class="uscript-comment">// This is the view calculations used to determine the "behind view" when</span>
+  <span class="uscript-comment">// the View Target is not the same as the Possessed pawn.</span>
+  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> bBehindView <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+    CameraLocation <span class="uscript-operator">=</span> CameraLocation <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>ViewTarget<span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>CollisionHeight <span class="uscript-operator">-</span> ViewTarget<span class="uscript-operator">.</span>CollisionHeight<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    CalcBehindView<span class="uscript-operator">(</span>CameraLocation<span class="uscript-operator">,</span> CameraRotation<span class="uscript-operator">,</span> CameraDist <span class="uscript-operator">*</span> ViewTarget<span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>CollisionRadius<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p><em class="em2">OlympusMons:</em> I took this from <a href="http://wiki.beyondunreal.com/wiki/Customising_The_Player_View">http://wiki.beyondunreal.com/wiki/Customising_The_Player_View</a> and put it here I though this was a better place.</p>
+<h2><a name="0.4"></a>Spectators</h2>
+<p>Spectating is also handled by the PlayerController class.  A state hierarchy is used to enabled and disabled various player functions and generally keep things tidy.  The hierarchy is shown below.</p>
+<pre class="paraverbatim">  BaseSpectating
+    +- Spectating
+    |    +- AttractMode (also defined in xGame.xPlayer)
+    +- PlayerWaiting
+    +- WaitingForPawn</pre><p>If you spend any time looking through the spectating code (which does more or less what you'd expect) you'll notice something really odd.  A pathalogical desire to set the view target.</p>
+<pre class="uscript"><span class="uscript-comment">// Spectating - AltFire() calls ServerViewSelf() to return to your corpse (if you've been killed or whatever)</span>
+
+<span class="uscript-comment">// ServerViewSelf() does the following:</span>
+    SetViewTarget<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    ClientSetViewTarget<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// ClientSetViewTarget() is defined as:</span>
+<span class="uscript-keyword">function</span> ClientSetViewTarget<span class="uscript-operator">(</span> Actor a <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    SetViewTarget<span class="uscript-operator">(</span> a <span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>In fact, every call to ClientSetViewTarget( target ) is preceded with a call to SetViewTarget( target ).  Is this simply an example of redundant code within the code base or something more sinister?  I'll leave it up to the reader to decide.</p>
+<h2><a name="0.5"></a>Movement and Control </h2>
+<p>Player movement and control can be split into two sections.  The first is capturing input from the player and doing stuff with it.  The second is ensuring that the player's position in the world is consistent between the client and the server.</p>
+<h3><a name="0.5.1"></a>Capturing Player Input </h3>
+<p>There are two classes shipped with UT2003 responsible for handling the player's input, and managing the <em class="em1">input configuration</em>.  Both of these are in the Engine class.  The two classes are shown below.</p>
+<pre class="paraverbatim"> Engine.<a href="playerinput.html">PlayerInput</a>
+    +- Engine.XBoxPlayerInput<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=XBoxPlayerInput&referrerid=PlayerController_Overview">?</a></pre><p>The PlayerInput class is defined as being <em class="em1">within PlayerController</em>.  This means that the class has visibility of the attributes of the PlayerController class.  These classes only exist on the client.  The entry points into the PlayerInput class from a handling point of view are shown below.</p>
+<pre class="uscript"><span class="uscript-comment">// This function is called from PlayerController.PlayerTick( float DeltaTime )</span>
+<span class="uscript-comment">// to figure out what the player is up to.</span>
+<span class="uscript-keyword">event</span> PlayerInput<span class="uscript-operator">(</span> <span class="uscript-type">float</span> DeltaTime <span class="uscript-operator">)</span>
+
+<span class="uscript-comment">// This function is called from PlayerController.PlayerMove( float DeltaTime )</span>
+<span class="uscript-comment">// it determines whether the player is dodging and if so, in which direction.</span>
+<span class="uscript-keyword">function</span> Actor<span class="uscript-operator">.</span>eDoubleClickDir CheckForDoubleClickMove<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span></pre><p><em class="em1">It's pretty arcane in there.  The logic within the double click move function is particularly tortuous.  I'll need sleep before tackling that one.</em></p>
+<h3><a name="0.5.2"></a>Player Movement and Replication </h3>
+<blockquote><p><em class="em2">Mychaeel:</em> Player movement replication roughly works like this:  Locally, the player moves freely, and the client sends information about that to the server.  The server then tries to replay those moves when it receives them, and then sends information back to the client on whether the movements worked out or not (and, if not, where the player actually is right now).  That way you don't experience any lag in your own movement when playing on a game server unless you interact with conflicting dynamic objects (for instance, other players or movers or projectiles).</p>
+</blockquote><p>Here's what the PlayerController class has to say about the player's movement replication.  It's a good summary of exactly what is going on.</p>
+<blockquote><p>Here's how player movement prediction, replication and correction works in network games:</p>
+<p>Every tick, the PlayerTick() function is called.  It calls the PlayerMove() function (which is implemented in various states).  PlayerMove() figures out the acceleration and rotation, and then calls ProcessMove() (for single player or listen servers), or ReplicateMove() (if its a network client).</p>
+<p>ReplicateMove() saves the move (in the PendingMove list), calls ProcessMove(), and then replicates the move to the server by calling the replicated function ServerMove() - passing the movement parameters, the client's resultant position, and a timestamp.</p>
+<p>ServerMove() is executed on the server.  It decodes the movement parameters and causes the appropriate movement to occur.  It then looks at the resulting position and if enough time has passed since the last response, or the position error is significant enough, the server calls ClientAdjustPosition(), a replicated function.</p>
+<p>ClientAdjustPosition() is executed on the client.  The client sets its position to the servers version of position, and sets the bUpdatePosition flag to true.</p>
+<p>When PlayerTick() is called on the client again, if bUpdatePosition is true, the client will call ClientUpdatePosition() before calling PlayerMove().  ClientUpdatePosition() replays all the moves in the pending move list which occured after the timestamp of the move the server was adjusting.</p>
+</blockquote><p>I guess the above comments really beg the question, "How exactly do replicated functions work then?".</p>
+<h2><a name="0.6"></a>Related Topics</h2>
+<ul><li><a href="controller-overview.html">Controller Overview</a></li>
+<li><a href="creating-an-interaction-fr2.html">Creating an Interaction from a PlayerController</a></li>
+<li><a href="customising-the-player-view.html">Customising the Player View</a></li>
+</ul>
+<h2><a name="0.7"></a>Discussion</h2>
+<p><em class="em2">OlympusMons:</em> Ok I put all the stuff that was on the player controller page here for an overview similar to <a href="controller-overview.html">Controller Overview</a>. This is probably temporary until the <a href="playercontroller.html">PlayerController</a> page can be brought to standard formatting. If I was wrong in doing this please fix this <img alt=";)" src="emoticons/wink.gif" align="middle"></p>
+<p><em class="em2">SuperApe:</em> Looks pretty good for the most part.</p>
+<hr class="thin"><p><a href="refactor-me.html">Refactor Me</a> &ndash; Some things here just need a little careful organization.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("A Quick Nod to the Controller Class ", "#0.1");
+menuItemAdd("PlayerController", "#0.2");
+menuItemAdd("Views", "#0.3");
+menuItemAdd("Spectators", "#0.4");
+menuItemAdd("Movement and Control ", "#0.5");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Capturing Player Input ", "#0.5.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Player Movement and Replication ", "#0.5.2");
+menuItemAdd("Related Topics", "#0.6");
+menuItemAdd("Discussion", "#0.7");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=PlayerController_Overview">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=PlayerController_Overview">View other revisions</a><br>Last edited January 24, 2006 10:39 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=PlayerController_Overview">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/PlayerController_Overview">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>The three virtues of a programmer: Laziness, Impatience, and Hubris. (Larry Wall)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

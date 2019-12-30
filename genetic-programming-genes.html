@@ -1,0 +1,327 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Genetic Programming/Genes</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Genetic_Programming/Genes; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="genetic-programming.html">Genetic Programming</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Genetic+Programming/Genes">Genes</a></h1>
+	<div class="wiki"><p><a href="zedsquared-developer-journa.html">This page</a> introduced the core class and ideas behind breeding a routine using <a href="http://www.genetic-programming.com/">[Genetic Programming.]</a>  </p>
+<p>Having sorted out the core stuff we need to think about the bigger picture:</p>
+<p>The 'outer loop' of GP goes like this:</p>
+<ol><li>Pick a candidate from a population of random programmes</li>
+<li>Test the candidate, keep track of how well it does</li>
+<li>Repeat untill all candidates have had enough trials to get a measure of their fitness for the task in hand</li>
+<li>Breed a new population by:<ol><li>Finding the best performing members of the current 'generation'</li>
+<li>Perform 'genetic operations' on these elite performers to generate members of the next generation by combining or changing their code in some way.</li>
+<li>Repeat untill you have a new population to test.</li>
+</ol>
+</li>
+<li>Start all over again at 1), repeat until you deem performance good enough.</li>
+</ol>
+<p>Now the classical way to do this involves running one large population on one machine and this is  what I'll start off with. But this can have some disadvantages as the population can become under diversified as an early partial solution to the problem rises to the top and monopolises all the gene pool. </p>
+<p>One way around this is to adopt the so called 'island' model and maintain many populations, each randomised at the start, and to allow those to breed for a while and then periodically allow exchange of members with the others thus ensuring some diversity. These populations can be run on different machines communicating over a network, or as many processes on one machine.</p>
+<p>Anyway that's getting a bit ahead of myself... I need some way of storing and manipulating these things so it's time for a fresh class:  The GPmaster:</p>
+<pre class="uscript"><span class="uscript-comment">//---------------------------------------------------------</span>
+<span class="uscript-comment">// class that handles breeding, fitness selection etc of GP</span>
+<span class="uscript-comment">// trees</span>
+<span class="uscript-comment">//-----------------------------------------------------------</span>
+
+<span class="uscript-keyword">class</span> GPMaster <span class="uscript-keyword">extends</span> Info <span class="uscript-keyword">config</span><span class="uscript-operator">(</span>Genes<span class="uscript-operator">)</span><span class="uscript-operator">;</span></pre><p>A good start <img alt=":)" src="emoticons/smile.gif" align="middle"> as the only way of storing persistant data in uscript is via ini files we make this use genes.ini as a gene pool database (see <a href="config-vars-and-ini-files.html">Config Vars And .Ini Files</a> ).</p>
+<p>Uscript never was meant to be used as a heavy duty database so if the breeding programme takes off and requires the tracking of thousands of individuals then I'll have to look at using <a href="tcplink.html">TcpLink</a> to talk to an external decent DBMS like MySQL or something. But at this stage in development ini files will do.</p>
+<p>To keep track of a member of the population we need to store the code that it uses and its performance in the trials, this sounds like just the job for a struct:</p>
+<pre class="uscript"><span class="uscript-keyword">struct</span> gene
+  <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">var</span> <span class="uscript-type">string</span> code<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">var</span> fitnessstats fitness<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">var</span> <span class="uscript-type">int</span> PoolIdx<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">var</span> <span class="uscript-type">int</span> trials<span class="uscript-operator">;</span>  <span class="uscript-comment">// number of times this has been tested in this run</span>
+    <span class="uscript-keyword">var</span> <span class="uscript-type">int</span> rank<span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span><span class="uscript-operator">;</span></pre><p>At this point I realised that the GP framework I'm putting together could get used for many different tasks, not just breeding something that's good at steering lightcycles. Different tasks will have different ways of measuring success, not just number of frags... perhaps number of hits/bullets fired, or time spent staying alive, or prisoners rescued... whatever, the point is that we don't know what info will be returned by the other game code (the stuff that's actually running the trials ) so we make this gpmaster class somewhat abstract and fill in nitty gritty details in a subclass.</p>
+<p>My first thought was along the lines of:</p>
+<pre class="uscript"><span class="uscript-keyword">struct</span> fitnessstats    <span class="uscript-comment">// redefined in subclasses  for different tasks</span>
+                      
+  <span class="uscript-operator">{</span>
+   
+  <span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">function</span> initfitstats<span class="uscript-operator">(</span> fitnessstats f<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-comment">// called to initialise stats on new gene</span>
+ <span class="uscript-comment">// define in subclass</span>
+<span class="uscript-operator">}</span>
+
+
+
+<span class="uscript-keyword">function</span> addfitstats<span class="uscript-operator">(</span> fitnessStats <span class="uscript-keyword">new</span><span class="uscript-operator">,</span> fitnessstats old <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+  <span class="uscript-comment">// merges fitness stats from gene returning from trial</span>
+  <span class="uscript-comment">// with those in pool</span>
+  <span class="uscript-comment">// define in subclass</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> gene best<span class="uscript-operator">(</span> gene g1<span class="uscript-operator">,</span> gene g2 <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-comment">// evaluate and return fittest of the two genes</span>
+<span class="uscript-comment">// submitted.</span>
+<span class="uscript-comment">// Used to sort genes to find the best performers</span>
+<span class="uscript-comment">// define in subclass</span>
+<span class="uscript-operator">}</span></pre><p>And all seemed fine, I coded up a subclass, put some actual variables in the struct and all compiled fine.. then I wrote initfitstats to suit and blarrrt! compiler error about redefining initfitstats, probably because even though the number of arguments to that function seemingly haven't changed (there's still just one struct passed) there are now more variables in that struct, hence the confusion <img alt=":)" src="emoticons/smile.gif" align="middle"> No panic, I'll just have to define an object to hold fitness variables and subclass that instead I guess. Actually this is a bit neater as that class can also hold the functions needed to initialise itself and so on, but is messier as storing these variables is a problem... hmmm some more thought needed there, quick workround for now, though is to define all the stuff I need to get *my* task done up here in the superclass and worry about being versatile later <img alt=":)" src="emoticons/smile.gif" align="middle"> So we have the variable definition block in full:</p>
+<pre class="uscript"><span class="uscript-keyword">struct</span> fitnessstats    <span class="uscript-comment">// need to replace this with an object so it can be redifined in subclasses</span>
+                       <span class="uscript-comment">// for different tasks</span>
+  <span class="uscript-operator">{</span>
+   <span class="uscript-keyword">var</span>   <span class="uscript-type">int</span> gameswonVbots<span class="uscript-operator">;</span>
+   <span class="uscript-keyword">var</span>   <span class="uscript-type">int</span> gameslostVbots<span class="uscript-operator">;</span>
+   <span class="uscript-keyword">var</span>   <span class="uscript-type">int</span> GameswonVhumans<span class="uscript-operator">;</span>
+   <span class="uscript-keyword">var</span>   <span class="uscript-type">int</span> GameslostVhumans<span class="uscript-operator">;</span>
+   <span class="uscript-keyword">var</span> <span class="uscript-type">float</span> timespentplaying<span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+
+<span class="uscript-keyword">struct</span> gene
+  <span class="uscript-operator">{</span>
+    <span class="uscript-keyword">var</span> <span class="uscript-type">string</span> code<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">var</span> fitnessstats fitness<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">var</span> <span class="uscript-type">int</span> PoolIdx<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">var</span> <span class="uscript-type">int</span> trials<span class="uscript-operator">;</span>  <span class="uscript-comment">// number of times this has been tested in this run</span>
+    <span class="uscript-keyword">var</span> <span class="uscript-type">int</span> rank<span class="uscript-operator">;</span>
+  <span class="uscript-operator">}</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">config</span> gene pool<span class="uscript-operator">[</span><span class="uscript-number">200</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-keyword">config</span> <span class="uscript-type">int</span> totaltrials<span class="uscript-operator">,</span>PoolPtr<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">int</span> maxdepth<span class="uscript-operator">;</span></pre><p>So you can see we have an array of genes, size 200 for our population (number 200 pulled out of the air... may grow later), and a couple of persistant variables to keep track of how many trials have been made and which was the last gene plucked fro the pool for testing.</p>
+<p>Right, now for some proper meat:</p>
+<pre class="uscript"><span class="uscript-keyword">function</span> PullGene<span class="uscript-operator">(</span><span class="uscript-keyword">out</span> gpinfo result<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-comment">// grab a gene from the pool</span>
+
+ <span class="uscript-keyword">local</span> gpnode root1<span class="uscript-operator">;</span>
+ <span class="uscript-keyword">Local</span> <span class="uscript-type">int</span> idx<span class="uscript-operator">;</span>
+ log<span class="uscript-operator">(</span><span class="uscript-string">" *GPM* pullgene called with gpi = "</span><span class="uscript-operator">$</span>result<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-comment">// alternate between next gene from pool and random gene</span>
+ <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>toggler <span class="uscript-operator">==</span><span class="uscript-number">0</span><span class="uscript-operator">)</span> idx <span class="uscript-operator">=</span> rand<span class="uscript-operator">(</span><span class="uscript-number">600</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">else</span>
+   <span class="uscript-operator">{</span>
+     idx <span class="uscript-operator">=</span> poolptr<span class="uscript-operator">;</span>
+     poolptr <span class="uscript-operator">++</span><span class="uscript-operator">;</span>
+     <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>poolptr <span class="uscript-operator">==</span><span class="uscript-number">601</span><span class="uscript-operator">)</span> poolptr<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+   <span class="uscript-operator">}</span>
+ toggler <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">-</span>toggler<span class="uscript-operator">;</span>
+
+ result<span class="uscript-operator">.</span>initialise<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> pool<span class="uscript-operator">[</span>idx<span class="uscript-operator">]</span><span class="uscript-operator">.</span>code <span class="uscript-operator">==</span> <span class="uscript-string">""</span> <span class="uscript-operator">)</span>
+   <span class="uscript-operator">{</span>
+     <span class="uscript-comment">// grow random tree to fill empty pool position</span>
+     root1<span class="uscript-operator">=</span>spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'gpnode'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+     root1<span class="uscript-operator">.</span>RandomGrow<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>maxdepth<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+     root1<span class="uscript-operator">.</span>WriteToString<span class="uscript-operator">(</span>result<span class="uscript-operator">.</span>code<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+     log<span class="uscript-operator">(</span><span class="uscript-string">" GPM new code generated = "</span><span class="uscript-operator">$</span>result<span class="uscript-operator">.</span>code<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+     root1<span class="uscript-operator">.</span>prune<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+     pool<span class="uscript-operator">[</span>idx<span class="uscript-operator">]</span><span class="uscript-operator">.</span>PoolIdx <span class="uscript-operator">=</span> idx<span class="uscript-operator">;</span>
+     pool<span class="uscript-operator">[</span>idx<span class="uscript-operator">]</span><span class="uscript-operator">.</span>trials<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+     pool<span class="uscript-operator">[</span>idx<span class="uscript-operator">]</span><span class="uscript-operator">.</span>code<span class="uscript-operator">=</span>result<span class="uscript-operator">.</span>code<span class="uscript-operator">;</span>
+     root1<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+   <span class="uscript-operator">}</span>
+
+
+ result<span class="uscript-operator">.</span>code<span class="uscript-operator">=</span>pool<span class="uscript-operator">[</span>idx<span class="uscript-operator">]</span><span class="uscript-operator">.</span>code<span class="uscript-operator">;</span>
+ result<span class="uscript-operator">.</span>ID<span class="uscript-operator">=</span>idx<span class="uscript-operator">;</span>
+ saveconfig<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> returngene<span class="uscript-operator">(</span> GPinfo incoming <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+ <span class="uscript-comment">// maybe some sort of hash function for indexing genes later ?</span>
+ addfitstats<span class="uscript-operator">(</span>incoming<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ pool<span class="uscript-operator">[</span>incoming<span class="uscript-operator">.</span>id<span class="uscript-operator">]</span><span class="uscript-operator">.</span>trials <span class="uscript-operator">++</span><span class="uscript-operator">;</span>
+ pool<span class="uscript-operator">[</span>incoming<span class="uscript-operator">.</span>id<span class="uscript-operator">]</span><span class="uscript-operator">.</span>rank<span class="uscript-operator">=</span>eval<span class="uscript-operator">(</span>pool<span class="uscript-operator">[</span>incoming<span class="uscript-operator">.</span>id<span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ totaltrials<span class="uscript-operator">++</span><span class="uscript-operator">;</span>
+ <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>totaltrials <span class="uscript-operator">%</span> Trials_per_generation<span class="uscript-operator">==</span><span class="uscript-number">0</span><span class="uscript-operator">)</span>
+     breednewpool<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+ saveconfig<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>Pullgene will be used by the game entity that's going to be controlled by the GP tree to request a new brain for testing, it alternately selects either a random gene or the next one in sequence, this was done so I could ensure that as, long as I run at least twice as many tests as there are candidates in the pool, each candidate is guaranteed to be tested but not only against its immediate neighbours as would happen if I were simply to go through the genes sequentially. </p>
+<p>Within each gene struct is stored an index to the pool array so that when it comes back from the trial and returngene() is called then the appropriate set of fitness stats gets updated, remember there could be any number of in game bots all requesting new brains at different times during a trial so this is the best way to keep track of things IMO.</p>
+<p>Now a break from the higher level logic for an actual genetic operator: the crossover operator. What this should do is take two trees, chose a node at random on each one,and swap over those nodes, along with any sub tree attached to them. </p>
+<pre class="uscript"><span class="uscript-keyword">function</span> crossover<span class="uscript-operator">(</span> gene g1<span class="uscript-operator">,</span> gene g2<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> gene g3<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> gene g4<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">int</span> n1<span class="uscript-operator">,</span>n2<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">int</span> nc1<span class="uscript-operator">,</span>nc2<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> <span class="uscript-type">string</span> s1<span class="uscript-operator">,</span>s2<span class="uscript-operator">;</span>
+<span class="uscript-keyword">local</span> gpnode root1<span class="uscript-operator">,</span>root2<span class="uscript-operator">,</span> node1<span class="uscript-operator">,</span> node2<span class="uscript-operator">;</span>
+
+log<span class="uscript-operator">(</span><span class="uscript-string">" crossover: building trees "</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+root1<span class="uscript-operator">=</span>spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'gpnode'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+root2<span class="uscript-operator">=</span>spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'gpnode'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+log<span class="uscript-operator">(</span><span class="uscript-string">"code string1 ="</span><span class="uscript-operator">$</span>g1<span class="uscript-operator">.</span>code<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+log<span class="uscript-operator">(</span><span class="uscript-string">"code string2 ="</span><span class="uscript-operator">$</span>g2<span class="uscript-operator">.</span>code<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+root1<span class="uscript-operator">.</span>ReadFromString<span class="uscript-operator">(</span>g1<span class="uscript-operator">.</span>code<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+root2<span class="uscript-operator">.</span>ReadFromString<span class="uscript-operator">(</span>g2<span class="uscript-operator">.</span>code<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// count nodes in candidates</span>
+root1<span class="uscript-operator">.</span>CountNodes<span class="uscript-operator">(</span>nc1<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+root2<span class="uscript-operator">.</span>CountNodes<span class="uscript-operator">(</span>nc2<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+log<span class="uscript-operator">(</span><span class="uscript-string">" crossover: nodes counted in tree 1 = "</span><span class="uscript-operator">$</span>nc1<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+log<span class="uscript-operator">(</span><span class="uscript-string">" crossover: nodes counted in tree 2 = "</span><span class="uscript-operator">$</span>nc2<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-comment">// select a couple of nodes at random</span>
+
+n1 <span class="uscript-operator">=</span> rand<span class="uscript-operator">(</span>nc1<span class="uscript-number">-1</span><span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-number">2</span><span class="uscript-operator">;</span>
+
+n2 <span class="uscript-operator">=</span> rand<span class="uscript-operator">(</span>nc2<span class="uscript-number">-1</span><span class="uscript-operator">)</span><span class="uscript-operator">+</span><span class="uscript-number">2</span><span class="uscript-operator">;</span>
+
+log<span class="uscript-operator">(</span><span class="uscript-string">" Crossover point 1 = "</span><span class="uscript-operator">$</span>n1<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+log<span class="uscript-operator">(</span><span class="uscript-string">" CRossover point 2 = "</span><span class="uscript-operator">$</span>n2<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+node1 <span class="uscript-operator">=</span> root1<span class="uscript-operator">.</span>findnode<span class="uscript-operator">(</span>n1<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+node2 <span class="uscript-operator">=</span> root2<span class="uscript-operator">.</span>findnode<span class="uscript-operator">(</span>n2<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+log<span class="uscript-operator">(</span><span class="uscript-string">" crossover node on tree1 = "</span><span class="uscript-operator">$</span>node1<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+log<span class="uscript-operator">(</span><span class="uscript-string">" crossover node on tree2 = "</span><span class="uscript-operator">$</span>node2<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-comment">//swap over subtrees</span>
+
+node1<span class="uscript-operator">.</span>parent<span class="uscript-operator">.</span>children<span class="uscript-operator">[</span>node1<span class="uscript-operator">.</span>childnum<span class="uscript-operator">]</span><span class="uscript-operator">=</span>node2<span class="uscript-operator">;</span>
+node2<span class="uscript-operator">.</span>parent<span class="uscript-operator">.</span>children<span class="uscript-operator">[</span>node2<span class="uscript-operator">.</span>childnum<span class="uscript-operator">]</span><span class="uscript-operator">=</span>node1<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// write out new strings</span>
+root1<span class="uscript-operator">.</span>WriteToString<span class="uscript-operator">(</span>s1<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+root2<span class="uscript-operator">.</span>WriteToString<span class="uscript-operator">(</span>s2<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+log<span class="uscript-operator">(</span><span class="uscript-string">" after crossover tree1 ="</span><span class="uscript-operator">$</span>s1<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+log<span class="uscript-operator">(</span><span class="uscript-string">" after crossover tree2 ="</span><span class="uscript-operator">$</span>s2<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// kill orphans</span>
+
+
+root1<span class="uscript-operator">.</span>prune<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> root1<span class="uscript-operator">.</span>destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+root2<span class="uscript-operator">.</span>prune<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> root2<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// initialise new stats blocks.</span>
+initfitstats<span class="uscript-operator">(</span>g3<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+initfitstats<span class="uscript-operator">(</span>g4<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// assign new code strings</span>
+
+g3<span class="uscript-operator">.</span>code<span class="uscript-operator">=</span>s1<span class="uscript-operator">;</span>
+g4<span class="uscript-operator">.</span>code<span class="uscript-operator">=</span>s2<span class="uscript-operator">;</span>
+<span class="uscript-comment">// the end!</span>
+<span class="uscript-operator">}</span></pre><p>All those logs are from testing and I'm pleased to say it all worked OK... here's some annotated log snippage to illustrate:</p>
+<p>ScriptLog:  crossover: building trees </p>
+<p>ScriptLog: code string1 =XXERQG</p>
+<p>ScriptLog: code string2 =N*HNK0.020814LQ-A+&lt;A+HEA+K0.155583GE</p>
+<p>ScriptLog:  crossover: nodes counted in tree 1 = 7</p>
+<p>ScriptLog:  crossover: nodes counted in tree 2 = 21</p>
+<p>ScriptLog:  Crossover point 1 = 7</p>
+<p>ScriptLog:  CRossover point 2 = 11</p>
+<p>ScriptLog:  crossover node on tree1 = UTronCyclebottrainerTEST.GPTlookLeft4180</p>
+<p>ScriptLog:  crossover node on tree2 = UTronCyclebottrainerTEST.GPFplus5064</p>
+<p>So the seventh node on tree1 is the chosen crossover point with the eleventh node on tree2. Counting along the strings (starting from 2 to allow for the root node) gives us the characters 'G' and '+' respectively and the logged node types agree... great! that means the node counting and selecting routines all work.</p>
+<p>ScriptLog:  after crossover tree1 =XXERQ+&lt;A+HEA+K0.155583GE</p>
+<p>ScriptLog:  after crossover tree2 =N*HNK0.020814LQ-AG</p>
+<p>And checking those resulting strings confirms that the crossover went OK, woot! </p>
+<p>Now for the next main genetic operator... mutation, but this page is getting large so hop on along to:</p>
+<p><a href="genetic-programming-mutatio.html">Genetic Programming/Mutation</a></p>
+<h2><a name="0.1"></a>your comments welcome</h2>
+<p><em class="em2">Tarquin:</em> Suggestions: </p>
+<ol><li>move content out of <a href="zedsquared-developer-journa.html">ZedSquared/Developer Journal</a> to be episode I of GP.</li>
+<li>change the page names, eg  <a href="genetic-programming-mutatio.html">Genetic Programming/Mutation</a> for episode 3.</li>
+</ol>
+<p><em class="em2">Zedsquared</em>  Cheers for the suggestions Tarq, I'll be doing that sort of thing once I get to the end of my adventure, meanwhile it's somewhat of a shambling pile... bit like me really <img alt=":)" src="emoticons/smile.gif" align="middle"></p>
+<script type="text/javascript"><!--
+ menuItemAdd("your comments welcome", "#0.1");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="genetic-programming.html">Genetic Programming</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Genetic_Programming/Genes">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Genetic_Programming/Genes">View other revisions</a><br>Last edited August 1, 2004 11:10 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Genetic_Programming/Genes">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Genetic_Programming/Genes">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>I search for solutions in this order: Past Code, Unreal Source, Wiki, BUF, groups.yahoo, google, screaming at monitor. (RegularX)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

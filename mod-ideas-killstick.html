@@ -1,0 +1,601 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Mod Ideas/Killstick</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Mod_Ideas/Killstick; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="mod-ideas.html">Mod Ideas</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Mod+Ideas/Killstick">Killstick</a></h1>
+	<div class="wiki"><h3><a name="0.0.1"></a>NOTE:</h3>
+<p>Currently in the process of a complete recode, will post once complete</p>
+<h2><a name="0.1"></a>Description</h2>
+<p>The Killstick is based off of a weapon used in the online comic <a href="http://www.megatokyo.com">[Megatokyo]</a>.</p>
+<h2><a name="0.2"></a>How it works</h2>
+<p>Here's the basics: this weapon works much like the normal sniper rifle. however, when this weapon is fully charged, it consumes all ammo to create a huge explosion, simmilar to the ion cannnon. To charge the weapon you hold the trigger, pull trigger normally for normal shots</p>
+<h2><a name="0.3"></a>Unreal Script Code</h2>
+<p>I already have the majority of the code for this down.</p>
+<h3><a name="0.3.1"></a>General Description</h3>
+<p>This weapons combines code from at least 4 different weapons in UT2003: the zoom super shock rifle, the sniper rifle, the shield gun (charging), and the redeemer/ion cannon. I started by extending my main weapon class from zoom super shock rifle so the gun could zoom, this also allowed me to use the shock rifle beam code for the fire effect. I then started working on adding the charge function by looking at the code for the shield gun and grabbing bits of what i needed. I attempted to use the code from the shield gun for the charge effect, but things got weird (see code once it's up). I then looked at the sniper rilfe code and found what lines enabled headshots and copied those. Finally, i found the <a href="mod-ideas-nukerifles.html">Mod Ideas/NukeRifles</a> here and liked how he did the spawning of a dummy projectile to get the redeemer explosion, and i did the same.</p>
+<h3><a name="0.3.2"></a>Killstick.uc</h3>
+<pre class="uscript"><span class="uscript-comment">//Created by Syntax_Error</span>
+<span class="uscript-keyword">class</span> Killstick <span class="uscript-keyword">extends</span> ZoomSuperShockRifle
+<span class="uscript-keyword">config</span><span class="uscript-operator">(</span>user<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//So weapon preference settings are stored alongside all the standard weapons.</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">float</span> ChargeBar<span class="uscript-operator">(</span><span class="uscript-operator">)</span>  <span class="uscript-comment">//this sets what the charge bar measures</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> FMin<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">,</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>HoldTime<span class="uscript-operator">/</span>KillstickFire<span class="uscript-operator">(</span>FireMode<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">)</span><span class="uscript-operator">.</span>MaxHoldTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+    ItemName<span class="uscript-operator">=</span><span class="uscript-string">"Killstick"</span> <span class="uscript-comment">//The text you see when you switch to the weapon and in various other places.</span>
+    IconMaterial<span class="uscript-operator">=</span>Material<span class="uscript-name">'InterfaceContent.Hud.SkinA'</span> <span class="uscript-comment">//Texture where the icon to be show in the weapon bar is.</span>
+    IconCoords<span class="uscript-operator">=</span><span class="uscript-operator">(</span>X1<span class="uscript-operator">=</span><span class="uscript-number">322</span><span class="uscript-operator">,</span>Y1<span class="uscript-operator">=</span><span class="uscript-number">372</span><span class="uscript-operator">,</span>X2<span class="uscript-operator">=</span><span class="uscript-number">444</span><span class="uscript-operator">,</span>Y2<span class="uscript-operator">=</span><span class="uscript-number">462</span><span class="uscript-operator">)</span> <span class="uscript-comment">//Position of icon in that texture.</span>
+
+    <span class="uscript-comment">//vars for zoom reticle</span>
+    innerArrowsX<span class="uscript-operator">=</span><span class="uscript-number">42.000000</span>
+    innerArrowsY<span class="uscript-operator">=</span><span class="uscript-number">42.000000</span>
+    ArrowColor<span class="uscript-operator">=</span><span class="uscript-operator">(</span>R<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>A<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">)</span>
+    TargetColor<span class="uscript-operator">=</span><span class="uscript-operator">(</span>B<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>G<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>R<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>A<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">)</span>
+    NoTargetColor<span class="uscript-operator">=</span><span class="uscript-operator">(</span>B<span class="uscript-operator">=</span><span class="uscript-number">200</span><span class="uscript-operator">,</span>G<span class="uscript-operator">=</span><span class="uscript-number">200</span><span class="uscript-operator">,</span>R<span class="uscript-operator">=</span><span class="uscript-number">200</span><span class="uscript-operator">,</span>A<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">)</span>
+    FocusColor<span class="uscript-operator">=</span><span class="uscript-operator">(</span>B<span class="uscript-operator">=</span><span class="uscript-number">126</span><span class="uscript-operator">,</span>G<span class="uscript-operator">=</span><span class="uscript-number">90</span><span class="uscript-operator">,</span>R<span class="uscript-operator">=</span><span class="uscript-number">71</span><span class="uscript-operator">,</span>A<span class="uscript-operator">=</span><span class="uscript-number">215</span><span class="uscript-operator">)</span>
+    ChargeColor<span class="uscript-operator">=</span><span class="uscript-operator">(</span>B<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>G<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>R<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">,</span>A<span class="uscript-operator">=</span><span class="uscript-number">255</span><span class="uscript-operator">)</span>
+    RechargeOrigin<span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">600.000000</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">330.000000</span><span class="uscript-operator">)</span>
+    RechargeSize<span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">10.000000</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">180.000000</span><span class="uscript-operator">)</span>
+
+    bShowChargingBar<span class="uscript-operator">=</span><span class="uscript-keyword">True</span> <span class="uscript-comment">//shows charge bar</span>
+    FireModeClass<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>KillstickFire
+    FireModeClass<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>KillstickZoom
+    DrawScale<span class="uscript-operator">=</span><span class="uscript-number">0.4</span>
+    Mesh<span class="uscript-operator">=</span>mesh<span class="uscript-name">'mtWeapon.killstick'</span> <span class="uscript-comment">//What you see in 1st person.</span>
+    BobDamping<span class="uscript-operator">=</span><span class="uscript-number">2.3</span> <span class="uscript-comment">//How much the weapon moves about as you walk.</span>
+
+    PickupClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'KillstickPickup'</span>
+    EffectOffset<span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">100</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">10</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">7.5</span><span class="uscript-operator">)</span> <span class="uscript-comment">//Where effects are drawn. Used for start location of InstantFire beam effects.</span>
+
+    <span class="uscript-comment">//animations</span>
+    SelectAnim<span class="uscript-operator">=</span><span class="uscript-string">"Select"</span>
+    PutDownAnim<span class="uscript-operator">=</span><span class="uscript-string">"PutDown"</span>
+    DisplayFOV<span class="uscript-operator">=</span><span class="uscript-number">60</span>
+
+    PlayerViewOffset<span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">3</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">6</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">3</span><span class="uscript-operator">)</span> <span class="uscript-comment">//Position of the weapon in 1st person</span>
+    PlayerViewPivot<span class="uscript-operator">=</span><span class="uscript-operator">(</span>Pitch<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Roll<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">,</span>Yaw<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">)</span> <span class="uscript-comment">//Rotation of the model in 1st person.</span>
+    UV2Texture<span class="uscript-operator">=</span>Material<span class="uscript-name">'XGameShaders.WeaponEnvShader'</span> <span class="uscript-comment">//What does this do?</span>
+
+    AttachmentClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'KillstickAttachment'</span><span class="uscript-comment">//third person mesh</span>
+
+    SelectSound<span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.LinkGun.SwitchToLinkGun'</span>
+    SelectForce<span class="uscript-operator">=</span><span class="uscript-string">"SwitchToLightningGun"</span> <span class="uscript-comment">//The various 'Force' variables are for force feedback mice etc.</span>
+
+    AIRating<span class="uscript-operator">=</span><span class="uscript-number">0.69</span> <span class="uscript-comment">//How much bots want to use this weapon.</span>
+    CurrentRating<span class="uscript-operator">=</span><span class="uscript-number">0.69</span>
+
+    <span class="uscript-comment">//priority of weapon</span>
+    Priority<span class="uscript-operator">=</span><span class="uscript-number">13</span>
+    DefaultPriority<span class="uscript-operator">=</span><span class="uscript-number">13</span>
+
+    InventoryGroup<span class="uscript-operator">=</span><span class="uscript-number">9</span> <span class="uscript-comment">//Which slot the weapon occupies.</span>
+    GroupOffset<span class="uscript-operator">=</span><span class="uscript-number">4</span> <span class="uscript-comment">//This must be different to all other weapons that occupy the same InventoryGroup.</span>
+<span class="uscript-operator">}</span></pre><h3><a name="0.3.3"></a>KillstickFire.uc</h3>
+<pre class="uscript"><span class="uscript-comment">//Created by Syntax_Error</span>
+<span class="uscript-comment">//::TODO:: bigger beam on charged shot, adjust damage on charged shot</span>
+<span class="uscript-comment">//:::::::: no double charge/flash effects</span>
+
+
+<span class="uscript-keyword">class</span> KillstickFire <span class="uscript-keyword">extends</span> ShockBeamFire<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> sound ChargeSound<span class="uscript-operator">;</span>
+<span class="uscript-keyword">var</span> Emitter ChargeEmitter<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">/********this is the code i used for the charge effect*********
+simulated function DestroyEffects() //destorys effects
+{
+    if (chargingemitter != None)
+    {
+        chargingemitter.Destroy();
+    }
+    Super.DestroyEffects();
+}
+
+simulated function InitEffects() //initalises effects
+{
+    if ( Level.NetMode != NM_DedicatedServer )
+    {
+        ChargingEmitter= Spawn(class'KillstickChargeEffect');
+        //chargingemitter.mRegenPause = true; //::part of xEffects::
+    }
+    Super.InitEffects();
+}
+
+
+function DrawMuzzleFlash(Canvas Canvas) //draws and places charge effect
+{
+
+    if (ChargeEmitter != None &amp;&amp; HoldTime &gt; 0.0 &amp;&amp; !bNowWaiting)
+    {
+        ChargeEmitter.SetLocation( Weapon.GetEffectStart() );
+        Canvas.DrawActor( ChargeEmitter, false, false, Weapon.DisplayFOV );
+    }
+
+    if (FlashEmitter != None)
+    {
+        FlashEmitter.SetLocation( Weapon.GetEffectStart() );
+        if ( Weapon.WeaponCentered() )
+            FlashEmitter.SetRotation(Weapon.Instigator.GetViewRotation());
+        else
+            FlashEmitter.SetRotation(Weapon.Rotation);
+        Canvas.DrawActor( FlashEmitter, false, false, Weapon.DisplayFOV );
+    }
+
+    if ( (Instigator.AmbientSound == ChargeSound)
+        &amp;&amp; ((HoldTime &lt;= 0.0) || bNowWaiting) )
+        Instigator.AmbientSound = None;
+
+}
+********************************************************************/</span>
+<span class="uscript-keyword">function</span> PlayPreFire<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-comment">//this execs when the trigger is pulled</span>
+<span class="uscript-operator">{</span>
+    Weapon<span class="uscript-operator">.</span>LoopAnim<span class="uscript-operator">(</span><span class="uscript-name">'Charge'</span><span class="uscript-operator">,</span> <span class="uscript-number">1</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//loop charging animation until trigger is released</span>
+    weapon<span class="uscript-operator">.</span>PlayOwnedSound<span class="uscript-operator">(</span>ChargeSound<span class="uscript-operator">,</span> SLOT_Interact<span class="uscript-operator">,</span> TransientSoundVolume<span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//plays charging sound</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> DoFireEffect<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Vector StartTrace<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Rotator R<span class="uscript-operator">,</span> Aim<span class="uscript-operator">;</span>
+
+
+    Instigator<span class="uscript-operator">.</span>MakeNoise<span class="uscript-operator">(</span><span class="uscript-number">1.0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-comment">// the to-hit trace always starts right in front of the eye</span>
+    StartTrace <span class="uscript-operator">=</span> Instigator<span class="uscript-operator">.</span>Location <span class="uscript-operator">+</span> Instigator<span class="uscript-operator">.</span>EyePosition<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Aim <span class="uscript-operator">=</span> AdjustAim<span class="uscript-operator">(</span>StartTrace<span class="uscript-operator">,</span> AimError<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    R <span class="uscript-operator">=</span> rotator<span class="uscript-operator">(</span>vector<span class="uscript-operator">(</span>Aim<span class="uscript-operator">)</span> <span class="uscript-operator">+</span> VRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>FRand<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">*</span>Spread<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    DoTrace<span class="uscript-operator">(</span>StartTrace<span class="uscript-operator">,</span> R<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> DoTrace<span class="uscript-operator">(</span>Vector Start<span class="uscript-operator">,</span> Rotator Dir<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Vector X<span class="uscript-operator">;</span>
+
+    X <span class="uscript-operator">=</span> vector<span class="uscript-operator">(</span>Dir<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+
+    TracePart<span class="uscript-operator">(</span>Start<span class="uscript-operator">,</span>Start<span class="uscript-operator">+</span>X<span class="uscript-operator">*</span>TraceRange<span class="uscript-operator">,</span>X<span class="uscript-operator">,</span>Dir<span class="uscript-operator">,</span>Instigator<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> AllowMultiHit<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> TracePart<span class="uscript-operator">(</span>Vector Start<span class="uscript-operator">,</span> Vector End<span class="uscript-operator">,</span> Vector X<span class="uscript-operator">,</span> Rotator Dir<span class="uscript-operator">,</span> Pawn Ignored<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> Vector HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> Actor Other<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> dist<span class="uscript-operator">;</span>
+
+
+    Other <span class="uscript-operator">=</span> Ignored<span class="uscript-operator">.</span>Trace<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> End<span class="uscript-operator">,</span> Start<span class="uscript-operator">,</span> <span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Other <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Other <span class="uscript-operator">!=</span> Ignored<span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>Other<span class="uscript-operator">.</span>bWorldGeometry <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            Other<span class="uscript-operator">.</span>TakeDamage<span class="uscript-operator">(</span>DamageMax<span class="uscript-operator">,</span> Instigator<span class="uscript-operator">,</span> HitLocation<span class="uscript-operator">,</span> Momentum<span class="uscript-operator">*</span>X<span class="uscript-operator">,</span> DamageType<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            HitNormal <span class="uscript-operator">=</span> <span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Pawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>HitLocation <span class="uscript-operator">!=</span> Start<span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> AllowMultiHit<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+                TracePart<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">,</span>End<span class="uscript-operator">,</span>X<span class="uscript-operator">,</span>Dir<span class="uscript-operator">,</span>Pawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+    <span class="uscript-keyword">else</span>
+    <span class="uscript-operator">{</span>
+        HitLocation <span class="uscript-operator">=</span> End<span class="uscript-operator">;</span>
+        HitNormal <span class="uscript-operator">=</span> <span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+    SpawnBeamEffect<span class="uscript-operator">(</span>Start<span class="uscript-operator">,</span> Dir<span class="uscript-operator">,</span> HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-comment">//headshot check and damage def</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Other<span class="uscript-operator">.</span>GetClosestBone<span class="uscript-operator">(</span> HitLocation<span class="uscript-operator">,</span> X<span class="uscript-operator">,</span> dist<span class="uscript-operator">,</span> <span class="uscript-name">'head'</span><span class="uscript-operator">,</span> <span class="uscript-number">8</span> <span class="uscript-operator">)</span> <span class="uscript-operator">==</span> <span class="uscript-name">'head'</span><span class="uscript-operator">)</span>
+        Other<span class="uscript-operator">.</span>TakeDamage<span class="uscript-operator">(</span><span class="uscript-number">70</span> <span class="uscript-operator">*</span> <span class="uscript-number">2</span><span class="uscript-operator">,</span> Instigator<span class="uscript-operator">,</span> HitLocation<span class="uscript-operator">,</span> Momentum<span class="uscript-operator">*</span>X<span class="uscript-operator">,</span> <span class="uscript-keyword">Class</span><span class="uscript-name">'DamTypeKillstickHeadShot'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span> Instigator<span class="uscript-operator">.</span>bDeleteMe <span class="uscript-operator">!=</span> <span class="uscript-keyword">true</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>HoldTime<span class="uscript-operator">&gt;=</span><span class="uscript-number">2.4</span><span class="uscript-operator">)</span>           <span class="uscript-comment">//spawn the dummy if weapon is fully charged</span>
+        <span class="uscript-operator">{</span>
+           Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'KillstickDummy'</span><span class="uscript-operator">,</span>Instigator<span class="uscript-operator">,</span><span class="uscript-operator">,</span> HitLocation <span class="uscript-operator">-</span> <span class="uscript-operator">(</span><span class="uscript-number">100</span><span class="uscript-operator">*</span>Normal<span class="uscript-operator">(</span>HitLocation <span class="uscript-operator">-</span> Start<span class="uscript-operator">)</span><span class="uscript-operator">)</span> <span class="uscript-operator">,</span> Dir<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+           Weapon<span class="uscript-operator">.</span>Ammo<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span><span class="uscript-operator">.</span>UseAmmo<span class="uscript-operator">(</span><span class="uscript-number">50</span><span class="uscript-operator">,</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">//consumes all ammo if fully charged</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> SpawnBeamEffect<span class="uscript-operator">(</span>Vector Start<span class="uscript-operator">,</span> Rotator Dir<span class="uscript-operator">,</span> Vector HitLocation<span class="uscript-operator">,</span> Vector HitNormal<span class="uscript-operator">,</span> <span class="uscript-type">int</span> ReflectNum<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> ShockBeamEffect Beam<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">.</span>Team <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">(</span>Instigator<span class="uscript-operator">.</span>PlayerReplicationInfo<span class="uscript-operator">.</span>Team<span class="uscript-operator">.</span>TeamIndex <span class="uscript-operator">==</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span>
+        Beam <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span>BeamEffectClass<span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span> Start<span class="uscript-operator">,</span> Dir<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        Beam <span class="uscript-operator">=</span> Spawn<span class="uscript-operator">(</span>BeamEffectClass<span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span> Start<span class="uscript-operator">,</span> Dir<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>ReflectNum <span class="uscript-operator">!=</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span> Beam<span class="uscript-operator">.</span>Instigator <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span> <span class="uscript-comment">// prevents client side repositioning of beam start</span>
+    Beam<span class="uscript-operator">.</span>AimAt<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> PlayFiring<span class="uscript-operator">(</span><span class="uscript-operator">)</span>  <span class="uscript-comment">//this execs when trigger is released</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-comment">//DestroyEffects(); //destroy charging effect</span>
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PlayFiring<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+
+    BeamEffectClass<span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-name">'KillstickFireEffect'</span>
+    <span class="uscript-comment">//FireSound=Sound'WeaponSounds.TAGRifle.IonCannonBlast'</span>
+    ChargeSound<span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.TAGRifle.TAGFireB'</span>
+    FireForce<span class="uscript-operator">=</span><span class="uscript-string">"LightningGunFire"</span>
+    PreFireAnim<span class="uscript-operator">=</span><span class="uscript-string">"charge"</span>
+    bFireOnRelease<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>  <span class="uscript-comment">//don't fire untill trigger is released</span>
+    MaxHoldTime<span class="uscript-operator">=</span><span class="uscript-number">2.5</span> <span class="uscript-comment">// how long trigger must be held to fully charge</span>
+
+    TraceRange<span class="uscript-operator">=</span><span class="uscript-number">17000</span> <span class="uscript-comment">//Maximum range of the weapon.</span>
+    Momentum<span class="uscript-operator">=</span><span class="uscript-number">1000</span> <span class="uscript-comment">//How much the victim is pushed when hit.</span>
+    AmmoClass<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'KillstickAmmo'</span> <span class="uscript-comment">//ammo class call</span>
+    AmmoPerFire<span class="uscript-operator">=</span><span class="uscript-number">1</span> <span class="uscript-comment">//how much ammo used per shot</span>
+    DamageType<span class="uscript-operator">=</span><span class="uscript-keyword">class</span><span class="uscript-name">'DamTypeKillstick'</span> <span class="uscript-comment">//damage type class call</span>
+    DamageMin<span class="uscript-operator">=</span><span class="uscript-number">70</span> <span class="uscript-comment">//same damage as sniper rifle</span>
+    DamageMax<span class="uscript-operator">=</span><span class="uscript-number">70</span>
+
+    FireRate<span class="uscript-operator">=</span><span class="uscript-number">1.800000</span><span class="uscript-comment">//How fast it fires. same rate as sniper rifle</span>
+    BotRefireRate<span class="uscript-operator">=</span><span class="uscript-number">1.8</span> <span class="uscript-comment">//How fast bots should try to fire.</span>
+    AimError<span class="uscript-operator">=</span><span class="uscript-number">800</span> <span class="uscript-comment">//How accurate bots are.</span>
+    bPawnRapidFireAnim<span class="uscript-operator">=</span><span class="uscript-keyword">false</span>
+
+    <span class="uscript-comment">//These settings controll how your view shakes when you fire.</span>
+    ShakeOffsetMag<span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">15.0</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">0.0</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">10.0</span><span class="uscript-operator">)</span>
+    ShakeOffsetRate<span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-operator">-</span><span class="uscript-number">4000.0</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">0.0</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">4000.0</span><span class="uscript-operator">)</span>
+    ShakeOffsetTime<span class="uscript-operator">=</span><span class="uscript-number">1.6</span>
+    ShakeRotMag<span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">0.0</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">0.0</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">0.0</span><span class="uscript-operator">)</span>
+    ShakeRotRate<span class="uscript-operator">=</span><span class="uscript-operator">(</span>X<span class="uscript-operator">=</span><span class="uscript-number">0.0</span><span class="uscript-operator">,</span>Y<span class="uscript-operator">=</span><span class="uscript-number">0.0</span><span class="uscript-operator">,</span>Z<span class="uscript-operator">=</span><span class="uscript-number">0.0</span><span class="uscript-operator">)</span>
+    ShakeRotTime<span class="uscript-operator">=</span><span class="uscript-number">2</span>
+
+    FlashEmitterClass<span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-name">'KillstickFlash1st'</span> <span class="uscript-comment">//mussle flash effect</span>
+
+<span class="uscript-operator">}</span></pre><h3><a name="0.3.4"></a>KillstickDummy.uc</h3>
+<pre class="uscript"><span class="uscript-comment">//Created by Syntax_Error</span>
+<span class="uscript-comment">//dummy projectile class for spawning the explosion</span>
+<span class="uscript-comment">//borrowed lotsa code from the redemmer</span>
+<span class="uscript-keyword">class</span> KillstickDummy <span class="uscript-keyword">extends</span> Projectile<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> RedeemerTrail SmokeTrail<span class="uscript-operator">;</span>
+
+<span class="uscript-comment">// camera shakes //</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> vector ShakeRotMag<span class="uscript-operator">;</span>           <span class="uscript-comment">// how far to rot view</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> vector ShakeRotRate<span class="uscript-operator">;</span>          <span class="uscript-comment">// how fast to rot view</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span>  ShakeRotTime<span class="uscript-operator">;</span>          <span class="uscript-comment">// how much time to rot the instigator's view</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> vector ShakeOffsetMag<span class="uscript-operator">;</span>        <span class="uscript-comment">// max view offset vertically</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> vector ShakeOffsetRate<span class="uscript-operator">;</span>       <span class="uscript-comment">// how fast to offset view vertically</span>
+<span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span>  ShakeOffsetTime<span class="uscript-operator">;</span>       <span class="uscript-comment">// how much time to offset view</span>
+<span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bExploded<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">auto</span> <span class="uscript-keyword">state</span> InstantBoom <span class="uscript-comment">//go immediatly to explosion state</span>
+<span class="uscript-operator">{</span>
+Begin:
+    BlowUp<span class="uscript-operator">(</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">/**************commented out, not used****************
+simulated function Destroyed()
+{
+    if ( SmokeTrail != None )
+        SmokeTrail.Destroy();
+    Super.Destroyed();
+}
+
+simulated function PostBeginPlay()
+{
+    local vector Dir;
+
+    if ( bDeleteMe || IsInState('Dying') )
+        return;
+
+    Dir = vector(Rotation);
+    Velocity = speed * Dir;
+
+    if ( Level.NetMode != NM_DedicatedServer)
+    {
+        SmokeTrail = Spawn(class'RedeemerTrail',self,,Location - 40 * Dir);
+        SmokeTrail.SetBase(self);
+    }
+}
+
+event bool EncroachingOn( actor Other )
+{
+    if ( Other.bWorldGeometry )
+        return true;
+
+    return false;
+}
+**************************************************/</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ProcessTouch <span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">,</span> Vector HitLocation<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Other <span class="uscript-operator">!=</span> instigator <span class="uscript-operator">)</span>
+        Explode<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">,</span><span class="uscript-keyword">Vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Explode<span class="uscript-operator">(</span>vector HitLocation<span class="uscript-operator">,</span> vector HitNormal<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    BlowUp<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> PhysicsVolumeChange<span class="uscript-operator">(</span> PhysicsVolume Volume <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Landed<span class="uscript-operator">(</span> vector HitNormal <span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    BlowUp<span class="uscript-operator">(</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> HitWall<span class="uscript-operator">(</span>vector HitNormal<span class="uscript-operator">,</span> actor Wall<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    BlowUp<span class="uscript-operator">(</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> TakeDamage<span class="uscript-operator">(</span> <span class="uscript-type">int</span> Damage<span class="uscript-operator">,</span> Pawn instigatedBy<span class="uscript-operator">,</span> Vector hitlocation<span class="uscript-operator">,</span>
+                            Vector momentum<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>DamageType<span class="uscript-operator">&gt;</span> damageType<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Damage <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> InstigatedBy <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+            BlowUp<span class="uscript-operator">(</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+        <span class="uscript-operator">{</span>
+            Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'SmallRedeemerExplosion'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            SetCollision<span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            HurtRadius<span class="uscript-operator">(</span>Damage<span class="uscript-operator">,</span> DamageRadius<span class="uscript-operator">*</span><span class="uscript-number">0.125</span><span class="uscript-operator">,</span> MyDamageType<span class="uscript-operator">,</span> MomentumTransfer<span class="uscript-operator">,</span> Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> FellOutOfWorld<span class="uscript-operator">(</span>eKillZType KillType<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    BlowUp<span class="uscript-operator">(</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> BlowUp<span class="uscript-operator">(</span>vector HitLocation<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'NewIonEffect'</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span> HitLocation <span class="uscript-operator">-</span> <span class="uscript-number">100</span> <span class="uscript-operator">*</span> Normal<span class="uscript-operator">(</span>Velocity<span class="uscript-operator">)</span><span class="uscript-operator">,</span> <span class="uscript-keyword">Rot</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">16384</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    MakeNoise<span class="uscript-operator">(</span><span class="uscript-number">1.0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    SetPhysics<span class="uscript-operator">(</span>PHYS_None<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    bHidden <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    GotoState<span class="uscript-operator">(</span><span class="uscript-name">'Dying'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">state</span> Dying
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">function</span> TakeDamage<span class="uscript-operator">(</span> <span class="uscript-type">int</span> Damage<span class="uscript-operator">,</span> Pawn instigatedBy<span class="uscript-operator">,</span> Vector hitlocation<span class="uscript-operator">,</span>
+                            Vector momentum<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>DamageType<span class="uscript-operator">&gt;</span> damageType<span class="uscript-operator">)</span> <span class="uscript-operator">{</span><span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> BeginState<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        bHidden <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        SetPhysics<span class="uscript-operator">(</span>PHYS_None<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        SetCollision<span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">,</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bExploded <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            Spawn<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'IonCore'</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span><span class="uscript-operator">,</span> Location<span class="uscript-operator">,</span> Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            ShakeView<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+        InitialState <span class="uscript-operator">=</span> <span class="uscript-name">'Dying'</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> SmokeTrail <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+            SmokeTrail<span class="uscript-operator">.</span>Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> ShakeView<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">local</span> Controller C<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">local</span> PlayerController PC<span class="uscript-operator">;</span>
+        <span class="uscript-keyword">local</span> <span class="uscript-type">float</span> Dist<span class="uscript-operator">,</span> Scale<span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span> C<span class="uscript-operator">=</span>Level<span class="uscript-operator">.</span>ControllerList<span class="uscript-operator">;</span> C<span class="uscript-operator">!=</span><span class="uscript-keyword">None</span><span class="uscript-operator">;</span> C<span class="uscript-operator">=</span>C<span class="uscript-operator">.</span>NextController <span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            PC <span class="uscript-operator">=</span> PlayerController<span class="uscript-operator">(</span>C<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PC <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> PC<span class="uscript-operator">.</span>ViewTarget <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                Dist <span class="uscript-operator">=</span> VSize<span class="uscript-operator">(</span>Location <span class="uscript-operator">-</span> PC<span class="uscript-operator">.</span>ViewTarget<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Dist <span class="uscript-operator">&lt;</span> DamageRadius <span class="uscript-operator">*</span> <span class="uscript-number">2.0</span><span class="uscript-operator">)</span>
+                <span class="uscript-operator">{</span>
+                    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span>Dist <span class="uscript-operator">&lt;</span> DamageRadius<span class="uscript-operator">)</span>
+                        Scale <span class="uscript-operator">=</span> <span class="uscript-number">1.0</span><span class="uscript-operator">;</span>
+                    <span class="uscript-keyword">else</span>
+                        Scale <span class="uscript-operator">=</span> <span class="uscript-operator">(</span>DamageRadius<span class="uscript-operator">*</span><span class="uscript-number">2.0</span> <span class="uscript-operator">-</span> Dist<span class="uscript-operator">)</span> <span class="uscript-operator">/</span> <span class="uscript-operator">(</span>DamageRadius<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                    C<span class="uscript-operator">.</span>ShakeView<span class="uscript-operator">(</span>ShakeRotMag<span class="uscript-operator">*</span>Scale<span class="uscript-operator">,</span> ShakeRotRate<span class="uscript-operator">,</span> ShakeRotTime<span class="uscript-operator">,</span> ShakeOffsetMag<span class="uscript-operator">*</span>Scale<span class="uscript-operator">,</span> ShakeOffsetRate<span class="uscript-operator">,</span> ShakeOffsetTime<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                <span class="uscript-operator">}</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+
+Begin:
+    PlaySound<span class="uscript-operator">(</span>sound<span class="uscript-name">'WeaponSounds.TAGRifle.IonCannonBlast'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    HurtRadius<span class="uscript-operator">(</span>Damage<span class="uscript-operator">,</span> DamageRadius<span class="uscript-operator">*</span><span class="uscript-number">0.125</span><span class="uscript-operator">,</span> MyDamageType<span class="uscript-operator">,</span> MomentumTransfer<span class="uscript-operator">,</span> Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Sleep<span class="uscript-operator">(</span><span class="uscript-number">0.5</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    HurtRadius<span class="uscript-operator">(</span>Damage<span class="uscript-operator">,</span> DamageRadius<span class="uscript-operator">*</span><span class="uscript-number">0.300</span><span class="uscript-operator">,</span> MyDamageType<span class="uscript-operator">,</span> MomentumTransfer<span class="uscript-operator">,</span> Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Sleep<span class="uscript-operator">(</span><span class="uscript-number">0.2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    HurtRadius<span class="uscript-operator">(</span>Damage<span class="uscript-operator">,</span> DamageRadius<span class="uscript-operator">*</span><span class="uscript-number">0.475</span><span class="uscript-operator">,</span> MyDamageType<span class="uscript-operator">,</span> MomentumTransfer<span class="uscript-operator">,</span> Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Sleep<span class="uscript-operator">(</span><span class="uscript-number">0.2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    HurtRadius<span class="uscript-operator">(</span>Damage<span class="uscript-operator">,</span> DamageRadius<span class="uscript-operator">*</span><span class="uscript-number">0.650</span><span class="uscript-operator">,</span> MyDamageType<span class="uscript-operator">,</span> MomentumTransfer<span class="uscript-operator">,</span> Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Sleep<span class="uscript-operator">(</span><span class="uscript-number">0.2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    HurtRadius<span class="uscript-operator">(</span>Damage<span class="uscript-operator">,</span> DamageRadius<span class="uscript-operator">*</span><span class="uscript-number">0.825</span><span class="uscript-operator">,</span> MyDamageType<span class="uscript-operator">,</span> MomentumTransfer<span class="uscript-operator">,</span> Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Sleep<span class="uscript-operator">(</span><span class="uscript-number">0.2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    HurtRadius<span class="uscript-operator">(</span>Damage<span class="uscript-operator">,</span> DamageRadius<span class="uscript-operator">*</span><span class="uscript-number">1.000</span><span class="uscript-operator">,</span> MyDamageType<span class="uscript-operator">,</span> MomentumTransfer<span class="uscript-operator">,</span> Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-operator">{</span>
+     ShakeRotMag<span class="uscript-operator">=</span><span class="uscript-operator">(</span>Z<span class="uscript-operator">=</span><span class="uscript-number">250.000000</span><span class="uscript-operator">)</span>
+     ShakeRotRate<span class="uscript-operator">=</span><span class="uscript-operator">(</span>Z<span class="uscript-operator">=</span><span class="uscript-number">2500.000000</span><span class="uscript-operator">)</span>
+     ShakeRotTime<span class="uscript-operator">=</span><span class="uscript-number">6.000000</span>
+     ShakeOffsetMag<span class="uscript-operator">=</span><span class="uscript-operator">(</span>Z<span class="uscript-operator">=</span><span class="uscript-number">10.000000</span><span class="uscript-operator">)</span>
+     ShakeOffsetRate<span class="uscript-operator">=</span><span class="uscript-operator">(</span>Z<span class="uscript-operator">=</span><span class="uscript-number">200.000000</span><span class="uscript-operator">)</span>
+     ShakeOffsetTime<span class="uscript-operator">=</span><span class="uscript-number">10.000000</span>
+     Speed<span class="uscript-operator">=</span><span class="uscript-number">1000.000000</span>
+     MaxSpeed<span class="uscript-operator">=</span><span class="uscript-number">1000.000000</span>
+     Damage<span class="uscript-operator">=</span><span class="uscript-number">250.000000</span>
+     DamageRadius<span class="uscript-operator">=</span><span class="uscript-number">1500.000000</span>
+     MomentumTransfer<span class="uscript-operator">=</span><span class="uscript-number">200000.000000</span>
+     MyDamageType<span class="uscript-operator">=</span><span class="uscript-keyword">Class</span><span class="uscript-name">'DamTypeKillstick'</span>
+     LightType<span class="uscript-operator">=</span>LT_Steady
+     LightEffect<span class="uscript-operator">=</span>LE_QuadraticNonIncidence
+     LightBrightness<span class="uscript-operator">=</span><span class="uscript-number">255.000000</span>
+     LightRadius<span class="uscript-operator">=</span><span class="uscript-number">6.000000</span>
+     LightHue<span class="uscript-operator">=</span><span class="uscript-number">28</span>
+     <span class="uscript-comment">//DrawType=DT_StaticMesh  //removed mesh</span>
+     <span class="uscript-comment">//StaticMesh=StaticMesh'WeaponStaticMesh.RedeemerMissile'</span>
+     bDynamicLight<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     bNetTemporary<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+     <span class="uscript-comment">//AmbientSound=Sound'WeaponSounds.Misc.redeemer_flight'</span>
+     DrawScale<span class="uscript-operator">=</span><span class="uscript-number">0.500000</span>
+     AmbientGlow<span class="uscript-operator">=</span><span class="uscript-number">96</span>
+     bUnlit<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>
+     SoundRadius<span class="uscript-operator">=</span><span class="uscript-number">100.000000</span>
+     SoundVolume<span class="uscript-operator">=</span><span class="uscript-number">255</span>
+     TransientSoundVolume<span class="uscript-operator">=</span><span class="uscript-number">1.000000</span>
+     TransientSoundRadius<span class="uscript-operator">=</span><span class="uscript-number">5000.000000</span>
+     CollisionRadius<span class="uscript-operator">=</span><span class="uscript-number">24.000000</span>
+     CollisionHeight<span class="uscript-operator">=</span><span class="uscript-number">12.000000</span>
+     bProjTarget<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     bFixedRotationDir<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+     RotationRate<span class="uscript-operator">=</span><span class="uscript-operator">(</span>Roll<span class="uscript-operator">=</span><span class="uscript-number">50000</span><span class="uscript-operator">)</span>
+     DesiredRotation<span class="uscript-operator">=</span><span class="uscript-operator">(</span>Roll<span class="uscript-operator">=</span><span class="uscript-number">30000</span><span class="uscript-operator">)</span>
+     ForceType<span class="uscript-operator">=</span>FT_DragAlong
+     ForceRadius<span class="uscript-operator">=</span><span class="uscript-number">100.000000</span>
+     ForceScale<span class="uscript-operator">=</span><span class="uscript-number">5.000000</span>
+<span class="uscript-operator">}</span></pre><h2><a name="0.4"></a>TODO</h2>
+<p>-charging effect either will not display or will spawn in the wrong location until weapon is charged <em class="em2">&lt;&ndash; Experiment with PlayerOffset and SmallWeaponOffset to align the effect up with the weapon</em></p>
+<p>-damage adjustment for ammo on charged shot not yet implimented</p>
+<p>-larger beam for charged shot (is this possible?) &ndash;done, spawning larger beam now and in the right direction <img alt=":D" src="emoticons/biggrin.gif" align="middle"></p>
+<p>-texturing on all meshes &ndash;started texturing, going inda slow for now</p>
+<hr class="thick"><p><em class="em2">Syntax_Error</em></p>
+<p><a href="http://www.devildogsoft.com">http://www.devildogsoft.com</a></p>
+<h2><a name="0.5"></a>Discussion</h2>
+<p><em class="em2">EntropicLqd:</em> Sounds very similar to <a href="mod-ideas-charging-shock-ri.html">Mod Ideas/Charging Shock Rifle</a></p>
+<p><em class="em2">Syntax_Error:</em> It is, except it doesn't auto charge, you must hold the trigger to charge, much like the shield gun</p>
+<p>lemme restate the charge effect problem: when the effect initializes, it auto spawns on the weapon base, and only attaches to the weapon when it is charged... weird huh <img alt="O_o" src="emoticons/ohoh.gif" align="middle"></p>
+<p>still have not had a chance to get to my own computer yet &gt;_&lt; it'll put the code up as soon as i get a chance</p>
+<p><em class="em2">Syntax_Error:</em> Yeay, code is up, this isnt everything, but it's a start. I'll put up individual pages as soon as i can.</p>
+<p><em class="em2">Syntax_Error:</em> Sorry for the long time away, doing taxes isnt much fun. looking for the Special DVD ed. of 2004 now, and will transfer all MOD stuff to it.</p>
+<p><em class="em2">Syntax_Error:</em> Holy #$&amp;^ it has been a long time since i update here. Major changes to code, and most of the problems have been fixed. only annoying one left is the whole double charge/mussleflash effect (i'll get a screen up to show you) planning on putting in reload so if u have 50 ammo you can fire multiple large blasts (just not quickly <img alt=";)" src="emoticons/wink.gif" align="middle">) also starting up the dual shotgun weapon, suggestions for alt-fire are welcome.</p>
+<p><em class="em2">Foxpaw:</em> For a shotgun weapon, there's a couple of things that come to mind for a secondary fire. Basically, shotguns are neat because there is a variety of ammunition available for them. Their lack of rifling allows for much more flexible ammunition. Anyways, although it wouldn't be entirely realistic, you could have primary fire be one type of ammo, while secondary fire was the other. For instance, one could be slugs and the other buckshot. Or one could fire "less lethal" beanbag rounds that would slow down or otherwise hinder your opponent to set up for another (more lethal) shot. Flares would be somewhat less useful. Flechette rounds are available, but would behave similar to buckshot in-game (only better!) Incendiary rounds are available, though I'm not really sure what they're for. I think smaller slug-bearing sabots may also be available.</p>
+<p>Also you could have one fire be semi-auto and the other pump-action. Select fire shotguns have more power in pump-action mode because in semi-auto mode a significant amount of the expanding powder gases are used to cycle the weapon, leaving less to propel the projectile.</p>
+<p>Anyways, just thought I'd toss out some ideas. A good secondary fire is essential to prevent it from being just a tracefire flak cannon.</p>
+<p><em class="em2">Syntax_Error:</em> Thanks for the suggestions, I really like the semi-auto and pump-aciton idea. That should work well with what i had planned for dual wielding: where primary fire is a powerful double shot, and alt is rapid, alternating single shots. If you only have one shotgun, primary would be pump, while alt would be the less powerful semi-auto. Would the spead change for each one? To say it another way, which type is more accurate? FYI, once I get this started I'll put up a seperate wiki page, and maybe start a page for my info.</p>
+<p><em class="em2">Foxpaw:</em> Hmm, that's a tough question. Pump action would have higher chamber pressures which would give the buckshot more momentum leaving the barrel. That might cause it to stay on course more, making it have less spread. On the other hand, the faster moving pump-action buckshot would be less stable in flight due to it's higher velocity. One of these factors would likely outweigh the other - but I don't know which one.</p>
+<script type="text/javascript"><!--
+ menuItemAdd("NOTE:", "#0.0.1");
+menuItemAdd("Description", "#0.1");
+menuItemAdd("How it works", "#0.2");
+menuItemAdd("Unreal Script Code", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>General Description", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Killstick.uc", "#0.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>KillstickFire.uc", "#0.3.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>KillstickDummy.uc", "#0.3.4");
+menuItemAdd("TODO", "#0.4");
+menuItemAdd("Discussion", "#0.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="mod-ideas.html">Mod Ideas</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Mod_Ideas/Killstick">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Mod_Ideas/Killstick">View other revisions</a><br>Last edited August 24, 2005 4:50 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Mod_Ideas/Killstick">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Mod_Ideas/Killstick">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Always snap to grid
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

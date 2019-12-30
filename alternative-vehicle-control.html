@@ -1,0 +1,400 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Alternative Vehicle Control</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Alternative_Vehicle_Control; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="http://wiki.beyondunreal.com/wiki?back=Alternative Vehicle Control">Alternative Vehicle Control</a></h1>
+	<div class="wiki"><p>This code has arisen from the need to have a vehicle where the player can still be seen and shot whilst in control of a vehicle (for the artillery and horses in the LawDogs mod). Instead of the player's original <a href="pawn.html">Pawn</a> being hidden and the vehicle possessed, the original pawn is attached to the vehicle and the vehicle controlled indirectly.</p>
+<p>This has the advantage not only of being able to kill the player without damaging the vehicle and vice versa, but also it allows the player to potentially fire their normal weapons whilst on the vehicle.</p>
+<p>The code shown here has only the code relevant to this control method present; It is a long way from a complete vehicle. There is no bot support.</p>
+<p>First the vehicle class:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> LawDogsVehicle <span class="uscript-keyword">extends</span> KVehicle
+    <span class="uscript-keyword">abstract</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> Pawn RepDriver<span class="uscript-operator">;</span> <span class="uscript-comment">//Replicated 'Driver'.</span>
+
+<span class="uscript-keyword">replication</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span>
+        RepDriver<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ClientKDriverEnter<span class="uscript-operator">(</span>PlayerController pc<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    PlayerController<span class="uscript-operator">(</span>RepDriver<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">.</span>bBehindView <span class="uscript-operator">=</span> bUseBehindView<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> KDriverEnter<span class="uscript-operator">(</span>Pawn p<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    Driver <span class="uscript-operator">=</span> p<span class="uscript-operator">;</span>
+    RepDriver <span class="uscript-operator">=</span> Driver<span class="uscript-operator">;</span>
+
+    Driver<span class="uscript-operator">.</span>bCollideWorld <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>bPhysicsAnimUpdate <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>Velocity <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">,</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetPhysics<span class="uscript-operator">(</span>PHYS_None<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    Driver<span class="uscript-operator">.</span>SetBase<span class="uscript-operator">(</span><span class="uscript-keyword">self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetRelativeLocation<span class="uscript-operator">(</span>DrivePos<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetRelativeRotation<span class="uscript-operator">(</span><span class="uscript-keyword">rot</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    LawDogsPlayer<span class="uscript-operator">(</span>Driver<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Vehicle <span class="uscript-operator">=</span> <span class="uscript-keyword">self</span><span class="uscript-operator">;</span>
+    LawDogsPlayer<span class="uscript-operator">(</span>Driver<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">.</span>GotoState<span class="uscript-operator">(</span><span class="uscript-name">'PlayerRiding'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    SetOwner<span class="uscript-operator">(</span>Driver<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    ClientKDriverEnter<span class="uscript-operator">(</span>PlayerController<span class="uscript-operator">(</span>Driver<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> ClientKDriverLeave<span class="uscript-operator">(</span>PlayerController pc<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    pc<span class="uscript-operator">.</span>bBehindView <span class="uscript-operator">=</span> pc<span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>bBehindView<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> KDriverLeave<span class="uscript-operator">(</span><span class="uscript-type">bool</span> bForceLeave<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> <span class="uscript-type">bool</span> havePlaced<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">local</span> vector HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> tryPlace<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Driver <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+    Driver<span class="uscript-operator">.</span>bCollideWorld <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">for</span><span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> ExitPositions<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">&amp;&amp;</span> havePlaced <span class="uscript-operator">==</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span> i<span class="uscript-operator">++</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        tryPlace <span class="uscript-operator">=</span> Location <span class="uscript-operator">+</span> <span class="uscript-operator">(</span>ExitPositions<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">&gt;&gt;</span> Rotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Trace<span class="uscript-operator">(</span>HitLocation<span class="uscript-operator">,</span> HitNormal<span class="uscript-operator">,</span> tryPlace<span class="uscript-operator">,</span> Location<span class="uscript-operator">,</span> <span class="uscript-keyword">false</span><span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+            <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+            
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>Driver<span class="uscript-operator">.</span>SetLocation<span class="uscript-operator">(</span>tryPlace<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+            <span class="uscript-keyword">continue</span><span class="uscript-operator">;</span>
+    
+        havePlaced <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span>havePlaced <span class="uscript-operator">&amp;&amp;</span> <span class="uscript-operator">!</span>bForceLeave<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        Driver<span class="uscript-operator">.</span>bCollideWorld <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    Driver<span class="uscript-operator">.</span>PlayWaiting<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>bPhysicsAnimUpdate <span class="uscript-operator">=</span> Driver<span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>bPhysicsAnimUpdate<span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>SetBase<span class="uscript-operator">(</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    Driver<span class="uscript-operator">.</span>Acceleration <span class="uscript-operator">=</span> <span class="uscript-keyword">vect</span><span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">0</span><span class="uscript-operator">,</span> <span class="uscript-number">24000</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Driver<span class="uscript-operator">.</span>TouchingWaterVolume<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        Driver<span class="uscript-operator">.</span>SetPhysics<span class="uscript-operator">(</span>PHYS_Swimming<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span>
+        Driver<span class="uscript-operator">.</span>SetPhysics<span class="uscript-operator">(</span>PHYS_Falling<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    Driver<span class="uscript-operator">.</span>Controller<span class="uscript-operator">.</span>Restart<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    LawDogsPlayer<span class="uscript-operator">(</span>Driver<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Vehicle <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    ClientKDriverLeave<span class="uscript-operator">(</span>PlayerController<span class="uscript-operator">(</span>Driver<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    Driver <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    RepDriver <span class="uscript-operator">=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">;</span>
+    SetOwner<span class="uscript-operator">(</span><span class="uscript-keyword">None</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    Throttle<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    Steering<span class="uscript-operator">=</span><span class="uscript-number">0</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">function</span> TakeDamage<span class="uscript-operator">(</span><span class="uscript-type">int</span> Damage<span class="uscript-operator">,</span> Pawn instigatedBy<span class="uscript-operator">,</span> Vector hitlocation<span class="uscript-operator">,</span> Vector momentum<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>DamageType<span class="uscript-operator">&gt;</span> damageType<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    Health <span class="uscript-operator">-=</span> Damage<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Health <span class="uscript-operator">&lt;=</span> <span class="uscript-number">0</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-comment">//Make sure driver leaves when vehicle is destroyed.</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Driver <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+            KDriverLeave<span class="uscript-operator">(</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        Destroy<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Tick<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">local</span> rotator DriverRot<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>RepDriver <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-comment">//So taking damage doesn't make the driver start falling.</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>RepDriver<span class="uscript-operator">.</span>Physics <span class="uscript-operator">!=</span> PHYS_None<span class="uscript-operator">)</span>
+            RepDriver<span class="uscript-operator">.</span>SetPhysics<span class="uscript-operator">(</span>PHYS_None<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-comment">//Make very sure the driver stays still.</span>
+        RepDriver<span class="uscript-operator">.</span>SetRelativeLocation<span class="uscript-operator">(</span>DrivePos<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        DriverRot<span class="uscript-operator">.</span>Yaw <span class="uscript-operator">=</span> RepDriver<span class="uscript-operator">.</span>RelativeRotation<span class="uscript-operator">.</span>Yaw<span class="uscript-operator">;</span>
+        RepDriver<span class="uscript-operator">.</span>SetRelativeRotation<span class="uscript-operator">(</span>DriverRot<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//Allow camera to rotate relative to the vehicle, within limits.</span>
+<span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> <span class="uscript-type">bool</span> SpecialCalcView<span class="uscript-operator">(</span><span class="uscript-keyword">out</span> actor ViewActor<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> vector CameraLocation<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> rotator CameraRotation<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>RepDriver <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">||</span> RepDriver<span class="uscript-operator">.</span>Controller <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+
+    ViewActor <span class="uscript-operator">=</span> RepDriver<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>CameraRotation<span class="uscript-operator">.</span>Yaw ClockwiseFrom <span class="uscript-operator">(</span>Rotation<span class="uscript-operator">.</span>Yaw <span class="uscript-operator">+</span> MaxYaw<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        CameraRotation<span class="uscript-operator">.</span>Yaw <span class="uscript-operator">=</span> Rotation<span class="uscript-operator">.</span>Yaw <span class="uscript-operator">+</span> MaxYaw<span class="uscript-operator">;</span>
+    <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span><span class="uscript-operator">!</span><span class="uscript-operator">(</span>CameraRotation<span class="uscript-operator">.</span>Yaw ClockwiseFrom <span class="uscript-operator">(</span>Rotation<span class="uscript-operator">.</span>Yaw <span class="uscript-operator">+</span> MinYaw<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        CameraRotation<span class="uscript-operator">.</span>Yaw <span class="uscript-operator">=</span> Rotation<span class="uscript-operator">.</span>Yaw <span class="uscript-operator">+</span> MinYaw<span class="uscript-operator">;</span>
+
+    CameraRotation <span class="uscript-operator">=</span> normalize<span class="uscript-operator">(</span>CameraRotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    RepDriver<span class="uscript-operator">.</span>SetTwistLook<span class="uscript-operator">(</span>normalize<span class="uscript-operator">(</span>CameraRotation <span class="uscript-operator">-</span> Rotation<span class="uscript-operator">)</span><span class="uscript-operator">.</span>Yaw<span class="uscript-operator">,</span> CameraRotation<span class="uscript-operator">.</span>Pitch<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    RepDriver<span class="uscript-operator">.</span>Controller<span class="uscript-operator">.</span>SetRotation<span class="uscript-operator">(</span>CameraRotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    CameraLocation <span class="uscript-operator">=</span> RepDriver<span class="uscript-operator">.</span>Location <span class="uscript-operator">+</span> RepDriver<span class="uscript-operator">.</span>EyePosition<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>PlayerController<span class="uscript-operator">(</span>RepDriver<span class="uscript-operator">.</span>Controller<span class="uscript-operator">)</span><span class="uscript-operator">.</span>bBehindView<span class="uscript-operator">)</span>
+        CameraLocation <span class="uscript-operator">+=</span> BehindViewOffset <span class="uscript-operator">&gt;&gt;</span> Rotation<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">return</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span></pre><p>And the new stuff for the PlayerController class:</p>
+<pre class="uscript"><span class="uscript-keyword">class</span> LawDogsPlayer <span class="uscript-keyword">extends</span> xPlayer
+    <span class="uscript-keyword">config</span><span class="uscript-operator">(</span>user<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">var</span> KVehicle Vehicle<span class="uscript-operator">;</span>
+
+<span class="uscript-keyword">replication</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">reliable</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Role <span class="uscript-operator">==</span> ROLE_Authority<span class="uscript-operator">)</span>
+        Vehicle<span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//Fix dying whilst controling a vehicle.</span>
+<span class="uscript-keyword">function</span> WasKilledBy<span class="uscript-operator">(</span>Controller Other<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Vehicle <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        Vehicle<span class="uscript-operator">.</span>KDriverLeave<span class="uscript-operator">(</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>WasKilledBy<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//Allow vehicle to handle camera.</span>
+<span class="uscript-keyword">event</span> PlayerCalcView<span class="uscript-operator">(</span><span class="uscript-keyword">out</span> actor ViewActor<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> vector CameraLocation<span class="uscript-operator">,</span> <span class="uscript-keyword">out</span> rotator CameraRotation<span class="uscript-operator">)</span>
+<span class="uscript-operator">{</span>
+    <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Vehicle <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> Vehicle<span class="uscript-operator">.</span>bSpecialCalcView <span class="uscript-operator">&amp;&amp;</span> Vehicle<span class="uscript-operator">.</span>SpecialCalcView<span class="uscript-operator">(</span>ViewActor<span class="uscript-operator">,</span> CameraLocation<span class="uscript-operator">,</span> CameraRotation<span class="uscript-operator">)</span><span class="uscript-operator">)</span>
+        <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>PlayerCalcView<span class="uscript-operator">(</span>ViewActor<span class="uscript-operator">,</span> CameraLocation<span class="uscript-operator">,</span> CameraRotation<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-operator">}</span>
+
+<span class="uscript-comment">//Using a LawDogsVehicle.</span>
+<span class="uscript-keyword">state</span> PlayerRiding
+<span class="uscript-operator">{</span>
+<span class="uscript-keyword">ignores</span> SeePlayer<span class="uscript-operator">,</span> HearNoise<span class="uscript-operator">,</span> Bump<span class="uscript-operator">;</span>
+
+    <span class="uscript-keyword">function</span> ProcessMove<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">,</span> vector NewAccel<span class="uscript-operator">,</span> eDoubleClickDir DoubleClickMove<span class="uscript-operator">,</span> rotator DeltaRot<span class="uscript-operator">)</span><span class="uscript-operator">{</span><span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">//Pressing 'use' will exit vehicle (to free up the jump key for other purposes).</span>
+    <span class="uscript-keyword">function</span> ServerUse<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Level<span class="uscript-operator">.</span>Pauser <span class="uscript-operator">==</span> PlayerReplicationInfo<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            SetPause<span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Pawn <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+            <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Vehicle <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+            Vehicle<span class="uscript-operator">.</span>bGetOut <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> Fire<span class="uscript-operator">(</span><span class="uscript-keyword">optional</span> <span class="uscript-type">float</span> F<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Vehicle <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            Vehicle<span class="uscript-operator">.</span>VehicleFire<span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            Vehicle<span class="uscript-operator">.</span>bVehicleIsFiring <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">exec</span> <span class="uscript-keyword">function</span> AltFire<span class="uscript-operator">(</span><span class="uscript-keyword">optional</span> <span class="uscript-type">float</span> F<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Vehicle <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            Vehicle<span class="uscript-operator">.</span>VehicleFire<span class="uscript-operator">(</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            Vehicle<span class="uscript-operator">.</span>bVehicleIsAltFiring <span class="uscript-operator">=</span> <span class="uscript-keyword">true</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-comment">// Set the throttle, steering etc. for the vehicle based on the input provided</span>
+    <span class="uscript-keyword">function</span> ProcessDrive<span class="uscript-operator">(</span><span class="uscript-type">float</span> InForward<span class="uscript-operator">,</span> <span class="uscript-type">float</span> InStrafe<span class="uscript-operator">,</span> <span class="uscript-type">bool</span> InJump<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Vehicle <span class="uscript-operator">==</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            log<span class="uscript-operator">(</span><span class="uscript-string">"PlayerRiding.PlayerMove: No Vehicle"</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+        <span class="uscript-comment">//Horses can jump.</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bPressedJump<span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            Vehicle<span class="uscript-operator">.</span>DoJump<span class="uscript-operator">(</span>bUpdating<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+            bPressedJump <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+        <span class="uscript-operator">}</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>InForward <span class="uscript-operator">&gt;</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span>
+            Vehicle<span class="uscript-operator">.</span>Throttle <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>InForward <span class="uscript-operator">&lt;</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+            Vehicle<span class="uscript-operator">.</span>Throttle <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+            Vehicle<span class="uscript-operator">.</span>Throttle <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>InStrafe <span class="uscript-operator">&lt;</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">)</span>
+            Vehicle<span class="uscript-operator">.</span>Steering <span class="uscript-operator">=</span> <span class="uscript-operator">-</span><span class="uscript-number">1</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span> <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>InStrafe <span class="uscript-operator">&gt;</span> <span class="uscript-number">1</span><span class="uscript-operator">)</span>
+            Vehicle<span class="uscript-operator">.</span>Steering <span class="uscript-operator">=</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+            Vehicle<span class="uscript-operator">.</span>Steering <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> PlayerMove<span class="uscript-operator">(</span><span class="uscript-type">float</span> DeltaTime<span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        <span class="uscript-comment">//Only servers can actually do the driving logic.</span>
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Role <span class="uscript-operator">&lt;</span> ROLE_Authority<span class="uscript-operator">)</span>
+            ServerDrive<span class="uscript-operator">(</span>aForward<span class="uscript-operator">,</span> aStrafe<span class="uscript-operator">,</span> bPressedJump<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+        <span class="uscript-keyword">else</span>
+            ProcessDrive<span class="uscript-operator">(</span>aForward<span class="uscript-operator">,</span> aStrafe<span class="uscript-operator">,</span> bPressedJump<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+
+        <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>Vehicle <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span>
+        <span class="uscript-operator">{</span>
+            <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bFire <span class="uscript-operator">==</span> <span class="uscript-number">0</span> <span class="uscript-operator">&amp;&amp;</span> Vehicle<span class="uscript-operator">.</span>bVehicleIsFiring<span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                Vehicle<span class="uscript-operator">.</span>VehicleCeaseFire<span class="uscript-operator">(</span><span class="uscript-keyword">false</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                Vehicle<span class="uscript-operator">.</span>bVehicleIsFiring <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+
+            <span class="uscript-keyword">if</span><span class="uscript-operator">(</span>bAltFire <span class="uscript-operator">==</span> <span class="uscript-number">0</span> <span class="uscript-operator">&amp;&amp;</span> Vehicle<span class="uscript-operator">.</span>bVehicleIsAltFiring<span class="uscript-operator">)</span>
+            <span class="uscript-operator">{</span>
+                Vehicle<span class="uscript-operator">.</span>VehicleCeaseFire<span class="uscript-operator">(</span><span class="uscript-keyword">true</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+                Vehicle<span class="uscript-operator">.</span>bVehicleIsAltFiring <span class="uscript-operator">=</span> <span class="uscript-keyword">false</span><span class="uscript-operator">;</span>
+            <span class="uscript-operator">}</span>
+        <span class="uscript-operator">}</span>
+
+        <span class="uscript-comment">//update 'looking' rotation - no affect on driving</span>
+        UpdateRotation<span class="uscript-operator">(</span>DeltaTime<span class="uscript-operator">,</span> <span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> BeginState<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        CleanOutSavedMoves<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+
+    <span class="uscript-keyword">function</span> EndState<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+    <span class="uscript-operator">{</span>
+        CleanOutSavedMoves<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+    <span class="uscript-operator">}</span>
+<span class="uscript-operator">}</span></pre><p>One thing that you may find necessary but which is not shown here is that to stop a player from firing their own weapons, you need to give them a non-functional dummy weapon whilst they are in control of the vehicle.</p>
+<p>Another potential problem is that the player's pawn can encroach on other pawns whilst it is attached to the vehicle, telefragging them instantly. This needs to be fixed in the EncroachedBy function in the pawn.</p>
+<p><em class="em2">Foxpaw:</em> From what I've heard, this is already part of the vehicle code for UT2004. But I haven't played UT2004 so I can't say that with certainty.</p>
+<p><em class="em2">Mr Evil:</em> That's what I've heard too, but I wanted it now, so I did it.</p>
+<p><a href="category-custom-class.html">Category Custom Class</a></p>
+</div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Alternative_Vehicle_Control">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Alternative_Vehicle_Control">View other revisions</a><br>Last edited April 7, 2006 3:49 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Alternative_Vehicle_Control">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Alternative_Vehicle_Control">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Describe the new page here.
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>

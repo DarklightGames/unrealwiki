@@ -1,0 +1,419 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"  "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head lang="en">
+	<title>UnrealWiki: Replication Examples/Giant Spider Execution</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+	<link rel="stylesheet" type="text/css" media="screen, print"
+		href="shared/stylebase.structural.css">	
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/template-default.css">
+	<link rel="stylesheet" type="text/css" media="screen"
+		href="shared/styles.chblue.css">
+	<link rel="stylesheet" type="text/css" media="print"
+		href="shared/template-default-print.css">
+	<!--[if IE 6]>
+			<style>
+			/* dirty hack for IE6. */
+			#quickbar {
+				position: absolute;
+				}
+			</style>
+	<![endif]-->
+  <link rel="start" href="http://wiki.beyondunreal.com/">
+  <link rel="glossary"  href="http://wiki.beyondunreal.com/wiki/Terminology">
+  <link rel="help"  href="http://wiki.beyondunreal.com/wiki/Using_The_Wiki">
+<script type="text/javascript" src="shared/dhtml.js"></script>
+<script type="text/javascript" src="shared/dhtml-menu.js"></script>
+<style type="text/css">#dhtml-menu    { background: #eee; padding: 5px 0px; margin-right: -20px; border: 1px solid #888; border-left: 1px solid #ccc; border-top: 1px solid #ccc;  border-right: 1px solid #888; border-bottom: 1px solid #888 }
+#dhtml-menu td { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; padding: 1px 10px; cursor: default }
+#dhtml-menu a  { color: #000; font-family: Arial,Helvetica,sans-serif; font-size: 9pt; line-height: 13pt; text-decoration: none }
+#dhtml-menu tt { font-family: monospace; font-size: 9pt }
+#dhtml-menu-separator { height: 1px; background: red }
+#dhtml-menu-anchor { cursor: default }
+</style>
+<script type="text/javascript" src="shared/expandable.js"></script>
+</head>
+<body onLoad="menuInit(); document.cookie='page=Replication_Examples/Giant_Spider_Execution; path=/'" class="default">
+<div id="scrolling"><!-- contains all except the fixed sidebar -->
+<div id="topbar"  class="bar">
+	<div class="righthalf">
+		<form class="inline" method="post" action="/wiki" enctype="application/x-www-form-urlencoded"><input type="text" name="search"  size="20" /> <input type="submit" name="search" value="search" /></form>
+	</div>
+	<div class="lefthalf">
+		<script type="text/javascript"><!--
+			menuAlignRight = false;
+		//--></script>
+		<span><script type="text/javascript"><!--
+ menuWriteAnchor("Quick Navigation") //--></script></span> | <a href="(start).html">Home Page</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a>
+	</div>
+</div>
+
+<div id="content"><!-- contains the title and article -->
+	<h1 class='pagetitle'><a href="replication-examples.html">Replication Examples</a>/<a href="http://wiki.beyondunreal.com/wiki?back=Replication+Examples/Giant+Spider+Execution">Giant Spider Execution</a></h1>
+	<div class="wiki"><p>This example describes the replication (or better: simulation) magic behind the alternate execution sequence on JB-Aswan-v2. The spider actor waits for a serverside trigger <a href="event.html">event</a> and then starts parallel execution of server- and clientside <a href="state.html">state</a> code. Only the change of a single replicated value starts the entire clientside simulation machinery, which otherwise doesn't require any replication because it mainly relies on <a href="default-properties.html">default properties</a>.</p>
+<h2><a name="0.1"></a>The Actors Involved</h2>
+<p>I don't want to bore you to death with how Jailbreak's jails and execution sequences are set up, but basically the game triggers an event serversidely that should eventually result in the prisoners in a certain jail getting killed.</p>
+<p>On JB-Aswan-v2, the execution is actually a quite complex system of <a href="scriptedtrigger.html">ScriptedTrigger</a>s to randomly select between the default spider invasion execution or the giant spider execution. The giant spider execution uses a custom actor that, once triggered, dispatches events for a camera view switch (a <span class="interwiki"><img 
+      alt="JDN logo"
+      title="JDN"
+      src="shared//InterWiki-JDN.png">&nbsp;<a href="http://www.planetjailbreak.com/jdn/JBCamera">JBCamera</a></span>) and the explosion <a href="emitter.html">Emitter</a>. The giant spider mine also uses a spawn effect, but that is simply triggered at the same time as the giant spider itself.<br>The spawn effect emitter uses a setup similar to the Onslaught vehicle spawn effect and is reset on triggering. The explosion emitter spawns a few explosion effect sprites with spawn sounds, a few yellow/orange-colored sprites to fill the jail and four groups of black sprites coming towards the camera through the jail bars.</p>
+<p>Interested in how exactly this looks? I've prepared a short video sequence for you:</p>
+<ul><li><a href="http://www.koehler-homepage.de/images/GiantSpiderExecution.avi">[Giant Spider Execution]</a> (DivX required)</li>
+</ul>
+<h2><a name="0.2"></a>The Giant Spider's Code</h2>
+<p>The giant spider actor is a custom actor. The following code is basically identical with the code I compiled for JB-Aswan-v2, but has a few comments added for clarification. An explaination of how the code works follows below.</p>
+<pre class="uscript"><span class="uscript-line">00001</span>  <span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-line">00002</span>  <span class="uscript-comment">// JBGiantSpiderMine</span>
+<span class="uscript-line">00003</span>  <span class="uscript-comment">// Copyright (c) 2004 by Wormbo &lt;spamtheworm@koehler-homepage.de&gt;</span>
+<span class="uscript-line">00004</span>  <span class="uscript-comment">//</span>
+<span class="uscript-line">00005</span>  <span class="uscript-comment">// A standalone version of the parasite mine.</span>
+<span class="uscript-line">00006</span>  <span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-line">00007</span>  
+<span class="uscript-line">00008</span>  
+<span class="uscript-line">00009</span>  <span class="uscript-keyword">class</span> JBGiantSpiderMine <span class="uscript-keyword">extends</span> Actor
+<span class="uscript-line">00010</span>    <span class="uscript-keyword">placeable</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00011</span>  
+<span class="uscript-line">00012</span>  
+<span class="uscript-line">00013</span>  <span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-line">00014</span>  <span class="uscript-comment">// Imports</span>
+<span class="uscript-line">00015</span>  <span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-line">00016</span>  
+<span class="uscript-line">00017</span>  <span class="uscript-exec">#exec obj load file=..\Textures\XGameShaders.utx</span>
+<span class="uscript-line">00018</span>  <span class="uscript-exec">#exec obj load file=..\Sounds\WeaponSounds.uax</span>
+<span class="uscript-line">00019</span>  
+<span class="uscript-line">00020</span>  
+<span class="uscript-line">00021</span>  <span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-line">00022</span>  <span class="uscript-comment">// Properties</span>
+<span class="uscript-line">00023</span>  <span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-line">00024</span>  
+<span class="uscript-line">00025</span>  <span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Events<span class="uscript-operator">)</span> <span class="uscript-keyword">edfindable</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>JBInfoJail<span class="uscript-operator">&gt;</span> AssociatedJails<span class="uscript-operator">;</span> <span class="uscript-comment">// players in these jails will be killed by the explosion</span>
+<span class="uscript-line">00026</span>  <span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Events<span class="uscript-operator">)</span> <span class="uscript-type">name</span> PreExplosionEvent<span class="uscript-operator">;</span>    <span class="uscript-comment">// the event used to switch the camera view</span>
+<span class="uscript-line">00027</span>  <span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> PreSpawnDelay<span class="uscript-operator">;</span>             <span class="uscript-comment">// a delay between getting triggered and setting bHidden=false</span>
+<span class="uscript-line">00028</span>  <span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> PreExplosionDelay<span class="uscript-operator">;</span>         <span class="uscript-comment">// a delay between triggering PreExplosionEvent and Event</span>
+<span class="uscript-line">00029</span>  <span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> ExplosionDelay<span class="uscript-operator">;</span>            <span class="uscript-comment">// the delay from getting triggered to exploding</span>
+<span class="uscript-line">00030</span>  <span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> Material SpawnOverlayMaterial<span class="uscript-operator">;</span>   <span class="uscript-comment">// the overlay material to display after spawning</span>
+<span class="uscript-line">00031</span>  <span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> SpawnOverlayTime<span class="uscript-operator">;</span>          <span class="uscript-comment">// the time, the overlay is displayed</span>
+<span class="uscript-line">00032</span>  <span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-type">float</span> MomentumTransfer<span class="uscript-operator">;</span>          <span class="uscript-comment">// amount of momentum applied when damagin players (so gibs fly around :P)</span>
+<span class="uscript-line">00033</span>  <span class="uscript-keyword">var</span><span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>DamageType<span class="uscript-operator">&gt;</span> MyDamageType<span class="uscript-operator">;</span>  <span class="uscript-comment">// the damage type to use for killing players</span>
+<span class="uscript-line">00034</span>  <span class="uscript-keyword">var</span><span class="uscript-operator">(</span>Sounds<span class="uscript-operator">)</span> <span class="uscript-keyword">array</span><span class="uscript-operator">&lt;</span>Sound<span class="uscript-operator">&gt;</span> BulletSounds<span class="uscript-operator">;</span> <span class="uscript-comment">// sounds played back when shots hit the (invulnerable) spider</span>
+<span class="uscript-line">00035</span>  
+<span class="uscript-line">00036</span>  
+<span class="uscript-line">00037</span>  <span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-line">00038</span>  <span class="uscript-comment">// Variables</span>
+<span class="uscript-line">00039</span>  <span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-line">00040</span>  
+<span class="uscript-line">00041</span>  <span class="uscript-keyword">var</span> <span class="uscript-type">name</span> IdleAnims<span class="uscript-operator">[</span><span class="uscript-number">4</span><span class="uscript-operator">]</span><span class="uscript-operator">;</span>        <span class="uscript-comment">// animations are randomly played before exploding (animations handle the sounds)</span>
+<span class="uscript-line">00042</span>  <span class="uscript-keyword">var</span> <span class="uscript-type">float</span> ExplosionCountdown<span class="uscript-operator">;</span> <span class="uscript-comment">// counts down from ExplosionDelay to 0</span>
+<span class="uscript-line">00043</span>  <span class="uscript-keyword">var</span> <span class="uscript-type">bool</span> bPreExplosion<span class="uscript-operator">;</span>       <span class="uscript-comment">// tells, whether PreExplosionEvent was already triggered</span>
+<span class="uscript-line">00044</span>  
+<span class="uscript-line">00045</span>  
+<span class="uscript-line">00046</span>  <span class="uscript-comment">//== EncroachingOn ============================================================</span>
+<span class="uscript-line">00047</span>  <span class="uscript-comment">/**
+<span class="uscript-line">00048</span>  Telefrag players blocking the spawn point.
+<span class="uscript-line">00049</span>  */</span>
+<span class="uscript-line">00050</span>  <span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-line">00051</span>  
+<span class="uscript-line">00052</span>  <span class="uscript-keyword">event</span> <span class="uscript-type">bool</span> EncroachingOn<span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">)</span>
+<span class="uscript-line">00053</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00054</span>    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Pawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+<span class="uscript-line">00055</span>      Pawn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">.</span>GibbedBy<span class="uscript-operator">(</span><span class="uscript-keyword">Self</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00056</span>    
+<span class="uscript-line">00057</span>    <span class="uscript-keyword">return</span> <span class="uscript-keyword">Super</span><span class="uscript-operator">.</span>EncroachingOn<span class="uscript-operator">(</span>Other<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00058</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00059</span>  
+<span class="uscript-line">00060</span>  
+<span class="uscript-line">00061</span>  <span class="uscript-comment">//== state Sleeping ===========================================================</span>
+<span class="uscript-line">00062</span>  <span class="uscript-comment">/**
+<span class="uscript-line">00063</span>  Wait hidden and non-colliding until triggered.
+<span class="uscript-line">00064</span>  */</span>
+<span class="uscript-line">00065</span>  <span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-line">00066</span>  
+<span class="uscript-line">00067</span>  <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">state</span> Sleeping
+<span class="uscript-line">00068</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00069</span>    <span class="uscript-keyword">function</span> Trigger<span class="uscript-operator">(</span>Actor Other<span class="uscript-operator">,</span> Pawn EventInstigator<span class="uscript-operator">)</span>
+<span class="uscript-line">00070</span>    <span class="uscript-operator">{</span>
+<span class="uscript-line">00071</span>      <span class="uscript-keyword">local</span> JBInfoJail thisJail<span class="uscript-operator">;</span>
+<span class="uscript-line">00072</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+<span class="uscript-line">00073</span>      <span class="uscript-keyword">local</span> PlayerReplicationInfo PRI<span class="uscript-operator">;</span>
+<span class="uscript-line">00074</span>      <span class="uscript-keyword">local</span> JBTagPlayer TagPlayer<span class="uscript-operator">;</span>
+<span class="uscript-line">00075</span>      <span class="uscript-keyword">local</span> Pawn thisPawn<span class="uscript-operator">;</span>
+<span class="uscript-line">00076</span>      
+<span class="uscript-line">00077</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> AssociatedJails<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">==</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span> <span class="uscript-comment">// not associated with any jails, try to find matching jails</span>
+<span class="uscript-line">00078</span>        <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'JBInfoJail'</span><span class="uscript-operator">,</span> thisJail<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-line">00079</span>          <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> thisJail<span class="uscript-operator">.</span>ContainsActor<span class="uscript-operator">(</span><span class="uscript-keyword">Self</span><span class="uscript-operator">)</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-line">00080</span>            AssociatedJails<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> thisJail<span class="uscript-operator">;</span>
+<span class="uscript-line">00081</span>            <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00082</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00083</span>        <span class="uscript-operator">}</span>
+<span class="uscript-line">00084</span>        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> AssociatedJails<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">==</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-line">00085</span>          <span class="uscript-comment">// no associated jails found, associate with all jails</span>
+<span class="uscript-line">00086</span>          log<span class="uscript-operator">(</span><span class="uscript-string">"!!!!"</span> <span class="uscript-operator">@</span> <span class="uscript-keyword">Self</span> <span class="uscript-operator">@</span> <span class="uscript-string">"not associated with any jails!"</span><span class="uscript-operator">,</span> <span class="uscript-name">'Warning'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00087</span>          <span class="uscript-keyword">foreach</span> AllActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'JBInfoJail'</span><span class="uscript-operator">,</span> thisJail<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-line">00088</span>            AssociatedJails<span class="uscript-operator">[</span><span class="uscript-number">0</span><span class="uscript-operator">]</span> <span class="uscript-operator">=</span> thisJail<span class="uscript-operator">;</span>
+<span class="uscript-line">00089</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00090</span>        <span class="uscript-operator">}</span>
+<span class="uscript-line">00091</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00092</span>      
+<span class="uscript-line">00093</span>      <span class="uscript-comment">// check if we actually have someone in this jail</span>
+<span class="uscript-line">00094</span>      <span class="uscript-keyword">foreach</span> DynamicActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'PlayerReplicationInfo'</span><span class="uscript-operator">,</span> PRI<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-line">00095</span>        TagPlayer <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'JBTagPlayer'</span><span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>FindFor<span class="uscript-operator">(</span>PRI<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00096</span>        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> TagPlayer <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> TagPlayer<span class="uscript-operator">.</span>IsInJail<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> TagPlayer<span class="uscript-operator">.</span>GetPawn<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-line">00097</span>          thisJail <span class="uscript-operator">=</span> TagPlayer<span class="uscript-operator">.</span>GetJail<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00098</span>          thisPawn <span class="uscript-operator">=</span> TagPlayer<span class="uscript-operator">.</span>GetPawn<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00099</span>          <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> AssociatedJails<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> <span class="uscript-operator">++</span>i<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-line">00100</span>            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> thisJail <span class="uscript-operator">==</span> AssociatedJails<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-line">00101</span>              <span class="uscript-comment">// prisoner found, now spawn</span>
+<span class="uscript-line">00102</span>              NetUpdateTime <span class="uscript-operator">=</span> Level<span class="uscript-operator">.</span>TimeSeconds <span class="uscript-operator">-</span> <span class="uscript-number">1</span><span class="uscript-operator">;</span> <span class="uscript-comment">// force replication right now</span>
+<span class="uscript-line">00103</span>              bClientTrigger <span class="uscript-operator">=</span> <span class="uscript-operator">!</span>bClientTrigger<span class="uscript-operator">;</span>
+<span class="uscript-line">00104</span>              GotoState<span class="uscript-operator">(</span><span class="uscript-name">'Spawning'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00105</span>              <span class="uscript-keyword">return</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00106</span>            <span class="uscript-operator">}</span>
+<span class="uscript-line">00107</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00108</span>        <span class="uscript-operator">}</span>
+<span class="uscript-line">00109</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00110</span>    <span class="uscript-operator">}</span>
+<span class="uscript-line">00111</span>    
+<span class="uscript-line">00112</span>    <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">event</span> ClientTrigger<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00113</span>    <span class="uscript-operator">{</span>
+<span class="uscript-line">00114</span>      GotoState<span class="uscript-operator">(</span><span class="uscript-name">'Spawning'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00115</span>    <span class="uscript-operator">}</span>
+<span class="uscript-line">00116</span>    
+<span class="uscript-line">00117</span>  Begin:
+<span class="uscript-line">00118</span>    bHidden <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00119</span>    SetCollision<span class="uscript-operator">(</span><span class="uscript-keyword">False</span><span class="uscript-operator">,</span> <span class="uscript-keyword">False</span><span class="uscript-operator">,</span> <span class="uscript-keyword">False</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00120</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00121</span>  
+<span class="uscript-line">00122</span>  
+<span class="uscript-line">00123</span>  <span class="uscript-comment">//== TakeDamage ===============================================================</span>
+<span class="uscript-line">00124</span>  <span class="uscript-comment">/**
+<span class="uscript-line">00125</span>  Play sound effects for bullet hits.
+<span class="uscript-line">00126</span>  */</span>
+<span class="uscript-line">00127</span>  <span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-line">00128</span>  
+<span class="uscript-line">00129</span>  <span class="uscript-keyword">event</span> TakeDamage<span class="uscript-operator">(</span><span class="uscript-type">int</span> Damage<span class="uscript-operator">,</span> Pawn EventInstigator<span class="uscript-operator">,</span> vector HitLocation<span class="uscript-operator">,</span> vector Momentum<span class="uscript-operator">,</span> <span class="uscript-keyword">class</span><span class="uscript-operator">&lt;</span>DamageType<span class="uscript-operator">&gt;</span> DamageType<span class="uscript-operator">)</span>
+<span class="uscript-line">00130</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00131</span>    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bHidden <span class="uscript-operator">&amp;&amp;</span> DamageType <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> DamageType<span class="uscript-operator">.</span><span class="uscript-keyword">Default</span><span class="uscript-operator">.</span>bBulletHit <span class="uscript-operator">&amp;&amp;</span> BulletSounds<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span> <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+<span class="uscript-line">00132</span>      PlaySound<span class="uscript-operator">(</span>BulletSounds<span class="uscript-operator">[</span>Rand<span class="uscript-operator">(</span>BulletSounds<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">)</span><span class="uscript-operator">]</span><span class="uscript-operator">,</span> SLOT_None<span class="uscript-operator">,</span> <span class="uscript-number">2.0</span><span class="uscript-operator">,</span> <span class="uscript-keyword">False</span><span class="uscript-operator">,</span> <span class="uscript-number">100</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00133</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00134</span>  
+<span class="uscript-line">00135</span>  
+<span class="uscript-line">00136</span>  <span class="uscript-comment">//== state Spawning ===========================================================</span>
+<span class="uscript-line">00137</span>  <span class="uscript-comment">/**
+<span class="uscript-line">00138</span>  Play a spawn effect.
+<span class="uscript-line">00139</span>  */</span>
+<span class="uscript-line">00140</span>  <span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-line">00141</span>  
+<span class="uscript-line">00142</span>  <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">state</span> Spawning
+<span class="uscript-line">00143</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00144</span>  Begin:
+<span class="uscript-line">00145</span>    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> PrespawnDelay <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+<span class="uscript-line">00146</span>      Sleep<span class="uscript-operator">(</span>PrespawnDelay<span class="uscript-operator">)</span><span class="uscript-operator">;</span> <span class="uscript-comment">// wait until external spawn effect is over</span>
+<span class="uscript-line">00147</span>    bHidden <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00148</span>    SetCollision<span class="uscript-operator">(</span><span class="uscript-keyword">True</span><span class="uscript-operator">,</span> <span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00149</span>    SetLocation<span class="uscript-operator">(</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>  <span class="uscript-comment">// "telefrag" players at this location</span>
+<span class="uscript-line">00150</span>    <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> SpawnOverlayTime <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">&amp;&amp;</span> SpawnOverlayMaterial <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span>
+<span class="uscript-line">00151</span>      SetOverlayMaterial<span class="uscript-operator">(</span>SpawnOverlayMaterial<span class="uscript-operator">,</span> SpawnOverlayTime<span class="uscript-operator">,</span> <span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00152</span>    PlayAnim<span class="uscript-operator">(</span><span class="uscript-name">'Startup'</span><span class="uscript-operator">,</span> <span class="uscript-number">1.0</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00153</span>    FinishAnim<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00154</span>    GotoState<span class="uscript-operator">(</span><span class="uscript-name">'Waiting'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00155</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00156</span>  
+<span class="uscript-line">00157</span>  
+<span class="uscript-line">00158</span>  <span class="uscript-comment">//== state Waiting ============================================================</span>
+<span class="uscript-line">00159</span>  <span class="uscript-comment">/**
+<span class="uscript-line">00160</span>  Spider idles a bit before detonating.
+<span class="uscript-line">00161</span>  */</span>
+<span class="uscript-line">00162</span>  <span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-line">00163</span>  
+<span class="uscript-line">00164</span>  <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">state</span> Waiting
+<span class="uscript-line">00165</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00166</span>    <span class="uscript-keyword">simulated</span> <span class="uscript-keyword">function</span> Timer<span class="uscript-operator">(</span><span class="uscript-operator">)</span>
+<span class="uscript-line">00167</span>    <span class="uscript-operator">{</span>
+<span class="uscript-line">00168</span>      <span class="uscript-keyword">local</span> JBInfoJail thisJail<span class="uscript-operator">;</span>
+<span class="uscript-line">00169</span>      <span class="uscript-keyword">local</span> <span class="uscript-type">int</span> i<span class="uscript-operator">;</span>
+<span class="uscript-line">00170</span>      <span class="uscript-keyword">local</span> PlayerReplicationInfo PRI<span class="uscript-operator">;</span>
+<span class="uscript-line">00171</span>      <span class="uscript-keyword">local</span> JBTagPlayer TagPlayer<span class="uscript-operator">;</span>
+<span class="uscript-line">00172</span>      <span class="uscript-keyword">local</span> Pawn thisPawn<span class="uscript-operator">;</span>
+<span class="uscript-line">00173</span>      
+<span class="uscript-line">00174</span>      ExplosionCountdown <span class="uscript-operator">-=</span> <span class="uscript-number">0.1</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00175</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> <span class="uscript-operator">!</span>bPreExplosion <span class="uscript-operator">&amp;&amp;</span> ExplosionCountdown <span class="uscript-operator">&lt;=</span> PreExplosionDelay <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-line">00176</span>        <span class="uscript-comment">// trigger the pre-explosion event (camera switch)</span>
+<span class="uscript-line">00177</span>        bPreExplosion <span class="uscript-operator">=</span> <span class="uscript-keyword">True</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00178</span>        TriggerEvent<span class="uscript-operator">(</span>PreExplosionEvent<span class="uscript-operator">,</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">,</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00179</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00180</span>      <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> ExplosionCountdown <span class="uscript-operator">&lt;=</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-line">00181</span>        SetTimer<span class="uscript-operator">(</span><span class="uscript-number">0.0</span><span class="uscript-operator">,</span> <span class="uscript-keyword">False</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00182</span>        TriggerEvent<span class="uscript-operator">(</span><span class="uscript-keyword">Event</span><span class="uscript-operator">,</span> <span class="uscript-keyword">Self</span><span class="uscript-operator">,</span> <span class="uscript-keyword">None</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00183</span>        
+<span class="uscript-line">00184</span>        <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> Role <span class="uscript-operator">==</span> ROLE_Authority <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-line">00185</span>          <span class="uscript-keyword">foreach</span> DynamicActors<span class="uscript-operator">(</span><span class="uscript-keyword">class</span><span class="uscript-name">'PlayerReplicationInfo'</span><span class="uscript-operator">,</span> PRI<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-line">00186</span>            TagPlayer <span class="uscript-operator">=</span> <span class="uscript-keyword">class</span><span class="uscript-name">'JBTagPlayer'</span><span class="uscript-operator">.</span><span class="uscript-keyword">static</span><span class="uscript-operator">.</span>FindFor<span class="uscript-operator">(</span>PRI<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00187</span>            <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> TagPlayer <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">&amp;&amp;</span> TagPlayer<span class="uscript-operator">.</span>IsInJail<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">&amp;&amp;</span> TagPlayer<span class="uscript-operator">.</span>GetPawn<span class="uscript-operator">(</span><span class="uscript-operator">)</span> <span class="uscript-operator">!=</span> <span class="uscript-keyword">None</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-line">00188</span>              thisJail <span class="uscript-operator">=</span> TagPlayer<span class="uscript-operator">.</span>GetJail<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00189</span>              thisPawn <span class="uscript-operator">=</span> TagPlayer<span class="uscript-operator">.</span>GetPawn<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00190</span>              <span class="uscript-keyword">for</span> <span class="uscript-operator">(</span>i <span class="uscript-operator">=</span> <span class="uscript-number">0</span><span class="uscript-operator">;</span> i <span class="uscript-operator">&lt;</span> AssociatedJails<span class="uscript-operator">.</span><span class="uscript-keyword">Length</span><span class="uscript-operator">;</span> <span class="uscript-operator">++</span>i<span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-line">00191</span>                <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> thisJail <span class="uscript-operator">==</span> AssociatedJails<span class="uscript-operator">[</span>i<span class="uscript-operator">]</span> <span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-line">00192</span>                  thisPawn<span class="uscript-operator">.</span>TakeDamage<span class="uscript-operator">(</span><span class="uscript-number">1000</span><span class="uscript-operator">,</span> <span class="uscript-keyword">None</span><span class="uscript-operator">,</span> thisPawn<span class="uscript-operator">.</span>Location<span class="uscript-operator">,</span> MomentumTransfer <span class="uscript-operator">*</span> Normal<span class="uscript-operator">(</span>thisPawn<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> Location<span class="uscript-operator">)</span> <span class="uscript-operator">*</span> <span class="uscript-number">1000</span> <span class="uscript-operator">/</span> VSize<span class="uscript-operator">(</span>thisPawn<span class="uscript-operator">.</span>Location <span class="uscript-operator">-</span> Location<span class="uscript-operator">)</span><span class="uscript-operator">,</span> MyDamageType<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00193</span>                  <span class="uscript-keyword">if</span> <span class="uscript-operator">(</span> thisPawn<span class="uscript-operator">.</span>Health <span class="uscript-operator">&gt;</span> <span class="uscript-number">0</span> <span class="uscript-operator">)</span>
+<span class="uscript-line">00194</span>                    thisPawn<span class="uscript-operator">.</span>Died<span class="uscript-operator">(</span><span class="uscript-keyword">None</span><span class="uscript-operator">,</span> MyDamageType<span class="uscript-operator">,</span> thisPawn<span class="uscript-operator">.</span>Location<span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00195</span>                  <span class="uscript-keyword">break</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00196</span>                <span class="uscript-operator">}</span>
+<span class="uscript-line">00197</span>              <span class="uscript-operator">}</span>
+<span class="uscript-line">00198</span>            <span class="uscript-operator">}</span>
+<span class="uscript-line">00199</span>          <span class="uscript-operator">}</span>
+<span class="uscript-line">00200</span>        <span class="uscript-operator">}</span>
+<span class="uscript-line">00201</span>        GotoState<span class="uscript-operator">(</span><span class="uscript-name">'Sleeping'</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00202</span>      <span class="uscript-operator">}</span>
+<span class="uscript-line">00203</span>  
+<span class="uscript-line">00204</span>    <span class="uscript-operator">}</span>
+<span class="uscript-line">00205</span>    
+<span class="uscript-line">00206</span>  Begin:
+<span class="uscript-line">00207</span>    ExplosionCountdown <span class="uscript-operator">=</span> ExplosionDelay<span class="uscript-operator">;</span>
+<span class="uscript-line">00208</span>    bPreExplosion <span class="uscript-operator">=</span> <span class="uscript-keyword">False</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00209</span>    SetTimer<span class="uscript-operator">(</span><span class="uscript-number">0.1</span><span class="uscript-operator">,</span> <span class="uscript-keyword">True</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00210</span>    <span class="uscript-keyword">while</span> <span class="uscript-operator">(</span><span class="uscript-keyword">True</span><span class="uscript-operator">)</span> <span class="uscript-operator">{</span>
+<span class="uscript-line">00211</span>      PlayAnim<span class="uscript-operator">(</span><span class="uscript-name">'Idle'</span><span class="uscript-operator">,</span> <span class="uscript-number">1.0</span><span class="uscript-operator">,</span> <span class="uscript-number">0.3</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00212</span>      FinishAnim<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00213</span>      PlayAnim<span class="uscript-operator">(</span>IdleAnims<span class="uscript-operator">[</span>Rand<span class="uscript-operator">(</span><span class="uscript-keyword">ArrayCount</span><span class="uscript-operator">(</span>IdleAnims<span class="uscript-operator">)</span><span class="uscript-operator">)</span><span class="uscript-operator">]</span><span class="uscript-operator">,</span> <span class="uscript-number">1.0</span><span class="uscript-operator">,</span> <span class="uscript-number">0.3</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00214</span>      FinishAnim<span class="uscript-operator">(</span><span class="uscript-operator">)</span><span class="uscript-operator">;</span>
+<span class="uscript-line">00215</span>    <span class="uscript-operator">}</span>
+<span class="uscript-line">00216</span>  <span class="uscript-operator">}</span>
+<span class="uscript-line">00217</span>  
+<span class="uscript-line">00218</span>  
+<span class="uscript-line">00219</span>  <span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-line">00220</span>  <span class="uscript-comment">// Default properties</span>
+<span class="uscript-line">00221</span>  <span class="uscript-comment">//=============================================================================</span>
+<span class="uscript-line">00222</span>  
+<span class="uscript-line">00223</span>  <span class="uscript-keyword">defaultproperties</span>
+<span class="uscript-line">00224</span>  <span class="uscript-operator">{</span>
+<span class="uscript-line">00225</span>    DrawType<span class="uscript-operator">=</span>DT_Mesh              <span class="uscript-comment">// The mesh used for this actor is a special version of the</span>
+<span class="uscript-line">00226</span>    Mesh<span class="uscript-operator">=</span>CollidingSpiderMineMesh  <span class="uscript-comment">// Onslaught parasite mine mesh, that has sound notifications</span>
+<span class="uscript-line">00227</span>    bUseCylinderCollision<span class="uscript-operator">=</span><span class="uscript-keyword">False</span>   <span class="uscript-comment">// and collision boxes matching the spider's size and shape.</span>
+<span class="uscript-line">00228</span>    bEdShouldSnap<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-line">00229</span>    bProjTarget<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>              <span class="uscript-comment">// shots should hit the spider</span>
+<span class="uscript-line">00230</span>    CollisionHeight<span class="uscript-operator">=</span><span class="uscript-number">60.0</span>          <span class="uscript-comment">// These dimensions help placing</span>
+<span class="uscript-line">00231</span>    CollisionRadius<span class="uscript-operator">=</span><span class="uscript-number">150.0</span>         <span class="uscript-comment">// the spider in Unrealed.</span>
+<span class="uscript-line">00232</span>    IdleAnims<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Clean
+<span class="uscript-line">00233</span>    IdleAnims<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Look
+<span class="uscript-line">00234</span>    IdleAnims<span class="uscript-operator">(</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Bob
+<span class="uscript-line">00235</span>    IdleAnims<span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>FootTap
+<span class="uscript-line">00236</span>    DrawScale<span class="uscript-operator">=</span><span class="uscript-number">1.5</span>
+<span class="uscript-line">00237</span>    bUseDynamicLights<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-line">00238</span>    bDramaticLighting<span class="uscript-operator">=</span><span class="uscript-keyword">True</span>
+<span class="uscript-line">00239</span>    RemoteRole<span class="uscript-operator">=</span>ROLE_SimulatedProxy    <span class="uscript-comment">// The spider should be replicated to clients.</span>
+<span class="uscript-line">00240</span>    InitialState<span class="uscript-operator">=</span>Sleeping             <span class="uscript-comment">// the startup state</span>
+<span class="uscript-line">00241</span>    SpawnOverlayMaterial<span class="uscript-operator">=</span>VehicleSpawnShaderRed
+<span class="uscript-line">00242</span>    SpawnOverlayTime<span class="uscript-operator">=</span><span class="uscript-number">2.0</span>
+<span class="uscript-line">00243</span>    PreSpawnDelay<span class="uscript-operator">=</span><span class="uscript-number">2.0</span>
+<span class="uscript-line">00244</span>    PreExplosionDelay<span class="uscript-operator">=</span><span class="uscript-number">1.0</span>
+<span class="uscript-line">00245</span>    ExplosionDelay<span class="uscript-operator">=</span><span class="uscript-number">5.0</span>
+<span class="uscript-line">00246</span>    MomentumTransfer<span class="uscript-operator">=</span><span class="uscript-number">100000.0</span>
+<span class="uscript-line">00247</span>    MyDamageType<span class="uscript-operator">=</span>DamTypeONSMine
+<span class="uscript-line">00248</span>    SurfaceType<span class="uscript-operator">=</span>EST_Metal         <span class="uscript-comment">// for players walking on the spider and shots hitting it</span>
+<span class="uscript-line">00249</span>    BulletSounds<span class="uscript-operator">(</span><span class="uscript-number">0</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.BBulletReflect1'</span>
+<span class="uscript-line">00250</span>    BulletSounds<span class="uscript-operator">(</span><span class="uscript-number">1</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.BBulletReflect2'</span>
+<span class="uscript-line">00251</span>    BulletSounds<span class="uscript-operator">(</span><span class="uscript-number">2</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.BBulletReflect3'</span>
+<span class="uscript-line">00252</span>    BulletSounds<span class="uscript-operator">(</span><span class="uscript-number">3</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.BBulletReflect4'</span>
+<span class="uscript-line">00253</span>    BulletSounds<span class="uscript-operator">(</span><span class="uscript-number">4</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.BBulletImpact1'</span>
+<span class="uscript-line">00254</span>    BulletSounds<span class="uscript-operator">(</span><span class="uscript-number">5</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.BBulletImpact2'</span>
+<span class="uscript-line">00255</span>    BulletSounds<span class="uscript-operator">(</span><span class="uscript-number">6</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.BBulletImpact3'</span>
+<span class="uscript-line">00256</span>    BulletSounds<span class="uscript-operator">(</span><span class="uscript-number">7</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.BBulletImpact4'</span>
+<span class="uscript-line">00257</span>    BulletSounds<span class="uscript-operator">(</span><span class="uscript-number">8</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.BBulletImpact5'</span>
+<span class="uscript-line">00258</span>    BulletSounds<span class="uscript-operator">(</span><span class="uscript-number">9</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.BBulletImpact6'</span>
+<span class="uscript-line">00259</span>    BulletSounds<span class="uscript-operator">(</span><span class="uscript-number">10</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.BBulletImpact7'</span>
+<span class="uscript-line">00260</span>    BulletSounds<span class="uscript-operator">(</span><span class="uscript-number">11</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.BBulletImpact8'</span>
+<span class="uscript-line">00261</span>    BulletSounds<span class="uscript-operator">(</span><span class="uscript-number">12</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.BBulletImpact9'</span>
+<span class="uscript-line">00262</span>    BulletSounds<span class="uscript-operator">(</span><span class="uscript-number">13</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.BBulletImpact11'</span>
+<span class="uscript-line">00263</span>    BulletSounds<span class="uscript-operator">(</span><span class="uscript-number">14</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.BBulletImpact12'</span>
+<span class="uscript-line">00264</span>    BulletSounds<span class="uscript-operator">(</span><span class="uscript-number">15</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.BBulletImpact13'</span>
+<span class="uscript-line">00265</span>    BulletSounds<span class="uscript-operator">(</span><span class="uscript-number">16</span><span class="uscript-operator">)</span><span class="uscript-operator">=</span>Sound<span class="uscript-name">'WeaponSounds.BBulletImpact14'</span>
+<span class="uscript-line">00266</span>  <span class="uscript-operator">}</span></pre><h2><a name="0.3"></a>How Does It Work?</h2>
+<h3><a name="0.3.1"></a>Before We Start</h3>
+<p>JBGiantSpiderMine is a placeable, replicated actor. That means, the actor is placed in the map and exists as separate versions on the server and on all clients <em class="em1">before</em> any replication happens. These clientside versions will never do anything and could as well be destroyed in PreBeginPlay() when <code>(Level.NetMode == NM_Client)</code> and <code>(Role == ROLE_Authority)</code>.</p>
+<p>The giant spider is initially invisible and will never receive the trigger events in the clients, so we might as well leave it alone. You should still keep this in mind when creating replicated actors for mappers.</p>
+<p>The JBGiantSpiderMine starts in its <a href="initialstate.html">InitialState</a> 'Sleeping' both on the server and on clients.</p>
+<h3><a name="0.3.2"></a>Press The Start Button</h3>
+<p>The giant spider is triggered serversidely by an event matching its <a href="tag.html">Tag</a> value. This will cause the Trigger() function in state Sleeping to be executed. This is a non-<a href="simulated-function.html">simulated function</a>, because it never needs to be executed clientsidely.</p>
+<p>The Trigger() function checks, whether there are actually players in the desired jail. If it finds players, three things happen:</p>
+<ul><li>The value of bClientTrigger is toggled. This change will be replicated to all clients and cause some native replication magic to do its work. (see below)</li>
+<li>The value of NetUpdateTime is set to a time index in the past. This will force all changed replicated variables to be replicated as soon as possible.</li>
+<li>The JBGiantSpiderMine switches to state 'Spawning' serversidely.</li>
+</ul>
+<p>Changing the value of bClientTrigger will cause the ClientTrigger() function to be called clientsidely once the change reaches the client. Since the JBGiantSpiderMine is also in state 'Sleeping' on the client, it will call the corresponding ClientTrigger() function, which switches to state 'Spawning'.</p>
+<p>From this point on, the server and clients process their visual and sound effects independantly from each other.</p>
+<h3><a name="0.3.3"></a>Making The Spider Appear</h3>
+<p>The 'Spawning' state waits until the spawn effect emitter is done (the required amount time for this must be set manually by the mapper) and makes the spider visible and enables its collision. The call to SetLocation() makes sure, that all players touching the spider are immediately "telefragged". The spider plays its startup animation and goes to state 'Waiting'.</p>
+<h3><a name="0.3.4"></a>Waiting For The Big Bang</h3>
+<p>Like the 'Sleeping' and 'Spawning' states, the 'Waiting' state is entered independently on server and clients. Only the fixed time intervals used on server and clients ensure that they enter this state at about the same time!</p>
+<p>Once state 'Waiting' starts, two things are done independantly form each other:</p>
+<ul><li>The state code randomly plays animations and waits for them to finish.</li>
+<li>The Timer() function is called every 0.1 game seconds and decreases the ExplosionCounter. If it drops below PreExplosionDelay, the PreExplosionEvent is trigger <em class="em1">on the server and clients independantly.</em> If the ExplosionCounter reaches 0, the Event is triggered also on the server and the clients independantly and the server (<code>Role == ROLE_Authority</code>) kills the players in the associated jails. After that, server and client go back to state 'Sleeping' <em class="em1">independantly</em>.</li>
+</ul>
+<h2><a name="0.4"></a>Conclusion</h2>
+<p>Sometimes (like in this case) the big challenge in replication is not the replication itself, but <em class="em1">not</em> using it. This example relies more on simulation than on replication. The only part where the simulation is syncronized is the native magic behind the bClientTrigger variable, which calls the ClientTrigger() function once its changed value reaches the client. It should be mentioned, that bClientTrigger is only useful when you know, that it will not change more than once within a short time span. With a higher frequence of changes you should use a replicated byte variable and check its value in PostNetReceive() on the clients.</p>
+<h2><a name="0.5"></a>Related Topics</h2>
+<ul><li><a href="replication-examples.html">Replication Examples</a></li>
+<li><a href="replication.html">Replication</a></li>
+</ul>
+<hr class="thin"><p><a href="category-tutorial.html">Category Tutorial</a></p>
+<script type="text/javascript"><!--
+ menuItemAdd("The Actors Involved", "#0.1");
+menuItemAdd("The Giant Spider's Code", "#0.2");
+menuItemAdd("How Does It Work?", "#0.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Before We Start", "#0.3.1");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Press The Start Button", "#0.3.2");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Making The Spider Appear", "#0.3.3");
+menuItemAdd("<tt>&nbsp;&nbsp;</tt>Waiting For The Big Bang", "#0.3.4");
+menuItemAdd("Conclusion", "#0.4");
+menuItemAdd("Related Topics", "#0.5");
+ menuWrite() //--></script></div>
+</div>
+
+<div id="footer" class="bar">
+	<p><form method="post" action="http://wiki.beyondunreal.com/wiki" enctype="application/x-www-form-urlencoded">
+<a href="(start).html">Home Page</a> | <a href="replication-examples.html">Replication Examples</a> | <a href="recent-changes.html">Recent Changes</a> | <a href="http://wiki.beyondunreal.com/wiki?action=editprefs">Preferences</a><br>
+<a href="http://wiki.beyondunreal.com/wiki?action=edit&id=Replication_Examples/Giant_Spider_Execution">Edit text of this page</a> | <a href="http://wiki.beyondunreal.com/wiki?action=history&id=Replication_Examples/Giant_Spider_Execution">View other revisions</a><br>Last edited August 30, 2005 8:07 <a href="http://wiki.beyondunreal.com/wiki?action=browse&diff=1&id=Replication_Examples/Giant_Spider_Execution">(diff)</a><br>Search: <input type="text" name="search"  size="20" /><input type="hidden" name="dosearch" value="1"  /><br><br><small><a href="http://wiki.beyondunreal.com/wiki/Replication_Examples/Giant_Spider_Execution">Original page</a> &#150; copy created Sat, Jun 23, 2007</small><div></div>
+</form>
+	</p>
+	<p>Gah - a solution with more questions. (EntropicLqd)
+</p>
+</div>
+</div><!-- close of "scrolling" div -->
+
+<div id="quickbar">
+	<div id="logo"><a href="http://wiki.beyondunreal.com/"><img src="shared/wikilogo.jpg" width="143" height="100" border="0"></a>
+		</div>
+	<div class="qbsitename">
+		<p>The Unreal Engine Documentation Site</p>
+	</div>
+	<div class="qbsection">
+<p><a href="metatopics.html">Wiki Community</a></p>
+<p><a href="category-category.html">Topic Categories</a></p>
+<p><a href="/cgi-bin/imageupload.cgi/wiki-ext/imageupload.htt" target="_blank ">Image Uploads</a></p>
+<p><a href="http://wiki.beyondunreal.com/wiki?action=random">Random Page</a></p>
+<p><a href="recent-changes.html">Recent Changes</a></p>
+<p><a href="offline-wiki.html">Offline Wiki</a></p>
+</div><div class="qbsection">
+<p><a href="unreal-engine.html">Unreal Engine</a></p>
+<p><a href="console-commands.html">Console Commands</a></p>
+<p><a href="terminology.html">Terminology</a></p>
+<p><a href="category-faq.html">FAQs</a></p>
+<p><a href="help-desk.html">Help Desk</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-mapping.html">Mapping Topics</a></p>
+<p><a href="mapping-lessons.html">Mapping Lessons</a></p>
+<p><a href="unrealed-3.html">UnrealEd Interface</a></p>
+</div><div class="qbsection">
+<p><a href="unrealscript.html">UnrealScript Topics</a></p>
+<p><a href="unrealscript-lessons.html">UnrealScript Lessons</a></p>
+<p><a href="making-mods.html">Making Mods</a></p>
+<p><a href="class-tree.html">Class Tree</a></p>
+</div><div class="qbsection">
+<p><a href="topics-on-modeling.html">Modeling Topics</a></p>
+</div><div class="qbsection">
+<p><a href="chongqing-page.html">Chongqing Page</a></p>
+<p><a href="log-in.html">Log In</a></p></div>
+</div>
+
+</body></html>
